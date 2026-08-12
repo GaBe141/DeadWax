@@ -1,0 +1,76 @@
+# Dead Wax playtest
+
+Use this checklist for a 10–15 minute prototype pass. Run `.\deadwax.cmd play` from the project root; runtime errors are written to `.godot/deadwax-play.log`.
+
+## Session
+
+- Date/time:
+- Commit (`git rev-parse --short HEAD`):
+- Machine/display:
+- Input device:
+- Overall frame pacing: smooth / occasional hitch / frequent hitch
+- Audio clarity and latency:
+
+## Cross-room checks
+
+- [ ] The game opens at 1280×720 in **The Label** with HUD and synthesized audio.
+- [ ] A/D or arrows move; Space jumps; J/X strikes; K/C holds Hood; L holds Set.
+- [ ] R respawns the player. Tab advances rooms and wraps after room five.
+- [ ] Hood noticeably slows movement, quiets crackle, and muffles the audio bed.
+- [ ] Controller mappings work, if a controller is available.
+
+## 1. The Label
+
+- [ ] A strike near a live groove launches Skip; a strike in dead air does not.
+- [ ] Striking again as the groove echo returns produces **ON BEAT** and a stronger launch.
+- [ ] Four evenly spaced strikes open the unsigned groove-lock.
+- [ ] The spent-wax gap and wall-groove shaft are readable without explanation.
+
+## 2. The Practice Room
+
+- [ ] Holding Hood near dull wax for about 1.2 seconds grants one Shine.
+- [ ] The dummy hears crackle, ticks three times, then swings on four.
+- [ ] A mistimed defense causes knockback and increments hits taken.
+- [ ] A strike in the 100 ms parry window produces **RUNG BACK**.
+- [ ] Five ordinary nearby hits—or enough resonance—shatter the dummy.
+- [ ] Four evenly spaced strikes open the signed count-in door.
+
+## 3. The Verse
+
+- [ ] An Auditioner approaches and gives a readable rising reach tell.
+- [ ] A strike/parry breaks the reach as expected.
+- [ ] Holding L/Set nearby for about 1.2 seconds frees an Auditioner peacefully.
+- [ ] Fighting another Auditioner demonstrates the contrasting shatter outcome.
+
+## 4. The Unplayed
+
+- [ ] Two directional air-strike breaths work before landing.
+- [ ] Landing, groove launches, and pogo hits refill breaths.
+- [ ] Air-striking a nearby enemy produces an upward-biased pogo bounce.
+- [ ] Known issue: at roughly 121–150 px, a pogo can occur without the enemy receiving a hit.
+
+## 5. The Smoothed Floor
+
+- [ ] Raw strikes do not build resonance or remove HP from the muted dummy.
+- [ ] Three successful parries win the bout.
+- [ ] Known issue: the third parry can produce shatter effects and **the bout is yours** together.
+- [ ] Tab returns to The Label.
+
+## Feel questions
+
+- Does the 100 ms parry window feel fair after learning the three-tick tell?
+- Does Hood feel meaningfully quieter rather than merely slower?
+- Is Set/mercy discoverable without being explained first?
+- Is thick-air movement expressive or frustrating?
+- Is the muted bout tense and readable, or simply empty?
+
+## Issue record
+
+- Short title:
+- Room:
+- Steps to reproduce:
+- Expected:
+- Actual:
+- Frequency: once / intermittent / every time
+- Screenshot/video/log timestamp:
+- Severity: blocks play / major mechanic / feel-polish / cosmetic

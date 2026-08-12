@@ -1,7 +1,19 @@
-# DEAD WAX — game prototype (M1)
+# DEAD WAX — game prototype
 
-Open this folder in **Godot 4.x** and press **F5**. Everything is built from
+Open this folder in **Godot 4.7.1** and press **F5**. Everything is built from
 code at runtime — the editor viewport is supposed to look empty.
+
+On the Dead Wax Wyse, the lightweight project commands are:
+
+```text
+.\deadwax.cmd doctor  check the local toolchain and repository
+.\deadwax.cmd play    run the prototype with a local runtime log
+.\deadwax.cmd editor  open the project in Godot
+.\deadwax.cmd check   import resources and run the smoke suite
+.\deadwax.cmd vibe    start Mistral Vibe in this repository
+```
+
+See `PLAYTEST.md` for the repeatable five-room playtest.
 
 ## Controls
 
@@ -11,7 +23,9 @@ code at runtime — the editor viewport is supposed to look empty.
 - **K hold** (or C) — **HOOD UP**: silence. Slower, softer, your crackle
   drains fast, the world goes lowpass-muffled, and things stop hearing you.
   Hold it beside dull grey wax to **polish** (mints shine).
-- **R** restart room · **TAB** next room
+- **L hold** — **SET / KNEEL**: listen to an Auditioner instead of breaking it.
+- **W/S** (or arrows) — aim directional strikes while airborne.
+- **R** respawn · **TAB** next room
 
 ## The rooms (TAB cycles)
 
@@ -23,14 +37,16 @@ code at runtime — the editor viewport is supposed to look empty.
    swing lands: **RUNG BACK** (parry). Fill its rim to shatter it. Also:
    polishing corner, and the **signed COUNT-IN door** (four even strikes,
    any tempo).
-3. **THE UNPLAYED** — thick-air flight, two breaths, hot grooves.
-4. **THE SMOOTHED FLOOR** — a bout on HUSH's terms: resonance OFF, raw hits
+3. **THE VERSE** — Auditioners can be shattered or heard. Hold SET nearby to
+   free one peacefully.
+4. **THE UNPLAYED** — thick-air flight, two breaths, hot grooves.
+5. **THE SMOOTHED FLOOR** — a bout on HUSH's terms: resonance OFF, raw hits
    worthless, three rung-backs to win. Spacing and timing, nothing else.
    This room decides whether the rival duels will feel good.
 
 ## What to feel for (bring notes)
 
-- Does the parry window (130 ms) feel generous or cruel?
+- Does the parry window (100 ms) feel fair after learning the tell?
 - Does hood-stealth read — do you *feel* quieter, does the dummy calming
   down land?
 - Is the count-in door forgiving enough at fast and slow tempos?
@@ -43,8 +59,10 @@ code at runtime — the editor viewport is supposed to look empty.
 - Door strictness: `GAP_MIN/GAP_MAX/EVENNESS` in `scripts/refrain_door.gd`
 - All SFX are synthesized in `scripts/audio_bank.gd` — no assets anywhere
 
-## Housekeeping
+## Development checks
 
-M0's bell-era files (`clapper.gd`, `toll_wave.gd`, `resonant_plate.gd`,
-`room_dry.gd`, `room_waist.gd`) were moved to `mtrdvn/_to_delete/` — delete
-that folder whenever. Their replacements live here under Dead Wax names.
+The dependency-free smoke suite validates all project resources, the 53-room
+world-map data, every current prototype room, and the runtime input map. Run
+`.\deadwax.cmd check` before committing. GitHub runs the same checks on pushes and
+pull requests. Gameplay feel, real audio, and controller behavior still require
+the manual checklist in `PLAYTEST.md`.

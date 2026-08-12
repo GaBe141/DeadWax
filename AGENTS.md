@@ -10,8 +10,9 @@
 ## Work and verification
 
 - Open this directory as a Godot project and press F6/F5 as appropriate. Use F5 for the full prototype.
-- Before handing off code changes, run `godot --headless --editor --path . --quit` to import assets and catch script parse/load errors.
-- There is no automated test harness or `export_presets.cfg`. After gameplay changes, manually smoke-test all five rooms with Tab and use R to restart each room.
+- Before handing off code changes, run `.\deadwax.cmd check`. It imports resources and runs the dependency-free native smoke suite in `tests/smoke_test.gd`.
+- The smoke suite covers resource loading, world-map invariants, all five room boots, and required inputs. After gameplay changes, also follow `PLAYTEST.md`; timing, audio, rendering, and controller feel remain manual.
+- There is no `export_presets.cfg`; this repository is not yet configured for distributable builds.
 - Runtime controls are defined in `scripts/main.gd`: A/D or arrows move, Space jumps, J/X strikes, hold K/C raises the Hood, hold L kneels/Sets, R restarts, and Tab changes rooms. Gamepad mappings are defined there too.
 - Follow the existing GDScript conventions: tabs, `snake_case` names, typed signatures and variables, and `UPPER_SNAKE_CASE` constants. Preserve `.gd.uid` sidecars.
 - Keep gameplay tuning in the constants already grouped near the tops of the relevant scripts.

@@ -1,0 +1,60 @@
+name: Godot checks
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+
+    env:
+      GODOT_RELEASE: 4.7.1-stable
+      GODOT_BINARY: Godot_v4.7.1-stable_linux.x86_64
+      GODOT_SHA256: c7ff14fd28472c8d4f193043de30278dcf7e5241a1dcf7566b02e27addaa33ba
+
+    steps:
+      - name: Check out source
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Install verified Godot editor
+        shell: bash
+        run: |
+          set -euo pipefail
+          archive="$RUNNER_TEMP/$GODOT_BINARY.zip"
+          install_dir="$RUNNER_TEMP/godot"
+          url="https://github.com/godotengine/godot-builds/releases/download/$GODOT_RELEASE/$GODOT_BINARY.zip"
+
+          curl --fail --location --retry 3 --output "$archive" "$url"
+          printf '%s  %s\n' "$GODOT_SHA256" "$archive" | sha256sum --check -
+          mkdir -p "$install_dir"
+          unzip -q "$archive" -d "$install_dir"
+          mv "$install_dir/$GODOT_BINARY" "$install_dir/godot"
+          chmod +x "$install_dir/godot"
+          echo "$install_dir" >> "$GITHUB_PATH"
+
+      - name: Confirm engine version
+        run: godot --version
+
+      - name: Import project resources
+        run: godot --headless --path . --import
+
+      - name: Parse every gameplay script
+        shell: bash
+        run: |
+          set -euo pipefail
+          while IFS= read -r -d '' script; do
+            echo "Checking $script"
+            godot --headless --path . --check-only --script "res://$script"
+          done < <(find scripts -type f -name '*.gd' -print0)
+
+      - name: Run native smoke suite
+        run: godot --headless --path . --script res://tests/smoke_test.gd
