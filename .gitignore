@@ -1,0 +1,7 @@
+# Godot 4 editor cache and imported artifacts.
+.godot/
+
+# Operating-system metadata.
+.DS_Store
+Thumbs.db
+desktop.ini
