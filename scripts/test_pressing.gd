@@ -119,17 +119,19 @@ func _resolve_swing(d: float) -> void:
 		if since_strike >= 0 and since_strike <= PARRY_WINDOW_MS:
 			# RUNG BACK — caught on the point and played back
 			parry_count += 1
-			_gain(RES_PARRY)
-			parried.emit()
 			state = S.STAGGER
 			_t = 0.0
+			parried.emit()
 			if b != null:
 				b.play("parry", -3.0)
-			if muted and parry_count >= 3:
-				parry_count = 0
-				state = S.DOWN
-				_t = 0.0
-				bout_won.emit()
+			if muted:
+				# HUSH's floor has no resonance outcome: only three clean catches win.
+				if parry_count >= 3:
+					parry_count = 0
+					_down(false)
+					bout_won.emit()
+				return
+			_gain(RES_PARRY)
 			return
 		_player.take_hit(global_position)
 		if b != null:

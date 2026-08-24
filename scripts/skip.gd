@@ -35,7 +35,7 @@ const AIR_KEEP := 0.30
 const BEAT_MULT := 1.55            # ON BEAT bonus multiplier
 
 # -- POGO (flow: combat feeds platforming) ------------------------------------
-const POGO_RANGE := 150.0          # strike an enemy this close and you bounce off it
+const POGO_RANGE := 120.0          # match enemy hit reach: every pogo is a confirmed strike
 const POGO_IMPULSE := 820.0        # recoil off a struck enemy
 const POGO_UP_BIAS := 1.2          # bounces bias upward — keep the pendulum airborne
 const POGO_KEEP := 0.40            # carry more momentum through a bounce than off a groove

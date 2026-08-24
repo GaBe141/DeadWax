@@ -2,6 +2,10 @@ extends SceneTree
 ## Dependency-free headless validation for Dead Wax.
 ## Run with: .\deadwax.cmd test
 
+const SkipScript := preload("res://scripts/skip.gd")
+const TestPressingScript := preload("res://scripts/test_pressing.gd")
+const AuditionerScript := preload("res://scripts/auditioner.gd")
+
 const EXPECTED_STRATA := 6
 const EXPECTED_WORLD_ROOMS := 53
 const EXPECTED_PROTOTYPE_ROOMS := [
@@ -26,6 +30,12 @@ const REQUIRED_INPUT_ACTIONS := [
 
 var _checks := 0
 var _failures: Array[String] = []
+var _parried_events := 0
+var _shattered_events := 0
+var _bout_won_events := 0
+var _combat_event_order: Array[String] = []
+var _observed_dummy: Node
+var _strike_target: Node
 
 func _init() -> void:
 	call_deferred("_run")
@@ -33,6 +43,7 @@ func _init() -> void:
 func _run() -> void:
 	_check_world_map()
 	await _check_project_boot()
+	await _check_combat_regressions()
 
 	if _failures.is_empty():
 		print("DEAD WAX SMOKE PASS (%d checks)" % _checks)
@@ -183,3 +194,167 @@ func _check_project_boot() -> void:
 	main.queue_free()
 	await process_frame
 	await process_frame
+
+func _check_combat_regressions() -> void:
+	_expect(
+		is_equal_approx(float(SkipScript.POGO_RANGE), float(TestPressingScript.STRIKE_HIT_RANGE)),
+		"Test Pressing hit reach matches the player's pogo reach"
+	)
+	_expect(
+		is_equal_approx(float(SkipScript.POGO_RANGE), float(AuditionerScript.STRIKE_HIT_RANGE)),
+		"Auditioner hit reach matches the player's pogo reach"
+	)
+
+	var player := SkipScript.new()
+	root.add_child(player)
+	player.air_strikes_max = 2
+	player.struck.connect(_relay_strike)
+
+	var range_dummy := TestPressingScript.new()
+	root.add_child(range_dummy)
+	_strike_target = range_dummy
+	player.global_position = Vector2.ZERO
+	range_dummy.global_position = Vector2(SkipScript.POGO_RANGE, 0.0)
+	player.velocity = Vector2.ZERO
+	player.air_strikes_left = 0
+	player.call("_strike")
+	_expect(range_dummy.hp < TestPressingScript.HP_MAX, "pogo-range strike damages its target")
+	_expect(not player.velocity.is_zero_approx(), "pogo-range strike launches the player")
+	_expect(player.air_strikes_left == 2, "successful pogo refills air strikes")
+
+	range_dummy.hp = TestPressingScript.HP_MAX
+	range_dummy.resonance = 0.0
+	range_dummy.global_position = Vector2(SkipScript.POGO_RANGE + 1.0, 0.0)
+	player.velocity = Vector2.ZERO
+	player.air_strikes_left = 0
+	player.call("_strike")
+	_expect(
+		is_equal_approx(range_dummy.hp, TestPressingScript.HP_MAX),
+		"out-of-range strike does not damage a pogo target"
+	)
+	_expect(player.velocity.is_zero_approx(), "out-of-range strike does not pogo")
+	_expect(player.air_strikes_left == 0, "failed pogo does not refill air strikes")
+	range_dummy.queue_free()
+	_strike_target = null
+	player.struck.disconnect(_relay_strike)
+	await process_frame
+
+	var normal_dummy := TestPressingScript.new()
+	root.add_child(normal_dummy)
+	normal_dummy.set("_player", player)
+	normal_dummy.set("state", TestPressingScript.S.SWING)
+	normal_dummy.set("resonance", 0.8)
+	_reset_combat_events()
+	_connect_combat_events(normal_dummy)
+	player.last_strike_ms = Time.get_ticks_msec()
+	normal_dummy.call("_resolve_swing", 0.0)
+	_expect(_parried_events == 1, "resonance-completing parry emits parried once")
+	_expect(_shattered_events == 1, "resonance-completing parry emits shattered once")
+	_expect(_bout_won_events == 0, "normal parry never emits muted bout victory")
+	_expect(
+		int(normal_dummy.get("state")) == int(TestPressingScript.S.DOWN),
+		"resonance-completing parry leaves the Test Pressing down"
+	)
+	_expect(
+		_combat_event_order == [
+			"parried:%d" % TestPressingScript.S.STAGGER,
+			"shattered:%d" % TestPressingScript.S.DOWN,
+		],
+		"normal terminal parry signals stagger before shatter"
+	)
+	normal_dummy.queue_free()
+	await process_frame
+
+	var muted_progress_dummy := TestPressingScript.new()
+	muted_progress_dummy.muted = true
+	root.add_child(muted_progress_dummy)
+	muted_progress_dummy.set("_player", player)
+	muted_progress_dummy.set("state", TestPressingScript.S.SWING)
+	_reset_combat_events()
+	_connect_combat_events(muted_progress_dummy)
+	player.last_strike_ms = Time.get_ticks_msec()
+	muted_progress_dummy.call("_resolve_swing", 0.0)
+	_expect(_parried_events == 1, "non-winning muted parry emits parried once")
+	_expect(_shattered_events == 0, "non-winning muted parry does not emit shattered")
+	_expect(_bout_won_events == 0, "non-winning muted parry does not emit bout victory")
+	_expect(
+		int(muted_progress_dummy.get("state")) == int(TestPressingScript.S.STAGGER),
+		"non-winning muted parry leaves the Test Pressing staggered"
+	)
+	_expect(
+		is_zero_approx(float(muted_progress_dummy.get("resonance"))),
+		"non-winning muted parry does not build resonance"
+	)
+	_expect(
+		int(muted_progress_dummy.get("parry_count")) == 1,
+		"non-winning muted parry advances the bout counter"
+	)
+	_expect(
+		_combat_event_order == ["parried:%d" % TestPressingScript.S.STAGGER],
+		"non-winning muted parry signals while staggered"
+	)
+	muted_progress_dummy.queue_free()
+	await process_frame
+
+	var muted_dummy := TestPressingScript.new()
+	muted_dummy.muted = true
+	root.add_child(muted_dummy)
+	muted_dummy.set("_player", player)
+	muted_dummy.set("state", TestPressingScript.S.SWING)
+	muted_dummy.set("resonance", 0.8)
+	muted_dummy.set("parry_count", 2)
+	_reset_combat_events()
+	_connect_combat_events(muted_dummy)
+	player.last_strike_ms = Time.get_ticks_msec()
+	muted_dummy.call("_resolve_swing", 0.0)
+	_expect(_parried_events == 1, "muted third parry emits parried once")
+	_expect(_shattered_events == 0, "muted third parry does not emit shattered")
+	_expect(_bout_won_events == 1, "muted third parry emits bout victory once")
+	_expect(
+		int(muted_dummy.get("state")) == int(TestPressingScript.S.DOWN),
+		"muted third parry leaves the Test Pressing down"
+	)
+	_expect(
+		is_zero_approx(float(muted_dummy.get("resonance"))),
+		"muted bout victory clears resonance"
+	)
+	_expect(int(muted_dummy.get("parry_count")) == 0, "muted bout victory resets its parry count")
+	_expect(
+		_combat_event_order == [
+			"parried:%d" % TestPressingScript.S.STAGGER,
+			"bout_won:%d" % TestPressingScript.S.DOWN,
+		],
+		"muted terminal parry signals stagger before bout victory"
+	)
+	muted_dummy.queue_free()
+	player.queue_free()
+	await process_frame
+	await process_frame
+
+func _reset_combat_events() -> void:
+	_parried_events = 0
+	_shattered_events = 0
+	_bout_won_events = 0
+	_combat_event_order.clear()
+
+func _connect_combat_events(dummy: Node) -> void:
+	_observed_dummy = dummy
+	dummy.connect("parried", _record_parried)
+	dummy.connect("shattered", _record_shattered)
+	dummy.connect("bout_won", _record_bout_won)
+
+func _record_parried() -> void:
+	_parried_events += 1
+	_combat_event_order.append("parried:%d" % int(_observed_dummy.get("state")))
+
+func _record_shattered(_pos: Vector2) -> void:
+	_shattered_events += 1
+	_combat_event_order.append("shattered:%d" % int(_observed_dummy.get("state")))
+
+func _record_bout_won() -> void:
+	_bout_won_events += 1
+	_combat_event_order.append("bout_won:%d" % int(_observed_dummy.get("state")))
+
+func _relay_strike(pos: Vector2, big: bool, _launched: bool) -> void:
+	if is_instance_valid(_strike_target):
+		_strike_target.call("on_player_strike", pos, big)

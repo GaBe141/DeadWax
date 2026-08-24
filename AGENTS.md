@@ -23,8 +23,10 @@
 - The transferred README says M1, four rooms, and a 130 ms parry window. The implementation includes partial M2 tuning, five rooms (including The Verse), and a 100 ms parry window. Treat code as the current behavior and call out this drift when editing documentation or tuning.
 - `ENEMIES.md` is referenced in `scripts/auditioner.gd` and `scripts/room_verse.gd`, but it was not included in the transferred archive. Do not invent rules attributed to it; recover it from the former workspace or remote if it exists.
 - Git history, Claude workspace instructions/history, license information, and export settings were not present in the transferred archive.
+- Godot 4.7.1 command-line exits can warn about one leaked `AudioStreamWAV` and one `AudioStreamPlaybackWAV` while the crackle loop is active. This matches confirmed upstream issue [godotengine/godot#76745](https://github.com/godotengine/godot/issues/76745) and does not fail the smoke suite.
 
-## Known baseline issues
+## Regression-sensitive behavior
 
-- In `scripts/test_pressing.gd`, the muted dummy's third successful parry can reach full resonance and emit `shattered`, then also emit `bout_won`. Keep muted-room victory and shatter outcomes mutually exclusive when this is fixed.
-- `scripts/skip.gd` searches 150 px for pogo targets, while the enemy hit handlers accept strikes only within 120 px. At 121–150 px, the player can bounce without the target receiving the strike.
+- The muted dummy never builds resonance. Its third successful parry emits `bout_won` without also emitting `shattered`.
+- Player pogo reach intentionally matches enemy strike-hit reach at 120 px, so every pogo is also a confirmed hit.
+- The native smoke suite locks both invariants; keep those regression checks when tuning combat ranges or outcomes.

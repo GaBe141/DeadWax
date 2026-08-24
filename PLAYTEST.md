@@ -47,13 +47,13 @@ Use this checklist for a 10–15 minute prototype pass. Run `.\deadwax.cmd play`
 - [ ] Two directional air-strike breaths work before landing.
 - [ ] Landing, groove launches, and pogo hits refill breaths.
 - [ ] Air-striking a nearby enemy produces an upward-biased pogo bounce.
-- [ ] Known issue: at roughly 121–150 px, a pogo can occur without the enemy receiving a hit.
+- [ ] Every pogo also registers a hit; striking just outside hit range does neither.
 
 ## 5. The Smoothed Floor
 
 - [ ] Raw strikes do not build resonance or remove HP from the muted dummy.
 - [ ] Three successful parries win the bout.
-- [ ] Known issue: the third parry can produce shatter effects and **the bout is yours** together.
+- [ ] The third parry produces **the bout is yours** without shatter effects.
 - [ ] Tab returns to The Label.
 
 ## Feel questions
