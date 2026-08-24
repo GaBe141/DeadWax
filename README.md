@@ -13,7 +13,8 @@ On the Dead Wax Wyse, the lightweight project commands are:
 .\deadwax.cmd vibe    start Mistral Vibe in this repository
 ```
 
-See `PLAYTEST.md` for the repeatable five-room playtest.
+See `PLAYTEST.md` for the repeatable five-room playtest and `ROUTING.md` for
+the compact traversal layout.
 
 ## Controls
 
@@ -26,7 +27,8 @@ See `PLAYTEST.md` for the repeatable five-room playtest.
   Hold it beside dull grey wax to **polish** (mints shine).
 - **L hold** — **SET / KNEEL**: listen to an Auditioner instead of breaking it.
 - **W/S** (or arrows) — aim directional strikes while airborne.
-- **R** respawn · **TAB** next room
+- **E** (or gamepad Y) — enter a nearby room passage.
+- **R** respawn at the current entry · **TAB** debug-build room cycle
 
 ## Character progression
 
@@ -42,14 +44,19 @@ skill tree:
   dry wax; rooms that already grant more keep their original capacity.
 
 Progression currently lasts for the running session: it survives R respawns
-and TAB room recreation, then resets on a fresh launch. Rest and Jump-Cut are
+and physical room transitions, then resets on a fresh launch. Rest and Jump-Cut are
 represented in progression state but do not have gameplay effects yet.
 
-## The rooms (TAB cycles)
+## The playable route
+
+```text
+LABEL <-> PRACTICE <-> VERSE <-> UNPLAYED <-> SMOOTHED <-> LABEL
+  Gather opens the Label -> Smoothed shelf shortcut.
+```
 
 1. **THE LABEL** — M0's dry lessons, reskinned: groove launches, spent-wax
    gaps, the shaft, ON BEAT. It hides an **unsigned groove-lock** and a high
-   dry return shelf that becomes reachable after Gather.
+   dry return shelf that becomes a Smoothed shortcut after Gather.
 2. **THE PRACTICE ROOM** — M1's heart. The **Test Pressing** dummy: it hears
    your crackle, ticks three times, swings on four. Strike exactly as the
    swing lands: **RUNG BACK** (parry). Fill its rim to shatter it. Also:
@@ -58,7 +65,7 @@ represented in progression state but do not have gameplay effects yet.
 3. **THE VERSE** — Auditioners can be shattered or heard. Hold SET nearby to
    free one peacefully.
 4. **THE UNPLAYED** — thick-air flight, two breaths, hot grooves, and the
-   **Gather** Refrain at the climb-out.
+   **Gather** Refrain at the climb-out. Its passage continues to Smoothed.
 5. **THE SMOOTHED FLOOR** — a bout on HUSH's terms: resonance OFF, raw hits
    worthless, three rung-backs to win. Spacing and timing, nothing else.
    This room decides whether the rival duels will feel good.
@@ -81,8 +88,9 @@ represented in progression state but do not have gameplay effects yet.
 
 ## Development checks
 
-The dependency-free smoke suite validates all project resources, the 53-room
-world-map data, every current prototype room, and the runtime input map. Run
+The dependency-free smoke suite validates all project resources, compact-map
+topology, every current prototype passage, named arrivals, and the runtime
+input map. Run
 `.\deadwax.cmd check` before committing. GitHub runs the same checks on pushes and
 pull requests. Gameplay feel, real audio, and controller behavior still require
 the manual checklist in `PLAYTEST.md`.

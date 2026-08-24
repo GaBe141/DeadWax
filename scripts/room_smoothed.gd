@@ -7,6 +7,7 @@ extends "res://scripts/room_base.gd"
 const DummyScript := preload("res://scripts/test_pressing.gd")
 
 func _init() -> void:
+	room_id = &"smoothed"
 	band_name = "THE SMOOTHED FLOOR"
 	band_desc = "His floor. Burnished flat. Your ring means nothing here."
 	air_density = 0.0
@@ -18,6 +19,8 @@ func _init() -> void:
 	bg_color = Color(0.836, 0.822, 0.856)   # burnished pale
 	ink = Color(0.38, 0.36, 0.42)           # everything grey. nothing pink.
 	spawn_pos = Vector2(240, 480)
+	register_entry(&"from_unplayed", Vector2(180, 539))
+	register_entry(&"from_label", Vector2(1950, 539))
 	death_y = 1200.0
 	cam_limits = Rect2(-200, -800, 2600, 1800)
 
@@ -25,6 +28,7 @@ func _ready() -> void:
 	platform(Vector2(1000, 600), Vector2(2400, 70))
 	platform(Vector2(-150, 300), Vector2(60, 700))
 	platform(Vector2(2150, 300), Vector2(60, 700))
+	route_exit(Vector2(50, 530), &"unplayed", &"from_smoothed", "THE UNPLAYED")
 
 	sign_label(Vector2(120, 340), "someone smoothed this floor\nby hand. recently. carefully.")
 	sign_label(Vector2(620, 300), "resonance will not build here.\nraw hits mean nothing.\nonly what you CATCH and play\nback counts. three rung-backs\nend the bout.")
@@ -35,4 +39,5 @@ func _ready() -> void:
 	add_child(dummy)
 
 	sign_label(Vector2(1560, 360), "spacing. timing. nothing else.\n(this is what fighting him\nwill feel like.)")
-	sign_label(Vector2(1780, 470), "a note, wedged in the wax:\n\"footwork.\nthe deep is worse.\"\n[TAB] — back to the label.")
+	sign_label(Vector2(1630, 430), "a note, wedged in the wax:\n\"footwork. the deep is worse.\"")
+	route_exit(Vector2(2050, 530), &"label", &"from_smoothed", "THE LABEL")

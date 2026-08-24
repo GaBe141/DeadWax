@@ -17,6 +17,26 @@ const EXPECTED_PROTOTYPE_ROOMS := [
 	"THE UNPLAYED",
 	"THE SMOOTHED FLOOR",
 ]
+const EXPECTED_PROTOTYPE_IDS := ["label", "practice", "verse", "unplayed", "smoothed"]
+const EXPECTED_ROUTE_EDGES := [
+	"label>practice",
+	"label>smoothed",
+	"practice>label",
+	"practice>verse",
+	"verse>practice",
+	"verse>unplayed",
+	"unplayed>verse",
+	"unplayed>smoothed",
+	"smoothed>unplayed",
+	"smoothed>label",
+]
+const WORLD_ROUTE_PROGRESSIONS := [
+	"tech:count-in",
+	"tech:step-turn",
+	"refrain:gather",
+	"refrain:rest",
+	"refrain:jump-cut",
+]
 const REQUIRED_INPUT_ACTIONS := [
 	"move_left",
 	"move_right",
@@ -26,6 +46,7 @@ const REQUIRED_INPUT_ACTIONS := [
 	"strike",
 	"lift",
 	"set",
+	"enter_passage",
 	"restart",
 	"switch_room",
 ]
@@ -232,7 +253,7 @@ func _check_world_map() -> void:
 		return
 	var world: Dictionary = parsed
 
-	_expect(int(world.get("version", 0)) > 0, "world map version is positive")
+	_expect(int(world.get("version", 0)) == 2, "world map uses the split route-metadata schema")
 	_expect(int(world.get("grid_cell", 0)) > 0, "world map grid_cell is positive")
 
 	var strata_value: Variant = world.get("strata", [])
@@ -261,6 +282,7 @@ func _check_world_map() -> void:
 		stratum_ids[stratum_id] = true
 
 	var room_ids := {}
+	var room_by_id := {}
 	for room_value in rooms:
 		_expect(room_value is Dictionary, "each room is an object")
 		if not (room_value is Dictionary):
@@ -272,6 +294,7 @@ func _check_world_map() -> void:
 			continue
 		_expect(not room_ids.has(room_id), "room id '%s' is unique" % room_id)
 		room_ids[room_id] = true
+		room_by_id[room_id] = room_data
 		_expect(
 			stratum_ids.has(String(room_data.get("stratum", ""))),
 			"room '%s' references a known stratum" % room_id
@@ -301,6 +324,292 @@ func _check_world_map() -> void:
 			var special: Dictionary = special_value
 			var target := String(special.get("to", ""))
 			_expect(room_ids.has(target), "room '%s' special target '%s' exists" % [room_id, target])
+			if room_by_id.has(target):
+				_expect(
+					_world_rooms_touch(room_data, room_by_id[target]),
+					"room '%s' special route physically touches '%s'" % [room_id, target]
+				)
+			_expect(
+				String(special.get("kind", "")) in ["gate", "shortcut", "story", "secret"],
+				"room '%s' special route has a topology kind" % room_id
+			)
+			var requires_value: Variant = special.get("requires", null)
+			_expect(requires_value is Array, "room '%s' special route has a requirements array" % room_id)
+			if requires_value is Array:
+				for requirement_value in requires_value:
+					_expect(
+						String(requirement_value) in WORLD_ROUTE_PROGRESSIONS,
+						"room '%s' route requirement is a canonical progression id" % room_id
+					)
+			_expect(
+				String(special.get("direction", "")) in ["bidirectional", "oneway"],
+				"room '%s' special route declares direction separately" % room_id
+			)
+
+	_check_world_routing(rooms, room_by_id)
+
+func _check_world_routing(rooms: Array, room_by_id: Dictionary) -> void:
+	# Space-efficiency metrics deliberately use the undirected packing graph.
+	# Direction and requirements are exercised separately below.
+	var packing_adjacency := {}
+	for room_value in rooms:
+		var room_data: Dictionary = room_value
+		packing_adjacency[String(room_data.get("id"))] = {}
+
+	for left_index in rooms.size():
+		var left: Dictionary = rooms[left_index]
+		for right_index in range(left_index + 1, rooms.size()):
+			var right: Dictionary = rooms[right_index]
+			_expect(
+				not _world_rooms_overlap(left, right),
+				"world rooms '%s' and '%s' do not overlap" % [left.get("id"), right.get("id")]
+			)
+			if _world_rooms_touch(left, right):
+				_connect_world_rooms(packing_adjacency, String(left.get("id")), String(right.get("id")))
+
+	for room_value in rooms:
+		var room_data: Dictionary = room_value
+		var source := String(room_data.get("id"))
+		for special_value in room_data.get("specials", []):
+			if special_value is Dictionary:
+				var target := String(special_value.get("to"))
+				if room_by_id.has(target):
+					_connect_world_rooms(packing_adjacency, source, target)
+
+	var frontier: Array[String] = [String(rooms[0].get("id"))]
+	var visited := {}
+	while not frontier.is_empty():
+		var current := String(frontier.pop_front())
+		if visited.has(current):
+			continue
+		visited[current] = true
+		var neighbors: Dictionary = packing_adjacency.get(current, {})
+		for neighbor in neighbors:
+			if not visited.has(String(neighbor)):
+				frontier.append(String(neighbor))
+	_expect(visited.size() == rooms.size(), "all 53 planned rooms belong to one packing graph")
+
+	var dead_ends := 0
+	for room_id in packing_adjacency:
+		var neighbors: Dictionary = packing_adjacency[room_id]
+		if neighbors.size() == 1:
+			dead_ends += 1
+	_expect(dead_ends == 7, "compact world routing has exactly seven planned dead ends")
+	_expect(_count_world_bridges(packing_adjacency) == 18, "compact world routing has exactly 18 bridge connections")
+	_expect(_world_stratum_density(rooms, "unplayed") >= 0.48, "The Unplayed packs at least 48% of its bounds")
+	_expect(_world_stratum_density(rooms, "undersong") >= 0.63, "The Undersong packs at least 63% of its bounds")
+	_check_world_progression_routing(rooms, room_by_id)
+
+func _connect_world_rooms(adjacency: Dictionary, left_id: String, right_id: String) -> void:
+	var left_neighbors: Dictionary = adjacency[left_id]
+	var right_neighbors: Dictionary = adjacency[right_id]
+	left_neighbors[right_id] = true
+	right_neighbors[left_id] = true
+
+func _count_world_bridges(adjacency: Dictionary) -> int:
+	var visited := {}
+	var discovered := {}
+	var low := {}
+	var clock := [0]
+	var bridge_count := [0]
+	for room_id_value in adjacency:
+		var room_id := String(room_id_value)
+		if not visited.has(room_id):
+			_visit_world_bridges(room_id, "", adjacency, visited, discovered, low, clock, bridge_count)
+	return int(bridge_count[0])
+
+func _visit_world_bridges(
+	room_id: String,
+	parent_id: String,
+	adjacency: Dictionary,
+	visited: Dictionary,
+	discovered: Dictionary,
+	low: Dictionary,
+	clock: Array,
+	bridge_count: Array
+) -> void:
+	visited[room_id] = true
+	clock[0] = int(clock[0]) + 1
+	discovered[room_id] = int(clock[0])
+	low[room_id] = int(clock[0])
+	var neighbors: Dictionary = adjacency[room_id]
+	for neighbor_value in neighbors:
+		var neighbor_id := String(neighbor_value)
+		if neighbor_id == parent_id:
+			continue
+		if not visited.has(neighbor_id):
+			_visit_world_bridges(neighbor_id, room_id, adjacency, visited, discovered, low, clock, bridge_count)
+			low[room_id] = mini(int(low[room_id]), int(low[neighbor_id]))
+			if int(low[neighbor_id]) > int(discovered[room_id]):
+				bridge_count[0] = int(bridge_count[0]) + 1
+		else:
+			low[room_id] = mini(int(low[room_id]), int(discovered[neighbor_id]))
+
+func _check_world_progression_routing(rooms: Array, room_by_id: Dictionary) -> void:
+	var special_pairs := {}
+	var special_routes := {}
+	var open_contacts := {}
+	for room_value in rooms:
+		var room_data: Dictionary = room_value
+		var room_id := String(room_data.get("id"))
+		special_routes[room_id] = []
+		open_contacts[room_id] = {}
+		for special_value in room_data.get("specials", []):
+			if special_value is Dictionary:
+				var target := String(special_value.get("to"))
+				special_pairs[_world_pair_key(room_id, target)] = true
+
+	for room_value in rooms:
+		var room_data: Dictionary = room_value
+		var source := String(room_data.get("id"))
+		for special_value in room_data.get("specials", []):
+			if not special_value is Dictionary:
+				continue
+			var special: Dictionary = special_value
+			var target := String(special.get("to"))
+			if not room_by_id.has(target):
+				continue
+			var requirements: Array = special.get("requires", [])
+			var source_routes: Array = special_routes[source]
+			source_routes.append({"to": target, "requires": requirements})
+			if String(special.get("direction")) == "bidirectional":
+				var target_routes: Array = special_routes[target]
+				target_routes.append({"to": source, "requires": requirements})
+
+	for left_index in rooms.size():
+		var left: Dictionary = rooms[left_index]
+		var left_id := String(left.get("id"))
+		for right_index in range(left_index + 1, rooms.size()):
+			var right: Dictionary = rooms[right_index]
+			var right_id := String(right.get("id"))
+			if _world_rooms_touch(left, right) and not special_pairs.has(_world_pair_key(left_id, right_id)):
+				_connect_world_rooms(open_contacts, left_id, right_id)
+
+	# Search actual player states instead of treating every previously visited
+	# room as a teleport source. Technique requirements are execution challenges
+	# in-game; treating them as owned state here is a deliberately harsher check.
+	var progression_bits := {}
+	for progression_index in WORLD_ROUTE_PROGRESSIONS.size():
+		progression_bits[WORLD_ROUTE_PROGRESSIONS[progression_index]] = 1 << progression_index
+	var state_queue: Array[Dictionary] = []
+	var seen_states := {}
+	var reached_rooms := {}
+	var full_mask := (1 << WORLD_ROUTE_PROGRESSIONS.size()) - 1
+	var full_mask_reached := false
+	_queue_world_state("headshell", 0, room_by_id, progression_bits, state_queue, seen_states)
+	var queue_index := 0
+	while queue_index < state_queue.size():
+		var state: Dictionary = state_queue[queue_index]
+		queue_index += 1
+		var source := String(state.get("room"))
+		var owned_mask := int(state.get("owned"))
+		reached_rooms[source] = true
+		if owned_mask == full_mask:
+			full_mask_reached = true
+		var neighbors: Dictionary = open_contacts[source]
+		for target_value in neighbors:
+			_queue_world_state(
+				String(target_value), owned_mask, room_by_id, progression_bits, state_queue, seen_states
+			)
+		var routes: Array = special_routes[source]
+		for route_value in routes:
+			var route: Dictionary = route_value
+			var requirements: Array = route.get("requires", [])
+			if _world_requirements_met(requirements, owned_mask, progression_bits):
+				_queue_world_state(
+					String(route.get("to")), owned_mask, room_by_id, progression_bits, state_queue, seen_states
+				)
+	_expect(
+		reached_rooms.size() == rooms.size(),
+		"all 53 planned rooms remain reachable with one-way routes and strict acquired requirements"
+	)
+	_expect(
+		full_mask_reached,
+		"one strict planned traversal can acquire all five route progressions"
+	)
+
+func _world_pair_key(left_id: String, right_id: String) -> String:
+	var ids := [left_id, right_id]
+	ids.sort()
+	return "%s|%s" % ids
+
+func _queue_world_state(
+	room_id: String,
+	owned_mask: int,
+	room_by_id: Dictionary,
+	progression_bits: Dictionary,
+	state_queue: Array[Dictionary],
+	seen_states: Dictionary
+) -> void:
+	var room_data: Dictionary = room_by_id[room_id]
+	var next_mask := owned_mask
+	for reward_value in room_data.get("rewards", []):
+		var reward := String(reward_value)
+		if progression_bits.has(reward):
+			next_mask |= int(progression_bits[reward])
+	var state_key := "%s#%d" % [room_id, next_mask]
+	if seen_states.has(state_key):
+		return
+	seen_states[state_key] = true
+	state_queue.append({"room": room_id, "owned": next_mask})
+
+func _world_requirements_met(
+	requirements: Array,
+	owned_mask: int,
+	progression_bits: Dictionary
+) -> bool:
+	for requirement_value in requirements:
+		var requirement := String(requirement_value)
+		if not progression_bits.has(requirement):
+			return false
+		if (owned_mask & int(progression_bits[requirement])) == 0:
+			return false
+	return true
+
+func _world_rooms_overlap(left: Dictionary, right: Dictionary) -> bool:
+	return (
+		maxf(float(left.get("x")), float(right.get("x")))
+		< minf(float(left.get("x")) + float(left.get("w")), float(right.get("x")) + float(right.get("w")))
+		and maxf(float(left.get("y")), float(right.get("y")))
+		< minf(float(left.get("y")) + float(left.get("h")), float(right.get("y")) + float(right.get("h")))
+	)
+
+func _world_rooms_touch(left: Dictionary, right: Dictionary) -> bool:
+	var horizontal_overlap := (
+		maxf(float(left.get("x")), float(right.get("x")))
+		< minf(float(left.get("x")) + float(left.get("w")), float(right.get("x")) + float(right.get("w")))
+	)
+	var vertical_overlap := (
+		maxf(float(left.get("y")), float(right.get("y")))
+		< minf(float(left.get("y")) + float(left.get("h")), float(right.get("y")) + float(right.get("h")))
+	)
+	var touches_x := (
+		is_equal_approx(float(left.get("x")) + float(left.get("w")), float(right.get("x")))
+		or is_equal_approx(float(right.get("x")) + float(right.get("w")), float(left.get("x")))
+	)
+	var touches_y := (
+		is_equal_approx(float(left.get("y")) + float(left.get("h")), float(right.get("y")))
+		or is_equal_approx(float(right.get("y")) + float(right.get("h")), float(left.get("y")))
+	)
+	return (touches_x and vertical_overlap) or (touches_y and horizontal_overlap)
+
+func _world_stratum_density(rooms: Array, stratum_id: String) -> float:
+	var min_x := INF
+	var min_y := INF
+	var max_x := -INF
+	var max_y := -INF
+	var used_area := 0.0
+	for room_value in rooms:
+		var room_data: Dictionary = room_value
+		if String(room_data.get("stratum")) != stratum_id:
+			continue
+		min_x = minf(min_x, float(room_data.get("x")))
+		min_y = minf(min_y, float(room_data.get("y")))
+		max_x = maxf(max_x, float(room_data.get("x")) + float(room_data.get("w")))
+		max_y = maxf(max_y, float(room_data.get("y")) + float(room_data.get("h")))
+		used_area += float(room_data.get("w")) * float(room_data.get("h"))
+	var bounds_area := (max_x - min_x) * (max_y - min_y)
+	return used_area / bounds_area if bounds_area > 0.0 else 0.0
 
 func _check_project_boot() -> void:
 	var packed := load("res://scenes/main.tscn") as PackedScene
@@ -327,6 +636,9 @@ func _check_project_boot() -> void:
 	for action in REQUIRED_INPUT_ACTIONS:
 		_expect(InputMap.has_action(action), "input action '%s' exists" % action)
 
+	var observed_route_edges: Array[String] = []
+	var observed_arrivals: Array[Dictionary] = []
+	var entry_ids_by_room := {}
 	for index in EXPECTED_PROTOTYPE_ROOMS.size():
 		main.call("_load_room", index)
 		await process_frame
@@ -340,11 +652,78 @@ func _check_project_boot() -> void:
 			String(room.get("band_name")) == EXPECTED_PROTOTYPE_ROOMS[index],
 			"prototype room %d is %s" % [index, EXPECTED_PROTOTYPE_ROOMS[index]]
 		)
+		var current_room_id := String(room.get("room_id"))
+		_expect(current_room_id == EXPECTED_PROTOTYPE_IDS[index], "prototype room %d has a stable route id" % index)
+		var entries: Dictionary = room.get("entry_points")
+		entry_ids_by_room[current_room_id] = entries.duplicate()
+		for entry_id_value in entries:
+			var entry_id := StringName(entry_id_value)
+			var entry_position: Vector2 = entries[entry_id_value]
+			for listener in _room_group_members(room, &"hears_strikes"):
+				if listener.has_signal("freed"):
+					_expect(
+						entry_position.distance_to(listener.position) > AuditionerScript.REACH_RANGE,
+						"room '%s' entry '%s' starts outside Auditioner reach" % [current_room_id, entry_id]
+					)
 		var spawn: Vector2 = room.get("spawn_pos")
 		_expect(is_finite(spawn.x) and is_finite(spawn.y), "room '%s' spawn is finite" % room.get("band_name"))
 		_expect(is_finite(float(room.get("death_y"))), "room '%s' death plane is finite" % room.get("band_name"))
 		var limits: Rect2 = room.get("cam_limits")
 		_expect(limits.size.x > 0.0 and limits.size.y > 0.0, "room '%s' camera bounds are positive" % room.get("band_name"))
+		var exits := _room_group_members(room, &"room_exit")
+		_expect(exits.size() == 2, "room '%s' has two compact-loop passages" % room.get("band_name"))
+		for exit in exits:
+			var target_room := String(exit.get("target_room"))
+			var target_entry := String(exit.get("target_entry"))
+			_expect(target_room in EXPECTED_PROTOTYPE_IDS, "room '%s' routes to a known prototype room" % room.get("band_name"))
+			_expect(target_entry != "default", "route %s>%s uses a named arrival" % [current_room_id, target_room])
+			observed_arrivals.append({"source": current_room_id, "target": target_room, "entry": target_entry})
+			observed_route_edges.append("%s>%s" % [current_room_id, target_room])
+
+	observed_route_edges.sort()
+	var expected_route_edges: Array = EXPECTED_ROUTE_EDGES.duplicate()
+	expected_route_edges.sort()
+	_expect(observed_route_edges == expected_route_edges, "prototype passages form the intended bidirectional five-room loop")
+	for arrival in observed_arrivals:
+		var target_entries: Dictionary = entry_ids_by_room.get(String(arrival.get("target")), {})
+		_expect(
+			target_entries.has(StringName(arrival.get("entry"))),
+			"route %s>%s resolves named arrival '%s'" % [arrival.get("source"), arrival.get("target"), arrival.get("entry")]
+		)
+
+	# A locked shortcut cannot transition; a normal passage uses a named entry
+	# and makes that arrival the new death/R respawn point.
+	main.call("_load_room", 0)
+	await process_frame
+	await process_frame
+	var label_room := main.get("room") as Node2D
+	var locked_shortcut := _route_to(label_room, &"smoothed")
+	_expect(locked_shortcut != null, "The Label exposes the Smoothed shortcut")
+	if locked_shortcut != null:
+		_expect(bool(locked_shortcut.call("is_locked")), "The Label shortcut starts Gather-locked")
+		_expect(not bool(locked_shortcut.call("try_enter")), "a locked passage rejects traversal")
+	await process_frame
+	_expect(int(main.get("room_idx")) == 0, "a rejected passage leaves the current room unchanged")
+
+	var practice_passage := _route_to(label_room, &"practice")
+	_expect(practice_passage != null, "The Label summit routes to Practice")
+	if practice_passage != null:
+		var passage_player: CharacterBody2D = main.get("player")
+		passage_player.global_position = practice_passage.global_position
+		Input.action_press("enter_passage")
+	await process_frame
+	Input.action_release("enter_passage")
+	await process_frame
+	await process_frame
+	_expect(int(main.get("room_idx")) == 1, "proximity plus E/Y requests a Main-owned transition")
+	_expect(String(main.get("room_entry_id")) == "from_label", "the transition selects Practice's named entry")
+	var routed_player: CharacterBody2D = main.get("player")
+	var routed_room: Node2D = main.get("room")
+	var routed_arrival: Vector2 = routed_room.call("entry_position", &"from_label")
+	_expect(routed_player.global_position.is_equal_approx(routed_arrival), "the player arrives at Practice's Label-side anchor")
+	routed_player.global_position += Vector2(300, -120)
+	main.call("_respawn")
+	_expect(routed_player.global_position.is_equal_approx(routed_arrival), "R respawns at the active room entry")
 
 	# Gather is earned at The Unplayed's exit and survives room recreation.
 	main.call("_load_room", 3)
@@ -371,6 +750,31 @@ func _check_project_boot() -> void:
 	)
 	var post_collection_player: CharacterBody2D = main.get("player")
 	_expect(post_collection_player.air_strikes_left == 2, "Gather unlock reapplies The Unplayed's capacity immediately")
+
+	# Gather opens the compact return edge. Both transitions preserve the same
+	# session state while selecting the correct side of each room.
+	main.call("_load_room", 0)
+	await process_frame
+	await process_frame
+	label_room = main.get("room") as Node2D
+	var open_shortcut := _route_to(label_room, &"smoothed")
+	_expect(open_shortcut != null and not bool(open_shortcut.call("is_locked")), "Gather opens The Label's Smoothed shortcut")
+	if open_shortcut != null:
+		open_shortcut.call("try_enter")
+	await process_frame
+	await process_frame
+	_expect(int(main.get("room_idx")) == 4, "the Gather shortcut reaches Smoothed")
+	_expect(String(main.get("room_entry_id")) == "from_label", "the shortcut arrives on Smoothed's Label side")
+	var smoothed_room := main.get("room") as Node2D
+	var label_return := _route_to(smoothed_room, &"label")
+	_expect(label_return != null, "Smoothed provides the compact return to The Label")
+	if label_return != null:
+		label_return.call("try_enter")
+	await process_frame
+	await process_frame
+	_expect(int(main.get("room_idx")) == 0, "the compact loop returns to The Label")
+	_expect(String(main.get("room_entry_id")) == "from_smoothed", "the return uses The Label's Smoothed-side anchor")
+	_expect(main.get("progression") == session_progression, "room routes preserve the progression owner")
 
 	var expected_capacity := [1, 1, 1, 2, 1]
 	var expected_density := [0.0, 0.0, 0.35, 1.0, 0.0]
@@ -422,6 +826,9 @@ func _check_project_boot() -> void:
 		"Count-In discovery is recorded once without gating execution"
 	)
 
+	# Let route/pickup one-shots finish before the existing audio teardown.
+	await create_timer(0.65).timeout
+	await process_frame
 	var audio := main.get("audio") as Node
 	if audio != null:
 		for child in audio.get_children():
@@ -443,6 +850,12 @@ func _room_group_members(current_room: Node, group: StringName) -> Array[Node]:
 		if current_room.is_ancestor_of(node):
 			result.append(node)
 	return result
+
+func _route_to(current_room: Node, target_room: StringName) -> Node:
+	for exit in _room_group_members(current_room, &"room_exit"):
+		if exit.get("target_room") == target_room:
+			return exit
+	return null
 
 func _check_combat_regressions() -> void:
 	_expect(

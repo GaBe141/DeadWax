@@ -5,12 +5,14 @@ extends "res://scripts/room_base.gd"
 ## Hides: one unsigned groove-lock. If you know the count-in, you know.
 
 const DoorScript := preload("res://scripts/refrain_door.gd")
+const ProgressionScript := preload("res://scripts/progression_state.gd")
 const GATHER_SHELF_POS := Vector2(300, 380)
 const GATHER_SHELF_SIZE := Vector2(190, 28)
 const GATHER_BAFFLE_POS := Vector2(400, 170)
 const GATHER_BAFFLE_SIZE := Vector2(30, 600)
 
 func _init() -> void:
+	room_id = &"label"
 	band_name = "THE LABEL"
 	band_desc = "Played out. Dry — your strike only speaks to live grooves."
 	air_density = 0.0
@@ -21,6 +23,8 @@ func _init() -> void:
 	bg_color = Color(0.87, 0.85, 0.79)   # label paper
 	ink = Color(0.16, 0.15, 0.14)        # print ink
 	spawn_pos = Vector2(160, 500)
+	register_entry(&"from_practice", Vector2(2900, -841))
+	register_entry(&"from_smoothed", Vector2(520, 554))
 	death_y = 1000.0
 	cam_limits = Rect2(-200, -1200, 3900, 2500)
 
@@ -31,8 +35,15 @@ func _ready() -> void:
 	# Return route: the baffle blocks groove momentum but leaves a walk-under gap.
 	platform(GATHER_SHELF_POS, GATHER_SHELF_SIZE)
 	platform(GATHER_BAFFLE_POS, GATHER_BAFFLE_SIZE)
-	sign_label(Vector2(105, 260), "no groove crosses this baffle.\njump, then strike UP with the\nair you carried back.")
-	sign_label(Vector2(235, 340), "the dry remembers.")
+	sign_label(Vector2(60, 235), "jump. strike UP.\ncarry the air over.")
+	route_exit(
+		Vector2(300, 340),
+		&"smoothed",
+		&"from_label",
+		"SMOOTHED",
+		ProgressionScript.Refrain.GATHER,
+		"The dry runout needs one carried breath."
+	)
 
 	# lesson 1: stand on a live groove, strike, go up
 	groove(Vector2(760, 552))
@@ -69,4 +80,5 @@ func _ready() -> void:
 	groove(Vector2(2900, -288))
 	sign_label(Vector2(2660, -420), "strike the groove. watch its loop\ncome back around. STRIKE AGAIN as it lands:\nON BEAT. it carries you further.")
 	platform(Vector2(2900, -800), Vector2(220, 30))
-	sign_label(Vector2(2810, -880), "x_X  you're getting it.\n[TAB] — the practice room.")
+	sign_label(Vector2(2730, -920), "x_X  you're getting it.\nthe runout leads to practice.")
+	route_exit(Vector2(2900, -850), &"practice", &"from_label", "PRACTICE")

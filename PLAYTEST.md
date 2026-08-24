@@ -15,8 +15,10 @@ Use this checklist for a 10–15 minute prototype pass. Run `.\deadwax.cmd play`
 
 - [ ] The game opens at 1280×720 in **The Label** with HUD and synthesized audio.
 - [ ] A/D or arrows move; Space jumps; J/X strikes; K/C holds Hood; L holds Set.
-- [ ] R respawns the player. Tab advances rooms and wraps after room five.
-- [ ] Refrains and discovered techniques persist through R/Tab, but reset on a fresh launch.
+- [ ] E or gamepad Y enters a nearby passage; the five rooms form one loop.
+- [ ] R respawns at the entry used for this visit, including when traversing backward.
+- [ ] Tab cycles rooms only as a debug shortcut and is not required for normal play.
+- [ ] Refrains and discovered techniques persist through passages/R, but reset on a fresh launch.
 - [ ] Hood noticeably slows movement, quiets crackle, and muffles the audio bed.
 - [ ] Controller mappings work, if a controller is available.
 
@@ -28,6 +30,8 @@ Use this checklist for a 10–15 minute prototype pass. Run `.\deadwax.cmd play`
 - [ ] Striking again as the groove echo returns produces **ON BEAT** and a stronger launch.
 - [ ] Four evenly spaced strikes open the unsigned groove-lock.
 - [ ] The spent-wax gap and wall-groove shaft are readable without explanation.
+- [ ] The summit passage enters Practice; returning from Practice lands on the summit.
+- [ ] The shelf passage visibly asks for Gather and refuses entry on the first visit.
 
 ## 2. The Practice Room
 
@@ -38,6 +42,7 @@ Use this checklist for a 10–15 minute prototype pass. Run `.\deadwax.cmd play`
 - [ ] Five ordinary nearby hits—or enough resonance—shatter the dummy.
 - [ ] Four evenly spaced strikes open the signed count-in door.
 - [ ] Opening the door adds COUNT-IN to the HUD; the pattern worked before it was recorded.
+- [ ] The right passage beyond the door enters The Verse; the left passage returns to Label.
 
 ## 3. The Verse
 
@@ -45,6 +50,7 @@ Use this checklist for a 10–15 minute prototype pass. Run `.\deadwax.cmd play`
 - [ ] A strike/parry breaks the reach as expected.
 - [ ] Holding L/Set nearby for about 1.2 seconds frees an Auditioner peacefully.
 - [ ] Fighting another Auditioner demonstrates the contrasting shatter outcome.
+- [ ] The right passage enters The Unplayed; the left passage returns to Practice.
 
 ## 4. The Unplayed
 
@@ -54,20 +60,23 @@ Use this checklist for a 10–15 minute prototype pass. Run `.\deadwax.cmd play`
 - [ ] Every pogo also registers a hit; striking just outside hit range does neither.
 - [ ] Touching the record at the climb-out unlocks GATHER and updates the HUD once.
 - [ ] Gather does not add a third breath here: The Unplayed still refills to two.
+- [ ] The Smoothed passage is sealed until Gather is collected, then accepts E/Y.
 
 ## 5. The Smoothed Floor
 
 - [ ] Raw strikes do not build resonance or remove HP from the muted dummy.
 - [ ] Three successful parries win the bout.
 - [ ] The third parry produces **the bout is yours** without shatter effects.
-- [ ] Tab returns to The Label.
+- [ ] The right passage returns to The Label on the far side of the dry baffle.
+- [ ] The left passage returns to The Unplayed's Gather platform.
 
 ## 6. Gather return to The Label
 
 - [ ] One dry-air strike now launches Skip; a second does not until landing or respawning.
 - [ ] A jump followed by the one Gather breath reaches the high shelf above the spawn.
 - [ ] R refills the one dry breath, and the room's dry look/strike wave remains dry.
-- [ ] Tab around to The Unplayed again: the Gather pickup stays gone and capacity stays two.
+- [ ] E/Y on the shelf takes the new shortcut to Smoothed's right side.
+- [ ] Follow the reverse passages to The Unplayed: Gather stays gone and capacity stays two.
 
 ## Feel questions
 

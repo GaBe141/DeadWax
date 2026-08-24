@@ -1,7 +1,7 @@
 extends Node2D
 ## DEAD WAX — M1 bootstrap.
 ## Builds everything from code: input map, player, camera, HUD, audio, rooms.
-## [TAB] cycles rooms, [R] restarts.
+## In-world passages connect rooms. [TAB] remains a debug cycle; [R] respawns.
 
 const SkipScript := preload("res://scripts/skip.gd")
 const WaveScript := preload("res://scripts/strike_wave.gd")
@@ -14,13 +14,16 @@ const ROOM_SCRIPTS := [
 	preload("res://scripts/room_unplayed.gd"),
 	preload("res://scripts/room_smoothed.gd"),
 ]
+const ROOM_IDS := [&"label", &"practice", &"verse", &"unplayed", &"smoothed"]
 
 var player: CharacterBody2D
 var camera: Camera2D
 var audio: Node
 var room: Node2D
 var room_idx := 0
+var room_entry_id: StringName = &"default"
 var progression: RefCounted
+var _transition_pending := false
 
 var info: Label
 var feedback: Label
@@ -64,8 +67,8 @@ func _ready() -> void:
 	_load_room(0)
 
 func _process(delta: float) -> void:
-	if Input.is_action_just_pressed("switch_room"):
-		_load_room((room_idx + 1) % ROOM_SCRIPTS.size())
+	if OS.is_debug_build() and not _transition_pending and Input.is_action_just_pressed("switch_room"):
+		_load_room((room_idx + 1) % ROOM_SCRIPTS.size(), &"default")
 	if Input.is_action_just_pressed("restart"):
 		_respawn()
 	if player.global_position.y > room.death_y:
@@ -97,13 +100,20 @@ func _process(delta: float) -> void:
 
 # -- rooms --------------------------------------------------------------------
 
-func _load_room(i: int) -> void:
+func _load_room(i: int, entry_id: StringName = &"default") -> void:
+	if i < 0 or i >= ROOM_SCRIPTS.size():
+		push_error("Unknown prototype room index: %d" % i)
+		return
 	room_idx = i
+	room_entry_id = entry_id
 	if room != null:
+		remove_child(room)
 		room.queue_free()
 	room = ROOM_SCRIPTS[i].new()
 	room.progression = progression
 	room.refrain_collected.connect(_on_refrain_collected)
+	room.route_requested.connect(_on_route_requested)
+	room.route_blocked.connect(_on_route_blocked)
 	add_child(room)
 
 	player.air_density = room.air_density
@@ -123,10 +133,15 @@ func _load_room(i: int) -> void:
 	camera.limit_bottom = int(room.cam_limits.position.y + room.cam_limits.size.y)
 
 	_respawn()
-	info.text = "DEAD WAX — M1\nROOM: %s\n%s\n[A/D] move  [SPACE] jump  [J] strike  [K hold] hood  [L hold] kneel  [R] restart  [TAB] next room" % [room.band_name, room.band_desc]
+	var controls := "[A/D] move  [SPACE] jump  [J] strike  [K hold] hood  [L hold] kneel  [E/Y] passage  [R] respawn"
+	if OS.is_debug_build():
+		controls += "  [TAB] debug room"
+	info.text = "DEAD WAX — M1\nROOM: %s\n%s\n%s" % [room.band_name, room.band_desc, controls]
 
 func _wire_room() -> void:
 	for n in get_tree().get_nodes_in_group("hears_strikes"):
+		if not room.is_ancestor_of(n):
+			continue
 		if n is Node and n.has_signal("parried") and not n.parried.is_connected(_on_parried):
 			n.parried.connect(_on_parried)
 			n.shattered.connect(_on_shattered)
@@ -137,7 +152,7 @@ func _wire_room() -> void:
 			n.freed.connect(_on_freed)
 
 func _respawn() -> void:
-	player.global_position = room.spawn_pos
+	player.global_position = room.entry_position(room_entry_id)
 	player.velocity = Vector2.ZERO
 	player.refill_air_strikes()
 	camera.reset_smoothing()
@@ -193,6 +208,24 @@ func _on_player_hit() -> void:
 
 func _on_refrain_collected(refrain: int) -> void:
 	progression.call("unlock_refrain", refrain)
+
+func _on_route_requested(target_room: StringName, target_entry: StringName) -> void:
+	if _transition_pending:
+		return
+	var target_index := ROOM_IDS.find(target_room)
+	if target_index < 0:
+		push_error("Unknown prototype route target: %s" % target_room)
+		return
+	_transition_pending = true
+	audio.play("door", -10.0)
+	call_deferred("_complete_route_transition", target_index, target_entry)
+
+func _complete_route_transition(target_index: int, target_entry: StringName) -> void:
+	_load_room(target_index, target_entry)
+	_transition_pending = false
+
+func _on_route_blocked(message: String) -> void:
+	_flash(message)
 
 func _on_refrain_unlocked(refrain: int) -> void:
 	audio.play("freed", -7.0)
@@ -273,8 +306,9 @@ func _setup_input() -> void:
 	_action("strike", [KEY_J, KEY_X], [JOY_BUTTON_X])
 	_action("lift", [KEY_K, KEY_C], [JOY_BUTTON_B])
 	_action("set", [KEY_L], [JOY_BUTTON_LEFT_SHOULDER])
+	_action("enter_passage", [KEY_E], [JOY_BUTTON_Y])
 	_action("restart", [KEY_R], [JOY_BUTTON_BACK])
-	_action("switch_room", [KEY_TAB], [JOY_BUTTON_Y])
+	_action("switch_room", [KEY_TAB])
 
 func _action(action_name: String, keys: Array, pad_buttons: Array = [], axes: Array = []) -> void:
 	if InputMap.has_action(action_name):

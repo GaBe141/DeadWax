@@ -5,12 +5,17 @@ extends Node2D
 const GrooveScript := preload("res://scripts/hot_groove.gd")
 const PatchScript := preload("res://scripts/polish_patch.gd")
 const RefrainPickupScript := preload("res://scripts/refrain_pickup.gd")
+const RoomExitScript := preload("res://scripts/room_exit.gd")
 
 signal refrain_collected(refrain: int)
+signal route_requested(target_room: StringName, target_entry: StringName)
+signal route_blocked(message: String)
 
+var room_id: StringName
 var band_name := ""
 var band_desc := ""
 var spawn_pos := Vector2.ZERO
+var entry_points: Dictionary = {}
 var death_y := 2000.0
 var cam_limits := Rect2(-500, -2000, 4000, 4000)
 
@@ -61,6 +66,43 @@ func refrain_pickup(pos: Vector2, refrain: int) -> void:
 
 func _on_refrain_pickup_collected(refrain: int) -> void:
 	refrain_collected.emit(refrain)
+
+func register_entry(entry_id: StringName, pos: Vector2) -> void:
+	entry_points[entry_id] = pos
+
+func entry_position(entry_id: StringName) -> Vector2:
+	if entry_id == &"default":
+		return spawn_pos
+	if not entry_points.has(entry_id):
+		push_warning("Room '%s' has no entry '%s'; using its default spawn." % [room_id, entry_id])
+		return spawn_pos
+	return entry_points[entry_id] as Vector2
+
+func route_exit(
+	pos: Vector2,
+	target_room: StringName,
+	target_entry: StringName,
+	display_name: String,
+	required_refrain := -1,
+	blocked_message := ""
+) -> void:
+	var exit := RoomExitScript.new()
+	exit.position = pos
+	exit.progression = progression
+	exit.target_room = target_room
+	exit.target_entry = target_entry
+	exit.display_name = display_name
+	exit.required_refrain = required_refrain
+	exit.blocked_message = blocked_message
+	exit.route_requested.connect(_on_exit_route_requested)
+	exit.route_blocked.connect(_on_exit_route_blocked)
+	add_child(exit)
+
+func _on_exit_route_requested(target_room: StringName, target_entry: StringName) -> void:
+	route_requested.emit(target_room, target_entry)
+
+func _on_exit_route_blocked(message: String) -> void:
+	route_blocked.emit(message)
 
 func sign_label(pos: Vector2, text: String) -> void:
 	var l := Label.new()

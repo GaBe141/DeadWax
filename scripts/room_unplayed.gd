@@ -8,6 +8,7 @@ const DummyScript := preload("res://scripts/test_pressing.gd")
 const ProgressionScript := preload("res://scripts/progression_state.gd")
 
 func _init() -> void:
+	room_id = &"unplayed"
 	band_name = "THE UNPLAYED"
 	band_desc = "Below the Scratch. Never played — the air answers your strike."
 	air_density = 1.0
@@ -18,12 +19,15 @@ func _init() -> void:
 	bg_color = Color(0.10, 0.085, 0.115)   # wax dark
 	ink = Color(0.90, 0.88, 0.84)          # scratchboard white line
 	spawn_pos = Vector2(220, 480)
+	register_entry(&"from_verse", Vector2(220, 509))
+	register_entry(&"from_smoothed", Vector2(2350, -563))
 	death_y = 1400.0
 	cam_limits = Rect2(-300, -1000, 3500, 2700)
 
 func _ready() -> void:
 	# soft bottom — falling here is forgiving; the unplayed catches you
 	platform(Vector2(1300, 820), Vector2(2900, 60))
+	route_exit(Vector2(70, 760), &"verse", &"from_unplayed", "THE VERSE")
 
 	# spawn island
 	platform(Vector2(300, 560), Vector2(360, 50))
@@ -50,9 +54,17 @@ func _ready() -> void:
 
 	# climb out
 	groove(Vector2(2560, -240))
-	platform(Vector2(2450, -520), Vector2(300, 34))
-	refrain_pickup(Vector2(2520, -580), ProgressionScript.Refrain.GATHER)
-	sign_label(Vector2(2240, -700), "GATHER what the unplayed taught you.\none breath will follow into dry wax.\n[TAB twice] — take it back to the label.")
+	platform(Vector2(2500, -520), Vector2(420, 34))
+	refrain_pickup(Vector2(2460, -580), ProgressionScript.Refrain.GATHER)
+	sign_label(Vector2(2100, -720), "GATHER what the unplayed taught you.\none breath will follow into dry wax.\nthe runout continues through HUSH.")
+	route_exit(
+		Vector2(2650, -580),
+		&"smoothed",
+		&"from_unplayed",
+		"SMOOTHED",
+		ProgressionScript.Refrain.GATHER,
+		"Gather the held breath before you leave."
+	)
 
 func _pad(pos: Vector2) -> void:
 	var d := DummyScript.new()

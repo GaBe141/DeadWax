@@ -6,6 +6,7 @@ extends "res://scripts/room_base.gd"
 const AuditionerScript := preload("res://scripts/auditioner.gd")
 
 func _init() -> void:
+	room_id = &"verse"
 	band_name = "THE VERSE — a warren of the Unplayed"
 	band_desc = "They reach for you. Break them, or kneel and let them be heard."
 	air_density = 0.35             # below the Scratch: the air answers a little
@@ -16,12 +17,16 @@ func _init() -> void:
 	bg_color = Color(0.16, 0.15, 0.20)     # darker, thicker than the dry rooms
 	ink = Color(0.72, 0.70, 0.66)          # pale scratchboard ink on dark ground
 	spawn_pos = Vector2(200, 470)
+	register_entry(&"from_practice", Vector2(180, 539))
+	# Leave breathing room from the final Auditioner on reverse traversal.
+	register_entry(&"from_unplayed", Vector2(2825, 539))
 	death_y = 1200.0
 	cam_limits = Rect2(-200, -800, 3400, 2000)
 
 func _ready() -> void:
 	platform(Vector2(1400, 600), Vector2(3000, 70))
 	platform(Vector2(-70, 300), Vector2(60, 700))
+	route_exit(Vector2(75, 530), &"practice", &"from_verse", "PRACTICE")
 
 	sign_label(Vector2(90, 320), "the verse.\nnobody down here has ever been heard.\nthey reach for you. it's all they want.")
 
@@ -41,6 +46,7 @@ func _ready() -> void:
 	_auditioner(Vector2(2640, 552))
 
 	groove(Vector2(1060, 542))     # one groove for spacing / mobility
+	route_exit(Vector2(2800, 530), &"unplayed", &"from_verse", "THE UNPLAYED")
 
 func _auditioner(pos: Vector2) -> void:
 	var a := AuditionerScript.new()

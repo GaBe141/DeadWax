@@ -7,6 +7,7 @@ const DummyScript := preload("res://scripts/test_pressing.gd")
 const DoorScript := preload("res://scripts/refrain_door.gd")
 
 func _init() -> void:
+	room_id = &"practice"
 	band_name = "THE PRACTICE ROOM"
 	band_desc = "Tick loops here. The dummy counts to four. So can you."
 	air_density = 0.0
@@ -17,6 +18,8 @@ func _init() -> void:
 	bg_color = Color(0.88, 0.855, 0.80)
 	ink = Color(0.17, 0.155, 0.15)
 	spawn_pos = Vector2(200, 480)
+	register_entry(&"from_label", Vector2(180, 539))
+	register_entry(&"from_verse", Vector2(2700, 539))
 	death_y = 1200.0
 	cam_limits = Rect2(-200, -800, 3400, 2000)
 
@@ -24,6 +27,7 @@ func _ready() -> void:
 	# one long kind floor
 	platform(Vector2(1400, 600), Vector2(3000, 70))
 	platform(Vector2(-70, 300), Vector2(60, 700))   # left wall
+	route_exit(Vector2(75, 530), &"label", &"from_practice", "THE LABEL")
 
 	sign_label(Vector2(90, 330), "the practice room.\n\"3... 3... 3...\"\n(nobody has heard the 4 in years.)")
 
@@ -51,5 +55,6 @@ func _ready() -> void:
 	door.position = Vector2(2280, 490)
 	add_child(door)
 	sign_label(Vector2(2020, 330), "≡ THE COUNT-IN\nfour even strikes. any tempo.\ncount it in. the door has\nalways been listening.")
-	sign_label(Vector2(2380, 430), "everything opens for the\nplayer who knows.\n[TAB] — the unplayed.")
+	sign_label(Vector2(2380, 430), "everything opens for the\nplayer who knows.\nthe verse waits past this bar.")
 	patch(Vector2(2520, 540))
+	route_exit(Vector2(2800, 530), &"verse", &"from_practice", "THE VERSE")
