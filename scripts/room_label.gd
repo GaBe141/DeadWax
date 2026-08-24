@@ -5,6 +5,10 @@ extends "res://scripts/room_base.gd"
 ## Hides: one unsigned groove-lock. If you know the count-in, you know.
 
 const DoorScript := preload("res://scripts/refrain_door.gd")
+const GATHER_SHELF_POS := Vector2(300, 380)
+const GATHER_SHELF_SIZE := Vector2(190, 28)
+const GATHER_BAFFLE_POS := Vector2(400, 170)
+const GATHER_BAFFLE_SIZE := Vector2(30, 600)
 
 func _init() -> void:
 	band_name = "THE LABEL"
@@ -24,6 +28,11 @@ func _ready() -> void:
 	# spawn shelf
 	platform(Vector2(500, 610), Vector2(900, 60))
 	sign_label(Vector2(70, 400), "the song played through here\nlong ago. nothing answers.\n(almost.)")
+	# Return route: the baffle blocks groove momentum but leaves a walk-under gap.
+	platform(GATHER_SHELF_POS, GATHER_SHELF_SIZE)
+	platform(GATHER_BAFFLE_POS, GATHER_BAFFLE_SIZE)
+	sign_label(Vector2(105, 260), "no groove crosses this baffle.\njump, then strike UP with the\nair you carried back.")
+	sign_label(Vector2(235, 340), "the dry remembers.")
 
 	# lesson 1: stand on a live groove, strike, go up
 	groove(Vector2(760, 552))

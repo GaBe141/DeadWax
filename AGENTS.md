@@ -6,6 +6,8 @@
 - `scenes/main.tscn` is the entry point. `scripts/main.gd` creates the input map, player, camera, HUD, audio, and five rooms at runtime, so an empty editor viewport is expected.
 - Existing audio is synthesized in `scripts/audio_bank.gd`; there are no external audio assets or third-party dependencies.
 - `data/world_map.json` contains valid world-planning data for 53 rooms, but the current runtime does not load it.
+- `scripts/progression_state.gd` is a Main-owned, session-only progression model. Main injects it into rooms and the player; do not replace it with an Autoload until real scene transitions or disk saves require longer-lived ownership.
+- Core verbs are never permission-gated. Knowledge techniques are journal/discovery state only. Earned Refrains may alter traversal; Gather derives an effective breath capacity with `max(room capacity, 1)` and must not mutate room `air_density`.
 
 ## Work and verification
 
@@ -30,3 +32,4 @@
 - The muted dummy never builds resonance. Its third successful parry emits `bout_won` without also emitting `shattered`.
 - Player pogo reach intentionally matches enemy strike-hit reach at 120 px, so every pogo is also a confirmed hit.
 - The native smoke suite locks both invariants; keep those regression checks when tuning combat ranges or outcomes.
+- Progression regressions cover idempotent unlocks, snapshot restore, Gather's one dry breath, environmental capacity preservation, pickup persistence, and room recreation. Keep the distinction between environmental air and Gather when extending Refrains.

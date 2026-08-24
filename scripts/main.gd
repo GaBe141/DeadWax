@@ -6,6 +6,7 @@ extends Node2D
 const SkipScript := preload("res://scripts/skip.gd")
 const WaveScript := preload("res://scripts/strike_wave.gd")
 const AudioScript := preload("res://scripts/audio_bank.gd")
+const ProgressionScript := preload("res://scripts/progression_state.gd")
 const ROOM_SCRIPTS := [
 	preload("res://scripts/room_label.gd"),
 	preload("res://scripts/room_dojo.gd"),
@@ -19,6 +20,7 @@ var camera: Camera2D
 var audio: Node
 var room: Node2D
 var room_idx := 0
+var progression: RefCounted
 
 var info: Label
 var feedback: Label
@@ -38,11 +40,15 @@ var _shatter_i := 0
 func _ready() -> void:
 	randomize()
 	_setup_input()
+	progression = ProgressionScript.new()
+	progression.connect("refrain_unlocked", _on_refrain_unlocked)
+	progression.connect("technique_discovered", _on_technique_discovered)
 
 	audio = AudioScript.new()
 	add_child(audio)
 
 	player = SkipScript.new()
+	player.progression = progression
 	player.struck.connect(_on_struck)
 	player.on_beat.connect(_on_beat)
 	player.took_hit.connect(_on_player_hit)
@@ -81,11 +87,12 @@ func _process(delta: float) -> void:
 	audio.set_hooded(player.hooded)
 	crackle_bar.size.x = 140.0 * clampf(player.noise, 0.0, 1.0)
 	crackle_bar.color = Color(0.9, 0.25, 0.5) if not player.hooded else Color(0.55, 0.52, 0.58)
-	status.text = "crackle %s   shine %d   hits taken %d%s" % [
+	status.text = "crackle %s   shine %d   hits taken %d%s\n%s" % [
 		"·" if player.noise < 0.05 else "",
 		player.shine,
 		_hits_taken,
 		"   [HOODED]" if player.hooded else "",
+		progression.call("hud_text"),
 	]
 
 # -- rooms --------------------------------------------------------------------
@@ -95,6 +102,8 @@ func _load_room(i: int) -> void:
 	if room != null:
 		room.queue_free()
 	room = ROOM_SCRIPTS[i].new()
+	room.progression = progression
+	room.refrain_collected.connect(_on_refrain_collected)
 	add_child(room)
 
 	player.air_density = room.air_density
@@ -102,7 +111,7 @@ func _load_room(i: int) -> void:
 	player.fall_cap_mult = room.fall_cap_mult
 	player.groove_mult = room.groove_mult
 	player.air_strikes_max = room.air_strikes_max
-	player.air_strikes_left = room.air_strikes_max
+	player.refill_air_strikes()
 
 	# wire the room's listeners after they enter the tree
 	call_deferred("_wire_room")
@@ -130,7 +139,7 @@ func _wire_room() -> void:
 func _respawn() -> void:
 	player.global_position = room.spawn_pos
 	player.velocity = Vector2.ZERO
-	player.air_strikes_left = room.air_strikes_max
+	player.refill_air_strikes()
 	camera.reset_smoothing()
 
 # -- events -------------------------------------------------------------------
@@ -169,7 +178,11 @@ func _on_bout_won() -> void:
 	_flash("the bout is yours. he'd nod. once.")
 
 func _on_door_opened() -> void:
-	_flash("it was listening. it always was.")
+	var discovered := bool(
+		progression.call("discover_technique", ProgressionScript.Technique.COUNT_IN)
+	)
+	if not discovered:
+		_flash("it was listening. it always was.")
 
 func _on_freed(_pos: Vector2) -> void:
 	_flash("heard at last. it goes — and stays gone.")
@@ -177,6 +190,20 @@ func _on_freed(_pos: Vector2) -> void:
 func _on_player_hit() -> void:
 	_hits_taken += 1
 	_shake = 6.0
+
+func _on_refrain_collected(refrain: int) -> void:
+	progression.call("unlock_refrain", refrain)
+
+func _on_refrain_unlocked(refrain: int) -> void:
+	audio.play("freed", -7.0)
+	if refrain == ProgressionScript.Refrain.GATHER:
+		player.refill_air_strikes()
+		_flash("GATHER — one breath follows you into the dry.")
+	else:
+		_flash("%s — remembered." % progression.call("refrain_label", refrain))
+
+func _on_technique_discovered(technique: int) -> void:
+	_flash("%s — learned, never locked." % progression.call("technique_label", technique))
 
 func _word_splatter(pos: Vector2) -> void:
 	var words := ["BRIGHT", "LY", "OH", "!!"]
@@ -222,7 +249,7 @@ func _build_hud() -> void:
 	layer.add_child(feedback)
 
 	status = Label.new()
-	status.position = Vector2(14, 668)
+	status.position = Vector2(14, 654)
 	status.add_theme_font_size_override("font_size", 14)
 	status.add_theme_color_override("font_color", Color(0.1, 0.09, 0.09))
 	status.add_theme_color_override("font_outline_color", Color(1, 1, 1, 0.55))
@@ -230,7 +257,7 @@ func _build_hud() -> void:
 	layer.add_child(status)
 
 	crackle_bar = ColorRect.new()
-	crackle_bar.position = Vector2(14, 692)
+	crackle_bar.position = Vector2(14, 702)
 	crackle_bar.size = Vector2(0, 8)
 	crackle_bar.color = Color(0.9, 0.25, 0.5)
 	layer.add_child(crackle_bar)

@@ -5,6 +5,7 @@ extends "res://scripts/room_base.gd"
 ## Now also the FLOW course: pogo-pads to chain combat into traversal.
 
 const DummyScript := preload("res://scripts/test_pressing.gd")
+const ProgressionScript := preload("res://scripts/progression_state.gd")
 
 func _init() -> void:
 	band_name = "THE UNPLAYED"
@@ -50,7 +51,8 @@ func _ready() -> void:
 	# climb out
 	groove(Vector2(2560, -240))
 	platform(Vector2(2450, -520), Vector2(300, 34))
-	sign_label(Vector2(2280, -640), "the knobs live in scripts/skip.gd\ngo tune. make it yours.\n[TAB] — the smoothed floor.")
+	refrain_pickup(Vector2(2520, -580), ProgressionScript.Refrain.GATHER)
+	sign_label(Vector2(2240, -700), "GATHER what the unplayed taught you.\none breath will follow into dry wax.\n[TAB twice] — take it back to the label.")
 
 func _pad(pos: Vector2) -> void:
 	var d := DummyScript.new()

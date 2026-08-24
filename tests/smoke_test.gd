@@ -5,6 +5,8 @@ extends SceneTree
 const SkipScript := preload("res://scripts/skip.gd")
 const TestPressingScript := preload("res://scripts/test_pressing.gd")
 const AuditionerScript := preload("res://scripts/auditioner.gd")
+const ProgressionScript := preload("res://scripts/progression_state.gd")
+const RoomLabelScript := preload("res://scripts/room_label.gd")
 
 const EXPECTED_STRATA := 6
 const EXPECTED_WORLD_ROOMS := 53
@@ -36,11 +38,17 @@ var _bout_won_events := 0
 var _combat_event_order: Array[String] = []
 var _observed_dummy: Node
 var _strike_target: Node
+var _refrain_events: Array[int] = []
+var _technique_events: Array[int] = []
+var _launch_events: Array[bool] = []
 
 func _init() -> void:
 	call_deferred("_run")
 
 func _run() -> void:
+	_check_progression_state()
+	await _check_gather_player()
+	_check_gather_route_geometry()
 	_check_world_map()
 	await _check_project_boot()
 	await _check_combat_regressions()
@@ -59,6 +67,149 @@ func _expect(condition: bool, description: String) -> void:
 	_checks += 1
 	if not condition:
 		_failures.append(description)
+
+func _check_progression_state() -> void:
+	var state := ProgressionScript.new()
+	_refrain_events.clear()
+	_technique_events.clear()
+	state.refrain_unlocked.connect(_record_refrain_unlocked)
+	state.technique_discovered.connect(_record_technique_discovered)
+
+	_expect(not state.has_refrain(ProgressionScript.Refrain.GATHER), "Gather starts locked")
+	_expect(not state.has_refrain(ProgressionScript.Refrain.REST), "Rest starts locked")
+	_expect(not state.has_refrain(ProgressionScript.Refrain.JUMP_CUT), "Jump-Cut starts locked")
+	_expect(
+		not state.knows_technique(ProgressionScript.Technique.COUNT_IN),
+		"Count-In starts undiscovered but remains knowledge-executable"
+	)
+	_expect(
+		not state.knows_technique(ProgressionScript.Technique.STEP_TURN),
+		"Step-Turn starts undiscovered"
+	)
+	_expect(state.unlock_refrain(ProgressionScript.Refrain.GATHER), "Gather unlock succeeds once")
+	_expect(
+		not state.unlock_refrain(ProgressionScript.Refrain.GATHER),
+		"duplicate Gather unlock is idempotent"
+	)
+	_expect(
+		_refrain_events == [ProgressionScript.Refrain.GATHER],
+		"Gather unlock emits exactly one progression event"
+	)
+	_expect(
+		state.discover_technique(ProgressionScript.Technique.COUNT_IN),
+		"Count-In discovery succeeds once"
+	)
+	_expect(
+		not state.discover_technique(ProgressionScript.Technique.COUNT_IN),
+		"duplicate Count-In discovery is idempotent"
+	)
+	_expect(
+		_technique_events == [ProgressionScript.Technique.COUNT_IN],
+		"Count-In discovery emits exactly one knowledge event"
+	)
+
+	var saved := state.snapshot()
+	var restored := ProgressionScript.new()
+	restored.unlock_refrain(ProgressionScript.Refrain.REST)
+	restored.discover_technique(ProgressionScript.Technique.STEP_TURN)
+	_refrain_events.clear()
+	_technique_events.clear()
+	restored.refrain_unlocked.connect(_record_refrain_unlocked)
+	restored.technique_discovered.connect(_record_technique_discovered)
+	_expect(restored.restore_snapshot(saved), "progression snapshot restores")
+	_expect(restored.has_refrain(ProgressionScript.Refrain.GATHER), "snapshot preserves Gather")
+	_expect(not restored.has_refrain(ProgressionScript.Refrain.REST), "snapshot restore replaces old Refrains")
+	_expect(
+		restored.knows_technique(ProgressionScript.Technique.COUNT_IN),
+		"snapshot preserves Count-In discovery"
+	)
+	_expect(
+		not restored.knows_technique(ProgressionScript.Technique.STEP_TURN),
+		"snapshot restore replaces old technique discoveries"
+	)
+	_expect(_refrain_events.is_empty(), "snapshot restore does not replay Refrain signals")
+	_expect(_technique_events.is_empty(), "snapshot restore does not replay technique signals")
+	_expect(
+		not restored.restore_snapshot({"version": 999}),
+		"unknown progression snapshot versions are rejected"
+	)
+	_expect(
+		restored.has_refrain(ProgressionScript.Refrain.GATHER),
+		"rejected progression snapshots leave existing Refrains unchanged"
+	)
+	_expect(
+		restored.knows_technique(ProgressionScript.Technique.COUNT_IN),
+		"rejected progression snapshots leave existing techniques unchanged"
+	)
+
+func _check_gather_player() -> void:
+	for action in [&"move_left", &"move_right", &"move_up", &"move_down"]:
+		if not InputMap.has_action(action):
+			InputMap.add_action(action)
+	var state := ProgressionScript.new()
+	var player := SkipScript.new()
+	player.progression = state
+	player.air_density = 0.0
+	player.air_strikes_max = 0
+	root.add_child(player)
+	_launch_events.clear()
+	player.struck.connect(_record_launch)
+
+	player.refill_air_strikes()
+	_expect(player.air_strikes_left == 0, "dry rooms have no breath before Gather")
+	player.call("_strike")
+	_expect(player.velocity.is_zero_approx(), "a dry strike cannot launch before Gather")
+
+	state.unlock_refrain(ProgressionScript.Refrain.GATHER)
+	player.refill_air_strikes()
+	_expect(is_zero_approx(player.air_density), "Gather does not mutate the room's air density")
+	_expect(player.air_strike_capacity() == 1, "Gather grants one breath in dry rooms")
+	player.call("_strike")
+	_expect(not player.velocity.is_zero_approx(), "Gather launches once in dry air")
+	_expect(player.air_strikes_left == 0, "the Gather breath is consumed")
+	player.velocity = Vector2.ZERO
+	player.call("_strike")
+	_expect(player.velocity.is_zero_approx(), "Gather cannot launch twice before a refill")
+	_expect(_launch_events == [false, true, false], "dry Gather strike results are locked, launch, spent")
+
+	player.air_strikes_max = 2
+	player.refill_air_strikes()
+	_expect(player.air_strike_capacity() == 2, "Gather does not stack onto environmental breaths")
+	player.queue_free()
+	await process_frame
+
+func _record_launch(_pos: Vector2, _big: bool, launched: bool) -> void:
+	_launch_events.append(launched)
+
+func _check_gather_route_geometry() -> void:
+	const PLAYER_HEIGHT := 52.0
+	const LABEL_FLOOR_TOP := 580.0
+	const LABEL_GROOVE_X := 760.0
+	var standing_center := LABEL_FLOOR_TOP - PLAYER_HEIGHT / 2.0
+	var shelf_top: float = RoomLabelScript.GATHER_SHELF_POS.y - RoomLabelScript.GATHER_SHELF_SIZE.y / 2.0
+	var landing_center := shelf_top - PLAYER_HEIGHT / 2.0
+	var required_rise := standing_center - landing_center
+	var jump_rise: float = SkipScript.JUMP_VELOCITY * SkipScript.JUMP_VELOCITY / (2.0 * SkipScript.GRAVITY)
+	var gather_rise: float = SkipScript.AIR_IMPULSE * SkipScript.AIR_IMPULSE / (2.0 * SkipScript.GRAVITY)
+	_expect(required_rise > jump_rise, "the Label return shelf is above an ordinary jump")
+	_expect(required_rise < jump_rise + gather_rise, "one staged Gather breath can reach the Label shelf")
+
+	var baffle_left: float = RoomLabelScript.GATHER_BAFFLE_POS.x - RoomLabelScript.GATHER_BAFFLE_SIZE.x / 2.0
+	var shelf_right: float = RoomLabelScript.GATHER_SHELF_POS.x + RoomLabelScript.GATHER_SHELF_SIZE.x / 2.0
+	var baffle_bottom: float = RoomLabelScript.GATHER_BAFFLE_POS.y + RoomLabelScript.GATHER_BAFFLE_SIZE.y / 2.0
+	_expect(
+		baffle_left <= shelf_right
+		and RoomLabelScript.GATHER_BAFFLE_POS.x > RoomLabelScript.GATHER_SHELF_POS.x
+		and baffle_left < LABEL_GROOVE_X,
+		"the dry baffle joins the shelf and separates it from the live groove"
+	)
+	_expect(LABEL_FLOOR_TOP - baffle_bottom > PLAYER_HEIGHT, "the player can walk beneath the dry baffle")
+
+func _record_refrain_unlocked(refrain: int) -> void:
+	_refrain_events.append(refrain)
+
+func _record_technique_discovered(technique: int) -> void:
+	_technique_events.append(technique)
 
 func _check_world_map() -> void:
 	var file := FileAccess.open("res://data/world_map.json", FileAccess.READ)
@@ -127,6 +278,12 @@ func _check_world_map() -> void:
 		)
 		_expect(float(room_data.get("w", 0.0)) > 0.0, "room '%s' has positive width" % room_id)
 		_expect(float(room_data.get("h", 0.0)) > 0.0, "room '%s' has positive height" % room_id)
+		if room_id == "practice_room":
+			var practice_tags: Array = room_data.get("tags", [])
+			var practice_rewards: Array = room_data.get("rewards", [])
+			_expect("technique" in practice_tags, "world map classifies Count-In as a technique")
+			_expect("refrain" not in practice_tags, "world map no longer classifies Count-In as a Refrain")
+			_expect("tech:count-in" in practice_rewards, "world map uses Count-In's canonical technique id")
 
 	for room_value in rooms:
 		if not (room_value is Dictionary):
@@ -160,6 +317,12 @@ func _check_project_boot() -> void:
 	_expect(main.get("player") != null, "main creates the player")
 	_expect(main.get("camera") != null, "main creates the camera")
 	_expect(main.get("audio") != null, "main creates the audio bank")
+	_expect(main.get("progression") != null, "main owns the session progression state")
+	var boot_player: CharacterBody2D = main.get("player")
+	_expect(
+		boot_player.progression == main.get("progression"),
+		"main injects one progression state into the player"
+	)
 
 	for action in REQUIRED_INPUT_ACTIONS:
 		_expect(InputMap.has_action(action), "input action '%s' exists" % action)
@@ -183,6 +346,82 @@ func _check_project_boot() -> void:
 		var limits: Rect2 = room.get("cam_limits")
 		_expect(limits.size.x > 0.0 and limits.size.y > 0.0, "room '%s' camera bounds are positive" % room.get("band_name"))
 
+	# Gather is earned at The Unplayed's exit and survives room recreation.
+	main.call("_load_room", 3)
+	await process_frame
+	await process_frame
+	var unplayed := main.get("room") as Node2D
+	var pickups := _room_group_members(unplayed, &"refrain_pickup")
+	_expect(pickups.size() == 1, "The Unplayed presents one Gather pickup while locked")
+	var session_progression: RefCounted = main.get("progression")
+	_refrain_events.clear()
+	session_progression.connect("refrain_unlocked", _record_refrain_unlocked)
+	if not pickups.is_empty():
+		var collection_player: CharacterBody2D = main.get("player")
+		collection_player.global_position = pickups[0].global_position
+	await process_frame
+	await process_frame
+	_expect(
+		bool(session_progression.call("has_refrain", ProgressionScript.Refrain.GATHER)),
+		"approaching the Unplayed pickup unlocks Gather"
+	)
+	_expect(
+		_refrain_events == [ProgressionScript.Refrain.GATHER],
+		"the Gather pickup emits one session unlock"
+	)
+	var post_collection_player: CharacterBody2D = main.get("player")
+	_expect(post_collection_player.air_strikes_left == 2, "Gather unlock reapplies The Unplayed's capacity immediately")
+
+	var expected_capacity := [1, 1, 1, 2, 1]
+	var expected_density := [0.0, 0.0, 0.35, 1.0, 0.0]
+	for index in EXPECTED_PROTOTYPE_ROOMS.size():
+		main.call("_load_room", index)
+		await process_frame
+		await process_frame
+		var current_player: CharacterBody2D = main.get("player")
+		var current_room: Node2D = main.get("room")
+		_expect(main.get("progression") == session_progression, "progression survives room %d recreation" % index)
+		_expect(
+			current_player.air_strike_capacity() == expected_capacity[index],
+			"Gather capacity respects room %d's environmental maximum" % index
+		)
+		_expect(
+			is_equal_approx(float(current_room.get("air_density")), expected_density[index]),
+			"Gather leaves room %d's air density unchanged" % index
+		)
+
+	main.call("_load_room", 0)
+	await process_frame
+	await process_frame
+	var gathered_player: CharacterBody2D = main.get("player")
+	gathered_player.air_strikes_left = 0
+	main.call("_respawn")
+	_expect(gathered_player.air_strikes_left == 1, "respawning in dry wax refills Gather's breath")
+
+	main.call("_load_room", 3)
+	await process_frame
+	await process_frame
+	unplayed = main.get("room") as Node2D
+	_expect(
+		_room_group_members(unplayed, &"refrain_pickup").is_empty(),
+		"The Unplayed does not respawn an acquired Gather pickup"
+	)
+	var gathered_unplayed_player: CharacterBody2D = main.get("player")
+	_expect(gathered_unplayed_player.air_strike_capacity() == 2, "The Unplayed remains a two-breath room")
+
+	_technique_events.clear()
+	session_progression.connect("technique_discovered", _record_technique_discovered)
+	main.call("_on_door_opened")
+	main.call("_on_door_opened")
+	_expect(
+		bool(session_progression.call("knows_technique", ProgressionScript.Technique.COUNT_IN)),
+		"opening a count-in door records the knowledge technique"
+	)
+	_expect(
+		_technique_events == [ProgressionScript.Technique.COUNT_IN],
+		"Count-In discovery is recorded once without gating execution"
+	)
+
 	var audio := main.get("audio") as Node
 	if audio != null:
 		for child in audio.get_children():
@@ -191,9 +430,19 @@ func _check_project_boot() -> void:
 				child.stream = null
 	while AudioServer.get_bus_effect_count(0) > initial_master_effects:
 		AudioServer.remove_bus_effect(0, AudioServer.get_bus_effect_count(0) - 1)
+	# Give the audio thread a pair of frames to release transient pickup SFX.
+	await process_frame
+	await process_frame
 	main.queue_free()
 	await process_frame
 	await process_frame
+
+func _room_group_members(current_room: Node, group: StringName) -> Array[Node]:
+	var result: Array[Node] = []
+	for node in get_nodes_in_group(group):
+		if current_room.is_ancestor_of(node):
+			result.append(node)
+	return result
 
 func _check_combat_regressions() -> void:
 	_expect(

@@ -4,6 +4,9 @@ extends Node2D
 
 const GrooveScript := preload("res://scripts/hot_groove.gd")
 const PatchScript := preload("res://scripts/polish_patch.gd")
+const RefrainPickupScript := preload("res://scripts/refrain_pickup.gd")
+
+signal refrain_collected(refrain: int)
 
 var band_name := ""
 var band_desc := ""
@@ -18,6 +21,7 @@ var fall_cap_mult := 1.0
 var groove_mult := 1.0
 var air_strikes_max := 0
 var muted := false                 # HUSH rules: resonance systems off
+var progression: RefCounted
 
 var bg_color := Color(0.85, 0.83, 0.78)
 var ink := Color(0.14, 0.13, 0.12)
@@ -46,6 +50,17 @@ func patch(pos: Vector2) -> void:
 	var d := PatchScript.new()
 	d.position = pos
 	add_child(d)
+
+func refrain_pickup(pos: Vector2, refrain: int) -> void:
+	var pickup := RefrainPickupScript.new()
+	pickup.position = pos
+	pickup.progression = progression
+	pickup.refrain = refrain
+	pickup.collected.connect(_on_refrain_pickup_collected)
+	add_child(pickup)
+
+func _on_refrain_pickup_collected(refrain: int) -> void:
+	refrain_collected.emit(refrain)
 
 func sign_label(pos: Vector2, text: String) -> void:
 	var l := Label.new()

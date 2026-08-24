@@ -19,7 +19,8 @@ See `PLAYTEST.md` for the repeatable five-room playtest.
 
 - **A/D** move · **SPACE** jump (stubby on purpose — the strike does the flying)
 - **J** (or X) — **STRIKE**: near a live groove it launches you; below the
-  Scratch it jets you through thick air; near the dummy it builds resonance
+  Scratch it jets you through thick air; near the dummy it builds resonance.
+  After finding **GATHER**, one air-strike breath follows you into dry rooms.
 - **K hold** (or C) — **HOOD UP**: silence. Slower, softer, your crackle
   drains fast, the world goes lowpass-muffled, and things stop hearing you.
   Hold it beside dull grey wax to **polish** (mints shine).
@@ -27,19 +28,37 @@ See `PLAYTEST.md` for the repeatable five-room playtest.
 - **W/S** (or arrows) — aim directional strikes while airborne.
 - **R** respawn · **TAB** next room
 
+## Character progression
+
+Dead Wax uses a hybrid metroidvania progression instead of a conventional
+skill tree:
+
+- **Strike, Hood, and Set** are core verbs available from the start.
+- **Count-In** and **Step-Turn** are knowledge techniques. Discovering one
+  records it in the HUD and future save data, but never gates the input or
+  solution itself. Count-In is recorded when you prove it at a groove-lock.
+- **Gather, Rest, and Jump-Cut** are earned Refrains. The first playable slice
+  is **Gather**, waiting at the end of The Unplayed. It preserves one breath in
+  dry wax; rooms that already grant more keep their original capacity.
+
+Progression currently lasts for the running session: it survives R respawns
+and TAB room recreation, then resets on a fresh launch. Rest and Jump-Cut are
+represented in progression state but do not have gameplay effects yet.
+
 ## The rooms (TAB cycles)
 
 1. **THE LABEL** — M0's dry lessons, reskinned: groove launches, spent-wax
-   gaps, the shaft, ON BEAT. Now hides an **unsigned groove-lock** — if you
-   already know the count-in, it opens in minute one. That's the law.
+   gaps, the shaft, ON BEAT. It hides an **unsigned groove-lock** and a high
+   dry return shelf that becomes reachable after Gather.
 2. **THE PRACTICE ROOM** — M1's heart. The **Test Pressing** dummy: it hears
    your crackle, ticks three times, swings on four. Strike exactly as the
    swing lands: **RUNG BACK** (parry). Fill its rim to shatter it. Also:
    polishing corner, and the **signed COUNT-IN door** (four even strikes,
-   any tempo).
+   any tempo). Opening either groove-lock records Count-In as learned.
 3. **THE VERSE** — Auditioners can be shattered or heard. Hold SET nearby to
    free one peacefully.
-4. **THE UNPLAYED** — thick-air flight, two breaths, hot grooves.
+4. **THE UNPLAYED** — thick-air flight, two breaths, hot grooves, and the
+   **Gather** Refrain at the climb-out.
 5. **THE SMOOTHED FLOOR** — a bout on HUSH's terms: resonance OFF, raw hits
    worthless, three rung-backs to win. Spacing and timing, nothing else.
    This room decides whether the rival duels will feel good.
@@ -50,6 +69,7 @@ See `PLAYTEST.md` for the repeatable five-room playtest.
 - Does hood-stealth read — do you *feel* quieter, does the dummy calming
   down land?
 - Is the count-in door forgiving enough at fast and slow tempos?
+- Does bringing one breath back to The Label feel like a meaningful return?
 - Is the muted room fun with everything subtracted, or just empty?
 
 ## Tuning knobs

@@ -7,6 +7,8 @@ signal struck(pos: Vector2, big: bool, launched: bool)
 signal on_beat
 signal took_hit
 
+const ProgressionScript := preload("res://scripts/progression_state.gd")
+
 # -- RUN / JUMP (the honest legs) --------------------------------------------
 const RUN_SPEED := 340.0
 const RUN_ACCEL := 2600.0
@@ -33,6 +35,7 @@ const GROOVE_KEEP := 0.25
 const AIR_IMPULSE := 620.0         # thick-air jet (below the Scratch only)
 const AIR_KEEP := 0.30
 const BEAT_MULT := 1.55            # ON BEAT bonus multiplier
+const GATHER_AIR_STRIKES := 1      # one held breath follows you into dry rooms
 
 # -- POGO (flow: combat feeds platforming) ------------------------------------
 const POGO_RANGE := 120.0          # match enemy hit reach: every pogo is a confirmed strike
@@ -49,7 +52,8 @@ var air_density := 0.0             # 0 = spent wax above the Scratch, 1 = thick
 var gravity_mult := 1.0
 var fall_cap_mult := 1.0
 var groove_mult := 1.0
-var air_strikes_max := 0           # "breaths" — air jets before touching down
+var air_strikes_max := 0           # room-provided baseline; progression derives capacity
+var progression: RefCounted
 
 # -- state --------------------------------------------------------------------
 var air_strikes_left := 0
@@ -89,6 +93,24 @@ func _ready() -> void:
 		_jit[i] = Vector2.ZERO
 	z_index = 10
 
+func air_strike_capacity() -> int:
+	var capacity := air_strikes_max
+	if _has_gather():
+		capacity = maxi(capacity, GATHER_AIR_STRIKES)
+	return capacity
+
+func refill_air_strikes() -> void:
+	air_strikes_left = air_strike_capacity()
+
+func can_air_strike() -> bool:
+	return air_density > 0.0 or _has_gather()
+
+func _has_gather() -> bool:
+	return (
+		progression != null
+		and bool(progression.call("has_refrain", ProgressionScript.Refrain.GATHER))
+	)
+
 func _physics_process(delta: float) -> void:
 	hooded = Input.is_action_pressed("lift")
 	setting = Input.is_action_pressed("set") and is_on_floor() and not hooded
@@ -121,7 +143,7 @@ func _physics_process(delta: float) -> void:
 	noise = maxf(noise - delta * (NOISE_DECAY_HOODED if hooded else NOISE_DECAY), 0.0)
 
 	if is_on_floor():
-		air_strikes_left = air_strikes_max
+		refill_air_strikes()
 
 	if _buffer > 0.0 and _coyote > 0.0 and _stagger <= 0.0 and not setting:
 		velocity.y = JUMP_VELOCITY
@@ -174,7 +196,7 @@ func _strike() -> void:
 			on_beat.emit()
 		velocity = velocity * GROOVE_KEEP + away * GROOVE_IMPULSE * mult
 		best.ping()
-		air_strikes_left = air_strikes_max    # a launch refuels your breaths (flow)
+		refill_air_strikes()                   # a launch refuels your breaths (flow)
 		launched = true
 	elif foe != null:
 		# POGO — recoil off the foe you struck; a room of enemies is a set of trampolines
@@ -183,10 +205,10 @@ func _strike() -> void:
 			pw = Vector2.UP
 		var pdir := (pw + Vector2.UP * POGO_UP_BIAS).normalized()
 		velocity = velocity * POGO_KEEP + pdir * POGO_IMPULSE
-		air_strikes_left = air_strikes_max    # bouncing off a foe refuels your breaths (flow)
+		refill_air_strikes()                   # bouncing off a foe refuels your breaths (flow)
 		launched = true
-	elif air_density > 0.0 and air_strikes_left > 0:
-		# below the Scratch: strike against the pooled unplayed itself
+	elif can_air_strike() and air_strikes_left > 0:
+		# Gather holds one breath even when the pooled unplayed is far away.
 		air_strikes_left -= 1
 		var aim := Vector2(
 			Input.get_axis("move_left", "move_right"),
