@@ -6,6 +6,7 @@ const SkipScript := preload("res://scripts/skip.gd")
 const TestPressingScript := preload("res://scripts/test_pressing.gd")
 const AuditionerScript := preload("res://scripts/auditioner.gd")
 const ProgressionScript := preload("res://scripts/progression_state.gd")
+const InventoryMenuScript := preload("res://scripts/inventory_menu.gd")
 const RoomLabelScript := preload("res://scripts/room_label.gd")
 
 const EXPECTED_STRATA := 6
@@ -47,6 +48,7 @@ const REQUIRED_INPUT_ACTIONS := [
 	"lift",
 	"set",
 	"enter_passage",
+	"inventory",
 	"restart",
 	"switch_room",
 ]
@@ -68,6 +70,7 @@ func _init() -> void:
 
 func _run() -> void:
 	_check_progression_state()
+	await _check_inventory_menu()
 	await _check_gather_player()
 	_check_gather_route_geometry()
 	_check_world_map()
@@ -162,6 +165,73 @@ func _check_progression_state() -> void:
 		restored.knows_technique(ProgressionScript.Technique.COUNT_IN),
 		"rejected progression snapshots leave existing techniques unchanged"
 	)
+
+func _check_inventory_menu() -> void:
+	var state := ProgressionScript.new()
+	var menu := InventoryMenuScript.new()
+	menu.progression = state
+	root.add_child(menu)
+	await process_frame
+
+	_expect(menu.call("is_fullscreen_layout"), "The Book uses a full-viewport anchored overlay")
+	_expect(not menu.call("is_open"), "The Book starts closed")
+	var expected_slots := 3 + ProgressionScript.TECHNIQUE_ORDER.size() + ProgressionScript.REFRAIN_ORDER.size()
+	_expect(int(menu.call("slot_count")) == expected_slots, "The Book derives its slots from the progression schema")
+	_expect(int(menu.call("filled_slot_count")) == 3, "only the three core verbs begin filled")
+	for refrain in ProgressionScript.REFRAIN_ORDER:
+		var refrain_key := StringName(ProgressionScript.REFRAIN_KEYS[refrain])
+		var refrain_text := String(menu.call("slot_text", refrain_key))
+		_expect("UNHEARD" in refrain_text, "locked Refrain '%s' renders as unheard" % refrain_key)
+		_expect(
+			String(state.refrain_label(refrain)) not in refrain_text,
+			"locked Refrain '%s' does not reveal its name" % refrain_key
+		)
+	for technique in ProgressionScript.TECHNIQUE_ORDER:
+		var technique_key := StringName(ProgressionScript.TECHNIQUE_KEYS[technique])
+		var technique_text := String(menu.call("slot_text", technique_key))
+		_expect("UNLEARNED" in technique_text, "undiscovered technique '%s' renders as unlearned" % technique_key)
+		_expect(
+			String(state.technique_label(technique)) not in technique_text,
+			"undiscovered technique '%s' does not reveal its name" % technique_key
+		)
+
+	var before_open := state.snapshot()
+	menu.call("open_inventory")
+	_expect(menu.call("is_open"), "The Book opens through its public inventory action")
+	_expect(paused, "opening The Book pauses gameplay")
+	_expect(state.snapshot() == before_open, "opening The Book does not mutate progression")
+	state.unlock_refrain(ProgressionScript.Refrain.GATHER)
+	state.discover_technique(ProgressionScript.Technique.COUNT_IN)
+	_expect(int(menu.call("filled_slot_count")) == 5, "progression signals fill The Book live")
+	_expect("GATHER" in String(menu.call("slot_text", &"gather")), "Gather appears when carried")
+	_expect("COUNT-IN" in String(menu.call("slot_text", &"count-in")), "Count-In appears when recorded")
+	menu.call("close_inventory")
+	_expect(not menu.call("is_open"), "The Book closes cleanly")
+	_expect(not paused, "closing The Book resumes an unpaused game")
+
+	# Snapshot restore intentionally emits no progression signals. Opening must
+	# still pull the complete current state instead of relying on event history.
+	var restored := {
+		"version": ProgressionScript.SAVE_VERSION,
+		"refrains": ["rest"],
+		"techniques": ["step-turn"],
+	}
+	_expect(state.restore_snapshot(restored), "inventory fixture restores a silent snapshot")
+	menu.call("open_inventory")
+	_expect("REST" in String(menu.call("slot_text", &"rest")), "opening refreshes a silently restored Refrain")
+	_expect("STEP-TURN" in String(menu.call("slot_text", &"step-turn")), "opening refreshes a silently restored technique")
+	_expect("GATHER" not in String(menu.call("slot_text", &"gather")), "opening clears stale inventory presentation")
+	menu.call("close_inventory")
+
+	paused = true
+	menu.call("open_inventory")
+	menu.call("close_inventory")
+	_expect(paused, "The Book restores a pre-existing paused state")
+	paused = false
+	menu.call("open_inventory")
+	menu.queue_free()
+	await process_frame
+	_expect(not paused, "freeing an open Book cannot strand the scene tree paused")
 
 func _check_gather_player() -> void:
 	for action in [&"move_left", &"move_right", &"move_up", &"move_down"]:
@@ -627,14 +697,122 @@ func _check_project_boot() -> void:
 	_expect(main.get("camera") != null, "main creates the camera")
 	_expect(main.get("audio") != null, "main creates the audio bank")
 	_expect(main.get("progression") != null, "main owns the session progression state")
+	_expect(main.get("inventory") != null, "main creates the full-screen inventory")
 	var boot_player: CharacterBody2D = main.get("player")
 	_expect(
 		boot_player.progression == main.get("progression"),
 		"main injects one progression state into the player"
 	)
+	var inventory := main.get("inventory") as CanvasLayer
+	_expect(inventory.get("progression") == main.get("progression"), "inventory reads Main's progression instance")
+	_expect(inventory.get("shine_source") == boot_player, "inventory reads Shine from the persistent player")
+	_expect(not inventory.call("is_open"), "Main's inventory starts hidden")
 
 	for action in REQUIRED_INPUT_ACTIONS:
 		_expect(InputMap.has_action(action), "input action '%s' exists" % action)
+	_expect(_action_has_key(&"inventory", KEY_I), "I opens the inventory")
+	_expect(_action_has_button(&"inventory", JOY_BUTTON_START), "gamepad Start opens the inventory")
+	_expect(not _action_has_button(&"inventory", JOY_BUTTON_B), "gamepad B does not open the inventory during play")
+	var expected_inventory_slots := 3 + ProgressionScript.TECHNIQUE_ORDER.size() + ProgressionScript.REFRAIN_ORDER.size()
+	for action in REQUIRED_INPUT_ACTIONS:
+		if StringName(action) != &"inventory":
+			_expect(
+				not _action_has_button(StringName(action), JOY_BUTTON_START),
+				"gamepad Start is unique to inventory, not '%s'" % action
+			)
+	boot_player.shine = 12
+	_send_key(KEY_I, true)
+	await process_frame
+	_send_key(KEY_I, false)
+	_expect(inventory.call("is_open"), "the inventory input event opens The Book")
+	_expect(paused, "event-driven inventory opening pauses gameplay")
+	_expect(String(inventory.call("shine_text")) == "SHINE 012", "The Book refreshes the player's current Shine")
+	_expect(boot_player.shine == 12, "opening The Book does not spend Shine")
+	_send_joy_button(JOY_BUTTON_B, true)
+	await process_frame
+	_send_joy_button(JOY_BUTTON_B, false)
+	_expect(inventory.call("is_open"), "the gameplay Hood button cannot close The Book and leak through")
+	var first_inventory_focus := root.gui_get_focus_owner() as Button
+	_expect(
+		first_inventory_focus != null and "STRIKE" in first_inventory_focus.text,
+		"The Book opens with a visible focused entry"
+	)
+	var visited_inventory_slots := {String(inventory.call("selected_slot")): true}
+	_send_joy_axis(JOY_AXIS_LEFT_X, 1.0)
+	await process_frame
+	_send_joy_axis(JOY_AXIS_LEFT_X, 0.0)
+	var second_inventory_focus := root.gui_get_focus_owner() as Button
+	_expect(
+		second_inventory_focus != null and "HOOD" in second_inventory_focus.text,
+		"physical left-stick navigation moves inventory focus"
+	)
+	_expect(String(inventory.call("detail_title")) == "HOOD", "inventory focus refreshes the detail pane")
+	visited_inventory_slots[String(inventory.call("selected_slot"))] = true
+	for direction in [
+		JOY_BUTTON_DPAD_RIGHT,
+		JOY_BUTTON_DPAD_DOWN,
+		JOY_BUTTON_DPAD_DOWN,
+		JOY_BUTTON_DPAD_LEFT,
+		JOY_BUTTON_DPAD_LEFT,
+		JOY_BUTTON_DPAD_UP,
+	]:
+		_send_joy_button(direction, true)
+		await process_frame
+		_send_joy_button(direction, false)
+		visited_inventory_slots[String(inventory.call("selected_slot"))] = true
+	_expect(visited_inventory_slots.size() == expected_inventory_slots, "D-pad/stick focus can reach all inventory entries")
+	_send_joy_button(JOY_BUTTON_START, true)
+	await process_frame
+	_send_joy_button(JOY_BUTTON_START, false)
+	_expect(not inventory.call("is_open"), "gamepad Start toggles The Book closed")
+	_expect(not paused, "gamepad inventory closing resumes gameplay")
+	_send_joy_button(JOY_BUTTON_START, true)
+	await process_frame
+	_send_joy_button(JOY_BUTTON_START, false)
+	_expect(inventory.call("is_open"), "gamepad Start toggles The Book open")
+	_send_key(KEY_ESCAPE, true)
+	await process_frame
+	_send_key(KEY_ESCAPE, false)
+	_expect(not inventory.call("is_open"), "physical Escape closes The Book")
+	_expect(not paused, "Escape inventory closing resumes gameplay")
+
+	main.set("_transition_pending", true)
+	inventory.call("open_inventory")
+	_expect(not inventory.call("is_open"), "inventory refuses to open during a room transition")
+	_expect(not paused, "a refused inventory open does not pause the game")
+	main.set("_transition_pending", false)
+	var pre_menu_snapshot: Dictionary = main.get("progression").call("snapshot")
+	var pre_menu_room := int(main.get("room_idx"))
+	var pre_menu_entry := String(main.get("room_entry_id"))
+	boot_player.global_position += Vector2(37, -19)
+	boot_player.velocity = Vector2.ZERO
+	var pre_menu_position := boot_player.global_position
+	var pre_menu_strike_ms: int = boot_player.last_strike_ms
+	var pre_menu_noise: float = boot_player.noise
+	var pre_menu_breaths: int = boot_player.air_strikes_left
+	inventory.call("open_inventory")
+	_expect(paused, "Main's open inventory pauses its room and player")
+	Input.action_press("restart")
+	Input.action_press("move_right")
+	Input.action_press("strike")
+	Input.action_press("enter_passage")
+	Input.action_press("switch_room")
+	await process_frame
+	await process_frame
+	Input.action_release("restart")
+	Input.action_release("move_right")
+	Input.action_release("strike")
+	Input.action_release("enter_passage")
+	Input.action_release("switch_room")
+	_expect(boot_player.global_position.is_equal_approx(pre_menu_position), "inventory pause suppresses movement and respawn")
+	_expect(boot_player.last_strike_ms == pre_menu_strike_ms, "inventory pause suppresses strikes")
+	_expect(is_equal_approx(boot_player.noise, pre_menu_noise), "inventory pause preserves crackle")
+	_expect(boot_player.air_strikes_left == pre_menu_breaths, "inventory pause preserves breath capacity")
+	_expect(int(main.get("room_idx")) == pre_menu_room, "inventory pause suppresses room changes")
+	_expect(String(main.get("room_entry_id")) == pre_menu_entry, "inventory pause preserves the active entry")
+	_expect(main.get("progression").call("snapshot") == pre_menu_snapshot, "inventory pause preserves progression")
+	inventory.call("close_inventory")
+	_expect(not paused, "closing Main's inventory resumes gameplay")
 
 	var observed_route_edges: Array[String] = []
 	var observed_arrivals: Array[Dictionary] = []
@@ -775,6 +953,7 @@ func _check_project_boot() -> void:
 	_expect(int(main.get("room_idx")) == 0, "the compact loop returns to The Label")
 	_expect(String(main.get("room_entry_id")) == "from_smoothed", "the return uses The Label's Smoothed-side anchor")
 	_expect(main.get("progression") == session_progression, "room routes preserve the progression owner")
+	_expect(main.get("inventory") == inventory, "room routes preserve the same inventory view")
 
 	var expected_capacity := [1, 1, 1, 2, 1]
 	var expected_density := [0.0, 0.0, 0.35, 1.0, 0.0]
@@ -850,6 +1029,37 @@ func _room_group_members(current_room: Node, group: StringName) -> Array[Node]:
 		if current_room.is_ancestor_of(node):
 			result.append(node)
 	return result
+
+func _action_has_key(action: StringName, physical_keycode: Key) -> bool:
+	for event in InputMap.action_get_events(action):
+		if event is InputEventKey and event.physical_keycode == physical_keycode:
+			return true
+	return false
+
+func _action_has_button(action: StringName, button_index: JoyButton) -> bool:
+	for event in InputMap.action_get_events(action):
+		if event is InputEventJoypadButton and event.button_index == button_index:
+			return true
+	return false
+
+func _send_key(physical_keycode: Key, pressed: bool) -> void:
+	var event := InputEventKey.new()
+	event.physical_keycode = physical_keycode
+	event.keycode = physical_keycode
+	event.pressed = pressed
+	Input.parse_input_event(event)
+
+func _send_joy_button(button_index: JoyButton, pressed: bool) -> void:
+	var event := InputEventJoypadButton.new()
+	event.button_index = button_index
+	event.pressed = pressed
+	Input.parse_input_event(event)
+
+func _send_joy_axis(axis: JoyAxis, value: float) -> void:
+	var event := InputEventJoypadMotion.new()
+	event.axis = axis
+	event.axis_value = value
+	Input.parse_input_event(event)
 
 func _route_to(current_room: Node, target_room: StringName) -> Node:
 	for exit in _room_group_members(current_room, &"room_exit"):

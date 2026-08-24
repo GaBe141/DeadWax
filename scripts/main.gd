@@ -7,6 +7,7 @@ const SkipScript := preload("res://scripts/skip.gd")
 const WaveScript := preload("res://scripts/strike_wave.gd")
 const AudioScript := preload("res://scripts/audio_bank.gd")
 const ProgressionScript := preload("res://scripts/progression_state.gd")
+const InventoryMenuScript := preload("res://scripts/inventory_menu.gd")
 const ROOM_SCRIPTS := [
 	preload("res://scripts/room_label.gd"),
 	preload("res://scripts/room_dojo.gd"),
@@ -23,6 +24,7 @@ var room: Node2D
 var room_idx := 0
 var room_entry_id: StringName = &"default"
 var progression: RefCounted
+var inventory: CanvasLayer
 var _transition_pending := false
 
 var info: Label
@@ -64,6 +66,11 @@ func _ready() -> void:
 	camera.make_current()
 
 	_build_hud()
+	inventory = InventoryMenuScript.new()
+	inventory.progression = progression
+	inventory.shine_source = player
+	inventory.can_open = _can_open_inventory
+	add_child(inventory)
 	_load_room(0)
 
 func _process(delta: float) -> void:
@@ -133,7 +140,7 @@ func _load_room(i: int, entry_id: StringName = &"default") -> void:
 	camera.limit_bottom = int(room.cam_limits.position.y + room.cam_limits.size.y)
 
 	_respawn()
-	var controls := "[A/D] move  [SPACE] jump  [J] strike  [K hold] hood  [L hold] kneel  [E/Y] passage  [R] respawn"
+	var controls := "[A/D] move  [SPACE] jump  [J] strike  [K hold] hood  [L hold] kneel  [E/Y] passage  [I/START] book  [R] respawn"
 	if OS.is_debug_build():
 		controls += "  [TAB] debug room"
 	info.text = "DEAD WAX — M1\nROOM: %s\n%s\n%s" % [room.band_name, room.band_desc, controls]
@@ -227,6 +234,9 @@ func _complete_route_transition(target_index: int, target_entry: StringName) -> 
 func _on_route_blocked(message: String) -> void:
 	_flash(message)
 
+func _can_open_inventory() -> bool:
+	return not _transition_pending
+
 func _on_refrain_unlocked(refrain: int) -> void:
 	audio.play("freed", -7.0)
 	if refrain == ProgressionScript.Refrain.GATHER:
@@ -307,6 +317,7 @@ func _setup_input() -> void:
 	_action("lift", [KEY_K, KEY_C], [JOY_BUTTON_B])
 	_action("set", [KEY_L], [JOY_BUTTON_LEFT_SHOULDER])
 	_action("enter_passage", [KEY_E], [JOY_BUTTON_Y])
+	_action("inventory", [KEY_I], [JOY_BUTTON_START])
 	_action("restart", [KEY_R], [JOY_BUTTON_BACK])
 	_action("switch_room", [KEY_TAB])
 

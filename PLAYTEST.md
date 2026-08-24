@@ -16,6 +16,13 @@ Use this checklist for a 10–15 minute prototype pass. Run `.\deadwax.cmd play`
 - [ ] The game opens at 1280×720 in **The Label** with HUD and synthesized audio.
 - [ ] A/D or arrows move; Space jumps; J/X strikes; K/C holds Hood; L holds Set.
 - [ ] E or gamepad Y enters a nearby passage; the five rooms form one loop.
+- [ ] I or gamepad Start opens **The Book** over the full 1280×720 viewport.
+- [ ] The Book pauses movement, enemies, passages, strikes, respawn, and room cycling.
+- [ ] Arrows/D-pad/stick move the hot-pink focus; each entry updates the detail pane.
+- [ ] I/Start toggles the Book closed; Escape also closes it and play resumes cleanly.
+- [ ] Fresh inventory shows STRIKE, HOOD, and SET; the other five grooves are unnamed.
+- [ ] Count-In and Gather appear live when learned/carried, without revealing future entries.
+- [ ] Shine matches the HUD and the same Book state survives passages and R respawns.
 - [ ] R respawns at the entry used for this visit, including when traversing backward.
 - [ ] Tab cycles rooms only as a debug shortcut and is not required for normal play.
 - [ ] Refrains and discovered techniques persist through passages/R, but reset on a fresh launch.

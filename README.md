@@ -28,6 +28,7 @@ the compact traversal layout.
 - **L hold** — **SET / KNEEL**: listen to an Auditioner instead of breaking it.
 - **W/S** (or arrows) — aim directional strikes while airborne.
 - **E** (or gamepad Y) — enter a nearby room passage.
+- **I** (or gamepad Start) — open **The Book**, the full-screen inventory.
 - **R** respawn at the current entry · **TAB** debug-build room cycle
 
 ## Character progression
@@ -46,6 +47,15 @@ skill tree:
 Progression currently lasts for the running session: it survives R respawns
 and physical room transitions, then resets on a fresh launch. Rest and Jump-Cut are
 represented in progression state but do not have gameplay effects yet.
+
+## The Book
+
+The Book is a full-screen, read-only inventory. It pauses the room and records
+the three always-owned core verbs, discovered knowledge techniques, carried
+Refrains, and current Shine. Inside the game, unknown techniques and Refrains
+remain unnamed until the session records them; opening the Book never unlocks
+or equips anything. Use arrows, D-pad, or the left stick to select an entry, and press
+I/Start again or Escape to close it.
 
 ## The playable route
 
