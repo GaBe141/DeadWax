@@ -11,6 +11,8 @@ const RoomLabelScript := preload("res://scripts/room_label.gd")
 const WorldMapScript := preload("res://scripts/world_map.gd")
 const GrayboxScript := preload("res://scripts/room_graybox.gd")
 const RefrainPickupScript := preload("res://scripts/refrain_pickup.gd")
+const PressingScript := preload("res://scripts/pressing_state.gd")
+const RoomSmoothedScript := preload("res://scripts/room_smoothed.gd")
 
 const EXPECTED_STRATA := 6
 const EXPECTED_WORLD_ROOMS := 53
@@ -73,6 +75,8 @@ var _strike_target: Node
 var _refrain_events: Array[int] = []
 var _technique_events: Array[int] = []
 var _launch_events: Array[bool] = []
+var _side_events: Array[int] = []
+var _ended_events := 0
 
 func _init() -> void:
 	call_deferred("_run")
@@ -82,6 +86,8 @@ func _run() -> void:
 	await _check_inventory_menu()
 	await _check_gather_player()
 	_check_gather_route_geometry()
+	_check_pressing_state()
+	await _check_b_side_rooms()
 	_check_world_map()
 	_check_world_grayboxes(_check_world_loader())
 	await _check_project_boot()
@@ -690,6 +696,146 @@ func _world_stratum_density(rooms: Array, stratum_id: String) -> float:
 		used_area += float(room_data.get("w")) * float(room_data.get("h"))
 	var bounds_area := (max_x - min_x) * (max_y - min_y)
 	return used_area / bounds_area if bounds_area > 0.0 else 0.0
+
+func _check_pressing_state() -> void:
+	var pressing := PressingScript.new()
+	_side_events.clear()
+	pressing.side_changed.connect(_record_side_changed)
+
+	_expect(pressing.side == PressingScript.Side.A, "a pressing starts on the side that got played")
+	_expect(not pressing.on_b_side(), "the A-side is not the B-side")
+	_expect(is_equal_approx(pressing.runtime_left, PressingScript.SIDE_RUNTIME), "a fresh side is fully rewound")
+
+	# The A-side must present each room exactly as authored, or turning the wax
+	# over would quietly retune rooms nobody flipped.
+	_expect(is_zero_approx(pressing.effective_density(0.0)), "the A-side keeps dry wax dry")
+	_expect(is_equal_approx(pressing.effective_density(1.0), 1.0), "the A-side keeps thick wax thick")
+	_expect(pressing.effective_air_strikes(0, 0.0) == 0, "the A-side keeps a dry room breathless")
+	_expect(pressing.effective_air_strikes(2, 1.0) == 2, "the A-side keeps an authored breath count")
+
+	_expect(pressing.flip(), "a rewound pressing turns over")
+	_expect(pressing.on_b_side(), "turning over reaches the B-side")
+	_expect(_side_events == [PressingScript.Side.B], "turning over emits exactly one side change")
+	_expect(is_equal_approx(pressing.effective_density(0.0), 1.0), "dry wax reads thick from the far face")
+	_expect(is_zero_approx(pressing.effective_density(1.0)), "thick wax reads dry from the far face")
+	_expect(pressing.effective_air_strikes(0, 0.0) == 2, "the B-side of dry wax answers a strike")
+	_expect(pressing.effective_air_strikes(2, 1.0) == 0, "the B-side of thick wax has no air to push")
+
+	_expect(not pressing.advance(0.5), "playing the B-side forward does not end it early")
+	_expect(pressing.runtime_left < PressingScript.SIDE_RUNTIME, "the B-side plays down while you stand on it")
+	_side_events.clear()
+	_expect(pressing.flip(), "the B-side can be turned back deliberately")
+	_expect(_side_events == [PressingScript.Side.A], "turning back emits exactly one side change")
+
+	var rewound := pressing.runtime_left
+	pressing.advance(1.0)
+	_expect(pressing.runtime_left > rewound, "the A-side rewinds the far face")
+	_expect(
+		pressing.runtime_left <= PressingScript.SIDE_RUNTIME,
+		"rewinding never overruns the length of a side"
+	)
+
+	# A side that is nearly spent must refuse the flip rather than strand the
+	# player one frame later in air that is about to stop holding them up.
+	pressing.runtime_left = PressingScript.MIN_FLIP_RUNTIME - 0.1
+	_expect(not pressing.can_flip(), "a nearly spent side refuses to be turned over")
+	_expect(not pressing.flip(), "a refused flip stays on the played side")
+	_expect(not pressing.on_b_side(), "a refused flip leaves the world on the A-side")
+
+	pressing.runtime_left = PressingScript.SIDE_RUNTIME
+	pressing.flip()
+	pressing.runtime_left = 0.2
+	_side_events.clear()
+	_ended_events = 0
+	pressing.side_ended.connect(_record_side_ended)
+	_expect(pressing.advance(0.5), "a spent side lifts the needle by itself")
+	_expect(not pressing.on_b_side(), "a spent side returns the world to the A-side")
+	_expect(_ended_events == 1, "a spent side announces itself once")
+	_expect(_side_events == [PressingScript.Side.A], "a forced return is one side change")
+	_expect(pressing.can_flip() == false, "a just-spent side cannot be turned straight back over")
+
+func _record_side_changed(side: int) -> void:
+	_side_events.append(side)
+
+func _record_side_ended() -> void:
+	_ended_events += 1
+
+## Turning a room over is presentation plus liveness, never new geometry: the
+## same platforms, re-inked, with the far face's grooves gone quiet.
+func _check_b_side_rooms() -> void:
+	var room := RoomLabelScript.new()
+	root.add_child(room)
+	await process_frame
+
+	var live_on_a := _room_group_members(room, &"live_groove").size()
+	_expect(live_on_a > 0, "The Label presses live grooves on its played side")
+	var skins := _room_skins(room)
+	_expect(not skins.is_empty(), "a room's platforms carry recolourable skins")
+	var ink_on_a: Color = skins[0].color
+	_expect(ink_on_a.is_equal_approx(room.ink), "platforms are inked on the A-side")
+
+	room.apply_side(PressingScript.Side.B)
+	await process_frame
+	_expect(
+		_room_group_members(room, &"live_groove").is_empty(),
+		"A-side grooves fall quiet when the pressing turns over"
+	)
+	_expect(skins[0].color.is_equal_approx(room.bg_color), "turning over trades ink for paper")
+
+	room.apply_side(PressingScript.Side.A)
+	await process_frame
+	_expect(
+		_room_group_members(room, &"live_groove").size() == live_on_a,
+		"turning back restores every A-side groove"
+	)
+	_expect(skins[0].color.is_equal_approx(ink_on_a), "turning back restores the room's ink")
+	room.free()
+	await process_frame
+
+	# A groove pressed on the far face is the mirror case: quiet until flipped.
+	var b_room := RoomLabelScript.new()
+	root.add_child(b_room)
+	b_room.groove(Vector2(400, 400), PressingScript.Side.B)
+	await process_frame
+	var b_side_live := _room_group_members(b_room, &"live_groove").size()
+	b_room.apply_side(PressingScript.Side.B)
+	await process_frame
+	_expect(
+		_room_group_members(b_room, &"live_groove").size() == 1,
+		"a B-side groove answers only once the pressing is turned over"
+	)
+	_expect(b_side_live == live_on_a, "a B-side groove stays quiet while the A-side is up")
+	b_room.free()
+	await process_frame
+
+	# HUSH burnished the side that was face-up. The other one still rings.
+	var burnished := RoomSmoothedScript.new()
+	root.add_child(burnished)
+	await process_frame
+	var dummies := _room_group_members(burnished, &"hears_strikes")
+	_expect(not dummies.is_empty(), "The Smoothed Floor stands a Test Pressing")
+	for dummy in dummies:
+		_expect(bool(dummy.get("muted")), "the burnished floor mutes its bout on the A-side")
+	burnished.apply_side(PressingScript.Side.B)
+	await process_frame
+	for dummy in dummies:
+		_expect(not bool(dummy.get("muted")), "the far face of a burnished floor still rings")
+	burnished.apply_side(PressingScript.Side.A)
+	await process_frame
+	for dummy in dummies:
+		_expect(bool(dummy.get("muted")), "turning back restores what HUSH smoothed")
+	burnished.free()
+	await process_frame
+
+func _room_skins(room: Node) -> Array[ColorRect]:
+	var skins: Array[ColorRect] = []
+	for child in room.get_children():
+		if not (child is StaticBody2D):
+			continue
+		for grandchild in child.get_children():
+			if grandchild is ColorRect:
+				skins.append(grandchild)
+	return skins
 
 func _check_world_loader() -> RefCounted:
 	var map := WorldMapScript.new()
@@ -1425,6 +1571,70 @@ func _check_project_boot() -> void:
 	_expect(
 		String((main.get("room") as Node2D).get("band_name")) == EXPECTED_PROTOTYPE_ROOMS[0],
 		"the hand-built Label wins over any planned room"
+	)
+
+	# Turning the pressing over, through Main, in the dry room that shows it
+	# best. The Label authors no air at all, so its far face is the clearest
+	# possible read on whether the flip actually re-presents a room.
+	var pressing: RefCounted = main.get("pressing")
+	_expect(pressing != null, "Main owns the session's pressing state")
+	_expect(not bool(pressing.call("on_b_side")), "Main boots on the side that got played")
+	var label_player: CharacterBody2D = main.get("player")
+	var authored_density: float = (main.get("room") as Node2D).get("air_density")
+	var live_grooves := _room_group_members(main.get("room"), &"live_groove").size()
+
+	main.call("_try_flip")
+	await process_frame
+	_expect(
+		not bool(pressing.call("on_b_side")),
+		"the pressing will not turn over without the Jump-Cut"
+	)
+
+	session_progression.call("unlock_refrain", ProgressionScript.Refrain.JUMP_CUT)
+	main.call("_try_flip")
+	await process_frame
+	_expect(bool(pressing.call("on_b_side")), "the Jump-Cut turns the pressing over")
+	_expect(
+		is_equal_approx(label_player.air_density, 1.0 - authored_density),
+		"the far face of dry wax gives Main's player thick air"
+	)
+	_expect(
+		label_player.air_strike_capacity() == 2,
+		"the B-side of a dry room answers a strike twice"
+	)
+	_expect(
+		label_player.gravity_mult < 1.0,
+		"thick air read from the far face also carries the player's weight"
+	)
+	_expect(
+		_room_group_members(main.get("room"), &"live_groove").is_empty(),
+		"Main quiets the room's A-side grooves when it turns the pressing"
+	)
+	_expect(
+		is_equal_approx(float((main.get("room") as Node2D).get("air_density")), authored_density),
+		"turning the pressing over never rewrites the room's authored air"
+	)
+
+	# A spent side lifts the needle on its own and hands the room back as
+	# authored. Headless frame deltas are tiny, so wait on the transition
+	# rather than on a fixed number of frames.
+	pressing.set("runtime_left", 0.0001)
+	for _frame in 120:
+		if not bool(pressing.call("on_b_side")):
+			break
+		await process_frame
+	_expect(not bool(pressing.call("on_b_side")), "a side spent under Main returns to the A-side")
+	_expect(
+		is_equal_approx(label_player.air_density, authored_density),
+		"the needle lifting restores the room's authored air"
+	)
+	_expect(
+		_room_group_members(main.get("room"), &"live_groove").size() == live_grooves,
+		"the needle lifting restores the room's live grooves"
+	)
+	_expect(
+		label_player.air_strike_capacity() == 1,
+		"back on the played side, only Gather's held breath remains"
 	)
 
 	# Let route/pickup one-shots finish before the existing audio teardown.

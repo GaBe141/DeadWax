@@ -311,6 +311,7 @@ func _build_room_notes() -> void:
 	block.add_theme_color_override("font_color", Color(ink.r, ink.g, ink.b, 0.9))
 	block.add_theme_color_override("font_outline_color", bg_color)
 	block.add_theme_constant_override("outline_size", 5)
+	_notes.append(block)
 	add_child(block)
 
 	_build_rewards(data)

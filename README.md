@@ -29,9 +29,12 @@ the compact traversal layout.
 - **W/S** (or arrows) — aim directional strikes while airborne.
 - **E** (or gamepad Y) — enter a nearby room passage.
 - **I** (or gamepad Start) — open **The Book**, the full-screen inventory.
+- **F** (or right shoulder) — **FLIP**: turn the pressing over. Needs the
+  **Jump-Cut**. Silent until you carry it.
 - **R** respawn at the current entry · **TAB** debug-build room cycle
 - **M** (debug builds) — walk the **planned world**: all 53 rooms of
   `data/world_map.json`, grayed in. TAB then cycles that atlas instead.
+- **G** (debug builds) — grant every Refrain, for feel-testing.
 
 ## Character progression
 
@@ -45,10 +48,35 @@ skill tree:
 - **Gather, Rest, and Jump-Cut** are earned Refrains. The first playable slice
   is **Gather**, waiting at the end of The Unplayed. It preserves one breath in
   dry wax; rooms that already grant more keep their original capacity.
+  **Jump-Cut** turns the pressing over (see The B-side); it is chalked in The
+  Mispress Core, deep in the Undersong.
 
 Progression currently lasts for the running session: it survives R respawns
-and physical room transitions, then resets on a fresh launch. Rest and Jump-Cut are
-represented in progression state but do not have gameplay effects yet.
+and physical room transitions, then resets on a fresh launch. Rest is
+represented in progression state but does not have a gameplay effect yet.
+
+## The B-side
+
+A record has two sides. **Jump-Cut** lets you turn the one you are standing on
+over, and the far face is the same room read from the side nobody played:
+
+- **The air inverts.** Spent wax reads thick — it answers a strike, and it
+  holds your weight. Thick wax reads dry, and stops answering.
+- **Grooves belong to a side.** Everything pressed loud on the A-side falls
+  quiet when you flip. The trade is legible in one room: lose your launches,
+  gain the air.
+- **The ink inverts.** Paper and print trade places; the world goes
+  scratchboard. Rooms are not duplicated — a room authors its A-side only.
+- **Burnishing is one-sided.** HUSH smoothed the face that was up. The B-side
+  of The Smoothed Floor still rings, so resonance works there.
+- **A side has a runtime.** The B-side plays down in about twelve seconds, then
+  the needle lifts and drops you back wherever you are standing. It rewinds
+  slowly while you are on the A-side. Every flip is a round trip you have to
+  plan — and the air holding you up is on a timer.
+
+Turning over is silent until Jump-Cut is carried; an unearned Refrain is never
+announced before it is found. The Bootlegger has an opinion about this:
+*don't touch the B-sides.*
 
 ## The Book
 

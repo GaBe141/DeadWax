@@ -4,6 +4,7 @@ extends Node2D
 
 const GrooveScript := preload("res://scripts/hot_groove.gd")
 const PatchScript := preload("res://scripts/polish_patch.gd")
+const PressingScript := preload("res://scripts/pressing_state.gd")
 const RefrainPickupScript := preload("res://scripts/refrain_pickup.gd")
 const RoomExitScript := preload("res://scripts/room_exit.gd")
 
@@ -31,6 +32,15 @@ var progression: RefCounted
 var bg_color := Color(0.85, 0.83, 0.78)
 var ink := Color(0.14, 0.13, 0.12)
 
+## Which face of the pressing this room is currently showing. Rooms author
+## their A-side and never their B-side: turning over is a presentation of the
+## same room, so nothing here is duplicated per side.
+var side := PressingScript.Side.A
+
+var _skins: Array[ColorRect] = []
+var _notes: Array[Label] = []
+var _grooves: Array[Node2D] = []
+
 func platform(pos: Vector2, size: Vector2) -> void:
 	var b := StaticBody2D.new()
 	b.position = pos
@@ -40,16 +50,42 @@ func platform(pos: Vector2, size: Vector2) -> void:
 	cs.shape = sh
 	b.add_child(cs)
 	var vis := ColorRect.new()
-	vis.color = ink
+	vis.color = _solid_color()
 	vis.size = size
 	vis.position = -size / 2.0
 	b.add_child(vis)
+	_skins.append(vis)
 	add_child(b)
 
-func groove(pos: Vector2) -> void:
+func groove(pos: Vector2, groove_side: int = PressingScript.Side.A) -> void:
 	var p := GrooveScript.new()
 	p.position = pos
+	p.side = groove_side
+	p.set_current_side(side)
+	_grooves.append(p)
 	add_child(p)
+
+## Turns the room over. Ink and paper trade places, grooves pressed on the far
+## face fall quiet, and anything HUSH burnished stops being burnished — he only
+## ever smoothed the side that was face-up.
+func apply_side(next_side: int) -> void:
+	side = next_side
+	var solid := _solid_color()
+	for skin in _skins:
+		if is_instance_valid(skin):
+			skin.color = solid
+	for note in _notes:
+		if is_instance_valid(note):
+			note.add_theme_color_override("font_color", Color(solid.r, solid.g, solid.b, 0.85))
+	for hot in _grooves:
+		if is_instance_valid(hot):
+			hot.call("set_current_side", next_side)
+	for child in get_children():
+		if child.is_in_group("hears_strikes") and "muted" in child:
+			child.set("muted", muted and next_side == PressingScript.Side.A)
+
+func _solid_color() -> Color:
+	return bg_color if side == PressingScript.Side.B else ink
 
 func patch(pos: Vector2) -> void:
 	var d := PatchScript.new()
@@ -108,6 +144,8 @@ func sign_label(pos: Vector2, text: String) -> void:
 	var l := Label.new()
 	l.text = text
 	l.position = pos
-	l.add_theme_color_override("font_color", Color(ink.r, ink.g, ink.b, 0.85))
+	var solid := _solid_color()
+	l.add_theme_color_override("font_color", Color(solid.r, solid.g, solid.b, 0.85))
 	l.add_theme_font_size_override("font_size", 15)
+	_notes.append(l)
 	add_child(l)

@@ -18,6 +18,7 @@ const ROOM_SCRIPTS := [
 const ROOM_IDS := [&"label", &"practice", &"verse", &"unplayed", &"smoothed"]
 const WorldMapScript := preload("res://scripts/world_map.gd")
 const GrayboxScript := preload("res://scripts/room_graybox.gd")
+const PressingScript := preload("res://scripts/pressing_state.gd")
 
 var player: CharacterBody2D
 var camera: Camera2D
@@ -31,6 +32,7 @@ var world: RefCounted
 ## The planned room currently grayed in, or empty while the hand-built
 ## prototype loop is running. Exactly one of the two is live at a time.
 var world_room_id: StringName = &""
+var pressing: RefCounted
 var _transition_pending := false
 
 var info: Label
@@ -54,6 +56,10 @@ func _ready() -> void:
 	progression = ProgressionScript.new()
 	progression.connect("refrain_unlocked", _on_refrain_unlocked)
 	progression.connect("technique_discovered", _on_technique_discovered)
+
+	pressing = PressingScript.new()
+	pressing.connect("side_changed", _on_side_changed)
+	pressing.connect("side_ended", _on_side_ended)
 
 	world = WorldMapScript.new()
 	if not bool(world.call("load_from")):
@@ -89,6 +95,11 @@ func _process(delta: float) -> void:
 			_debug_cycle_room()
 		if Input.is_action_just_pressed("world_map"):
 			_debug_toggle_world()
+		if Input.is_action_just_pressed("debug_grant"):
+			_debug_grant_refrains()
+	if Input.is_action_just_pressed("flip"):
+		_try_flip()
+	pressing.call("advance", delta)
 	if Input.is_action_just_pressed("restart"):
 		_respawn()
 	if player.global_position.y > room.death_y:
@@ -110,13 +121,22 @@ func _process(delta: float) -> void:
 	audio.set_hooded(player.hooded)
 	crackle_bar.size.x = 140.0 * clampf(player.noise, 0.0, 1.0)
 	crackle_bar.color = Color(0.9, 0.25, 0.5) if not player.hooded else Color(0.55, 0.52, 0.58)
-	status.text = "crackle %s   shine %d   hits taken %d%s\n%s" % [
+	status.text = "crackle %s   shine %d   hits taken %d%s   %s\n%s" % [
 		"·" if player.noise < 0.05 else "",
 		player.shine,
 		_hits_taken,
 		"   [HOODED]" if player.hooded else "",
+		_pressing_text(),
 		progression.call("hud_text"),
 	]
+
+func _pressing_text() -> String:
+	if not bool(progression.call("has_refrain", ProgressionScript.Refrain.JUMP_CUT)):
+		return ""
+	if not bool(pressing.call("on_b_side")):
+		return "side A   (rewound %d%%)" % int(float(pressing.call("runtime_ratio")) * 100.0)
+	var warning := " !!" if bool(pressing.call("is_running_out")) else ""
+	return "SIDE B — %.1fs left%s" % [float(pressing.get("runtime_left")), warning]
 
 # -- rooms --------------------------------------------------------------------
 
@@ -153,18 +173,13 @@ func _swap_room(next_room: Node2D, entry_id: StringName) -> void:
 	room.route_requested.connect(_on_route_requested)
 	room.route_blocked.connect(_on_route_blocked)
 	add_child(room)
-
-	player.air_density = room.air_density
-	player.gravity_mult = room.gravity_mult
-	player.fall_cap_mult = room.fall_cap_mult
-	player.groove_mult = room.groove_mult
-	player.air_strikes_max = room.air_strikes_max
-	player.refill_air_strikes()
+	room.call("apply_side", pressing.side)
+	_apply_room_air()
 
 	# wire the room's listeners after they enter the tree
 	call_deferred("_wire_room")
 
-	RenderingServer.set_default_clear_color(room.bg_color)
+	_apply_room_palette()
 	camera.limit_left = int(room.cam_limits.position.x)
 	camera.limit_top = int(room.cam_limits.position.y)
 	camera.limit_right = int(room.cam_limits.position.x + room.cam_limits.size.x)
@@ -173,7 +188,7 @@ func _swap_room(next_room: Node2D, entry_id: StringName) -> void:
 	_respawn()
 	var controls := "[A/D] move  [SPACE] jump  [J] strike  [K hold] hood  [L hold] kneel  [E/Y] passage  [I/START] book  [R] respawn"
 	if OS.is_debug_build():
-		controls += "  [TAB] debug room  [M] planned world"
+		controls += "  [TAB] debug room  [M] planned world  [G] grant refrains"
 	var banner := "DEAD WAX — M1"
 	if not world_room_id.is_empty():
 		banner = "DEAD WAX — planned world (graybox %d/%d)" % [
@@ -195,6 +210,71 @@ func _wire_room() -> void:
 		if n.has_signal("freed") and not n.freed.is_connected(_on_freed):
 			n.freed.connect(_on_freed)
 
+# -- the pressing -------------------------------------------------------------
+
+## The air a room presents is its authored A-side read through the current
+## side. On the A-side these are exactly the room's own values, so nothing
+## about the prototype loop changes until the player turns the wax over.
+func _apply_room_air() -> void:
+	var density: float = pressing.call("effective_density", room.air_density)
+	player.air_density = density
+	player.air_strikes_max = pressing.call(
+		"effective_air_strikes", room.air_strikes_max, room.air_density
+	)
+	if bool(pressing.call("on_b_side")):
+		# Weight follows the air it is read through, landing on The Unplayed's
+		# thick profile wherever the far face is fully unplayed.
+		player.gravity_mult = lerpf(1.0, 0.8, density)
+		player.fall_cap_mult = lerpf(1.0, 0.62, density)
+		player.groove_mult = lerpf(1.0, 1.3, density)
+	else:
+		player.gravity_mult = room.gravity_mult
+		player.fall_cap_mult = room.fall_cap_mult
+		player.groove_mult = room.groove_mult
+	player.refill_air_strikes()
+
+func _apply_room_palette() -> void:
+	var paper: Color = room.ink if bool(pressing.call("on_b_side")) else room.bg_color
+	RenderingServer.set_default_clear_color(paper)
+	_apply_hud_palette(paper)
+
+## The HUD is printed on whatever the room is printed on. Dark wax — The
+## Unplayed, or any room read from its far face — needs the plate inverted or
+## the readout sinks into the background.
+func _apply_hud_palette(paper: Color) -> void:
+	if info == null or status == null:
+		return
+	var dark_paper := paper.get_luminance() < 0.45
+	var text := Color(0.94, 0.92, 0.88) if dark_paper else Color(0.1, 0.09, 0.09)
+	var outline := Color(0.06, 0.05, 0.07, 0.75) if dark_paper else Color(1, 1, 1, 0.55)
+	for plate in [info, status]:
+		plate.add_theme_color_override("font_color", text)
+		plate.add_theme_color_override("font_outline_color", outline)
+
+## Turning the pressing over is a Jump-Cut. Without it the input is inert and
+## says nothing: an unearned Refrain is never announced before it is found.
+func _try_flip() -> void:
+	if _transition_pending:
+		return
+	if not bool(progression.call("has_refrain", ProgressionScript.Refrain.JUMP_CUT)):
+		return
+	if not bool(pressing.call("flip")):
+		_flash("not enough side left to turn.")
+
+func _on_side_changed(side: int) -> void:
+	room.call("apply_side", side)
+	_apply_room_air()
+	_apply_room_palette()
+	audio.play("flip", -8.0, 1.0 if side == PressingScript.Side.B else 1.18)
+	_shake = 6.0
+	if side == PressingScript.Side.B:
+		_flash("THE B-SIDE — nobody played this.")
+	else:
+		_flash("back to the side that got played.")
+
+func _on_side_ended() -> void:
+	_flash("the side ran out. the needle lifts.")
+
 # -- debug traversal ----------------------------------------------------------
 
 ## Cycles whichever atlas is live: the five prototype rooms, or the planned
@@ -205,6 +285,17 @@ func _debug_cycle_room() -> void:
 		return
 	var order: Array = world.get("room_order")
 	_load_world_room(order[(order.find(world_room_id) + 1) % order.size()], &"default")
+
+## Debug builds only. The Refrains are scattered deep in the planned world, so
+## reaching one to feel-test it costs more than the test is worth.
+func _debug_grant_refrains() -> void:
+	var granted := 0
+	for refrain in ProgressionScript.REFRAIN_ORDER:
+		if bool(progression.call("unlock_refrain", refrain)):
+			granted += 1
+	_apply_room_air()
+	if granted == 0:
+		_flash("every Refrain is already carried.")
 
 func _debug_toggle_world() -> void:
 	if not world_room_id.is_empty():
@@ -380,11 +471,13 @@ func _setup_input() -> void:
 	_action("strike", [KEY_J, KEY_X], [JOY_BUTTON_X])
 	_action("lift", [KEY_K, KEY_C], [JOY_BUTTON_B])
 	_action("set", [KEY_L], [JOY_BUTTON_LEFT_SHOULDER])
+	_action("flip", [KEY_F], [JOY_BUTTON_RIGHT_SHOULDER])
 	_action("enter_passage", [KEY_E], [JOY_BUTTON_Y])
 	_action("inventory", [KEY_I], [JOY_BUTTON_START])
 	_action("restart", [KEY_R], [JOY_BUTTON_BACK])
 	_action("switch_room", [KEY_TAB])
 	_action("world_map", [KEY_M])
+	_action("debug_grant", [KEY_G])
 
 func _action(action_name: String, keys: Array, pad_buttons: Array = [], axes: Array = []) -> void:
 	if InputMap.has_action(action_name):
