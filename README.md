@@ -30,6 +30,8 @@ the compact traversal layout.
 - **E** (or gamepad Y) — enter a nearby room passage.
 - **I** (or gamepad Start) — open **The Book**, the full-screen inventory.
 - **R** respawn at the current entry · **TAB** debug-build room cycle
+- **M** (debug builds) — walk the **planned world**: all 53 rooms of
+  `data/world_map.json`, grayed in. TAB then cycles that atlas instead.
 
 ## Character progression
 
@@ -80,6 +82,19 @@ LABEL <-> PRACTICE <-> VERSE <-> UNPLAYED <-> SMOOTHED <-> LABEL
    worthless, three rung-backs to win. Spacing and timing, nothing else.
    This room decides whether the rival duels will feel good.
 
+## The planned world
+
+The five rooms above are hand-built. Behind them, `data/world_map.json` plans
+53 rooms across six strata, and the runtime now grays every one of them in:
+correct footprint, stratum palette and air, one passage per planned route, and
+Refrain seals where the plan asks for them. Press **M** in a debug build to
+walk it.
+
+These are shells, not designed rooms — structure to build into, and a way to
+feel the shape and scale of the full map before it is authored. A graybox is
+replaced by writing a room script that claims its id; hand-authored rooms
+always win. See `ROUTING.md` for how the plan becomes geometry.
+
 ## What to feel for (bring notes)
 
 - Does the parry window (100 ms) feel fair after learning the tell?
@@ -99,8 +114,10 @@ LABEL <-> PRACTICE <-> VERSE <-> UNPLAYED <-> SMOOTHED <-> LABEL
 ## Development checks
 
 The dependency-free smoke suite validates all project resources, compact-map
-topology, every current prototype passage, named arrivals, and the runtime
-input map. Run
+topology, every current prototype passage, named arrivals, the runtime input
+map, and the grayed-in world: every planned room boots, its passages match the
+plan, its arrivals resolve, its climbs fit a plain jump, and a walk from the
+Headshell still reaches all 53 rooms and every Refrain. Run
 `.\deadwax.cmd check` before committing. GitHub runs the same checks on pushes and
 pull requests. Gameplay feel, real audio, and controller behavior still require
 the manual checklist in `PLAYTEST.md`.

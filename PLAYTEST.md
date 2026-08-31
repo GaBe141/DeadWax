@@ -85,6 +85,18 @@ Use this checklist for a 10–15 minute prototype pass. Run `.\deadwax.cmd play`
 - [ ] E/Y on the shelf takes the new shortcut to Smoothed's right side.
 - [ ] Follow the reverse passages to The Unplayed: Gather stays gone and capacity stays two.
 
+## 7. The planned world (debug builds, optional)
+
+Scaffolding, not design — check shape and traversal, not feel.
+
+- [ ] **M** drops you into The Headshell; the HUD reads `planned world (graybox n/53)`.
+- [ ] Each stratum reads as its own palette, and the air changes below the Scratch.
+- [ ] Passages name their destination; E/Y crosses and lands you on the near side.
+- [ ] A Refrain shortcut reads SEALED until you carry it; a technique passage never seals.
+- [ ] Every climb is makeable on legs alone — no passage needs a breath you lack.
+- [ ] Gather, Rest, and Jump-Cut can each be reached and collected on one walk.
+- [ ] **M** returns to The Label with session progression intact.
+
 ## Feel questions
 
 - Does the 100 ms parry window feel fair after learning the three-tick tell?

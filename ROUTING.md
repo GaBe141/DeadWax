@@ -54,10 +54,38 @@ linking Walt directly to Gather, giving Rest a short Mispress route, and
 turning Jump-Cut into a breakout toward The Crates instead of another
 cul-de-sac.
 
+## The grayed-in runtime
+
+`scripts/world_map.gd` reads the plan at boot and resolves its contact graph;
+`scripts/room_graybox.gd` builds one traversable shell per planned room. All 53
+are walkable today — as structure, not as design.
+
+- One grid cell is 600 x 360 px, so a room's planned footprint is its real
+  footprint. The Undercross really is a 6000 px corridor.
+- Each stratum supplies its palette and its air. The Scratch remains the
+  boundary the fiction names: dry above it, thick enough to swim below.
+- A room opens one passage per planned route and anchors one `from_<room>`
+  arrival per inbound route. A one-way plan route is a door on one side and an
+  anchor on the other, so the Arm's seal still only falls one way.
+- Refrain requirements seal a passage. Technique requirements are printed on
+  the plaque and gate nothing, because knowledge is journal state.
+- Refrains are the only reward a graybox grants, on a plinth two rungs up.
+  That keeps the sealed shortcuts honest: a walk of the whole world can earn
+  everything the walk itself asks for.
+- Climbs are ladders of two alternating columns, sized so every hop fits inside
+  Skip's plain jump. No graybox needs a Refrain to cross itself.
+
+Hand-authored rooms always win: Main only grays in ids the prototype loop does
+not claim, and the five-room circuit is untouched. In debug builds `M` toggles
+between the prototype loop and the planned world, and `TAB` cycles whichever
+atlas is live.
+
 ## Trade-offs and next pass
 
-- The planning map is still data-only; the runtime prototype does not load its
-  53 rooms yet.
+- Grayboxes are shells. They carry topology, air, and gating — no encounters,
+  no lessons, no hand-placed grooves. Replacing one means writing a room script
+  that claims its id, exactly as the current five do.
+- Progression is still session-only, so a world walk resets on relaunch.
 - Encounter completion is not persistent, so the Smoothed passage is placed
   past the bout but is not locked to victory. Add world-state persistence
   before making that gate mandatory.

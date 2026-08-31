@@ -16,6 +16,8 @@ const ROOM_SCRIPTS := [
 	preload("res://scripts/room_smoothed.gd"),
 ]
 const ROOM_IDS := [&"label", &"practice", &"verse", &"unplayed", &"smoothed"]
+const WorldMapScript := preload("res://scripts/world_map.gd")
+const GrayboxScript := preload("res://scripts/room_graybox.gd")
 
 var player: CharacterBody2D
 var camera: Camera2D
@@ -25,6 +27,10 @@ var room_idx := 0
 var room_entry_id: StringName = &"default"
 var progression: RefCounted
 var inventory: CanvasLayer
+var world: RefCounted
+## The planned room currently grayed in, or empty while the hand-built
+## prototype loop is running. Exactly one of the two is live at a time.
+var world_room_id: StringName = &""
 var _transition_pending := false
 
 var info: Label
@@ -48,6 +54,10 @@ func _ready() -> void:
 	progression = ProgressionScript.new()
 	progression.connect("refrain_unlocked", _on_refrain_unlocked)
 	progression.connect("technique_discovered", _on_technique_discovered)
+
+	world = WorldMapScript.new()
+	if not bool(world.call("load_from")):
+		world = null
 
 	audio = AudioScript.new()
 	add_child(audio)
@@ -74,8 +84,11 @@ func _ready() -> void:
 	_load_room(0)
 
 func _process(delta: float) -> void:
-	if OS.is_debug_build() and not _transition_pending and Input.is_action_just_pressed("switch_room"):
-		_load_room((room_idx + 1) % ROOM_SCRIPTS.size(), &"default")
+	if OS.is_debug_build() and not _transition_pending:
+		if Input.is_action_just_pressed("switch_room"):
+			_debug_cycle_room()
+		if Input.is_action_just_pressed("world_map"):
+			_debug_toggle_world()
 	if Input.is_action_just_pressed("restart"):
 		_respawn()
 	if player.global_position.y > room.death_y:
@@ -112,11 +125,29 @@ func _load_room(i: int, entry_id: StringName = &"default") -> void:
 		push_error("Unknown prototype room index: %d" % i)
 		return
 	room_idx = i
+	world_room_id = &""
+	_swap_room(ROOM_SCRIPTS[i].new(), entry_id)
+
+## Grays in one room of the planned world. Hand-built rooms always win: Main
+## only reaches here for ids the prototype loop does not claim.
+func _load_world_room(id: StringName, entry_id: StringName = &"default") -> void:
+	if world == null or not bool(world.call("has_room", id)):
+		push_error("Unknown world room: %s" % id)
+		return
+	var graybox := GrayboxScript.new()
+	graybox.progression = progression
+	if not graybox.configure(world, id):
+		graybox.free()
+		return
+	world_room_id = id
+	_swap_room(graybox, entry_id)
+
+func _swap_room(next_room: Node2D, entry_id: StringName) -> void:
 	room_entry_id = entry_id
 	if room != null:
 		remove_child(room)
 		room.queue_free()
-	room = ROOM_SCRIPTS[i].new()
+	room = next_room
 	room.progression = progression
 	room.refrain_collected.connect(_on_refrain_collected)
 	room.route_requested.connect(_on_route_requested)
@@ -142,8 +173,14 @@ func _load_room(i: int, entry_id: StringName = &"default") -> void:
 	_respawn()
 	var controls := "[A/D] move  [SPACE] jump  [J] strike  [K hold] hood  [L hold] kneel  [E/Y] passage  [I/START] book  [R] respawn"
 	if OS.is_debug_build():
-		controls += "  [TAB] debug room"
-	info.text = "DEAD WAX — M1\nROOM: %s\n%s\n%s" % [room.band_name, room.band_desc, controls]
+		controls += "  [TAB] debug room  [M] planned world"
+	var banner := "DEAD WAX — M1"
+	if not world_room_id.is_empty():
+		banner = "DEAD WAX — planned world (graybox %d/%d)" % [
+			int(world.get("room_order").find(world_room_id)) + 1,
+			int(world.call("room_count")),
+		]
+	info.text = "%s\nROOM: %s\n%s\n%s" % [banner, room.band_name, room.band_desc, controls]
 
 func _wire_room() -> void:
 	for n in get_tree().get_nodes_in_group("hears_strikes"):
@@ -157,6 +194,28 @@ func _wire_room() -> void:
 			n.opened.connect(_on_door_opened)
 		if n.has_signal("freed") and not n.freed.is_connected(_on_freed):
 			n.freed.connect(_on_freed)
+
+# -- debug traversal ----------------------------------------------------------
+
+## Cycles whichever atlas is live: the five prototype rooms, or the planned
+## world in map order. Debug builds only — normal play uses passages.
+func _debug_cycle_room() -> void:
+	if world_room_id.is_empty():
+		_load_room((room_idx + 1) % ROOM_SCRIPTS.size(), &"default")
+		return
+	var order: Array = world.get("room_order")
+	_load_world_room(order[(order.find(world_room_id) + 1) % order.size()], &"default")
+
+func _debug_toggle_world() -> void:
+	if not world_room_id.is_empty():
+		_load_room(0, &"default")
+		_flash("back to the prototype loop.")
+		return
+	if world == null:
+		_flash("the planned world did not load.")
+		return
+	_load_world_room(world.call("spawn_room_id"), &"default")
+	_flash("the planned world, grayed in.")
 
 func _respawn() -> void:
 	player.global_position = room.entry_position(room_entry_id)
@@ -219,16 +278,21 @@ func _on_refrain_collected(refrain: int) -> void:
 func _on_route_requested(target_room: StringName, target_entry: StringName) -> void:
 	if _transition_pending:
 		return
-	var target_index := ROOM_IDS.find(target_room)
-	if target_index < 0:
-		push_error("Unknown prototype route target: %s" % target_room)
+	if ROOM_IDS.find(target_room) < 0 and (
+		world == null or not bool(world.call("has_room", target_room))
+	):
+		push_error("Unknown route target: %s" % target_room)
 		return
 	_transition_pending = true
 	audio.play("door", -10.0)
-	call_deferred("_complete_route_transition", target_index, target_entry)
+	call_deferred("_complete_route_transition", target_room, target_entry)
 
-func _complete_route_transition(target_index: int, target_entry: StringName) -> void:
-	_load_room(target_index, target_entry)
+func _complete_route_transition(target_room: StringName, target_entry: StringName) -> void:
+	var target_index := ROOM_IDS.find(target_room)
+	if target_index >= 0:
+		_load_room(target_index, target_entry)
+	else:
+		_load_world_room(target_room, target_entry)
 	_transition_pending = false
 
 func _on_route_blocked(message: String) -> void:
@@ -320,6 +384,7 @@ func _setup_input() -> void:
 	_action("inventory", [KEY_I], [JOY_BUTTON_START])
 	_action("restart", [KEY_R], [JOY_BUTTON_BACK])
 	_action("switch_room", [KEY_TAB])
+	_action("world_map", [KEY_M])
 
 func _action(action_name: String, keys: Array, pad_buttons: Array = [], axes: Array = []) -> void:
 	if InputMap.has_action(action_name):

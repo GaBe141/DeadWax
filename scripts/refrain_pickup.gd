@@ -23,7 +23,7 @@ func _ready() -> void:
 		queue_free()
 		return
 	var label := Label.new()
-	label.text = ProgressionScript.new().refrain_label(refrain)
+	label.text = ProgressionScript.refrain_label(refrain)
 	label.position = Vector2(-36, 38)
 	label.add_theme_font_size_override("font_size", 15)
 	label.add_theme_color_override("font_color", CHALK)

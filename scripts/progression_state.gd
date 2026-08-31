@@ -104,7 +104,22 @@ func restore_snapshot(data: Dictionary) -> bool:
 			_techniques[technique] = true
 	return true
 
-func refrain_label(refrain: int) -> String:
+## Canonical-key lookups for data that names progression by id, such as the
+## world map's route requirements and rewards. These resolve names only; they
+## never grant, and a technique key still gates nothing.
+static func refrain_for_key(key: String) -> int:
+	for refrain in REFRAIN_KEYS:
+		if String(REFRAIN_KEYS[refrain]) == key:
+			return int(refrain)
+	return -1
+
+static func technique_for_key(key: String) -> int:
+	for technique in TECHNIQUE_KEYS:
+		if String(TECHNIQUE_KEYS[technique]) == key:
+			return int(technique)
+	return -1
+
+static func refrain_label(refrain: int) -> String:
 	match refrain:
 		Refrain.GATHER:
 			return "GATHER"
@@ -114,7 +129,7 @@ func refrain_label(refrain: int) -> String:
 			return "JUMP-CUT"
 	return "UNKNOWN REFRAIN"
 
-func technique_label(technique: int) -> String:
+static func technique_label(technique: int) -> String:
 	match technique:
 		Technique.COUNT_IN:
 			return "COUNT-IN"
