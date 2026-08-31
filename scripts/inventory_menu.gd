@@ -6,6 +6,10 @@ signal opened
 signal closed
 
 const ProgressionScript := preload("res://scripts/progression_state.gd")
+const PressScript := preload("res://scripts/press.gd")
+
+## Above this size The Book is shouting, and shouting is set in wood type.
+const DISPLAY_AT := 24
 
 const CORE_SLOTS := [&"strike", &"hood", &"set"]
 
@@ -255,7 +259,8 @@ func _add_shelf(parent: VBoxContainer, title: String, slots: Array) -> void:
 		button.size_flags_vertical = Control.SIZE_EXPAND_FILL
 		button.focus_mode = Control.FOCUS_ALL
 		button.alignment = HORIZONTAL_ALIGNMENT_LEFT
-		button.add_theme_font_size_override("font_size", 16)
+		button.add_theme_font_override("font", PressScript.BodyFont)
+		button.add_theme_font_size_override("font_size", PressScript.SIZE_BODY)
 		button.add_theme_color_override("font_color", PAPER)
 		button.add_theme_color_override("font_hover_color", PAPER)
 		button.add_theme_color_override("font_focus_color", PAPER)
@@ -409,11 +414,16 @@ func _shine_count() -> int:
 func _on_progression_changed(_id: int) -> void:
 	_refresh()
 
+## The Book is set from the same case as the world: wood type for the headings
+## it shouts, set text for everything it merely records.
 func _make_label(text: String, font_size: int, color: Color) -> Label:
 	var label_node := Label.new()
 	label_node.text = text
-	label_node.add_theme_font_size_override("font_size", font_size)
-	label_node.add_theme_color_override("font_color", color)
+	if font_size >= DISPLAY_AT:
+		PressScript.set_display(label_node, font_size, color)
+		label_node.add_theme_constant_override("font_spacing_glyph", PressScript.TRACKING_DISPLAY)
+	else:
+		PressScript.set_body(label_node, font_size, color)
 	return label_node
 
 func _panel_style() -> StyleBoxFlat:
