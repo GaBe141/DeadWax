@@ -31,11 +31,11 @@ func _ready() -> void:
 
 	# spawn island
 	platform(Vector2(300, 560), Vector2(360, 50))
-	sign_label(Vector2(120, 360), "nothing down here was ever played.\nit has waited. it is THICK.")
+	sign_label(Vector2(120, 344), "nothing down here was ever played.\nit has waited. it is THICK.")
 	sign_label(Vector2(140, 420), "STRIKE mid-air [J]. steer with held direction.\ntwo breaths, then touch stone.")
 
 	# POGO PADS — strike a foe to recoil off it. combat carries you.
-	sign_label(Vector2(120, 476), "the dummies are pogo pads:\nSTRIKE one to bounce off it.\nchain jet -> pogo -> fling. never land.")
+	sign_label(Vector2(120, 496), "the dummies are pogo pads:\nSTRIKE one to bounce off it.\nchain jet -> pogo -> fling. never land.")
 	_pad(Vector2(1000, 320))
 	_pad(Vector2(1520, 20))
 	_pad(Vector2(2060, -180))

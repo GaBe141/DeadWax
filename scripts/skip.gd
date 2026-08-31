@@ -79,6 +79,11 @@ const IRON := Color(0.36, 0.35, 0.37)
 const PALE := Color(0.92, 0.90, 0.85)
 const PINK := Color(0.90, 0.25, 0.50)
 const HOODGREY := Color(0.55, 0.52, 0.58)
+const IRON_REVERSED := Color(0.62, 0.60, 0.63)
+
+## Skip is inked to stay legible on whatever stock the room is printed on:
+## the same figure, reversed out when the page goes dark.
+var _body := IRON
 
 func _ready() -> void:
 	add_to_group("player")
@@ -260,7 +265,7 @@ func _draw() -> void:
 		draw_circle(Vector2(3.5, -12.0), 1.6, HOODGREY)
 		return
 	var flash := _hit_flash > 0.0 and int(_hit_flash * 20.0) % 2 == 0
-	draw_colored_polygon(_shape_pts, PALE if flash else IRON)
+	draw_colored_polygon(_shape_pts, PALE if flash else _body)
 	var outline := PackedVector2Array()
 	for i in _shape_pts.size():
 		outline.append(_shape_pts[i] + _jit[i])
@@ -290,3 +295,7 @@ func _teardrop() -> PackedVector2Array:
 		var t := lerpf(-0.55, 3.69, i / 14.0)
 		pts.append(Vector2(0, 8) + Vector2(cos(t), sin(t)) * 19.0)
 	return pts
+
+func set_page(stock: Color) -> void:
+	_body = IRON_REVERSED if stock.get_luminance() < 0.45 else IRON
+	queue_redraw()

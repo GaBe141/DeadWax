@@ -4,6 +4,8 @@ extends Node2D
 
 const GrooveScript := preload("res://scripts/hot_groove.gd")
 const PatchScript := preload("res://scripts/polish_patch.gd")
+const PressingScript := preload("res://scripts/pressing_state.gd")
+const PressScript := preload("res://scripts/press.gd")
 const RefrainPickupScript := preload("res://scripts/refrain_pickup.gd")
 const RoomExitScript := preload("res://scripts/room_exit.gd")
 
@@ -31,6 +33,16 @@ var progression: RefCounted
 var bg_color := Color(0.85, 0.83, 0.78)
 var ink := Color(0.14, 0.13, 0.12)
 
+## Which face of the pressing this room is currently showing. Rooms author
+## their A-side and never their B-side: turning over is a presentation of the
+## same room, so nothing here is duplicated per side.
+var side := PressingScript.Side.A
+
+var _skins: Array[ColorRect] = []
+var _notes: Array[Control] = []
+var _grooves: Array[Node2D] = []
+var _backdrop: ColorRect
+
 func platform(pos: Vector2, size: Vector2) -> void:
 	var b := StaticBody2D.new()
 	b.position = pos
@@ -39,17 +51,58 @@ func platform(pos: Vector2, size: Vector2) -> void:
 	sh.size = size
 	cs.shape = sh
 	b.add_child(cs)
-	var vis := ColorRect.new()
-	vis.color = ink
-	vis.size = size
-	vis.position = -size / 2.0
+	var vis := PressScript.plate(size, _solid_color(), _stock_color(), PressScript.PINK, pos.x + pos.y)
 	b.add_child(vis)
+	_skins.append(vis)
 	add_child(b)
 
-func groove(pos: Vector2) -> void:
+## The halftone tint block a room is printed over. Main lays this down once the
+## room is in the tree, so no room script has to think about its own backdrop.
+func lay_backdrop(bounds: Rect2) -> void:
+	if _backdrop != null:
+		return
+	_backdrop = PressScript.backdrop(bounds.size, _solid_color())
+	_backdrop.position = bounds.position
+	_backdrop.z_index = -100
+	add_child(_backdrop)
+
+func groove(pos: Vector2, groove_side: int = PressingScript.Side.A) -> void:
 	var p := GrooveScript.new()
 	p.position = pos
+	p.side = groove_side
+	p.set_current_side(side)
+	_grooves.append(p)
 	add_child(p)
+
+## Turns the room over. Ink and paper trade places, grooves pressed on the far
+## face fall quiet, and anything HUSH burnished stops being burnished — he only
+## ever smoothed the side that was face-up.
+func apply_side(next_side: int) -> void:
+	side = next_side
+	var solid := _solid_color()
+	var stock := _stock_color()
+	for skin in _skins:
+		if is_instance_valid(skin):
+			PressScript.reink(skin, solid, stock, PressScript.PINK)
+	for note in _notes:
+		if is_instance_valid(note):
+			PressScript.recard(note, solid, stock, PressScript.PINK)
+	if _backdrop != null:
+		PressScript.retint_backdrop(_backdrop, solid)
+	for hot in _grooves:
+		if is_instance_valid(hot):
+			hot.call("set_current_side", next_side)
+	for child in get_children():
+		if child.is_in_group("hears_strikes") and "muted" in child:
+			child.set("muted", muted and next_side == PressingScript.Side.A)
+
+## The ink a room is currently printed in, and the stock under it. Turning the
+## pressing over trades the two.
+func _solid_color() -> Color:
+	return bg_color if side == PressingScript.Side.B else ink
+
+func _stock_color() -> Color:
+	return ink if side == PressingScript.Side.B else bg_color
 
 func patch(pos: Vector2) -> void:
 	var d := PatchScript.new()
@@ -104,10 +157,21 @@ func _on_exit_route_requested(target_room: StringName, target_entry: StringName)
 func _on_exit_route_blocked(message: String) -> void:
 	route_blocked.emit(message)
 
+## Room text is pasted up as a card, not floated as a caption: stock, a struck
+## rule, and set type. A heading is pulled from a leading ALL-CAPS line so
+## existing signage keeps reading the way it was written.
 func sign_label(pos: Vector2, text: String) -> void:
-	var l := Label.new()
-	l.text = text
-	l.position = pos
-	l.add_theme_color_override("font_color", Color(ink.r, ink.g, ink.b, 0.85))
-	l.add_theme_font_size_override("font_size", 15)
-	add_child(l)
+	var heading := ""
+	var body := text
+	var break_at := text.find("\n")
+	if break_at > 0:
+		var first := text.substr(0, break_at)
+		if first == first.to_upper() and first.strip_edges().length() > 2:
+			heading = first.strip_edges()
+			body = text.substr(break_at + 1)
+	var note := PressScript.card(
+		body, _solid_color(), _stock_color(), PressScript.PINK, PressScript.SIZE_BODY, heading
+	)
+	note.position = pos
+	_notes.append(note)
+	add_child(note)

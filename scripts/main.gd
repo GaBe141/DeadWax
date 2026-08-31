@@ -16,6 +16,12 @@ const ROOM_SCRIPTS := [
 	preload("res://scripts/room_smoothed.gd"),
 ]
 const ROOM_IDS := [&"label", &"practice", &"verse", &"unplayed", &"smoothed"]
+const WorldMapScript := preload("res://scripts/world_map.gd")
+const GrayboxScript := preload("res://scripts/room_graybox.gd")
+const PressingScript := preload("res://scripts/pressing_state.gd")
+const PressScript := preload("res://scripts/press.gd")
+
+const MARGIN := 22.0
 
 var player: CharacterBody2D
 var camera: Camera2D
@@ -25,11 +31,21 @@ var room_idx := 0
 var room_entry_id: StringName = &"default"
 var progression: RefCounted
 var inventory: CanvasLayer
+var world: RefCounted
+## The planned room currently grayed in, or empty while the hand-built
+## prototype loop is running. Exactly one of the two is live at a time.
+var world_room_id: StringName = &""
+var pressing: RefCounted
 var _transition_pending := false
 
-var info: Label
+var title: Label
+var subtitle: Label
+var title_rule: ColorRect
+var controls_note: Label
+var masthead: ColorRect
 var feedback: Label
 var status: Label
+var paper: ColorRect
 var crackle_bar: ColorRect
 var _fb_t := 0.0
 var _shake := 0.0
@@ -48,6 +64,14 @@ func _ready() -> void:
 	progression = ProgressionScript.new()
 	progression.connect("refrain_unlocked", _on_refrain_unlocked)
 	progression.connect("technique_discovered", _on_technique_discovered)
+
+	pressing = PressingScript.new()
+	pressing.connect("side_changed", _on_side_changed)
+	pressing.connect("side_ended", _on_side_ended)
+
+	world = WorldMapScript.new()
+	if not bool(world.call("load_from")):
+		world = null
 
 	audio = AudioScript.new()
 	add_child(audio)
@@ -74,8 +98,16 @@ func _ready() -> void:
 	_load_room(0)
 
 func _process(delta: float) -> void:
-	if OS.is_debug_build() and not _transition_pending and Input.is_action_just_pressed("switch_room"):
-		_load_room((room_idx + 1) % ROOM_SCRIPTS.size(), &"default")
+	if OS.is_debug_build() and not _transition_pending:
+		if Input.is_action_just_pressed("switch_room"):
+			_debug_cycle_room()
+		if Input.is_action_just_pressed("world_map"):
+			_debug_toggle_world()
+		if Input.is_action_just_pressed("debug_grant"):
+			_debug_grant_refrains()
+	if Input.is_action_just_pressed("flip"):
+		_try_flip()
+	pressing.call("advance", delta)
 	if Input.is_action_just_pressed("restart"):
 		_respawn()
 	if player.global_position.y > room.death_y:
@@ -97,13 +129,22 @@ func _process(delta: float) -> void:
 	audio.set_hooded(player.hooded)
 	crackle_bar.size.x = 140.0 * clampf(player.noise, 0.0, 1.0)
 	crackle_bar.color = Color(0.9, 0.25, 0.5) if not player.hooded else Color(0.55, 0.52, 0.58)
-	status.text = "crackle %s   shine %d   hits taken %d%s\n%s" % [
+	status.text = "crackle %s   shine %d   hits taken %d%s   %s\n%s" % [
 		"·" if player.noise < 0.05 else "",
 		player.shine,
 		_hits_taken,
 		"   [HOODED]" if player.hooded else "",
+		_pressing_text(),
 		progression.call("hud_text"),
 	]
+
+func _pressing_text() -> String:
+	if not bool(progression.call("has_refrain", ProgressionScript.Refrain.JUMP_CUT)):
+		return ""
+	if not bool(pressing.call("on_b_side")):
+		return "side A   (rewound %d%%)" % int(float(pressing.call("runtime_ratio")) * 100.0)
+	var warning := " !!" if bool(pressing.call("is_running_out")) else ""
+	return "SIDE B — %.1fs left%s" % [float(pressing.get("runtime_left")), warning]
 
 # -- rooms --------------------------------------------------------------------
 
@@ -112,38 +153,67 @@ func _load_room(i: int, entry_id: StringName = &"default") -> void:
 		push_error("Unknown prototype room index: %d" % i)
 		return
 	room_idx = i
+	world_room_id = &""
+	_swap_room(ROOM_SCRIPTS[i].new(), entry_id)
+
+## Grays in one room of the planned world. Hand-built rooms always win: Main
+## only reaches here for ids the prototype loop does not claim.
+func _load_world_room(id: StringName, entry_id: StringName = &"default") -> void:
+	if world == null or not bool(world.call("has_room", id)):
+		push_error("Unknown world room: %s" % id)
+		return
+	var graybox := GrayboxScript.new()
+	graybox.progression = progression
+	if not graybox.configure(world, id):
+		graybox.free()
+		return
+	world_room_id = id
+	_swap_room(graybox, entry_id)
+
+func _swap_room(next_room: Node2D, entry_id: StringName) -> void:
 	room_entry_id = entry_id
 	if room != null:
 		remove_child(room)
 		room.queue_free()
-	room = ROOM_SCRIPTS[i].new()
+	room = next_room
 	room.progression = progression
 	room.refrain_collected.connect(_on_refrain_collected)
 	room.route_requested.connect(_on_route_requested)
 	room.route_blocked.connect(_on_route_blocked)
 	add_child(room)
-
-	player.air_density = room.air_density
-	player.gravity_mult = room.gravity_mult
-	player.fall_cap_mult = room.fall_cap_mult
-	player.groove_mult = room.groove_mult
-	player.air_strikes_max = room.air_strikes_max
-	player.refill_air_strikes()
+	room.call("lay_backdrop", room.cam_limits)
+	room.call("apply_side", pressing.side)
+	_apply_room_air()
 
 	# wire the room's listeners after they enter the tree
 	call_deferred("_wire_room")
 
-	RenderingServer.set_default_clear_color(room.bg_color)
+	_apply_room_palette()
 	camera.limit_left = int(room.cam_limits.position.x)
 	camera.limit_top = int(room.cam_limits.position.y)
 	camera.limit_right = int(room.cam_limits.position.x + room.cam_limits.size.x)
 	camera.limit_bottom = int(room.cam_limits.position.y + room.cam_limits.size.y)
 
 	_respawn()
-	var controls := "[A/D] move  [SPACE] jump  [J] strike  [K hold] hood  [L hold] kneel  [E/Y] passage  [I/START] book  [R] respawn"
+	title.text = String(room.band_name).to_upper()
+	title_rule.size.x = maxf(title.get_minimum_size().x, 90.0)
+	var imprint := String(room.band_desc)
+	if not world_room_id.is_empty():
+		imprint = "GRAYBOX %d/%d · %s" % [
+			int(world.get("room_order").find(world_room_id)) + 1,
+			int(world.call("room_count")),
+			imprint,
+		]
+	subtitle.text = imprint
+	masthead.size = Vector2(
+		maxf(title.get_minimum_size().x, subtitle.get_minimum_size().x) + MARGIN * 2.0,
+		78.0
+	)
 	if OS.is_debug_build():
-		controls += "  [TAB] debug room"
-	info.text = "DEAD WAX — M1\nROOM: %s\n%s\n%s" % [room.band_name, room.band_desc, controls]
+		controls_note.text = (
+			"[A/D] move  [SPACE] jump  [J] strike  [K] hood  [L] kneel  [F] flip"
+			+ "  [E] passage  [I] book  [R] respawn  [TAB] room  [M] world  [G] refrains"
+		)
 
 func _wire_room() -> void:
 	for n in get_tree().get_nodes_in_group("hears_strikes"):
@@ -157,6 +227,116 @@ func _wire_room() -> void:
 			n.opened.connect(_on_door_opened)
 		if n.has_signal("freed") and not n.freed.is_connected(_on_freed):
 			n.freed.connect(_on_freed)
+
+# -- the pressing -------------------------------------------------------------
+
+## The air a room presents is its authored A-side read through the current
+## side. On the A-side these are exactly the room's own values, so nothing
+## about the prototype loop changes until the player turns the wax over.
+func _apply_room_air() -> void:
+	var density: float = pressing.call("effective_density", room.air_density)
+	player.air_density = density
+	player.air_strikes_max = pressing.call(
+		"effective_air_strikes", room.air_strikes_max, room.air_density
+	)
+	if bool(pressing.call("on_b_side")):
+		# Weight follows the air it is read through, landing on The Unplayed's
+		# thick profile wherever the far face is fully unplayed.
+		player.gravity_mult = lerpf(1.0, 0.8, density)
+		player.fall_cap_mult = lerpf(1.0, 0.62, density)
+		player.groove_mult = lerpf(1.0, 1.3, density)
+	else:
+		player.gravity_mult = room.gravity_mult
+		player.fall_cap_mult = room.fall_cap_mult
+		player.groove_mult = room.groove_mult
+	player.refill_air_strikes()
+
+func _apply_room_palette() -> void:
+	var paper: Color = room.ink if bool(pressing.call("on_b_side")) else room.bg_color
+	RenderingServer.set_default_clear_color(paper)
+	_apply_hud_palette(paper)
+	if player != null:
+		player.call("set_page", paper)
+
+## The HUD is printed in the room's own ink, on the room's own stock. Dark wax
+## — The Unplayed, or any room read from its far face — inverts the plate, and
+## the sheet's vignette re-inks with it.
+func _apply_hud_palette(stock: Color) -> void:
+	if title == null or status == null:
+		return
+	var dark_stock := stock.get_luminance() < 0.45
+	var text := Color(0.94, 0.92, 0.88) if dark_stock else Color(0.1, 0.09, 0.09)
+	title.add_theme_color_override("font_color", text)
+	subtitle.add_theme_color_override("font_color", Color(text.r, text.g, text.b, 0.72))
+	status.add_theme_color_override("font_color", Color(text.r, text.g, text.b, 0.85))
+	controls_note.add_theme_color_override("font_color", Color(text.r, text.g, text.b, 0.4))
+	masthead.color = Color(stock.r, stock.g, stock.b, 0.92)
+	feedback.add_theme_color_override(
+		"font_outline_color", Color(stock.r, stock.g, stock.b, 0.9)
+	)
+	if paper != null:
+		# Vignette in the ink of the room, so the corners darken on light stock
+		# and the sheet gathers light on dark.
+		PressScript.repaper(
+			paper, Color(0.94, 0.92, 0.88, 1.0) if dark_stock else Color(0.10, 0.09, 0.08, 1.0)
+		)
+
+## Turning the pressing over is a Jump-Cut. Without it the input is inert and
+## says nothing: an unearned Refrain is never announced before it is found.
+func _try_flip() -> void:
+	if _transition_pending:
+		return
+	if not bool(progression.call("has_refrain", ProgressionScript.Refrain.JUMP_CUT)):
+		return
+	if not bool(pressing.call("flip")):
+		_flash("not enough side left to turn.")
+
+func _on_side_changed(side: int) -> void:
+	room.call("apply_side", side)
+	_apply_room_air()
+	_apply_room_palette()
+	audio.play("flip", -8.0, 1.0 if side == PressingScript.Side.B else 1.18)
+	_shake = 6.0
+	if side == PressingScript.Side.B:
+		_flash("THE B-SIDE — nobody played this.")
+	else:
+		_flash("back to the side that got played.")
+
+func _on_side_ended() -> void:
+	_flash("the side ran out. the needle lifts.")
+
+# -- debug traversal ----------------------------------------------------------
+
+## Cycles whichever atlas is live: the five prototype rooms, or the planned
+## world in map order. Debug builds only — normal play uses passages.
+func _debug_cycle_room() -> void:
+	if world_room_id.is_empty():
+		_load_room((room_idx + 1) % ROOM_SCRIPTS.size(), &"default")
+		return
+	var order: Array = world.get("room_order")
+	_load_world_room(order[(order.find(world_room_id) + 1) % order.size()], &"default")
+
+## Debug builds only. The Refrains are scattered deep in the planned world, so
+## reaching one to feel-test it costs more than the test is worth.
+func _debug_grant_refrains() -> void:
+	var granted := 0
+	for refrain in ProgressionScript.REFRAIN_ORDER:
+		if bool(progression.call("unlock_refrain", refrain)):
+			granted += 1
+	_apply_room_air()
+	if granted == 0:
+		_flash("every Refrain is already carried.")
+
+func _debug_toggle_world() -> void:
+	if not world_room_id.is_empty():
+		_load_room(0, &"default")
+		_flash("back to the prototype loop.")
+		return
+	if world == null:
+		_flash("the planned world did not load.")
+		return
+	_load_world_room(world.call("spawn_room_id"), &"default")
+	_flash("the planned world, grayed in.")
 
 func _respawn() -> void:
 	player.global_position = room.entry_position(room_entry_id)
@@ -219,16 +399,21 @@ func _on_refrain_collected(refrain: int) -> void:
 func _on_route_requested(target_room: StringName, target_entry: StringName) -> void:
 	if _transition_pending:
 		return
-	var target_index := ROOM_IDS.find(target_room)
-	if target_index < 0:
-		push_error("Unknown prototype route target: %s" % target_room)
+	if ROOM_IDS.find(target_room) < 0 and (
+		world == null or not bool(world.call("has_room", target_room))
+	):
+		push_error("Unknown route target: %s" % target_room)
 		return
 	_transition_pending = true
 	audio.play("door", -10.0)
-	call_deferred("_complete_route_transition", target_index, target_entry)
+	call_deferred("_complete_route_transition", target_room, target_entry)
 
-func _complete_route_transition(target_index: int, target_entry: StringName) -> void:
-	_load_room(target_index, target_entry)
+func _complete_route_transition(target_room: StringName, target_entry: StringName) -> void:
+	var target_index := ROOM_IDS.find(target_room)
+	if target_index >= 0:
+		_load_room(target_index, target_entry)
+	else:
+		_load_world_room(target_room, target_entry)
 	_transition_pending = false
 
 func _on_route_blocked(message: String) -> void:
@@ -270,40 +455,77 @@ func _flash(text: String) -> void:
 
 # -- hud ----------------------------------------------------------------------
 
+## The sheet, then the masthead. Paper sits over the world and under the type,
+## so the HUD reads as printed ON the page rather than floating above it.
 func _build_hud() -> void:
+	var sheet := CanvasLayer.new()
+	sheet.layer = 1
+	add_child(sheet)
+	paper = PressScript.paper_overlay(Color(0.10, 0.09, 0.08))
+	sheet.add_child(paper)
+
 	var layer := CanvasLayer.new()
+	layer.layer = 2
 	add_child(layer)
 
-	info = Label.new()
-	info.position = Vector2(14, 10)
-	info.add_theme_font_size_override("font_size", 15)
-	info.add_theme_color_override("font_color", Color(0.1, 0.09, 0.09))
-	info.add_theme_color_override("font_outline_color", Color(1, 1, 1, 0.55))
-	info.add_theme_constant_override("outline_size", 6)
-	layer.add_child(info)
+	# The masthead is pasted onto the sheet, not floated over it: room signage
+	# lives in world space and will always drift under the corner eventually.
+	masthead = ColorRect.new()
+	masthead.position = Vector2(0, 0)
+	masthead.size = Vector2(360, 78)
+	masthead.color = Color(0.85, 0.83, 0.78, 0.92)
+	layer.add_child(masthead)
 
+	# Masthead: the room's name in wood type, struck through with a rule.
+	title = Label.new()
+	title.position = Vector2(MARGIN, 12)
+	PressScript.set_display(title, PressScript.SIZE_TITLE, Color(0.1, 0.09, 0.09))
+	title.add_theme_constant_override("font_spacing_glyph", PressScript.TRACKING_DISPLAY)
+	layer.add_child(title)
+
+	title_rule = ColorRect.new()
+	title_rule.position = Vector2(MARGIN, 47)
+	title_rule.size = Vector2(0, 2)
+	title_rule.color = PressScript.PINK
+	layer.add_child(title_rule)
+
+	subtitle = Label.new()
+	subtitle.position = Vector2(MARGIN, 53)
+	PressScript.set_body(subtitle, PressScript.SIZE_SMALL, Color(0.1, 0.09, 0.09, 0.72))
+	layer.add_child(subtitle)
+
+	# One word, struck large, centred. The game's only shout.
 	feedback = Label.new()
-	feedback.position = Vector2(460, 250)
-	feedback.add_theme_font_size_override("font_size", 34)
-	feedback.add_theme_color_override("font_color", Color(0.95, 0.25, 0.55))
-	feedback.add_theme_color_override("font_outline_color", Color(0.1, 0.09, 0.09, 0.8))
-	feedback.add_theme_constant_override("outline_size", 8)
+	feedback.position = Vector2(0, 236)
+	feedback.size = Vector2(1280, 60)
+	feedback.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	PressScript.set_display(
+		feedback, PressScript.SIZE_BANNER, PressScript.PINK, Color(0.1, 0.09, 0.08, 0.85)
+	)
+	feedback.add_theme_constant_override("font_spacing_glyph", PressScript.TRACKING_DISPLAY)
 	feedback.modulate.a = 0.0
 	layer.add_child(feedback)
 
 	status = Label.new()
-	status.position = Vector2(14, 654)
-	status.add_theme_font_size_override("font_size", 14)
-	status.add_theme_color_override("font_color", Color(0.1, 0.09, 0.09))
-	status.add_theme_color_override("font_outline_color", Color(1, 1, 1, 0.55))
-	status.add_theme_constant_override("outline_size", 5)
+	status.position = Vector2(MARGIN, 648)
+	PressScript.set_body(status, PressScript.SIZE_SMALL, Color(0.1, 0.09, 0.09, 0.85))
 	layer.add_child(status)
 
+	# The crackle smear: the noise meter, inked straight onto the sheet.
 	crackle_bar = ColorRect.new()
-	crackle_bar.position = Vector2(14, 702)
-	crackle_bar.size = Vector2(0, 8)
-	crackle_bar.color = Color(0.9, 0.25, 0.5)
+	crackle_bar.position = Vector2(MARGIN, 700)
+	crackle_bar.size = Vector2(0, 6)
+	crackle_bar.color = PressScript.PINK
 	layer.add_child(crackle_bar)
+
+	# The control list is a contact sheet note, not part of the game's page.
+	controls_note = Label.new()
+	controls_note.position = Vector2(0, 692)
+	controls_note.size = Vector2(1280 - MARGIN, 20)
+	controls_note.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
+	PressScript.set_body(controls_note, PressScript.SIZE_TINY, Color(0.1, 0.09, 0.09, 0.4))
+	controls_note.visible = OS.is_debug_build()
+	layer.add_child(controls_note)
 
 # -- input --------------------------------------------------------------------
 
@@ -316,10 +538,13 @@ func _setup_input() -> void:
 	_action("strike", [KEY_J, KEY_X], [JOY_BUTTON_X])
 	_action("lift", [KEY_K, KEY_C], [JOY_BUTTON_B])
 	_action("set", [KEY_L], [JOY_BUTTON_LEFT_SHOULDER])
+	_action("flip", [KEY_F], [JOY_BUTTON_RIGHT_SHOULDER])
 	_action("enter_passage", [KEY_E], [JOY_BUTTON_Y])
 	_action("inventory", [KEY_I], [JOY_BUTTON_START])
 	_action("restart", [KEY_R], [JOY_BUTTON_BACK])
 	_action("switch_room", [KEY_TAB])
+	_action("world_map", [KEY_M])
+	_action("debug_grant", [KEY_G])
 
 func _action(action_name: String, keys: Array, pad_buttons: Array = [], axes: Array = []) -> void:
 	if InputMap.has_action(action_name):

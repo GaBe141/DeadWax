@@ -29,7 +29,12 @@ the compact traversal layout.
 - **W/S** (or arrows) — aim directional strikes while airborne.
 - **E** (or gamepad Y) — enter a nearby room passage.
 - **I** (or gamepad Start) — open **The Book**, the full-screen inventory.
+- **F** (or right shoulder) — **FLIP**: turn the pressing over. Needs the
+  **Jump-Cut**. Silent until you carry it.
 - **R** respawn at the current entry · **TAB** debug-build room cycle
+- **M** (debug builds) — walk the **planned world**: all 53 rooms of
+  `data/world_map.json`, grayed in. TAB then cycles that atlas instead.
+- **G** (debug builds) — grant every Refrain, for feel-testing.
 
 ## Character progression
 
@@ -43,10 +48,35 @@ skill tree:
 - **Gather, Rest, and Jump-Cut** are earned Refrains. The first playable slice
   is **Gather**, waiting at the end of The Unplayed. It preserves one breath in
   dry wax; rooms that already grant more keep their original capacity.
+  **Jump-Cut** turns the pressing over (see The B-side); it is chalked in The
+  Mispress Core, deep in the Undersong.
 
 Progression currently lasts for the running session: it survives R respawns
-and physical room transitions, then resets on a fresh launch. Rest and Jump-Cut are
-represented in progression state but do not have gameplay effects yet.
+and physical room transitions, then resets on a fresh launch. Rest is
+represented in progression state but does not have a gameplay effect yet.
+
+## The B-side
+
+A record has two sides. **Jump-Cut** lets you turn the one you are standing on
+over, and the far face is the same room read from the side nobody played:
+
+- **The air inverts.** Spent wax reads thick — it answers a strike, and it
+  holds your weight. Thick wax reads dry, and stops answering.
+- **Grooves belong to a side.** Everything pressed loud on the A-side falls
+  quiet when you flip. The trade is legible in one room: lose your launches,
+  gain the air.
+- **The ink inverts.** Paper and print trade places; the world goes
+  scratchboard. Rooms are not duplicated — a room authors its A-side only.
+- **Burnishing is one-sided.** HUSH smoothed the face that was up. The B-side
+  of The Smoothed Floor still rings, so resonance works there.
+- **A side has a runtime.** The B-side plays down in about twelve seconds, then
+  the needle lifts and drops you back wherever you are standing. It rewinds
+  slowly while you are on the A-side. Every flip is a round trip you have to
+  plan — and the air holding you up is on a timer.
+
+Turning over is silent until Jump-Cut is carried; an unearned Refrain is never
+announced before it is found. The Bootlegger has an opinion about this:
+*don't touch the B-sides.*
 
 ## The Book
 
@@ -80,6 +110,19 @@ LABEL <-> PRACTICE <-> VERSE <-> UNPLAYED <-> SMOOTHED <-> LABEL
    worthless, three rung-backs to win. Spacing and timing, nothing else.
    This room decides whether the rival duels will feel good.
 
+## The planned world
+
+The five rooms above are hand-built. Behind them, `data/world_map.json` plans
+53 rooms across six strata, and the runtime now grays every one of them in:
+correct footprint, stratum palette and air, one passage per planned route, and
+Refrain seals where the plan asks for them. Press **M** in a debug build to
+walk it.
+
+These are shells, not designed rooms — structure to build into, and a way to
+feel the shape and scale of the full map before it is authored. A graybox is
+replaced by writing a room script that claims its id; hand-authored rooms
+always win. See `ROUTING.md` for how the plan becomes geometry.
+
 ## What to feel for (bring notes)
 
 - Does the parry window (100 ms) feel fair after learning the tell?
@@ -94,13 +137,40 @@ LABEL <-> PRACTICE <-> VERSE <-> UNPLAYED <-> SMOOTHED <-> LABEL
 - Movement/strike/noise: constants at the top of `scripts/skip.gd`
 - Dummy timing/windows: constants atop `scripts/test_pressing.gd`
 - Door strictness: `GAP_MIN/GAP_MAX/EVENNESS` in `scripts/refrain_door.gd`
-- All SFX are synthesized in `scripts/audio_bank.gd` — no assets anywhere
+- B-side length and rewind: constants atop `scripts/pressing_state.gd`
+- Type, ink, plates and paper: `scripts/press.gd` and `assets/shaders/`
+- All SFX are synthesized in `scripts/audio_bank.gd` — still no audio assets
+
+## How it looks
+
+Dead Wax is printed matter, so it is rendered as printed matter. Everything
+visual lives in `scripts/press.gd` — the press — and rooms only ever say *what*
+is there, never how it is inked:
+
+- **Plates.** A platform is an inked plate, not a filled rectangle: pressure
+  varies across it, the edge bites unevenly into the stock, and a second plate
+  in the accent colour never quite registers with the first.
+- **Stock.** Each room is printed over a halftone tint block in its own ink, so
+  the space behind the platforms is a page rather than a void.
+- **The sheet.** A screen-space tooth and a pressed-in vignette sit over the
+  world and under the type. It is static: paper does not swim when the camera
+  pans, film grain does.
+- **Type.** Big Shoulders for wood type — room names, the one word a moment is
+  worth — and IBM Plex Mono for everything the world says to you. Both SIL OFL;
+  licences ship beside them in `assets/fonts/`.
+- **Signage.** Room text is pasted up as a card with stock, a struck rule, and a
+  heading pulled from its leading ALL-CAPS line. Not a floating caption.
+
+Ink and stock come from the room's own `ink` and `bg_color`, so all six strata
+palettes and both faces of the pressing flow through the same press unchanged.
 
 ## Development checks
 
 The dependency-free smoke suite validates all project resources, compact-map
-topology, every current prototype passage, named arrivals, and the runtime
-input map. Run
+topology, every current prototype passage, named arrivals, the runtime input
+map, and the grayed-in world: every planned room boots, its passages match the
+plan, its arrivals resolve, its climbs fit a plain jump, and a walk from the
+Headshell still reaches all 53 rooms and every Refrain. Run
 `.\deadwax.cmd check` before committing. GitHub runs the same checks on pushes and
 pull requests. Gameplay feel, real audio, and controller behavior still require
 the manual checklist in `PLAYTEST.md`.

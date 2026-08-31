@@ -85,6 +85,35 @@ Use this checklist for a 10–15 minute prototype pass. Run `.\deadwax.cmd play`
 - [ ] E/Y on the shelf takes the new shortcut to Smoothed's right side.
 - [ ] Follow the reverse passages to The Unplayed: Gather stays gone and capacity stays two.
 
+## 7. The B-side
+
+Press **G** in a debug build to carry Jump-Cut, then **F** to turn the pressing
+over. This is the feel pass that matters most — twelve seconds is a guess.
+
+- [ ] F does nothing, and says nothing, before Jump-Cut is carried.
+- [ ] Flipping in The Label inverts ink and paper; the room reads as scratchboard.
+- [ ] The live groove goes visibly spent, and a strike near it no longer launches.
+- [ ] Dry wax now answers a strike: two breaths, and you fall more slowly.
+- [ ] The HUD stays readable on the dark face.
+- [ ] The runtime counts down and the readout warns in the last three seconds.
+- [ ] When the side runs out the needle lifts wherever you are — including mid-air.
+- [ ] Being dropped out of thick air by the timer reads as fair, not cheap.
+- [ ] The A-side rewinds the far face; a nearly spent side refuses to flip.
+- [ ] Flipping on The Smoothed Floor lets resonance build and raw hits land.
+- [ ] Twelve seconds is enough for a round trip, and short enough to feel it.
+
+## 8. The planned world (debug builds, optional)
+
+Scaffolding, not design — check shape and traversal, not feel.
+
+- [ ] **M** drops you into The Headshell; the HUD reads `planned world (graybox n/53)`.
+- [ ] Each stratum reads as its own palette, and the air changes below the Scratch.
+- [ ] Passages name their destination; E/Y crosses and lands you on the near side.
+- [ ] A Refrain shortcut reads SEALED until you carry it; a technique passage never seals.
+- [ ] Every climb is makeable on legs alone — no passage needs a breath you lack.
+- [ ] Gather, Rest, and Jump-Cut can each be reached and collected on one walk.
+- [ ] **M** returns to The Label with session progression intact.
+
 ## Feel questions
 
 - Does the 100 ms parry window feel fair after learning the three-tick tell?

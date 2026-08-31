@@ -62,6 +62,12 @@ func _build_sounds() -> void:
 	_sounds["alert"] = _wav(_pluck(340.0, 0.16, 0.6))
 	_sounds["reach"] = _sequence([[311.0, 0.16], [370.0, 0.16], [415.0, 0.24]])
 	_sounds["freed"] = _mix([_pluck(523.0, 0.5, 0.5), _pluck(659.0, 0.5, 0.4), _pluck(784.0, 0.55, 0.35)])
+	# the needle lifting and coming back down on the other face
+	_sounds["flip"] = _mix([
+		_noise_burst(0.20, 0.55, 2600.0),
+		_pluck(196.0, 0.30, 0.5),
+		_pluck(147.0, 0.40, 0.4),
+	])
 	_sounds["crackle"] = _crackle_loop(2.0)
 
 func _wav(samples: PackedFloat32Array, looped := false) -> AudioStreamWAV:

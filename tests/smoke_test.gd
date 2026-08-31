@@ -8,6 +8,11 @@ const AuditionerScript := preload("res://scripts/auditioner.gd")
 const ProgressionScript := preload("res://scripts/progression_state.gd")
 const InventoryMenuScript := preload("res://scripts/inventory_menu.gd")
 const RoomLabelScript := preload("res://scripts/room_label.gd")
+const WorldMapScript := preload("res://scripts/world_map.gd")
+const GrayboxScript := preload("res://scripts/room_graybox.gd")
+const RefrainPickupScript := preload("res://scripts/refrain_pickup.gd")
+const PressingScript := preload("res://scripts/pressing_state.gd")
+const RoomSmoothedScript := preload("res://scripts/room_smoothed.gd")
 
 const EXPECTED_STRATA := 6
 const EXPECTED_WORLD_ROOMS := 53
@@ -38,6 +43,12 @@ const WORLD_ROUTE_PROGRESSIONS := [
 	"refrain:rest",
 	"refrain:jump-cut",
 ]
+const WORLD_SPAWN_ROOM := &"headshell"
+const WORLD_SIDES := ["north", "south", "east", "west"]
+## The plan's one-way pair: the Arm's seal drops you into the Drop and the way
+## back up is a Gather climb, never a plain contact.
+const WORLD_ONEWAY_SOURCE := &"the_arm"
+const WORLD_ONEWAY_TARGET := &"the_drop"
 const REQUIRED_INPUT_ACTIONS := [
 	"move_left",
 	"move_right",
@@ -64,6 +75,8 @@ var _strike_target: Node
 var _refrain_events: Array[int] = []
 var _technique_events: Array[int] = []
 var _launch_events: Array[bool] = []
+var _side_events: Array[int] = []
+var _ended_events := 0
 
 func _init() -> void:
 	call_deferred("_run")
@@ -73,7 +86,10 @@ func _run() -> void:
 	await _check_inventory_menu()
 	await _check_gather_player()
 	_check_gather_route_geometry()
+	_check_pressing_state()
+	await _check_b_side_rooms()
 	_check_world_map()
+	_check_world_grayboxes(_check_world_loader())
 	await _check_project_boot()
 	await _check_combat_regressions()
 
@@ -681,6 +697,513 @@ func _world_stratum_density(rooms: Array, stratum_id: String) -> float:
 	var bounds_area := (max_x - min_x) * (max_y - min_y)
 	return used_area / bounds_area if bounds_area > 0.0 else 0.0
 
+func _check_pressing_state() -> void:
+	var pressing := PressingScript.new()
+	_side_events.clear()
+	pressing.side_changed.connect(_record_side_changed)
+
+	_expect(pressing.side == PressingScript.Side.A, "a pressing starts on the side that got played")
+	_expect(not pressing.on_b_side(), "the A-side is not the B-side")
+	_expect(is_equal_approx(pressing.runtime_left, PressingScript.SIDE_RUNTIME), "a fresh side is fully rewound")
+
+	# The A-side must present each room exactly as authored, or turning the wax
+	# over would quietly retune rooms nobody flipped.
+	_expect(is_zero_approx(pressing.effective_density(0.0)), "the A-side keeps dry wax dry")
+	_expect(is_equal_approx(pressing.effective_density(1.0), 1.0), "the A-side keeps thick wax thick")
+	_expect(pressing.effective_air_strikes(0, 0.0) == 0, "the A-side keeps a dry room breathless")
+	_expect(pressing.effective_air_strikes(2, 1.0) == 2, "the A-side keeps an authored breath count")
+
+	_expect(pressing.flip(), "a rewound pressing turns over")
+	_expect(pressing.on_b_side(), "turning over reaches the B-side")
+	_expect(_side_events == [PressingScript.Side.B], "turning over emits exactly one side change")
+	_expect(is_equal_approx(pressing.effective_density(0.0), 1.0), "dry wax reads thick from the far face")
+	_expect(is_zero_approx(pressing.effective_density(1.0)), "thick wax reads dry from the far face")
+	_expect(pressing.effective_air_strikes(0, 0.0) == 2, "the B-side of dry wax answers a strike")
+	_expect(pressing.effective_air_strikes(2, 1.0) == 0, "the B-side of thick wax has no air to push")
+
+	_expect(not pressing.advance(0.5), "playing the B-side forward does not end it early")
+	_expect(pressing.runtime_left < PressingScript.SIDE_RUNTIME, "the B-side plays down while you stand on it")
+	_side_events.clear()
+	_expect(pressing.flip(), "the B-side can be turned back deliberately")
+	_expect(_side_events == [PressingScript.Side.A], "turning back emits exactly one side change")
+
+	var rewound := pressing.runtime_left
+	pressing.advance(1.0)
+	_expect(pressing.runtime_left > rewound, "the A-side rewinds the far face")
+	_expect(
+		pressing.runtime_left <= PressingScript.SIDE_RUNTIME,
+		"rewinding never overruns the length of a side"
+	)
+
+	# A side that is nearly spent must refuse the flip rather than strand the
+	# player one frame later in air that is about to stop holding them up.
+	pressing.runtime_left = PressingScript.MIN_FLIP_RUNTIME - 0.1
+	_expect(not pressing.can_flip(), "a nearly spent side refuses to be turned over")
+	_expect(not pressing.flip(), "a refused flip stays on the played side")
+	_expect(not pressing.on_b_side(), "a refused flip leaves the world on the A-side")
+
+	pressing.runtime_left = PressingScript.SIDE_RUNTIME
+	pressing.flip()
+	pressing.runtime_left = 0.2
+	_side_events.clear()
+	_ended_events = 0
+	pressing.side_ended.connect(_record_side_ended)
+	_expect(pressing.advance(0.5), "a spent side lifts the needle by itself")
+	_expect(not pressing.on_b_side(), "a spent side returns the world to the A-side")
+	_expect(_ended_events == 1, "a spent side announces itself once")
+	_expect(_side_events == [PressingScript.Side.A], "a forced return is one side change")
+	_expect(pressing.can_flip() == false, "a just-spent side cannot be turned straight back over")
+
+func _record_side_changed(side: int) -> void:
+	_side_events.append(side)
+
+func _record_side_ended() -> void:
+	_ended_events += 1
+
+## Turning a room over is presentation plus liveness, never new geometry: the
+## same platforms, re-inked, with the far face's grooves gone quiet.
+func _check_b_side_rooms() -> void:
+	var room := RoomLabelScript.new()
+	root.add_child(room)
+	await process_frame
+
+	var live_on_a := _room_group_members(room, &"live_groove").size()
+	_expect(live_on_a > 0, "The Label presses live grooves on its played side")
+	var skins := _room_skins(room)
+	_expect(not skins.is_empty(), "a room's platforms carry recolourable skins")
+	var ink_on_a := _plate_ink(skins[0])
+	_expect(ink_on_a.is_equal_approx(room.ink), "platforms are inked on the A-side")
+
+	room.apply_side(PressingScript.Side.B)
+	await process_frame
+	_expect(
+		_room_group_members(room, &"live_groove").is_empty(),
+		"A-side grooves fall quiet when the pressing turns over"
+	)
+	_expect(_plate_ink(skins[0]).is_equal_approx(room.bg_color), "turning over trades ink for paper")
+	_expect(
+		_plate_stock(skins[0]).is_equal_approx(room.ink),
+		"turning over puts the room's ink under the plate as stock"
+	)
+
+	room.apply_side(PressingScript.Side.A)
+	await process_frame
+	_expect(
+		_room_group_members(room, &"live_groove").size() == live_on_a,
+		"turning back restores every A-side groove"
+	)
+	_expect(_plate_ink(skins[0]).is_equal_approx(ink_on_a), "turning back restores the room's ink")
+	room.free()
+	await process_frame
+
+	# A groove pressed on the far face is the mirror case: quiet until flipped.
+	var b_room := RoomLabelScript.new()
+	root.add_child(b_room)
+	b_room.groove(Vector2(400, 400), PressingScript.Side.B)
+	await process_frame
+	var b_side_live := _room_group_members(b_room, &"live_groove").size()
+	b_room.apply_side(PressingScript.Side.B)
+	await process_frame
+	_expect(
+		_room_group_members(b_room, &"live_groove").size() == 1,
+		"a B-side groove answers only once the pressing is turned over"
+	)
+	_expect(b_side_live == live_on_a, "a B-side groove stays quiet while the A-side is up")
+	b_room.free()
+	await process_frame
+
+	# HUSH burnished the side that was face-up. The other one still rings.
+	var burnished := RoomSmoothedScript.new()
+	root.add_child(burnished)
+	await process_frame
+	var dummies := _room_group_members(burnished, &"hears_strikes")
+	_expect(not dummies.is_empty(), "The Smoothed Floor stands a Test Pressing")
+	for dummy in dummies:
+		_expect(bool(dummy.get("muted")), "the burnished floor mutes its bout on the A-side")
+	burnished.apply_side(PressingScript.Side.B)
+	await process_frame
+	for dummy in dummies:
+		_expect(not bool(dummy.get("muted")), "the far face of a burnished floor still rings")
+	burnished.apply_side(PressingScript.Side.A)
+	await process_frame
+	for dummy in dummies:
+		_expect(bool(dummy.get("muted")), "turning back restores what HUSH smoothed")
+	burnished.free()
+	await process_frame
+
+## Plates carry their colours as shader parameters, not as a flat fill, so the
+## press can bite their edges and misregister the accent plate.
+func _plate_ink(rect: ColorRect) -> Color:
+	var mat := rect.material as ShaderMaterial
+	if mat == null:
+		return rect.color
+	return mat.get_shader_parameter("ink")
+
+func _plate_stock(rect: ColorRect) -> Color:
+	var mat := rect.material as ShaderMaterial
+	if mat == null:
+		return rect.color
+	return mat.get_shader_parameter("stock")
+
+func _room_skins(room: Node) -> Array[ColorRect]:
+	var skins: Array[ColorRect] = []
+	for child in room.get_children():
+		if not (child is StaticBody2D):
+			continue
+		for grandchild in child.get_children():
+			if grandchild is ColorRect:
+				skins.append(grandchild)
+	return skins
+
+func _check_world_loader() -> RefCounted:
+	var map := WorldMapScript.new()
+	_expect(map.load_from(), "the runtime world map loads")
+	_expect(map.room_count() == EXPECTED_WORLD_ROOMS, "the loader indexes all 53 planned rooms")
+	_expect(map.stratum_order.size() == EXPECTED_STRATA, "the loader indexes all six strata")
+	_expect(map.grid_cell > 0, "the loader keeps a positive grid cell")
+	_expect(map.spawn_room_id() == WORLD_SPAWN_ROOM, "the planned world spawns at the Headshell")
+
+	_expect(
+		WorldMapScript.required_refrain_key(["refrain:gather"]) == "gather",
+		"a refrain requirement resolves to its canonical key"
+	)
+	_expect(
+		WorldMapScript.required_refrain_key(["tech:count-in"]).is_empty(),
+		"a technique requirement is never read as a refrain permission"
+	)
+	_expect(
+		WorldMapScript.required_technique_key(["tech:step-turn"]) == "step-turn",
+		"a technique requirement resolves to its canonical key"
+	)
+	_expect(
+		ProgressionScript.refrain_for_key("jump-cut") == ProgressionScript.Refrain.JUMP_CUT,
+		"canonical refrain keys resolve back to the progression enum"
+	)
+	_expect(
+		ProgressionScript.technique_for_key("count-in") == ProgressionScript.Technique.COUNT_IN,
+		"canonical technique keys resolve back to the progression enum"
+	)
+	_expect(ProgressionScript.refrain_for_key("nothing") == -1, "unknown refrain keys resolve to nothing")
+
+	var contact_pairs := {}
+	for id in map.room_order:
+		_expect(
+			not (String(id) in EXPECTED_PROTOTYPE_IDS),
+			"planned room id '%s' does not shadow a prototype room" % id
+		)
+		var targets := {}
+		for route_value in map.routes_from(id):
+			var route: Dictionary = route_value
+			var target := StringName(route.get("to"))
+			_expect(map.has_room(target), "route '%s' leads to a planned room" % id)
+			_expect(not targets.has(target), "room '%s' declares one route per neighbour" % id)
+			targets[target] = true
+			_expect(String(route.get("side")) in WORLD_SIDES, "route '%s' has a canonical side" % id)
+			_expect(
+				map.contact_side(id, target) == StringName(route.get("side")),
+				"route '%s' side agrees with the planned footprints" % id
+			)
+			var span: Vector2 = route.get("span")
+			_expect(span.y > span.x, "route '%s'->'%s' shares a real edge" % [id, target])
+			if String(route.get("kind")) == String(WorldMapScript.KIND_CONTACT):
+				contact_pairs[_world_pair_key(String(id), String(target))] = true
+			else:
+				_expect(
+					StringName(route.get("kind")) in WorldMapScript.SPECIAL_KINDS,
+					"route '%s'->'%s' carries a planned topology kind" % [id, target]
+				)
+
+	# An open contact is walkable from both ends; the plan's one-way routes are
+	# specials, so they must never appear as plain contacts.
+	for pair_key in contact_pairs:
+		var ids: PackedStringArray = pair_key.split("|")
+		var left := StringName(ids[0])
+		var right := StringName(ids[1])
+		_expect(
+			_world_route_between(map, left, right) != null
+			and _world_route_between(map, right, left) != null,
+			"open contact '%s' stays walkable from both ends" % pair_key
+		)
+
+	var seal: Variant = _world_route_between(map, WORLD_ONEWAY_SOURCE, WORLD_ONEWAY_TARGET)
+	var climb: Variant = _world_route_between(map, WORLD_ONEWAY_TARGET, WORLD_ONEWAY_SOURCE)
+	_expect(seal != null, "the Arm's seal drops into the Drop")
+	_expect(
+		seal != null and String((seal as Dictionary).get("kind")) != String(WorldMapScript.KIND_CONTACT),
+		"a one-way plan route is never an open contact"
+	)
+	_expect(
+		climb != null
+		and WorldMapScript.required_refrain_key((climb as Dictionary).get("requires")) == "gather",
+		"climbing back out of the Drop asks for Gather"
+	)
+	return map
+
+## Every planned room is grayed in and walked over: passages must match the
+## plan's routes, arrivals must resolve on the far side, and every landing must
+## be reachable on legs alone so no graybox needs a Refrain to cross.
+func _check_world_grayboxes(map: RefCounted) -> void:
+	var state := ProgressionScript.new()
+	var entries_by_room := {}
+	var arrivals: Array[Dictionary] = []
+	var jump_rise: float = SkipScript.JUMP_VELOCITY * SkipScript.JUMP_VELOCITY / (2.0 * SkipScript.GRAVITY)
+	_expect(GrayboxScript.RUNG_RISE < jump_rise, "a graybox rung is inside a plain jump's rise")
+
+	for id in map.room_order:
+		var room := GrayboxScript.new()
+		room.progression = state
+		_expect(room.configure(map, id), "planned room '%s' configures" % id)
+		root.add_child(room)
+
+		var routes: Array = map.routes_from(id)
+		var incoming := _world_incoming(map, id)
+		var exits := _room_group_members(room, &"room_exit")
+		_expect(exits.size() == routes.size(), "graybox '%s' opens one passage per planned route" % id)
+		_expect(
+			room.entry_points.size() == incoming.size(),
+			"graybox '%s' anchors one arrival per inbound route" % id
+		)
+		_expect(
+			room.bg_color != Color(0, 0, 0, 1) and room.ink != room.bg_color,
+			"graybox '%s' paints its stratum" % id
+		)
+		_expect(room.death_y > room.room_size.y, "graybox '%s' keeps its death plane below the floor" % id)
+		entries_by_room[id] = room.entry_points.keys()
+
+		for exit in exits:
+			var target := StringName(exit.get("target_room"))
+			var route: Variant = _world_route_between(map, id, target)
+			_expect(route != null, "graybox '%s' passage to '%s' matches a planned route" % [id, target])
+			if route == null:
+				continue
+			arrivals.append({
+				"source": id,
+				"target": target,
+				"entry": StringName(exit.get("target_entry")),
+			})
+			var requires: Array = (route as Dictionary).get("requires", [])
+			var refrain_key := WorldMapScript.required_refrain_key(requires)
+			var technique_key := WorldMapScript.required_technique_key(requires)
+			if refrain_key.is_empty():
+				_expect(
+					int(exit.get("required_refrain")) == -1,
+					"graybox '%s'->'%s' stays open when the plan asks no Refrain" % [id, target]
+				)
+			else:
+				_expect(
+					int(exit.get("required_refrain")) == ProgressionScript.refrain_for_key(refrain_key),
+					"graybox '%s'->'%s' is sealed by the planned Refrain" % [id, target]
+				)
+				_expect(
+					bool(exit.call("is_locked")),
+					"graybox '%s'->'%s' starts sealed without its Refrain" % [id, target]
+				)
+			if not technique_key.is_empty():
+				# Knowledge is journal state: a technique names the move a route
+				# asks for and must never decide whether the door opens.
+				_expect(
+					not bool(exit.call("is_locked")),
+					"graybox '%s'->'%s' never gates on a technique" % [id, target]
+				)
+				_expect(
+					ProgressionScript.technique_label(
+						ProgressionScript.technique_for_key(technique_key)
+					) in String(exit.get("display_name")),
+					"graybox '%s'->'%s' names the move it asks for" % [id, target]
+				)
+
+		_check_graybox_climb(room, id, jump_rise)
+		room.free()
+
+	for arrival in arrivals:
+		var target_entries: Array = entries_by_room.get(arrival["target"], [])
+		_expect(
+			StringName(arrival["entry"]) in target_entries,
+			"planned route %s>%s resolves arrival '%s'"
+			% [arrival["source"], arrival["target"], arrival["entry"]]
+		)
+
+	_check_world_refrain_rewards(map)
+	_check_world_progression_walk(map)
+
+## Flood-fills the room's solids from its floor using plain-jump hops only.
+func _check_graybox_climb(room: Node2D, id: StringName, jump_rise: float) -> void:
+	var solids: Array[Rect2] = []
+	for child in room.get_children():
+		if not (child is StaticBody2D):
+			continue
+		for grandchild in child.get_children():
+			if grandchild is CollisionShape2D:
+				var shape := grandchild.shape as RectangleShape2D
+				if shape != null:
+					solids.append(Rect2(child.position - shape.size / 2.0, shape.size))
+
+	var room_size: Vector2 = room.get("room_size")
+	var reached := {}
+	var frontier: Array[int] = []
+	for index in solids.size():
+		if is_equal_approx(solids[index].position.y, room_size.y):
+			frontier.append(index)
+	while not frontier.is_empty():
+		var current := int(frontier.pop_front())
+		if reached.has(current):
+			continue
+		reached[current] = true
+		for index in solids.size():
+			if reached.has(index):
+				continue
+			var rise := solids[current].position.y - solids[index].position.y
+			if rise <= 1.0 or rise > jump_rise:
+				continue
+			var gap := maxf(
+				solids[index].position.x - solids[current].end.x,
+				solids[current].position.x - solids[index].end.x
+			)
+			if gap <= GrayboxScript.RUNG_RUN:
+				frontier.append(index)
+
+	var portals: Dictionary = room.get("portals")
+	for target in portals:
+		var portal: Dictionary = portals[target]
+		var landing: Vector2 = portal["position"]
+		var standing := false
+		for index in solids.size():
+			var solid := solids[index]
+			if (
+				is_equal_approx(solid.position.y, landing.y)
+				and landing.x >= solid.position.x - 1.0
+				and landing.x <= solid.end.x + 1.0
+				and reached.has(index)
+			):
+				standing = true
+		_expect(standing, "graybox '%s' landing for '%s' is reachable on legs alone" % [id, target])
+
+func _check_world_refrain_rewards(map: RefCounted) -> void:
+	var granted := {}
+	for id in map.room_order:
+		for reward_value in map.room(id).get("rewards", []):
+			var reward := String(reward_value)
+			if not reward.begins_with(WorldMapScript.REFRAIN_PREFIX):
+				continue
+			var refrain := ProgressionScript.refrain_for_key(
+				reward.substr(WorldMapScript.REFRAIN_PREFIX.length())
+			)
+			granted[refrain] = id
+
+			var fresh := ProgressionScript.new()
+			var room := GrayboxScript.new()
+			room.progression = fresh
+			room.configure(map, id)
+			root.add_child(room)
+			var pickups := _room_group_members(room, &"refrain_pickup")
+			_expect(pickups.size() == 1, "planned room '%s' offers its Refrain while unclaimed" % id)
+			# A Refrain must be climbed to. If a pickup sat within collect range
+			# of the spawn or of an arrival, merely entering would grant it and
+			# the sealed shortcuts leading here would open themselves.
+			for pickup in pickups:
+				var standing: Array[Vector2] = [room.get("spawn_pos")]
+				for entry_id in room.entry_points:
+					standing.append(room.entry_points[entry_id])
+				for stand in standing:
+					_expect(
+						stand.distance_to(pickup.position) > RefrainPickupScript.COLLECT_RADIUS,
+						"planned room '%s' does not hand its Refrain to an arrival" % id
+					)
+			room.free()
+
+			var carried := ProgressionScript.new()
+			carried.unlock_refrain(refrain)
+			var claimed := GrayboxScript.new()
+			claimed.progression = carried
+			claimed.configure(map, id)
+			root.add_child(claimed)
+			_expect(
+				_room_group_members(claimed, &"refrain_pickup").is_empty(),
+				"planned room '%s' does not respawn a carried Refrain" % id
+			)
+			claimed.free()
+	for refrain in ProgressionScript.REFRAIN_ORDER:
+		_expect(
+			granted.has(refrain),
+			"the planned world grants %s somewhere" % ProgressionScript.refrain_label(refrain)
+		)
+
+## Walks the grayed-in world the way a player would: only Refrains already
+## collected open a sealed passage, and techniques open nothing. Everything
+## must still be reachable, or the graybox pass has stranded part of the plan.
+func _check_world_progression_walk(map: RefCounted) -> void:
+	var bits := {}
+	for index in ProgressionScript.REFRAIN_ORDER.size():
+		bits[ProgressionScript.REFRAIN_ORDER[index]] = 1 << index
+	var full_mask := (1 << ProgressionScript.REFRAIN_ORDER.size()) - 1
+
+	var queue: Array[Dictionary] = []
+	var seen := {}
+	var reached := {}
+	var best_mask := 0
+	_queue_world_walk(map, WORLD_SPAWN_ROOM, 0, bits, queue, seen)
+	var index := 0
+	while index < queue.size():
+		var state: Dictionary = queue[index]
+		index += 1
+		var id := StringName(state["room"])
+		var owned := int(state["owned"])
+		reached[id] = true
+		best_mask |= owned
+		for route_value in map.routes_from(id):
+			var route: Dictionary = route_value
+			var refrain_key := WorldMapScript.required_refrain_key(route.get("requires", []))
+			if not refrain_key.is_empty():
+				var refrain := ProgressionScript.refrain_for_key(refrain_key)
+				if (owned & int(bits.get(refrain, 0))) == 0:
+					continue
+			_queue_world_walk(map, StringName(route.get("to")), owned, bits, queue, seen)
+
+	_expect(
+		reached.size() == EXPECTED_WORLD_ROOMS,
+		"a grayed-in walk from the Headshell reaches all 53 planned rooms"
+	)
+	_expect(best_mask == full_mask, "a grayed-in walk can collect every Refrain")
+
+func _queue_world_walk(
+	map: RefCounted,
+	id: StringName,
+	owned_mask: int,
+	bits: Dictionary,
+	queue: Array[Dictionary],
+	seen: Dictionary
+) -> void:
+	var next_mask := owned_mask
+	for reward_value in map.room(id).get("rewards", []):
+		var reward := String(reward_value)
+		if not reward.begins_with(WorldMapScript.REFRAIN_PREFIX):
+			continue
+		var refrain := ProgressionScript.refrain_for_key(
+			reward.substr(WorldMapScript.REFRAIN_PREFIX.length())
+		)
+		next_mask |= int(bits.get(refrain, 0))
+	var key := "%s#%d" % [id, next_mask]
+	if seen.has(key):
+		return
+	seen[key] = true
+	queue.append({"room": id, "owned": next_mask})
+
+func _world_route_between(map: RefCounted, from_id: StringName, to_id: StringName) -> Variant:
+	for route_value in map.routes_from(from_id):
+		var route: Dictionary = route_value
+		if StringName(route.get("to")) == to_id:
+			return route
+	return null
+
+func _world_incoming(map: RefCounted, id: StringName) -> Array[StringName]:
+	var sources: Array[StringName] = []
+	for other in map.room_order:
+		if other == id:
+			continue
+		if _world_route_between(map, other, id) != null:
+			sources.append(other)
+	return sources
+
 func _check_project_boot() -> void:
 	var packed := load("res://scenes/main.tscn") as PackedScene
 	_expect(packed != null, "main scene loads")
@@ -1003,6 +1526,133 @@ func _check_project_boot() -> void:
 	_expect(
 		_technique_events == [ProgressionScript.Technique.COUNT_IN],
 		"Count-In discovery is recorded once without gating execution"
+	)
+
+	# The planned world is a second atlas behind the same Main-owned transition:
+	# rooms still only describe routes, and Main still resolves and loads them.
+	var world: RefCounted = main.get("world")
+	_expect(world != null, "Main loads the planned world map at boot")
+	_expect(String(main.get("world_room_id")).is_empty(), "Main boots into the prototype loop")
+
+	main.call("_load_world_room", WORLD_SPAWN_ROOM)
+	await process_frame
+	await process_frame
+	_expect(String(main.get("world_room_id")) == String(WORLD_SPAWN_ROOM), "Main grays in a planned room")
+	var grayed := main.get("room") as Node2D
+	_expect(
+		String(grayed.get("room_id")) == String(WORLD_SPAWN_ROOM),
+		"a grayed-in room carries its planned route id"
+	)
+	var grayed_exits := _room_group_members(grayed, &"room_exit")
+	_expect(not grayed_exits.is_empty(), "the planned spawn room opens at least one passage")
+	if not grayed_exits.is_empty():
+		var onward := grayed_exits[0]
+		var onward_target := StringName(onward.get("target_room"))
+		_expect(not bool(onward.call("is_locked")), "the planned spawn room's passage is open")
+		onward.call("try_enter")
+		await process_frame
+		await process_frame
+		_expect(
+			String(main.get("world_room_id")) == String(onward_target),
+			"a planned passage transitions to its planned neighbour"
+		)
+		_expect(
+			String(main.get("room_entry_id")) == "from_%s" % WORLD_SPAWN_ROOM,
+			"a planned transition selects the named arrival"
+		)
+		var arrived := main.get("room") as Node2D
+		var arrival: Vector2 = arrived.call("entry_position", StringName("from_%s" % WORLD_SPAWN_ROOM))
+		var arrived_player: CharacterBody2D = main.get("player")
+		_expect(
+			arrived_player.global_position.is_equal_approx(arrival),
+			"the player arrives on the planned room's near side"
+		)
+		_expect(main.get("progression") == session_progression, "graying in preserves the progression owner")
+
+	# Rest is never earned in this suite, so its shortcut must stay sealed.
+	main.call("_load_world_room", &"whisper_strata")
+	await process_frame
+	await process_frame
+	var sealed := _route_to(main.get("room"), &"mispress")
+	_expect(sealed != null, "the Whisper Strata opens its planned Rest shortcut")
+	if sealed != null:
+		_expect(bool(sealed.call("is_locked")), "a planned Refrain shortcut stays sealed without it")
+		_expect(not bool(sealed.call("try_enter")), "a sealed planned passage rejects traversal")
+	await process_frame
+	_expect(String(main.get("world_room_id")) == "whisper_strata", "a rejected planned passage stays put")
+
+	main.call("_debug_toggle_world")
+	await process_frame
+	await process_frame
+	_expect(String(main.get("world_room_id")).is_empty(), "leaving the planned world restores the prototype loop")
+	_expect(int(main.get("room_idx")) == 0, "the prototype loop resumes at The Label")
+	_expect(
+		String((main.get("room") as Node2D).get("band_name")) == EXPECTED_PROTOTYPE_ROOMS[0],
+		"the hand-built Label wins over any planned room"
+	)
+
+	# Turning the pressing over, through Main, in the dry room that shows it
+	# best. The Label authors no air at all, so its far face is the clearest
+	# possible read on whether the flip actually re-presents a room.
+	var pressing: RefCounted = main.get("pressing")
+	_expect(pressing != null, "Main owns the session's pressing state")
+	_expect(not bool(pressing.call("on_b_side")), "Main boots on the side that got played")
+	var label_player: CharacterBody2D = main.get("player")
+	var authored_density: float = (main.get("room") as Node2D).get("air_density")
+	var live_grooves := _room_group_members(main.get("room"), &"live_groove").size()
+
+	main.call("_try_flip")
+	await process_frame
+	_expect(
+		not bool(pressing.call("on_b_side")),
+		"the pressing will not turn over without the Jump-Cut"
+	)
+
+	session_progression.call("unlock_refrain", ProgressionScript.Refrain.JUMP_CUT)
+	main.call("_try_flip")
+	await process_frame
+	_expect(bool(pressing.call("on_b_side")), "the Jump-Cut turns the pressing over")
+	_expect(
+		is_equal_approx(label_player.air_density, 1.0 - authored_density),
+		"the far face of dry wax gives Main's player thick air"
+	)
+	_expect(
+		label_player.air_strike_capacity() == 2,
+		"the B-side of a dry room answers a strike twice"
+	)
+	_expect(
+		label_player.gravity_mult < 1.0,
+		"thick air read from the far face also carries the player's weight"
+	)
+	_expect(
+		_room_group_members(main.get("room"), &"live_groove").is_empty(),
+		"Main quiets the room's A-side grooves when it turns the pressing"
+	)
+	_expect(
+		is_equal_approx(float((main.get("room") as Node2D).get("air_density")), authored_density),
+		"turning the pressing over never rewrites the room's authored air"
+	)
+
+	# A spent side lifts the needle on its own and hands the room back as
+	# authored. Headless frame deltas are tiny, so wait on the transition
+	# rather than on a fixed number of frames.
+	pressing.set("runtime_left", 0.0001)
+	for _frame in 120:
+		if not bool(pressing.call("on_b_side")):
+			break
+		await process_frame
+	_expect(not bool(pressing.call("on_b_side")), "a side spent under Main returns to the A-side")
+	_expect(
+		is_equal_approx(label_player.air_density, authored_density),
+		"the needle lifting restores the room's authored air"
+	)
+	_expect(
+		_room_group_members(main.get("room"), &"live_groove").size() == live_grooves,
+		"the needle lifting restores the room's live grooves"
+	)
+	_expect(
+		label_player.air_strike_capacity() == 1,
+		"back on the played side, only Gather's held breath remains"
 	)
 
 	# Let route/pickup one-shots finish before the existing audio teardown.
