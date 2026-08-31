@@ -19,6 +19,9 @@ const ROOM_IDS := [&"label", &"practice", &"verse", &"unplayed", &"smoothed"]
 const WorldMapScript := preload("res://scripts/world_map.gd")
 const GrayboxScript := preload("res://scripts/room_graybox.gd")
 const PressingScript := preload("res://scripts/pressing_state.gd")
+const PressScript := preload("res://scripts/press.gd")
+
+const MARGIN := 22.0
 
 var player: CharacterBody2D
 var camera: Camera2D
@@ -35,9 +38,14 @@ var world_room_id: StringName = &""
 var pressing: RefCounted
 var _transition_pending := false
 
-var info: Label
+var title: Label
+var subtitle: Label
+var title_rule: ColorRect
+var controls_note: Label
+var masthead: ColorRect
 var feedback: Label
 var status: Label
+var paper: ColorRect
 var crackle_bar: ColorRect
 var _fb_t := 0.0
 var _shake := 0.0
@@ -173,6 +181,7 @@ func _swap_room(next_room: Node2D, entry_id: StringName) -> void:
 	room.route_requested.connect(_on_route_requested)
 	room.route_blocked.connect(_on_route_blocked)
 	add_child(room)
+	room.call("lay_backdrop", room.cam_limits)
 	room.call("apply_side", pressing.side)
 	_apply_room_air()
 
@@ -186,16 +195,25 @@ func _swap_room(next_room: Node2D, entry_id: StringName) -> void:
 	camera.limit_bottom = int(room.cam_limits.position.y + room.cam_limits.size.y)
 
 	_respawn()
-	var controls := "[A/D] move  [SPACE] jump  [J] strike  [K hold] hood  [L hold] kneel  [E/Y] passage  [I/START] book  [R] respawn"
-	if OS.is_debug_build():
-		controls += "  [TAB] debug room  [M] planned world  [G] grant refrains"
-	var banner := "DEAD WAX — M1"
+	title.text = String(room.band_name).to_upper()
+	title_rule.size.x = maxf(title.get_minimum_size().x, 90.0)
+	var imprint := String(room.band_desc)
 	if not world_room_id.is_empty():
-		banner = "DEAD WAX — planned world (graybox %d/%d)" % [
+		imprint = "GRAYBOX %d/%d · %s" % [
 			int(world.get("room_order").find(world_room_id)) + 1,
 			int(world.call("room_count")),
+			imprint,
 		]
-	info.text = "%s\nROOM: %s\n%s\n%s" % [banner, room.band_name, room.band_desc, controls]
+	subtitle.text = imprint
+	masthead.size = Vector2(
+		maxf(title.get_minimum_size().x, subtitle.get_minimum_size().x) + MARGIN * 2.0,
+		78.0
+	)
+	if OS.is_debug_build():
+		controls_note.text = (
+			"[A/D] move  [SPACE] jump  [J] strike  [K] hood  [L] kneel  [F] flip"
+			+ "  [E] passage  [I] book  [R] respawn  [TAB] room  [M] world  [G] refrains"
+		)
 
 func _wire_room() -> void:
 	for n in get_tree().get_nodes_in_group("hears_strikes"):
@@ -237,19 +255,31 @@ func _apply_room_palette() -> void:
 	var paper: Color = room.ink if bool(pressing.call("on_b_side")) else room.bg_color
 	RenderingServer.set_default_clear_color(paper)
 	_apply_hud_palette(paper)
+	if player != null:
+		player.call("set_page", paper)
 
-## The HUD is printed on whatever the room is printed on. Dark wax — The
-## Unplayed, or any room read from its far face — needs the plate inverted or
-## the readout sinks into the background.
-func _apply_hud_palette(paper: Color) -> void:
-	if info == null or status == null:
+## The HUD is printed in the room's own ink, on the room's own stock. Dark wax
+## — The Unplayed, or any room read from its far face — inverts the plate, and
+## the sheet's vignette re-inks with it.
+func _apply_hud_palette(stock: Color) -> void:
+	if title == null or status == null:
 		return
-	var dark_paper := paper.get_luminance() < 0.45
-	var text := Color(0.94, 0.92, 0.88) if dark_paper else Color(0.1, 0.09, 0.09)
-	var outline := Color(0.06, 0.05, 0.07, 0.75) if dark_paper else Color(1, 1, 1, 0.55)
-	for plate in [info, status]:
-		plate.add_theme_color_override("font_color", text)
-		plate.add_theme_color_override("font_outline_color", outline)
+	var dark_stock := stock.get_luminance() < 0.45
+	var text := Color(0.94, 0.92, 0.88) if dark_stock else Color(0.1, 0.09, 0.09)
+	title.add_theme_color_override("font_color", text)
+	subtitle.add_theme_color_override("font_color", Color(text.r, text.g, text.b, 0.72))
+	status.add_theme_color_override("font_color", Color(text.r, text.g, text.b, 0.85))
+	controls_note.add_theme_color_override("font_color", Color(text.r, text.g, text.b, 0.4))
+	masthead.color = Color(stock.r, stock.g, stock.b, 0.92)
+	feedback.add_theme_color_override(
+		"font_outline_color", Color(stock.r, stock.g, stock.b, 0.9)
+	)
+	if paper != null:
+		# Vignette in the ink of the room, so the corners darken on light stock
+		# and the sheet gathers light on dark.
+		PressScript.repaper(
+			paper, Color(0.94, 0.92, 0.88, 1.0) if dark_stock else Color(0.10, 0.09, 0.08, 1.0)
+		)
 
 ## Turning the pressing over is a Jump-Cut. Without it the input is inert and
 ## says nothing: an unearned Refrain is never announced before it is found.
@@ -425,40 +455,77 @@ func _flash(text: String) -> void:
 
 # -- hud ----------------------------------------------------------------------
 
+## The sheet, then the masthead. Paper sits over the world and under the type,
+## so the HUD reads as printed ON the page rather than floating above it.
 func _build_hud() -> void:
+	var sheet := CanvasLayer.new()
+	sheet.layer = 1
+	add_child(sheet)
+	paper = PressScript.paper_overlay(Color(0.10, 0.09, 0.08))
+	sheet.add_child(paper)
+
 	var layer := CanvasLayer.new()
+	layer.layer = 2
 	add_child(layer)
 
-	info = Label.new()
-	info.position = Vector2(14, 10)
-	info.add_theme_font_size_override("font_size", 15)
-	info.add_theme_color_override("font_color", Color(0.1, 0.09, 0.09))
-	info.add_theme_color_override("font_outline_color", Color(1, 1, 1, 0.55))
-	info.add_theme_constant_override("outline_size", 6)
-	layer.add_child(info)
+	# The masthead is pasted onto the sheet, not floated over it: room signage
+	# lives in world space and will always drift under the corner eventually.
+	masthead = ColorRect.new()
+	masthead.position = Vector2(0, 0)
+	masthead.size = Vector2(360, 78)
+	masthead.color = Color(0.85, 0.83, 0.78, 0.92)
+	layer.add_child(masthead)
 
+	# Masthead: the room's name in wood type, struck through with a rule.
+	title = Label.new()
+	title.position = Vector2(MARGIN, 12)
+	PressScript.set_display(title, PressScript.SIZE_TITLE, Color(0.1, 0.09, 0.09))
+	title.add_theme_constant_override("font_spacing_glyph", PressScript.TRACKING_DISPLAY)
+	layer.add_child(title)
+
+	title_rule = ColorRect.new()
+	title_rule.position = Vector2(MARGIN, 47)
+	title_rule.size = Vector2(0, 2)
+	title_rule.color = PressScript.PINK
+	layer.add_child(title_rule)
+
+	subtitle = Label.new()
+	subtitle.position = Vector2(MARGIN, 53)
+	PressScript.set_body(subtitle, PressScript.SIZE_SMALL, Color(0.1, 0.09, 0.09, 0.72))
+	layer.add_child(subtitle)
+
+	# One word, struck large, centred. The game's only shout.
 	feedback = Label.new()
-	feedback.position = Vector2(460, 250)
-	feedback.add_theme_font_size_override("font_size", 34)
-	feedback.add_theme_color_override("font_color", Color(0.95, 0.25, 0.55))
-	feedback.add_theme_color_override("font_outline_color", Color(0.1, 0.09, 0.09, 0.8))
-	feedback.add_theme_constant_override("outline_size", 8)
+	feedback.position = Vector2(0, 236)
+	feedback.size = Vector2(1280, 60)
+	feedback.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	PressScript.set_display(
+		feedback, PressScript.SIZE_BANNER, PressScript.PINK, Color(0.1, 0.09, 0.08, 0.85)
+	)
+	feedback.add_theme_constant_override("font_spacing_glyph", PressScript.TRACKING_DISPLAY)
 	feedback.modulate.a = 0.0
 	layer.add_child(feedback)
 
 	status = Label.new()
-	status.position = Vector2(14, 654)
-	status.add_theme_font_size_override("font_size", 14)
-	status.add_theme_color_override("font_color", Color(0.1, 0.09, 0.09))
-	status.add_theme_color_override("font_outline_color", Color(1, 1, 1, 0.55))
-	status.add_theme_constant_override("outline_size", 5)
+	status.position = Vector2(MARGIN, 648)
+	PressScript.set_body(status, PressScript.SIZE_SMALL, Color(0.1, 0.09, 0.09, 0.85))
 	layer.add_child(status)
 
+	# The crackle smear: the noise meter, inked straight onto the sheet.
 	crackle_bar = ColorRect.new()
-	crackle_bar.position = Vector2(14, 702)
-	crackle_bar.size = Vector2(0, 8)
-	crackle_bar.color = Color(0.9, 0.25, 0.5)
+	crackle_bar.position = Vector2(MARGIN, 700)
+	crackle_bar.size = Vector2(0, 6)
+	crackle_bar.color = PressScript.PINK
 	layer.add_child(crackle_bar)
+
+	# The control list is a contact sheet note, not part of the game's page.
+	controls_note = Label.new()
+	controls_note.position = Vector2(0, 692)
+	controls_note.size = Vector2(1280 - MARGIN, 20)
+	controls_note.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
+	PressScript.set_body(controls_note, PressScript.SIZE_TINY, Color(0.1, 0.09, 0.09, 0.4))
+	controls_note.visible = OS.is_debug_build()
+	layer.add_child(controls_note)
 
 # -- input --------------------------------------------------------------------
 

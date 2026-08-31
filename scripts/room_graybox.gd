@@ -302,17 +302,18 @@ func _build_room_notes() -> void:
 		if technique >= 0:
 			lines.append("%s is proven here." % ProgressionScript.technique_label(technique))
 
-	var block := Label.new()
-	block.text = "\n".join(lines)
-	block.position = Vector2(NOTE_INSET, NOTE_TOP)
-	block.size = Vector2(clampf(room_size.x - NOTE_INSET * 2.0, 240.0, NOTE_WIDTH), 0.0)
-	block.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	block.add_theme_font_size_override("font_size", 15)
-	block.add_theme_color_override("font_color", Color(ink.r, ink.g, ink.b, 0.9))
-	block.add_theme_color_override("font_outline_color", bg_color)
-	block.add_theme_constant_override("outline_size", 5)
-	_notes.append(block)
-	add_child(block)
+	var heading := "%s · %s" % [String(stratum.get("name", "")), band_name.to_upper()]
+	var note := PressScript.card(
+		"\n".join(lines.slice(2)),
+		_solid_color(),
+		_stock_color(),
+		PressScript.PINK,
+		PressScript.SIZE_SMALL,
+		heading
+	)
+	note.position = Vector2(NOTE_INSET, NOTE_TOP)
+	_notes.append(note)
+	add_child(note)
 
 	_build_rewards(data)
 

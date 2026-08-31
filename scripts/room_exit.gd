@@ -6,6 +6,7 @@ signal route_requested(target_room: StringName, target_entry: StringName)
 signal route_blocked(message: String)
 
 const ProgressionScript := preload("res://scripts/progression_state.gd")
+const PressScript := preload("res://scripts/press.gd")
 const ACTIVATE_RADIUS := 74.0
 const INK := Color(0.10, 0.085, 0.115)
 const CHALK := Color(0.95, 0.92, 0.86)
@@ -26,13 +27,11 @@ var _pulse := 0.0
 func _ready() -> void:
 	add_to_group("room_exit")
 	_label = Label.new()
-	_label.position = Vector2(-66, -106)
-	_label.size = Vector2(132, 50)
+	_label.position = Vector2(-96, -112)
+	_label.size = Vector2(192, 54)
 	_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	_label.add_theme_font_size_override("font_size", 14)
-	_label.add_theme_color_override("font_color", CHALK)
-	_label.add_theme_color_override("font_outline_color", INK)
-	_label.add_theme_constant_override("outline_size", 5)
+	PressScript.set_display(_label, PressScript.SIZE_HEADING, CHALK, INK)
+	_label.add_theme_constant_override("font_spacing_glyph", PressScript.TRACKING_DISPLAY)
 	add_child(_label)
 	_was_locked = is_locked()
 	_refresh_label()

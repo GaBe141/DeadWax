@@ -137,7 +137,32 @@ always win. See `ROUTING.md` for how the plan becomes geometry.
 - Movement/strike/noise: constants at the top of `scripts/skip.gd`
 - Dummy timing/windows: constants atop `scripts/test_pressing.gd`
 - Door strictness: `GAP_MIN/GAP_MAX/EVENNESS` in `scripts/refrain_door.gd`
-- All SFX are synthesized in `scripts/audio_bank.gd` — no assets anywhere
+- B-side length and rewind: constants atop `scripts/pressing_state.gd`
+- Type, ink, plates and paper: `scripts/press.gd` and `assets/shaders/`
+- All SFX are synthesized in `scripts/audio_bank.gd` — still no audio assets
+
+## How it looks
+
+Dead Wax is printed matter, so it is rendered as printed matter. Everything
+visual lives in `scripts/press.gd` — the press — and rooms only ever say *what*
+is there, never how it is inked:
+
+- **Plates.** A platform is an inked plate, not a filled rectangle: pressure
+  varies across it, the edge bites unevenly into the stock, and a second plate
+  in the accent colour never quite registers with the first.
+- **Stock.** Each room is printed over a halftone tint block in its own ink, so
+  the space behind the platforms is a page rather than a void.
+- **The sheet.** A screen-space tooth and a pressed-in vignette sit over the
+  world and under the type. It is static: paper does not swim when the camera
+  pans, film grain does.
+- **Type.** Big Shoulders for wood type — room names, the one word a moment is
+  worth — and IBM Plex Mono for everything the world says to you. Both SIL OFL;
+  licences ship beside them in `assets/fonts/`.
+- **Signage.** Room text is pasted up as a card with stock, a struck rule, and a
+  heading pulled from its leading ALL-CAPS line. Not a floating caption.
+
+Ink and stock come from the room's own `ink` and `bg_color`, so all six strata
+palettes and both faces of the pressing flow through the same press unchanged.
 
 ## Development checks
 

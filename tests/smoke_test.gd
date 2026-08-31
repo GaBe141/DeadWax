@@ -771,7 +771,7 @@ func _check_b_side_rooms() -> void:
 	_expect(live_on_a > 0, "The Label presses live grooves on its played side")
 	var skins := _room_skins(room)
 	_expect(not skins.is_empty(), "a room's platforms carry recolourable skins")
-	var ink_on_a: Color = skins[0].color
+	var ink_on_a := _plate_ink(skins[0])
 	_expect(ink_on_a.is_equal_approx(room.ink), "platforms are inked on the A-side")
 
 	room.apply_side(PressingScript.Side.B)
@@ -780,7 +780,11 @@ func _check_b_side_rooms() -> void:
 		_room_group_members(room, &"live_groove").is_empty(),
 		"A-side grooves fall quiet when the pressing turns over"
 	)
-	_expect(skins[0].color.is_equal_approx(room.bg_color), "turning over trades ink for paper")
+	_expect(_plate_ink(skins[0]).is_equal_approx(room.bg_color), "turning over trades ink for paper")
+	_expect(
+		_plate_stock(skins[0]).is_equal_approx(room.ink),
+		"turning over puts the room's ink under the plate as stock"
+	)
 
 	room.apply_side(PressingScript.Side.A)
 	await process_frame
@@ -788,7 +792,7 @@ func _check_b_side_rooms() -> void:
 		_room_group_members(room, &"live_groove").size() == live_on_a,
 		"turning back restores every A-side groove"
 	)
-	_expect(skins[0].color.is_equal_approx(ink_on_a), "turning back restores the room's ink")
+	_expect(_plate_ink(skins[0]).is_equal_approx(ink_on_a), "turning back restores the room's ink")
 	room.free()
 	await process_frame
 
@@ -826,6 +830,20 @@ func _check_b_side_rooms() -> void:
 		_expect(bool(dummy.get("muted")), "turning back restores what HUSH smoothed")
 	burnished.free()
 	await process_frame
+
+## Plates carry their colours as shader parameters, not as a flat fill, so the
+## press can bite their edges and misregister the accent plate.
+func _plate_ink(rect: ColorRect) -> Color:
+	var mat := rect.material as ShaderMaterial
+	if mat == null:
+		return rect.color
+	return mat.get_shader_parameter("ink")
+
+func _plate_stock(rect: ColorRect) -> Color:
+	var mat := rect.material as ShaderMaterial
+	if mat == null:
+		return rect.color
+	return mat.get_shader_parameter("stock")
 
 func _room_skins(room: Node) -> Array[ColorRect]:
 	var skins: Array[ColorRect] = []
