@@ -3,7 +3,7 @@ extends RefCounted
 ## JSON numbers are checked before conversion, and every read is validated.
 ## The last valid checkpoint remains in .bak when a new checkpoint is installed.
 ## Required v1 fields: version, room_id, entry_id, progression.snapshot(), shine.
-## Optional fields: completed, encounters ("room/encounter": outcome), settings.
+## Optional fields: purchases, completed, encounters ("room/encounter": outcome), settings.
 ## Main must also check that saved location IDs belong to the active campaign.
 
 const SAVE_VERSION := 1
@@ -11,9 +11,10 @@ const MAX_FILE_BYTES := 65536
 const MAX_SHINE := 2147483647
 const MAX_ENCOUNTERS := 256
 const ProgressionScript := preload("res://scripts/progression_state.gd")
+const EconomyScript := preload("res://scripts/economy_state.gd")
 const ENCOUNTER_STATES := ["opened", "freed", "shattered", "polished", "won"]
 const DEFAULT_SETTINGS := {"volume": 1.0, "reduced_motion": false, "fullscreen": false}
-const ROOT_KEYS := ["version", "room_id", "entry_id", "progression", "shine", "completed", "encounters", "settings"]
+const ROOT_KEYS := ["version", "room_id", "entry_id", "progression", "shine", "purchases", "completed", "encounters", "settings"]
 
 var last_error := ""
 var _path: String
@@ -115,6 +116,9 @@ func _normalise(data: Dictionary) -> Dictionary:
 		return _invalid("The checkpoint location is invalid.")
 	if not _whole_number(data.get("shine"), 0, MAX_SHINE):
 		return _invalid("The checkpoint Shine amount is invalid.")
+	var purchases: Variant = data.get("purchases", [])
+	if not EconomyScript.valid_purchases(purchases):
+		return _invalid("The checkpoint purchases are invalid.")
 	var progression: Variant = data.get("progression")
 	if not (progression is Dictionary) or not _known_keys(progression, ["version", "refrains", "techniques"]):
 		return _invalid("The checkpoint progression is invalid.")
@@ -152,6 +156,7 @@ func _normalise(data: Dictionary) -> Dictionary:
 			"techniques": progression.techniques.duplicate(),
 		},
 		"shine": int(data.shine),
+		"purchases": purchases.duplicate(),
 		"completed": completed,
 		"encounters": encounters.duplicate(),
 		"settings": {

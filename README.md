@@ -19,7 +19,7 @@ On the Dead Wax Wyse, the lightweight project commands are:
 .\deadwax.cmd play    play the campaign with a local runtime log
 .\deadwax.cmd dev     open the original mechanics rooms and planned-world tools
 .\deadwax.cmd editor  open the project in Godot
-.\deadwax.cmd check   import resources; run all seven native test suites
+.\deadwax.cmd check   import resources; run all nine native test suites
 .\deadwax.cmd vibe    start Mistral Vibe in this repository
 ```
 
@@ -91,6 +91,30 @@ A freed Addie putters beside her doorway and pats a returning Hood or Set
 visitor. These small interactions offer company without replaying rewards;
 shattered Addie stays gone. Existing saves carry these choices forward.
 
+## Shine and the stall
+
+Hold the Hood beside worn wax to polish it and earn **1 Shine**. Each of the
+campaign's nine patches pays once, with a small `+1 SHINE` impression when
+collected. Your balance appears in the HUD, the Book, and the stall.
+
+Stand beside the Bootlegger and press **B / D-pad Up** to browse. E/Y still
+talks to him. Choose a piece, then use its Buy button; browsing pauses the
+game. Escape, controller B/Back, or Leave closes the stall.
+
+| Piece | Shine | What it does |
+| --- | ---: | --- |
+| Spare Groove | 4 | Adds one permanent needle-health slot, taking the maximum from 3 to 4. Fills the added slot when bought. |
+| Soft Lining | 3 | Raises Hood walking speed from 62% to 75% of ordinary walking speed. |
+| Warm Thread | 2 | Stitches an amber trim around Skip's Hood. Cosmetic. |
+
+Every purchase is permanent, applies immediately, and appears in the Book.
+Already-owned pieces cannot be bought twice. The five patches available by
+the first stall visit can fund either functional upgrade; all nine fund the
+whole counter. No core verb, technique, or passage requires a purchase.
+Recovery preserves your Shine and items. A failed purchase save refunds its
+debit and applies no effect; old saves begin with the same Shine and an empty
+purchase list.
+
 ## Saving and settings
 
 The chapter saves at passages, opened locks, resolved encounters, polishing,
@@ -110,9 +134,9 @@ The checkpoint is `user://deadwax-save.json`. Writes are validated and keep a
 and reduced camera motion are saved separately in
 `user://deadwax-settings.cfg`. Reduced camera motion removes camera smoothing
 and shake. Escape/gamepad Back opens pause; gamepad Start keeps its role as
-the Book. The needle can take three hits before recovering at the active room
-entry with full health and preserved progress. Continue also starts there at
-full health.
+the Book. The needle can take three hits, or four with Spare Groove, before
+recovering at the active room entry with full health and preserved progress.
+Continue also starts there at full health.
 
 ## Controls
 
@@ -125,7 +149,8 @@ full health.
   Hold it beside dull grey wax to **polish** (mints shine).
 - **L hold** — **SET / KNEEL**: listen to an Auditioner instead of breaking it.
 - **W/S** (or arrows) — aim directional strikes while airborne.
-- **E** (or gamepad Y) — enter a nearby room passage.
+- **E** (or gamepad Y) — enter a nearby passage or listen to a resident.
+- **B** (or D-pad Up) — browse the Bootlegger's stall while standing nearby.
 - **I** (or gamepad Start) — open **The Book**, the full-screen inventory.
 - **Escape** (or gamepad Back) — pause; Escape inside the Book closes it first.
 - **F** (or right shoulder) — **FLIP**: turn the pressing over. Needs the
@@ -182,7 +207,7 @@ announced before it is found. The Bootlegger has an opinion about this:
 
 The Book is a full-screen, read-only inventory. It pauses the room and records
 the three always-owned core verbs, discovered knowledge techniques, carried
-Refrains, and current Shine. Inside the game, unknown techniques and Refrains
+Refrains, current Shine, and permanent purchases. Inside the game, unknown techniques and Refrains
 remain unnamed until the session records them; opening the Book never unlocks
 or equips anything. Use arrows, D-pad, or the left stick to select an entry, and press
 I/Start again or Escape to close it.
@@ -274,11 +299,12 @@ palettes and both faces of the pressing flow through the same press unchanged.
 
 Run `.\deadwax.cmd check` before committing. It imports resources and runs the
 dependency-free native smoke, save-store, campaign, Tonearm, Overture,
-sprite-animation, and residents suites. These cover the
+sprite-animation, residents, economy-state, and economy integration suites. These cover the
 original combat and progression invariants, all planned-room routes, validated
 checkpoint recovery, both chapters' room graph, boss outcomes, old-demo save
 continuation, campaign state restoration, grounded conversations, resident
-pause behavior, harmless petting, and silent return visits.
+pause behavior, harmless petting, silent return visits, purchase transactions,
+item effects, and compatibility with saves made before the stall opened.
 GitHub runs the checks on pushes and pull requests. Gameplay feel, real audio,
 rendering, and controller behavior still require `PLAYTEST.md`.
 

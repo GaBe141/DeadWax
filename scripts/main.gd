@@ -21,6 +21,8 @@ const PressScript := preload("res://scripts/press.gd")
 const ChapterScript := preload("res://scripts/campaign.gd")
 const MenuScript := preload("res://scripts/game_menu.gd")
 const SaveScript := preload("res://scripts/save_store.gd")
+const EconomyScript := preload("res://scripts/economy_state.gd")
+const ShopScript := preload("res://scripts/shop_menu.gd")
 
 const MARGIN := 22.0
 const NEEDLE_HEALTH := 3
@@ -33,6 +35,10 @@ var room_idx := 0
 var room_entry_id: StringName = &"default"
 var progression: RefCounted
 var inventory: CanvasLayer
+var economy: RefCounted
+var shop: CanvasLayer
+var _purchasing := false
+var _shop_closing := false
 var world: RefCounted
 ## The authored campaign room, or a graybox id in development mode. Empty
 ## only while the original five-room mechanics loop is active.
@@ -85,6 +91,7 @@ func _ready() -> void:
 		DisplayServer.window_set_title("Dead Wax — Side One")
 	_setup_input()
 	progression = ProgressionScript.new()
+	economy = EconomyScript.new()
 	progression.connect("refrain_unlocked", _on_refrain_unlocked)
 	progression.connect("technique_discovered", _on_technique_discovered)
 
@@ -101,9 +108,11 @@ func _ready() -> void:
 
 	player = SkipScript.new()
 	player.progression = progression
+	player.economy = economy
 	player.struck.connect(_on_struck)
 	player.on_beat.connect(_on_beat)
 	player.took_hit.connect(_on_player_hit)
+	player.shine_earned.connect(_on_shine_earned)
 	add_child(player)
 
 	camera = Camera2D.new()
@@ -116,9 +125,14 @@ func _ready() -> void:
 	inventory = InventoryMenuScript.new()
 	inventory.progression = progression
 	inventory.shine_source = player
+	inventory.economy = economy
 	inventory.can_open = _can_open_inventory
 	add_child(inventory)
 	inventory.opened.connect(_on_inventory_opened)
+	shop = ShopScript.new()
+	add_child(shop)
+	shop.purchase_requested.connect(_purchase_item)
+	shop.close_requested.connect(_close_shop)
 	if development_mode:
 		_has_session = true
 		_load_room(0)
@@ -147,6 +161,10 @@ func _notification(what: int) -> void:
 		_quit_game()
 
 func _unhandled_input(event: InputEvent) -> void:
+	if event.is_action_pressed("trade") and not event.is_echo():
+		_open_shop()
+		if shop.is_open:
+			get_viewport().set_input_as_handled()
 	if event.is_action_pressed("pause_game") and not event.is_echo():
 		if game_menu != null and not game_menu.is_open and _can_open_inventory():
 			_pause_game()
@@ -194,7 +212,7 @@ func _process(delta: float) -> void:
 		_save_message_time = maxf(0, _save_message_time - delta)
 		var objective := String(room.get("objective_label")) if "objective_label" in room else ""
 		subtitle.text = objective
-		status.text = "NEEDLE %d/%d     %s   SHINE %02d%s" % [_health, NEEDLE_HEALTH, "HUSH" if player.hooded else "CRACKLE", player.shine, "   " + _pressing_text() if not _pressing_text().is_empty() else ""]
+		status.text = "NEEDLE %d/%d     %s   SHINE %02d%s" % [_health, _max_health(), "HUSH" if player.hooded else "CRACKLE", player.shine, "   " + _pressing_text() if not _pressing_text().is_empty() else ""]
 		controls_note.text = _save_message if _save_message_time > 0 else "I / START · THE BOOK     ESC / BACK · PAUSE"
 		if player.shine != _last_saved_shine:
 			_queue_save()
@@ -371,6 +389,7 @@ func _persist_session() -> bool:
 		"progression": progression.call("snapshot"), "shine": player.shine,
 		"completed": chapter_complete, "encounters": encounters.duplicate(true),
 		"settings": _settings.duplicate(true),
+		"purchases": economy.call("snapshot").purchases,
 	}
 	var saved := bool(save_store.call("save_game", data))
 	if saved and _save_failed and game_menu != null:
@@ -384,6 +403,8 @@ func _persist_session() -> bool:
 	return saved
 
 func _new_game() -> void:
+	shop.call("close_shop")
+	_shop_closing = false
 	_has_session = false
 	# The outgoing room must not copy its finished encounters into a new run.
 	if room != null:
@@ -394,7 +415,8 @@ func _new_game() -> void:
 	chapter_complete = false
 	progression.call("reset")
 	pressing.call("reset")
-	player.shine = 0
+	economy.call("reset")
+	_apply_purchases()
 	_reset_player()
 	_load_world_room(ChapterScript.START_ROOM)
 	_has_session = true
@@ -410,6 +432,8 @@ func _continue_game() -> void:
 	if data.is_empty() or not ChapterScript.has_room(StringName(data.get("room_id", ""))):
 		game_menu.call("set_notice", "That pressing could not be read. You can begin a new one.")
 		return
+	shop.call("close_shop")
+	_shop_closing = false
 	_has_session = false
 	if room != null:
 		remove_child(room)
@@ -419,7 +443,8 @@ func _continue_game() -> void:
 	chapter_complete = ChapterScript.saved_completion(data)
 	progression.call("restore_snapshot", data.progression)
 	pressing.call("reset")
-	player.shine = int(data.shine)
+	economy.call("restore", data.shine, data.get("purchases", []))
+	_apply_purchases()
 	_last_saved_shine = player.shine
 	_reset_player()
 	_load_world_room(StringName(data.room_id), StringName(data.entry_id))
@@ -453,7 +478,7 @@ func _show_title() -> void:
 	audio.set_crackle(0.0)
 
 func _pause_game() -> void:
-	if _transition_pending or inventory.call("is_open"):
+	if _transition_pending or inventory.call("is_open") or shop.is_open or _shop_closing:
 		return
 	game_menu.call("show_pause")
 	get_tree().paused = true
@@ -466,7 +491,7 @@ func _resume_game() -> void:
 	call_deferred("_unpause_game")
 
 func _unpause_game() -> void:
-	if game_menu != null and not game_menu.is_open:
+	if game_menu != null and not game_menu.is_open and not shop.is_open and not inventory.call("is_open"):
 		get_tree().paused = false
 
 func _return_to_title() -> void:
@@ -479,6 +504,7 @@ func _quit_game() -> void:
 	if not _persist_session():
 		if inventory.call("is_open"):
 			inventory.call("close_inventory")
+		shop.call("close_shop")
 		game_menu.call("show_pause")
 		get_tree().paused = true
 		game_menu.call("set_notice", "Could not save, so your game is still open. Resume and try again before leaving.")
@@ -501,6 +527,97 @@ func _show_chapter_ending() -> void:
 
 func _on_inventory_opened() -> void:
 	audio.set_crackle(0.0)
+	_queue_save()
+
+# -- Shine and the Bootlegger -------------------------------------------------
+
+func _max_health() -> int:
+	return int(economy.call("max_health")) if economy != null else NEEDLE_HEALTH
+
+func _apply_purchases() -> void:
+	player.hood_speed_mult = float(economy.call("hood_speed_multiplier"))
+	player.warm_thread = bool(economy.call("has_item", &"warm_thread"))
+	player.queue_redraw()
+
+func _shop_snapshot() -> Dictionary:
+	var snapshot: Dictionary = economy.call("snapshot")
+	snapshot["health"] = _health
+	snapshot["max_health"] = _max_health()
+	return snapshot
+
+func _at_bootlegger() -> bool:
+	if development_mode or world_room_id != &"bootlegger" or room == null or not player.is_on_floor():
+		return false
+	var resident := room.get_node_or_null("Bootlegger") as Node2D
+	return resident != null and player.global_position.distance_to(resident.global_position) <= 140.0
+
+func _open_shop() -> void:
+	if not _can_open_inventory() or inventory.call("is_open") or get_tree().paused or not _at_bootlegger():
+		return
+	player.velocity = Vector2.ZERO
+	player.set("_buffer", 0.0)
+	shop.call("show_shop", _shop_snapshot())
+	get_tree().paused = true
+	audio.set_crackle(0.0)
+	audio.play("tick", -17.0, 0.8)
+	_persist_session()
+
+func _close_shop() -> void:
+	if not shop.is_open or _shop_closing:
+		return
+	shop.call("close_shop")
+	_shop_closing = true
+	# The closing button belongs to the stall, including controller A/Space.
+	# Keep gameplay paused through this input frame before giving it back.
+	call_deferred("_finish_shop_close")
+
+func _finish_shop_close() -> void:
+	await get_tree().process_frame
+	_shop_closing = false
+	if shop.is_open or (game_menu != null and game_menu.is_open) or inventory.call("is_open"):
+		return
+	player.set("_buffer", 0.0)
+	get_tree().paused = false
+
+func _purchase_item(item_id: StringName) -> bool:
+	if _purchasing or not _has_session or not shop.is_open or _shop_closing or _transition_pending or not _at_bootlegger():
+		return false
+	if not bool(economy.call("can_purchase", item_id)):
+		shop.call("refresh_shop", _shop_snapshot(), "That tape is already yours, or you need more Shine.")
+		return false
+	_purchasing = true
+	var before: Dictionary = economy.call("snapshot")
+	var previous_cap := _max_health()
+	economy.call("purchase", item_id)
+	# The completed purchase and its debit share one validated checkpoint.
+	# Effects and a success sound are offered only after that write succeeds.
+	if not _persist_session():
+		economy.call("restore", before.shine, before.purchases)
+		_last_saved_shine = player.shine
+		shop.call("refresh_shop", _shop_snapshot(), "Could not save. Your Shine is still yours. Try again.")
+		_purchasing = false
+		return false
+	_apply_purchases()
+	_health = mini(_health + _max_health() - previous_cap, _max_health())
+	shop.call("refresh_shop", _shop_snapshot(), "Yours now. Worn in, and made to last.")
+	audio.play("polish", -7.0, 0.85)
+	_purchasing = false
+	return true
+
+func _on_shine_earned(amount: int) -> void:
+	var mote := Label.new()
+	PressScript.set_body(mote, 17, Color(0.96, 0.71, 0.32))
+	mote.add_theme_color_override("font_outline_color", Color(0.15, 0.12, 0.13))
+	mote.add_theme_constant_override("outline_size", 5)
+	mote.text = "+%d SHINE" % amount
+	mote.z_index = 40
+	mote.position = player.position + Vector2(26, -70)
+	add_child(mote)
+	var tween := create_tween()
+	tween.set_parallel(true)
+	tween.tween_property(mote, "position:y", mote.position.y - 38.0, 1.15)
+	tween.tween_property(mote, "modulate:a", 0.0, 0.7).set_delay(0.45)
+	tween.chain().tween_callback(mote.queue_free)
 	_queue_save()
 
 func _load_settings() -> void:
@@ -648,7 +765,9 @@ func _debug_toggle_world() -> void:
 	_flash("the planned world, grayed in.")
 
 func _respawn() -> void:
-	_health = NEEDLE_HEALTH
+	if shop != null and (shop.is_open or _shop_closing):
+		return
+	_health = _max_health()
 	_respawn_pending = false
 	player.global_position = room.entry_position(room_entry_id)
 	player.velocity = Vector2.ZERO
@@ -731,7 +850,7 @@ func _on_refrain_collected(refrain: int) -> void:
 	progression.call("unlock_refrain", refrain)
 
 func _on_route_requested(target_room: StringName, target_entry: StringName) -> void:
-	if _transition_pending or (game_menu != null and game_menu.is_open) or bool(inventory.call("is_open")):
+	if _transition_pending or (game_menu != null and game_menu.is_open) or bool(inventory.call("is_open")) or shop.is_open or _shop_closing:
 		return
 	if not development_mode and not ChapterScript.has_room(target_room):
 		return
@@ -757,7 +876,7 @@ func _on_route_blocked(message: String) -> void:
 	_flash(message)
 
 func _can_open_inventory() -> bool:
-	return _has_session and not _transition_pending and (game_menu == null or not game_menu.is_open)
+	return _has_session and not _transition_pending and not _shop_closing and not shop.is_open and (game_menu == null or not game_menu.is_open)
 
 func _on_refrain_unlocked(refrain: int) -> void:
 	audio.play("freed", -7.0)
@@ -886,6 +1005,7 @@ func _setup_input() -> void:
 	_action("set", [KEY_L], [JOY_BUTTON_LEFT_SHOULDER])
 	_action("flip", [KEY_F], [JOY_BUTTON_RIGHT_SHOULDER])
 	_action("enter_passage", [KEY_E], [JOY_BUTTON_Y])
+	_action("trade", [KEY_B], [JOY_BUTTON_DPAD_UP])
 	_action("inventory", [KEY_I], [JOY_BUTTON_START])
 	_action("restart", [KEY_R], [JOY_BUTTON_BACK] if development_mode else [])
 	_action("switch_room", [KEY_TAB])

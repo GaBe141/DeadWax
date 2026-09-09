@@ -112,7 +112,7 @@ func _build_bootlegger() -> void:
 	_exit(Vector2(85, 574), &"whistlers", "THE WHISTLERS")
 	_exit(Vector2(1590, 574), &"overture_stair", "THE STAIR")
 	sign_label(Vector2(1100, 310), "BELOW THE LABEL\nThe wall has opened\njust enough for a stall.")
-	sign_label(Vector2(260, 185), "WORN NAMES ONLY\nThe Bootlegger is listening.\n[E / Y] by the counter")
+	sign_label(Vector2(260, 185), "WORN NAMES ONLY\nShine for something that lasts.\n[B / D-PAD UP] by the counter")
 	var bootlegger := ResidentScript.new()
 	bootlegger.name = "Bootlegger"
 	bootlegger.kind = &"bootlegger"

@@ -73,6 +73,13 @@ static func draw(canvas: CanvasItem, pose: Dictionary, palette: Dictionary) -> v
 		_outline(canvas, sleeve, ink.lerp(hood_ink, hood), time, 0.45)
 		canvas.draw_line(Vector2(-17, 22), Vector2(-4, -24 * hood), Color(hood_ink, hood * 0.40), 1.5, true)
 		canvas.draw_line(Vector2(17, 22), Vector2(5, -21 * hood), Color(hood_ink, hood * 0.30), 1.5, true)
+		if bool(palette.get("warm_thread", false)):
+			var thread := Color(0.96, 0.69, 0.32, hood)
+			canvas.draw_polyline(PackedVector2Array([
+				Vector2(-20, 24), Vector2(-8 * (1.0 - hood), lerpf(20, -38, hood)),
+				Vector2(8 * (1.0 - hood), lerpf(20, -38, hood)), Vector2(20, 24),
+			]), thread, 2.2, true)
+			canvas.draw_line(Vector2(-18, 21), Vector2(18, 21), thread, 1.8, true)
 	var eye_center := Vector2(face * 2, lerpf(0, -12, hood) + kneel * 6)
 	if hood > 0.35:
 		canvas.draw_circle(eye_center, 9.0 * hood, Color(ink, hood), true, -1, true)

@@ -22,6 +22,8 @@ func _ready() -> void:
 	add_to_group("world_resident")
 	add_to_group("hears_strikes")
 	card_clearance = 178.0
+	if kind == &"bootlegger":
+		extra_hint = "[B / D-PAD UP]  Browse tapes"
 	_refresh_story()
 	super._ready()
 	# Skip can pass in front of the coat. Only the conversation card sits above.

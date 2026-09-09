@@ -85,6 +85,9 @@ static func draw_resident(canvas: CanvasItem, kind: StringName, pose: Dictionary
 static func draw_hound(canvas: CanvasItem, pose: Dictionary, ink: Color, stock: Color) -> void:
 	preload("res://scripts/press_hound.gd").draw(canvas, pose, ink, stock)
 
+static func draw_shop_item(canvas: CanvasItem, item_id: StringName, size: Vector2, ink: Color, stock: Color) -> void:
+	preload("res://scripts/press_shop.gd").draw(canvas, item_id, size, ink, stock)
+
 static func draw_auditioner(canvas: CanvasItem, pose: Dictionary, ink: Color, body: Color, pale: Color, accent: Color, grey: Color, warm: Color) -> void:
 	preload("res://scripts/press_auditioner.gd").draw_auditioner(canvas, pose, ink, body, pale, accent, grey, warm)
 

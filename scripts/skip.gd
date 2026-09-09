@@ -6,6 +6,7 @@ extends CharacterBody2D
 signal struck(pos: Vector2, big: bool, launched: bool)
 signal on_beat
 signal took_hit
+signal shine_earned(amount: int)
 
 const ProgressionScript := preload("res://scripts/progression_state.gd")
 const PressScript := preload("res://scripts/press.gd")
@@ -55,6 +56,9 @@ var fall_cap_mult := 1.0
 var groove_mult := 1.0
 var air_strikes_max := 0           # room-provided baseline; progression derives capacity
 var progression: RefCounted
+var economy: RefCounted
+var hood_speed_mult := HOOD_SPEED_MULT
+var warm_thread := false
 
 # -- state --------------------------------------------------------------------
 var air_strikes_left := 0
@@ -62,7 +66,17 @@ var noise := 0.0                   # crackle. loudness. the thing that hunts you
 var hooded := false
 var setting := false               # SET: kneeling, defenseless, playing soft (mercy)
 var facing := 1.0
-var shine := 0                     # polish currency
+var _loose_shine := 0
+# Existing HUD and room code read the same wallet through Skip. Standalone
+# mechanics rooms can still run without a campaign economy attached.
+var shine: int:
+	get:
+		return int(economy.get("balance")) if economy != null else _loose_shine
+	set(value):
+		if economy != null:
+			economy.call("restore", value, economy.call("snapshot").purchases)
+		else:
+			_loose_shine = clampi(value, 0, 2147483647)
 var last_strike_ms := -100000      # parry checks read this
 var _stagger := 0.0
 
@@ -113,6 +127,17 @@ func _ready() -> void:
 	add_child(cs)
 	z_index = 10
 
+func add_shine(amount: int) -> bool:
+	if amount <= 0 or amount > 2147483647 - shine:
+		return false
+	if economy != null:
+		if not bool(economy.call("credit", amount)):
+			return false
+	else:
+		_loose_shine += amount
+	shine_earned.emit(amount)
+	return true
+
 func air_strike_capacity() -> int:
 	var capacity := air_strikes_max
 	if _has_gather():
@@ -142,7 +167,7 @@ func _physics_process(delta: float) -> void:
 		dir = 0.0
 	if absf(dir) > 0.05:
 		facing = signf(dir)
-	var speed := RUN_SPEED * (HOOD_SPEED_MULT if hooded else 1.0)
+	var speed := RUN_SPEED * (hood_speed_mult if hooded else 1.0)
 	var accel := RUN_ACCEL if is_on_floor() else RUN_ACCEL * AIR_CONTROL
 	if _recover > 0.0 and is_on_floor():
 		accel *= STRIKE_RECOVER_ACCEL   # weight lives on the GROUND; the air stays free (flow)
@@ -285,6 +310,7 @@ func _process(delta: float) -> void:
 func _draw() -> void:
 	PressScript.draw_skip(self, _animation_pose(), {
 		"ink": INK, "body": _body, "pale": PALE, "pink": PINK, "hood": HOODGREY,
+		"warm_thread": warm_thread,
 	})
 
 func _animation_pose() -> Dictionary:

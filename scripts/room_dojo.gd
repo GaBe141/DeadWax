@@ -32,7 +32,7 @@ func _ready() -> void:
 	sign_label(Vector2(90, 330), "the practice room.\n\"3... 3... 3...\"\n(nobody has heard the 4 in years.)")
 
 	# -- polishing corner --
-	sign_label(Vector2(430, 400), "dull wax, gone grey.\nHOOD UP [hold K] beside it.\nbuff the shine back in.\n(shine buys things, someday.)")
+	sign_label(Vector2(430, 400), "dull wax, gone grey.\nHOOD UP [hold K] beside it.\nbuff the shine back in.\nThe Bootlegger trades in Shine.")
 	patch(Vector2(500, 540))
 	patch(Vector2(620, 540))
 	patch(Vector2(740, 540))

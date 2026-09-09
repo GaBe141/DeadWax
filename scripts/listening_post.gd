@@ -9,6 +9,7 @@ var lines: Array[String] = []
 var ink := Color("26221e")
 var stock := Color("e3bfb6")
 var card_clearance := 125.0
+var extra_hint := ""
 var _line := -1
 var _card: Control
 var _near := false
@@ -40,6 +41,8 @@ func _rebuild_card() -> void:
 	var text := "[E / Y]  Listen"
 	if _line >= 0:
 		text = lines[_line] + "\n\n[E / Y]  Listen on"
+	if not extra_hint.is_empty():
+		text += "\n" + extra_hint
 	_card = PressScript.card(text, ink, stock, PressScript.PINK, PressScript.SIZE_BODY, heading)
 	_card.position = Vector2(-_card.size.x / 2.0, -_card.size.y - card_clearance)
 	_card.visible = _near

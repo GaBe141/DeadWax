@@ -42,6 +42,7 @@ func _sample() -> Dictionary:
 		"entry_id": "from_practice",
 		"progression": progression.snapshot(),
 		"shine": 27,
+		"purchases": [],
 		"completed": true,
 		"encounters": {"practice/dummy": "won", "verse/auditioner-1": "freed"},
 		"settings": {"volume": 0.35, "reduced_motion": true, "fullscreen": true},
@@ -62,11 +63,11 @@ func _check_roundtrip() -> void:
 	_check(progression.knows_technique(ProgressionScript.Technique.COUNT_IN), "discovered technique survives disk save")
 	_check(store.has_save() and store.last_error.is_empty(), "Continue validates a good checkpoint")
 	var minimal := original.duplicate(true)
-	for key in ["completed", "encounters", "settings"]:
+	for key in ["purchases", "completed", "encounters", "settings"]:
 		minimal.erase(key)
 	_check(store.save_game(minimal), "optional fields may be absent")
 	var defaults := store.load_game()
-	_check(defaults.completed == false and defaults.encounters == {}, "optional campaign state defaults")
+	_check(defaults.completed == false and defaults.encounters == {} and defaults.purchases == [], "optional campaign state defaults")
 	_check(defaults.settings == SaveStoreScript.DEFAULT_SETTINGS, "optional settings default")
 
 func _check_invalid_data() -> void:

@@ -24,9 +24,15 @@ func _process(delta: float) -> void:
 	if player != null and player.hooded and global_position.distance_to(player.global_position) < RADIUS:
 		progress += delta / POLISH_TIME
 		if progress >= 1.0:
+			if player.has_method("add_shine"):
+				if not bool(player.call("add_shine", 1)):
+					progress = 1.0
+					queue_redraw()
+					return
+			else:
+				player.shine += 1
 			done = true
 			_sparkle = 0.9
-			player.shine += 1
 			var bank := get_tree().get_first_node_in_group("audio_bank")
 			if bank != null:
 				bank.play("polish", -6.0)

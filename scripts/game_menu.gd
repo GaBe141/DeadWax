@@ -315,13 +315,14 @@ func _build_controls() -> void:
 		["Raise Hood", "Hold K / C", "Hold B"],
 		["Kneel / Set", "Hold L", "Hold LB"],
 		["Enter passage", "E", "Y"],
+		["Browse stall", "B", "D-pad Up"],
 		["The Book", "I", "Start"],
 		["Pause", "Esc", "Back"],
 		["Last entrance", "R", "—"],
 	]:
 		for cell in row:
 			controls.add_child(_label(String(cell), PressScript.SIZE_SMALL, INK))
-	_page.add_child(_paragraph("A timely strike can answer an incoming blow.\nThree hits lift the needle back to your last entrance.\nYour discoveries stay with you."))
+	_page.add_child(_paragraph("A timely strike can answer an incoming blow.\nAn empty needle returns you to your last entrance.\nYour Shine, purchases, and discoveries stay with you."))
 	_button("Back", _show_screen.bind(_return_screen), true)
 
 

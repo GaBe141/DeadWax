@@ -73,6 +73,17 @@ Runtime errors are written to `.godot/deadwax-play.log`.
 - [ ] A shattered Addie remains absent after leaving, returning, and Continue. Existing version-one saves preserve the same choices.
 - [ ] Pause and the Book freeze every resident's animation, movement, and dialogue. Characters and cards remain readable at the usual game size.
 
+## Shine and purchases
+
+- [ ] Polishing a fresh patch shows `+1 SHINE` and increments the HUD and Book once. Leaving, returning, recovery, and Continue cannot pay that patch twice.
+- [ ] Grounded B/D-pad Up beside the Bootlegger opens the stall; remote or airborne input does nothing. E/Y still advances his conversation.
+- [ ] The counter clearly shows balance, prices, item effects, and owned or insufficient-funds states. Merely opening, holding the opening button, or selecting an item never buys it.
+- [ ] Buy Spare Groove for 4 Shine: balance falls by 4, the needle gains a filled fourth slot, and a fourth hit is required to recover. Soft Lining costs 3 and visibly speeds Hood walking; ordinary walking/jumping and silence stay the same. Warm Thread costs 2 and gives the Hood an amber stitched edge.
+- [ ] Bought items appear in the Book, cannot be bought again, and survive passages, recovery, quitting, and Continue. Starting a new game clears purchases and balance.
+- [ ] The shop pauses the world and prevents attacks, passages, recovery, or the Book behind it. Mouse, arrows/stick, and D-pad reach the products and Buy/Leave controls. D-pad Up navigates within the shop; Escape/controller B/Back closes it without a jump or passage.
+- [ ] Item descriptions, Buy/Leave controls, and notices remain readable at 1280×720 and 900×600. Returning with less than the price clearly shows how much more Shine is needed.
+- [ ] An old save keeps its existing Shine and gains an empty purchase list. The automated isolated-save checks cover write-failure rollback; never sabotage a real player's save for this test.
+
 ## Recovery, saves, and settings
 
 - [ ] The HUD starts at NEEDLE 3/3. Three hits recover at the active room entry with full health and preserved progression/outcomes.

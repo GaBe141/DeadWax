@@ -7,6 +7,7 @@ signal closed
 
 const ProgressionScript := preload("res://scripts/progression_state.gd")
 const PressScript := preload("res://scripts/press.gd")
+const EconomyScript := preload("res://scripts/economy_state.gd")
 
 ## Above this size The Book is shouting, and shouting is set in wood type.
 const DISPLAY_AT := 24
@@ -22,11 +23,13 @@ const FADED := Color(0.48, 0.45, 0.50)
 
 var progression: RefCounted
 var shine_source: Node
+var economy: RefCounted
 var can_open: Callable
 
 var overlay: Control
 var _progress_label: Label
 var _shine_label: Label
+var _wares_label: Label
 var _detail_kind: Label
 var _detail_title: Label
 var _detail_state: Label
@@ -189,6 +192,9 @@ func _build_menu() -> void:
 	rule.color = VIOLET
 	rule.custom_minimum_size.y = 2.0
 	page.add_child(rule)
+	_wares_label = _make_label("", 14, PAPER_DARK)
+	_wares_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	page.add_child(_wares_label)
 
 	var content := HBoxContainer.new()
 	content.add_theme_constant_override("separation", 18)
@@ -275,6 +281,12 @@ func _refresh() -> void:
 		return
 	_progress_label.text = "%d / %d GROOVES FILLED" % [filled_slot_count(), slot_count()]
 	_shine_label.text = "SHINE %03d" % _shine_count()
+	var carried: Array[String] = []
+	if economy != null:
+		for item in EconomyScript.catalog():
+			if bool(economy.call("has_item", item.id)):
+				carried.append(item.name)
+	_wares_label.text = "FROM THE STALL · " + " / ".join(carried) if not carried.is_empty() else "SHINE · Polish worn wax. Trade at the Bootlegger's stall."
 	for slot in _all_slots():
 		var button := _slot_buttons.get(slot) as Button
 		if button == null:
