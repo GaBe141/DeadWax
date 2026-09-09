@@ -79,6 +79,12 @@ static func draw_hush(canvas: CanvasItem, pose: int, ticks: int, parries: int, f
 static func draw_skip(canvas: CanvasItem, pose: Dictionary, palette: Dictionary) -> void:
 	preload("res://scripts/press_skip.gd").draw(canvas, pose, palette)
 
+static func draw_resident(canvas: CanvasItem, kind: StringName, pose: Dictionary, ink: Color, stock: Color) -> void:
+	preload("res://scripts/press_resident.gd").draw(canvas, kind, pose, ink, stock)
+
+static func draw_hound(canvas: CanvasItem, pose: Dictionary, ink: Color, stock: Color) -> void:
+	preload("res://scripts/press_hound.gd").draw(canvas, pose, ink, stock)
+
 static func draw_auditioner(canvas: CanvasItem, pose: Dictionary, ink: Color, body: Color, pale: Color, accent: Color, grey: Color, warm: Color) -> void:
 	preload("res://scripts/press_auditioner.gd").draw_auditioner(canvas, pose, ink, body, pale, accent, grey, warm)
 

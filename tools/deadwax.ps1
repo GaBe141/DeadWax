@@ -111,8 +111,8 @@ Dead Wax developer commands
   deadwax.cmd editor  Open the project in the Godot editor.
   deadwax.cmd play    Run the game directly with a local runtime log.
   deadwax.cmd dev     Open the mechanics rooms with developer shortcuts enabled.
-  deadwax.cmd check   Import resources, then run the native smoke suite.
-  deadwax.cmd test    Run only the native smoke suite.
+  deadwax.cmd check   Import resources, then run all native test suites.
+  deadwax.cmd test    Run all native test suites without importing.
   deadwax.cmd vibe    Start Mistral Vibe in this repository.
 
 The DEADWAX_GODOT environment variable can override Godot discovery.
@@ -184,7 +184,7 @@ switch ($Action) {
         $godot = Get-GodotExecutable -Console
         $version = Get-GodotVersion -Executable $godot
         Write-Host "Running Dead Wax smoke tests with Godot $version"
-        foreach ($suite in @('smoke_test', 'save_store_test', 'campaign_test', 'tonearm_test', 'overture_test', 'sprite_animation_test')) {
+        foreach ($suite in @('smoke_test', 'save_store_test', 'campaign_test', 'tonearm_test', 'overture_test', 'sprite_animation_test', 'residents_test')) {
             Invoke-Godot -Executable $godot -GodotArguments @(
                 '--headless', '--path', $ProjectRoot, '--script', ('res://tests/' + $suite + '.gd')
             )
@@ -198,7 +198,7 @@ switch ($Action) {
             '--headless', '--path', $ProjectRoot, '--import'
         )
         Write-Host 'Running native smoke tests'
-        foreach ($suite in @('smoke_test', 'save_store_test', 'campaign_test', 'tonearm_test', 'overture_test', 'sprite_animation_test')) {
+        foreach ($suite in @('smoke_test', 'save_store_test', 'campaign_test', 'tonearm_test', 'overture_test', 'sprite_animation_test', 'residents_test')) {
             Invoke-Godot -Executable $godot -GodotArguments @(
                 '--headless', '--path', $ProjectRoot, '--script', ('res://tests/' + $suite + '.gd')
             )

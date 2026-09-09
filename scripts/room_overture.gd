@@ -10,6 +10,7 @@ const HushScript := preload("res://scripts/hush.gd")
 const TonearmScript := preload("res://scripts/tonearm.gd")
 const OutcomeExitScript := preload("res://scripts/outcome_exit.gd")
 const ListeningPostScript := preload("res://scripts/listening_post.gd")
+const ResidentScript := preload("res://scripts/resident.gd")
 const WindScript := preload("res://scripts/wind_groove.gd")
 const MarkerScript := preload("res://scripts/chapter_marker.gd")
 
@@ -111,12 +112,15 @@ func _build_bootlegger() -> void:
 	_exit(Vector2(85, 574), &"whistlers", "THE WHISTLERS")
 	_exit(Vector2(1590, 574), &"overture_stair", "THE STAIR")
 	sign_label(Vector2(1100, 310), "BELOW THE LABEL\nThe wall has opened\njust enough for a stall.")
-	sign_label(Vector2(475, 185), "WORN NAMES ONLY\nThe Bootlegger is listening.\n[E / Y] by the counter")
-	_listening_post(Vector2(760, 574), "THE BOOTLEGGER", [
-		"The whistles only know one way.\nWest. Let them carry you.",
-		"Addie's door is still open.\nShe has been waiting at the last bar.",
-		"Below her, someone swept the floor.\nBelow him, something points home.",
-	])
+	sign_label(Vector2(260, 185), "WORN NAMES ONLY\nThe Bootlegger is listening.\n[E / Y] by the counter")
+	var bootlegger := ResidentScript.new()
+	bootlegger.name = "Bootlegger"
+	bootlegger.kind = &"bootlegger"
+	bootlegger.position = Vector2(760, 574)
+	bootlegger.session_outcomes = session_outcomes
+	bootlegger.ink = ink
+	bootlegger.stock = bg_color
+	add_child(bootlegger)
 	_polish(Vector2(1200, 574), &"stall_wax")
 	platform(Vector2(1320, 535), Vector2(180, 30))
 

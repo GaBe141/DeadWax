@@ -19,7 +19,7 @@ On the Dead Wax Wyse, the lightweight project commands are:
 .\deadwax.cmd play    play the campaign with a local runtime log
 .\deadwax.cmd dev     open the original mechanics rooms and planned-world tools
 .\deadwax.cmd editor  open the project in Godot
-.\deadwax.cmd check   import resources; run all six native test suites
+.\deadwax.cmd check   import resources; run all seven native test suites
 .\deadwax.cmd vibe    start Mistral Vibe in this repository
 ```
 
@@ -78,6 +78,18 @@ HUSH and the Tonearm carry their windups through contact and recovery.
 The animation follows the existing combat clock. It never moves collision
 shapes, changes damage ranges, or delays a strike. Pause freezes the poses;
 recovery clears transient player and boss motion.
+
+The Label and Overture have company, too. Tick nods through three beats and
+loses the fourth; grounded E/Y lets him talk about the nearby Count-In door.
+The Bootlegger rummages through tapes, looks up at Skip, and has different
+words after the Tonearm's ending. These conversations advance once per press.
+
+The Hound patrols beneath the plaza horn. Stand still with the Hood raised
+and let it come close: it settles beside Skip and wags for quiet company.
+Nearby strikes startle it briefly, and each freed voice widens its patrol.
+A freed Addie putters beside her doorway and pats a returning Hood or Set
+visitor. These small interactions offer company without replaying rewards;
+shattered Addie stays gone. Existing saves carry these choices forward.
 
 ## Saving and settings
 
@@ -261,10 +273,12 @@ palettes and both faces of the pressing flow through the same press unchanged.
 ## Development checks
 
 Run `.\deadwax.cmd check` before committing. It imports resources and runs the
-dependency-free native smoke, save-store, campaign, Tonearm, Overture, and sprite-animation suites. These cover the
+dependency-free native smoke, save-store, campaign, Tonearm, Overture,
+sprite-animation, and residents suites. These cover the
 original combat and progression invariants, all planned-room routes, validated
 checkpoint recovery, both chapters' room graph, boss outcomes, old-demo save
-continuation, and campaign state restoration.
+continuation, campaign state restoration, grounded conversations, resident
+pause behavior, harmless petting, and silent return visits.
 GitHub runs the checks on pushes and pull requests. Gameplay feel, real audio,
 rendering, and controller behavior still require `PLAYTEST.md`.
 

@@ -5,6 +5,8 @@ extends "res://scripts/room_base.gd"
 const DoorScript := preload("res://scripts/refrain_door.gd")
 const DummyScript := preload("res://scripts/test_pressing.gd")
 const AuditionerScript := preload("res://scripts/auditioner.gd")
+const ResidentScript := preload("res://scripts/resident.gd")
+const HoundScript := preload("res://scripts/hound.gd")
 const HORN_LISTEN_TIME := 1.4
 const HORN_LISTEN_RADIUS := 135.0
 const HORN_POSITION := Vector2(790, 574)
@@ -130,6 +132,14 @@ func _build_horn_plaza() -> void:
 	sign_label(Vector2(680, 424), "HOLD K / C / B — HOOD\nStand quietly beneath the horn.")
 	_polish(Vector2(790, 574), &"horn_wax")
 	sign_label(Vector2(1280, 260), "THE DESCENT\nEast, through the market.\nThe gate listens for a count.")
+	var hound := HoundScript.new()
+	hound.name = "Hound"
+	hound.position = Vector2(970, 574)
+	hound.home_position = hound.position
+	hound.session_outcomes = session_outcomes
+	hound.ink = ink
+	hound.stock = bg_color
+	add_child(hound)
 
 func _build_high_street() -> void:
 	_floor(2000)
@@ -157,7 +167,15 @@ func _build_practice_room() -> void:
 	_impression(&"arch", Vector2(1180, 330), Vector2(260, 460))
 	_exit(Vector2(85, 574), &"high_street", "HIGH STREET")
 	_exit(Vector2(1560, 574), &"horn_plaza", "THE PLAZA")
-	sign_label(Vector2(275, 345), "TICK'S PRACTICE\n3... 3... 3...\nThe missing beat is yours.")
+	sign_label(Vector2(720, 185), "TICK'S PRACTICE\n3... 3... 3...\nThe missing beat is yours.")
+	var tick := ResidentScript.new()
+	tick.name = "Tick"
+	tick.kind = &"tick"
+	tick.position = Vector2(465, 574)
+	tick.session_outcomes = session_outcomes
+	tick.ink = ink
+	tick.stock = bg_color
+	add_child(tick)
 	sign_label(Vector2(720, 335), "THE COUNT-IN\nJ / X — four even strikes.\nAny tempo. Leave a little space.")
 	_listening_door(Vector2(1190, 525), &"practice_count_in")
 	sign_label(Vector2(1305, 340), "YOU KNEW\nThe plaza is just outside.")
@@ -277,6 +295,9 @@ func apply_side(next_side: int) -> void:
 		previous.queue_free()
 		add_child(next_picture)
 		_scenery[index] = next_picture
+	for child in get_children():
+		if child.is_in_group("world_resident") and child.has_method("reink"):
+			child.call("reink", _solid_color(), _stock_color())
 
 func _process(delta: float) -> void:
 	if room_id != &"horn_plaza" or _horn_heard:

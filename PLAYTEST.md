@@ -57,10 +57,21 @@ Runtime errors are written to `.godot/deadwax-play.log`.
 - [ ] Skip's idle breath/blink, running feet, takeoff stretch, falling pose, and landing squash read clearly at normal game size.
 - [ ] Striking flicks the point immediately; Hood and Set transition smoothly without delaying either action.
 - [ ] Moving left and right keeps the point and eyes facing the movement direction; a hit shows recoil and recovery clears it.
-- [ ] Voices step as they creep and open their arms before contact; a freed Addie settles into a quiet standing loop.
+- [ ] Voices step as they creep and open their arms before contact; a freed Addie relaxes and putters beside her doorway.
 - [ ] The practice pressing, HUSH, and Tonearm windups and follow-through agree with their existing audio and parry timing.
 - [ ] A live victory settles into its resolved pose; Continue shows that settled pose without replaying the victory or granting rewards.
 - [ ] Pausing freezes character motion. Resume continues it; room transitions and recovery clear stale landing, strike, and hit poses.
+
+## Residents
+
+- [ ] The Bootlegger sorts and inspects tapes, looks toward Skip, and gestures when spoken to. His words change after either Tonearm ending.
+- [ ] Tick's pendulum and quiet clicks mark three beats, then pause. E/Y introduces the missing beat; four even J/X strikes still open the real Count-In door.
+- [ ] Standing near either resident shows a readable conversation above them. Each fresh E/Y press advances once; holding, jumping, or pressing from far away does not advance it or take a passage.
+- [ ] The Hound wanders and sniffs in the plaza. A grounded, still Hood visitor draws it close; after settling, it wags. Running or noise interrupts the quiet contact, and a nearby strike briefly startles it without hurting anyone.
+- [ ] Returning after freeing voices gives the Hound more room to patrol, with its whole silhouette clear of the plaza exits.
+- [ ] Freed Addie walks a small patch by her doorway and gently pats a nearby Hood or Set visitor. If freed far from home, she walks back without teleporting. Neither visit nor further strikes replay her encounter or Shine.
+- [ ] A shattered Addie remains absent after leaving, returning, and Continue. Existing version-one saves preserve the same choices.
+- [ ] Pause and the Book freeze every resident's animation, movement, and dialogue. Characters and cards remain readable at the usual game size.
 
 ## Recovery, saves, and settings
 

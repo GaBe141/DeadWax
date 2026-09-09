@@ -8,7 +8,8 @@ static func draw_auditioner(canvas: CanvasItem, pose: Dictionary, ink: Color, bo
 	var clock: float = pose.clock
 	var breath := sin(clock * 2.8)
 	var stride: float = pose.stride
-	var walking := phase == "pursue" or phase == "reach"
+	var resident: Dictionary = pose.get("resident", {})
+	var walking := phase == "pursue" or phase == "reach" or bool(resident.get("walking", false))
 	var step := sin(stride) if walking else 0.0
 	var lift := absf(cos(stride)) * 1.8 if walking else breath * 1.4
 	var recoil: float = pose.recoil
@@ -43,7 +44,7 @@ static func draw_auditioner(canvas: CanvasItem, pose: Dictionary, ink: Color, bo
 	# body while planted feet stay on the baseline, so the figure has weight.
 	var left_foot := Vector2(-10.0 + step * 7.0, 8.0 - maxf(step, 0.0) * 5.0)
 	var right_foot := Vector2(10.0 - step * 7.0, 8.0 - maxf(-step, 0.0) * 5.0)
-	if heard:
+	if heard and not walking:
 		left_foot = Vector2(-9.0, 8.0)
 		right_foot = Vector2(9.0, 8.0)
 	_limb(canvas, center + Vector2(-7.0, 10.0), left_foot, -4.0 - step * 2.0, inked, 3.5)
@@ -72,6 +73,15 @@ static func draw_auditioner(canvas: CanvasItem, pose: Dictionary, ink: Color, bo
 	if heard:
 		near_hand = center + Vector2(-29.0, -8.0 + breath * 2.0)
 		far_hand = center + Vector2(29.0, -8.0 - breath * 2.0)
+		if not resident.is_empty():
+			# Freed Addie offers a small touch, never a reaching attack. One
+			# hand pats the hood while the other quietly holds her own sleeve.
+			var pat := clampf(float(resident.get("pat", 0.0)), 0.0, 1.0)
+			near_hand = center + Vector2(face * 24.0, 6.0 + step * 2.0)
+			far_hand = center + Vector2(-face * 16.0, 13.0 - step * 2.0)
+			var hand_target: Vector2 = resident.get("hand_target", near_hand)
+			hand_target.y -= (0.5 + 0.5 * sin(float(resident.get("clock", clock)) * 5.0)) * 3.0
+			near_hand = near_hand.lerp(hand_target, pat)
 	elif phase == "stagger":
 		near_hand = center + Vector2(-face * (27.0 + recoil * 13.0), -18.0)
 		far_hand = center + Vector2(-face * 20.0, 15.0)
