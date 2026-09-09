@@ -73,8 +73,17 @@ static func draw_tonearm(canvas: CanvasItem, pose: Dictionary, ink: Color, stock
 		canvas, pose, ink, stock, DisplayFont, BodyFont, SIZE_HEADING, SIZE_SMALL
 	)
 
-static func draw_hush(canvas: CanvasItem, pose: int, ticks: int, parries: int, face: float, time: float, ink: Color, stock: Color) -> void:
-	preload("res://scripts/press_hush.gd").draw(canvas, pose, ticks, parries, face, time, ink, stock)
+static func draw_hush(canvas: CanvasItem, pose: int, ticks: int, parries: int, face: float, time: float, ink: Color, stock: Color, motion: Dictionary = {}) -> void:
+	preload("res://scripts/press_hush.gd").draw(canvas, pose, ticks, parries, face, time, ink, stock, motion)
+
+static func draw_skip(canvas: CanvasItem, pose: Dictionary, palette: Dictionary) -> void:
+	preload("res://scripts/press_skip.gd").draw(canvas, pose, palette)
+
+static func draw_auditioner(canvas: CanvasItem, pose: Dictionary, ink: Color, body: Color, pale: Color, accent: Color, grey: Color, warm: Color) -> void:
+	preload("res://scripts/press_auditioner.gd").draw_auditioner(canvas, pose, ink, body, pale, accent, grey, warm)
+
+static func draw_pressing(canvas: CanvasItem, pose: Dictionary, ink: Color, wax: Color, pale: Color, accent: Color, grey: Color) -> void:
+	preload("res://scripts/press_pressing.gd").draw_pressing(canvas, pose, ink, wax, pale, accent, grey)
 
 # -- surfaces -----------------------------------------------------------------
 

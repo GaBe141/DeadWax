@@ -9,26 +9,66 @@ static func draw_tonearm(canvas: CanvasItem, pose: Dictionary, ink: Color, stock
 	var warm := Color(0.80, 0.54, 0.24)
 	var pale := stock.lerp(Color.WHITE, 0.28)
 	var muted := stock.lerp(ink, 0.48)
+	var clock: float = pose.get("clock", pose.time)
+	var recoil: float = pose.get("hit_recoil", 0.0)
+	var settle := smoothstep(0.0, 1.0, float(pose.get("settle", 1.0)))
 	var pivot := Vector2(175.0, -370.0)
 	var elbow := Vector2(-130.0, -285.0)
-	var tip := Vector2.ZERO
+	var idle := Vector2(sin(clock * 1.3) * 1.8, -1.5 - sin(clock * 1.9) * 1.5)
+	var tip := idle
 	var tip_rotation := 0.0
+	# The mounting stays bolted to the wall. A little weight travels through
+	# the two joints and the loose cartridge, entirely in drawing coordinates.
+	elbow += Vector2(sin(clock * 1.3 - 0.4) * 2.8, sin(clock * 1.9 - 0.5) * 2.0)
 	if phase == "gesture":
-		var raised := sin(float(pose.gesture) * PI)
-		tip = Vector2(-160.0, -245.0) * raised
+		var gesture: float = pose.gesture
+		var raised := sin(smoothstep(0.0, 1.0, gesture) * PI)
+		tip = idle.lerp(Vector2(-160.0, -245.0), raised)
 		tip_rotation = -face * PI * raised
+		elbow += Vector2(-raised * 22.0, -raised * 16.0)
 	elif phase == "counting":
-		var tension: float = pose.windup
-		tip = Vector2(-face * 55.0, -80.0) * tension
+		var tension := smoothstep(0.0, 1.0, float(pose.windup))
+		tip = idle.lerp(Vector2(-face * 55.0, -80.0), tension)
+		elbow += Vector2(-face * tension * 8.0, -tension * 7.0)
+		tip_rotation = -face * tension * 0.22
 	elif phase == "sweep":
-		tip = Vector2(-face * 55.0, -80.0).lerp(Vector2.ZERO, float(pose.sweep))
+		# The accelerated arc reaches the node origin exactly at the existing
+		# 160 ms contact. Motion never displaces that gameplay strike point.
+		var sweep: float = pose.sweep
+		var travel := sweep * sweep
+		tip = Vector2(-face * 55.0, -80.0).lerp(Vector2.ZERO, travel)
+		tip += Vector2(face * sin(sweep * PI) * 14.0, 0.0)
+		tip_rotation = -face * 0.22 * (1.0 - travel)
+		elbow += Vector2(-face * (1.0 - travel) * 8.0, -(1.0 - travel) * 7.0)
+	elif phase == "recovery":
+		var age: float = pose.time
+		var follow := sin(minf(age / 0.24, 1.0) * PI) * exp(-age * 3.0)
+		tip = Vector2(face * 23.0, 4.0) * follow
+		tip += idle * smoothstep(0.24, 0.75, age)
+		tip_rotation = face * follow * 0.19
+		elbow += Vector2(face * follow * 10.0, follow * 3.0)
+	elif phase == "stagger":
+		var age: float = pose.time
+		var catch := sin(minf(age / 0.35, 1.0) * PI)
+		var tremor := sin(age * 18.0) * exp(-age * 4.0)
+		tip = Vector2(-face * 32.0, -26.0) * catch
+		tip += idle * smoothstep(0.3, 0.85, age)
+		tip_rotation = -face * (catch * 0.28 + tremor * 0.07)
+		elbow += Vector2(-face * catch * 12.0, -catch * 9.0)
 	elif phase == "freed":
-		tip = Vector2(-125.0, -230.0)
-		tip_rotation = -face * 1.15
-		elbow += Vector2(0.0, -30.0)
+		tip = Vector2(-125.0, -230.0) * settle
+		tip += Vector2(-sin(settle * PI) * 24.0, 0.0)
+		tip_rotation = -face * 1.15 * settle
+		elbow += Vector2(-sin(settle * PI) * 10.0, -30.0 * settle)
 	elif phase == "down":
-		tip = Vector2(32.0, 15.0)
-		elbow += Vector2(15.0, 115.0)
+		var fall := minf(settle * 1.35, 1.0)
+		var bounce := sin(clampf((settle - 0.72) / 0.28, 0.0, 1.0) * PI) * 6.0
+		tip = Vector2(32.0, 15.0) * fall - Vector2(0.0, bounce)
+		elbow += Vector2(15.0, 115.0) * settle
+	if recoil > 0.0:
+		var impact := sin((1.0 - recoil) * PI) * recoil
+		tip += Vector2(-face * 12.0, -6.0) * impact
+		tip_rotation += -face * impact * 0.16
 	var bright := accent if phase == "sweep" else (warm if phase == "freed" else ink)
 	var offset := Vector2(3.0, 2.0)
 	# Counterweight and overhead mounting plate; fine rules repeat the record's
@@ -65,10 +105,13 @@ static func draw_tonearm(canvas: CanvasItem, pose: Dictionary, ink: Color, stock
 	canvas.draw_line(Vector2(0.0, 13.0), Vector2(face * 13.0, 24.0), ink, 3.0, true)
 	canvas.draw_set_transform(Vector2.ZERO)
 	if phase == "down":
-		canvas.draw_line(Vector2(-22.0, -55.0), Vector2(8.0, -29.0), stock, 5.0, true)
-		canvas.draw_line(Vector2(8.0, -29.0), Vector2(-2.0, 6.0), stock, 5.0, true)
+		canvas.draw_line(tip + Vector2(-22.0, -55.0), tip + Vector2(8.0, -29.0), stock, 5.0, true)
+		canvas.draw_line(tip + Vector2(8.0, -29.0), tip + Vector2(-2.0, 6.0), stock, 5.0, true)
 		for shard in range(3):
-			canvas.draw_line(Vector2(-48.0 + shard * 27.0, 22.0), Vector2(-31.0 + shard * 27.0, 26.0), ink, 5.0, true)
+			var spread := Vector2(-48.0 + shard * 27.0, 22.0)
+			var leap := sin(settle * PI) * (34.0 + shard * 8.0)
+			var shard_pos := Vector2.ZERO.lerp(spread, settle) - Vector2(0.0, leap)
+			canvas.draw_line(shard_pos, shard_pos + Vector2(17.0, 4.0).rotated((1.0 - settle) * (shard + 1)), ink, 5.0, true)
 	# A narrow floor impression matches the localized reach. Only the committed
 	# face is marked, leaving the far side and above the point visibly clear.
 	if phase == "counting" or phase == "sweep":

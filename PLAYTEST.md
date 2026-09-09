@@ -52,6 +52,16 @@ Runtime errors are written to `.godot/deadwax-play.log`.
 - [ ] The Headshell's return text/scenery match the Tonearm's saved outcome.
 - [ ] An old completed eight-room demo save continues into the Overture with its Shine, room entry, Count-In, and prior choices intact.
 
+## Sprite animation
+
+- [ ] Skip's idle breath/blink, running feet, takeoff stretch, falling pose, and landing squash read clearly at normal game size.
+- [ ] Striking flicks the point immediately; Hood and Set transition smoothly without delaying either action.
+- [ ] Moving left and right keeps the point and eyes facing the movement direction; a hit shows recoil and recovery clears it.
+- [ ] Voices step as they creep and open their arms before contact; a freed Addie settles into a quiet standing loop.
+- [ ] The practice pressing, HUSH, and Tonearm windups and follow-through agree with their existing audio and parry timing.
+- [ ] A live victory settles into its resolved pose; Continue shows that settled pose without replaying the victory or granting rewards.
+- [ ] Pausing freezes character motion. Resume continues it; room transitions and recovery clear stale landing, strike, and hit poses.
+
 ## Recovery, saves, and settings
 
 - [ ] The HUD starts at NEEDLE 3/3. Three hits recover at the active room entry with full health and preserved progression/outcomes.

@@ -5,6 +5,8 @@ extends Node2D
 ## At full resonance it peaks and shatters into what it was going to say.
 ## muted=true -> Hush rules: raw hits build nothing; only parries count.
 
+const PrintPress := preload("res://scripts/press.gd")
+
 signal parried
 signal shattered(pos: Vector2)
 signal bout_won            # muted mode: 3 parries
@@ -42,6 +44,13 @@ var _face := -1.0
 var _sid := 0
 var _player: Node2D
 
+# The stand has a spring; its impression moves while its gameplay origin stays.
+const PRINT_RECOIL_TIME := 0.26
+const PRINT_FOLLOW_THROUGH_TIME := 0.25
+var _print_time := 0.0
+var _print_recoil := 0.0
+var _print_swing_tail := 0.0
+
 func _ready() -> void:
 	add_to_group("hears_strikes")
 	add_to_group("strikable")
@@ -55,6 +64,7 @@ func _bank() -> Node:
 	return get_tree().get_first_node_in_group("audio_bank")
 
 func _process(delta: float) -> void:
+	_advance_print(delta)
 	if _player == null:
 		_player = get_tree().get_first_node_in_group("player")
 		if _player == null:
@@ -112,12 +122,23 @@ func _process(delta: float) -> void:
 				_t = 0.0
 	queue_redraw()
 
+func _advance_print(delta: float) -> void:
+	if delta <= 0.0 or (is_inside_tree() and get_tree().paused):
+		return
+	var step := minf(delta, 0.1)
+	_print_time += step
+	_print_recoil = maxf(_print_recoil - step / PRINT_RECOIL_TIME, 0.0)
+	_print_swing_tail = maxf(_print_swing_tail - step / PRINT_FOLLOW_THROUGH_TIME, 0.0)
+	queue_redraw()
+
 func _resolve_swing(d: float) -> void:
+	_print_swing_tail = 1.0
 	var b := _bank()
 	if d <= HIT_RANGE + 20.0:
 		var since_strike: int = Time.get_ticks_msec() - _player.last_strike_ms
 		if since_strike >= 0 and since_strike <= PARRY_WINDOW_MS:
 			# RUNG BACK — caught on the point and played back
+			_print_recoil = 1.0
 			parry_count += 1
 			state = S.STAGGER
 			_t = 0.0
@@ -143,6 +164,7 @@ func on_player_strike(pos: Vector2, big: bool) -> void:
 	if state == S.DOWN:
 		return
 	if global_position.distance_to(pos) <= STRIKE_HIT_RANGE:
+		_print_recoil = 0.24 if muted else (1.0 if big else 0.72)
 		if muted:
 			# his rules: it barely flinches, and learns nothing about breaking
 			_t = maxf(_t - 0.1, 0.0)
@@ -180,48 +202,13 @@ const PINK := Color(0.90, 0.25, 0.50)
 const GREY := Color(0.55, 0.52, 0.58)
 
 func _draw() -> void:
-	var rng := RandomNumberGenerator.new()
-	rng.seed = _sid + int(Time.get_ticks_msec() / 100)
-	var jig := Vector2(rng.randf_range(-1.2, 1.2), rng.randf_range(-1.2, 1.2))
-	var accent := GREY if muted else PINK
-
-	if state == S.DOWN:
-		# a cracked stand, catching its breath (or bowing, on his floor)
-		draw_line(Vector2(-14, 42), Vector2(0, 10) + jig, INK, 4.0)
-		draw_line(Vector2(14, 42), Vector2(2, 12) + jig, INK, 4.0)
-		draw_arc(Vector2(0, -6) + jig, 20.0, 0.4, PI - 0.4, 12, GREY, 3.0)
-		return
-
-	# stand legs
-	draw_line(Vector2(-16, 42), Vector2(-4, -2) + jig, INK, 4.0)
-	draw_line(Vector2(16, 42), Vector2(4, -2) + jig, INK, 4.0)
-	# the pressed disc
-	var disc_c := Vector2(0, -26) + jig
-	draw_circle(disc_c, 30.0, WAX)
-	draw_arc(disc_c, 30.0, 0, TAU, 26, PALE if not muted else GREY, 3.0)
-	draw_arc(disc_c, 21.0, 0, TAU, 20, Color(PALE.r, PALE.g, PALE.b, 0.35), 1.5)
-	draw_arc(disc_c, 13.0, 0, TAU, 16, Color(PALE.r, PALE.g, PALE.b, 0.3), 1.5)
-	# resonance rim: the diegetic meter
-	if resonance > 0.01:
-		draw_arc(disc_c, 34.0, -PI / 2.0, -PI / 2.0 + TAU * resonance, 30, accent, 4.0)
-	# HP: the patient bar, shown as pips under the stand
-	var total := int(round(HP_MAX))
-	var remaining := int(ceil(hp))
-	for i in range(total):
-		var px := disc_c + Vector2(-((total - 1) * 9.0) * 0.5 + i * 9.0, 44.0)
-		var pip := PALE if i < remaining else Color(GREY.r, GREY.g, GREY.b, 0.4)
-		draw_line(px + Vector2(0, -4), px + Vector2(0, 4), pip, 3.0)
-	# the eye: calm pale, alert accent
-	var eye := PALE if state == S.CALM else accent
-	draw_circle(disc_c + Vector2(_face * 8.0, -2.0), 3.0, eye)
-	# counting ticks shown as marks over its head — it counts OUT LOUD, fair and square
-	if state == S.COUNTING:
-		for i in range(_count):
-			draw_line(disc_c + Vector2(-14 + i * 10, -44), disc_c + Vector2(-14 + i * 10, -36), accent, 3.0)
-	# the swing arm
-	if state == S.SWING:
-		draw_line(disc_c, disc_c + Vector2(_face * 110.0, 26.0), accent, 5.0)
-	elif state == S.COUNTING and _count >= 3:
-		draw_line(disc_c, disc_c + Vector2(_face * 40.0, -30.0), INK, 4.0)
-	elif state == S.STAGGER:
-		draw_line(disc_c, disc_c + Vector2(-_face * 60.0, -40.0), GREY, 4.0)
+	var pose := {
+		"phase": S.keys()[state].to_lower(), "clock": _print_time,
+		"seed": _sid, "face": _face, "muted": muted,
+		"recoil": _print_recoil, "follow_through": _print_swing_tail,
+		"count": _count, "beat": clampf(_t / TICK_GAP, 0.0, 1.0),
+		"swing": clampf(_t / 0.12, 0.0, 1.0),
+		"state_time": _t, "reform": clampf(_t / REFORM_TIME, 0.0, 1.0),
+		"resonance": resonance, "hp": hp, "hp_total": int(HP_MAX),
+	}
+	PrintPress.draw_pressing(self, pose, INK, WAX, PALE, PINK, GREY)

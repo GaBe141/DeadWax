@@ -19,7 +19,7 @@ On the Dead Wax Wyse, the lightweight project commands are:
 .\deadwax.cmd play    play the campaign with a local runtime log
 .\deadwax.cmd dev     open the original mechanics rooms and planned-world tools
 .\deadwax.cmd editor  open the project in Godot
-.\deadwax.cmd check   import resources; run all five native test suites
+.\deadwax.cmd check   import resources; run all six native test suites
 .\deadwax.cmd vibe    start Mistral Vibe in this repository
 ```
 
@@ -66,6 +66,18 @@ has different words and scenery when you return.
 
 Gather and Jump-Cut still belong to later regions. The Overture remains dry;
 this extension earns its traversal through grooves, wind, and ordinary jumps.
+
+## Living ink
+
+Skip breathes and blinks at rest, leans into a running stride, stretches on
+takeoff, and compresses on landing. Strikes flick the point forward; the Hood
+slides into place and Set lowers the body into a listening pose.
+
+Voices step and reach, the practice pressing bends and springs back, and
+HUSH and the Tonearm carry their windups through contact and recovery.
+The animation follows the existing combat clock. It never moves collision
+shapes, changes damage ranges, or delays a strike. Pause freezes the poses;
+recovery clears transient player and boss motion.
 
 ## Saving and settings
 
@@ -249,7 +261,7 @@ palettes and both faces of the pressing flow through the same press unchanged.
 ## Development checks
 
 Run `.\deadwax.cmd check` before committing. It imports resources and runs the
-dependency-free native smoke, save-store, campaign, Tonearm, and Overture suites. These cover the
+dependency-free native smoke, save-store, campaign, Tonearm, Overture, and sprite-animation suites. These cover the
 original combat and progression invariants, all planned-room routes, validated
 checkpoint recovery, both chapters' room graph, boss outcomes, old-demo save
 continuation, and campaign state restoration.

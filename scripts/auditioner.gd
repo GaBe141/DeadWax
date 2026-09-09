@@ -7,6 +7,8 @@ extends Node2D
 ##           heard at last, and leaves. Freed stays freed. Shattered stays gone.
 ## The mercy is the design (ENEMIES.md #5). The B5 audit remembers which.
 
+const PrintPress := preload("res://scripts/press.gd")
+
 signal parried
 signal shattered(pos: Vector2)
 signal bout_won                    # unused here; kept so main's wiring stays uniform
@@ -50,6 +52,13 @@ var _player: Node2D
 var _boil := 0.0
 var _jit := Vector2.ZERO
 
+# Presentation clocks never drive a reach, reward or movement.
+const PRINT_RECOIL_TIME := 0.24
+const PRINT_STRIDE_RADIANS := 0.12
+var _print_time := 0.0
+var _print_stride := 0.0
+var _print_recoil := 0.0
+
 func _ready() -> void:
 	add_to_group("hears_strikes")
 	add_to_group("strikable")
@@ -63,6 +72,7 @@ func _bank() -> Node:
 	return get_tree().get_first_node_in_group("audio_bank")
 
 func _process(delta: float) -> void:
+	_advance_print(delta)
 	if _player == null:
 		_player = get_tree().get_first_node_in_group("player")
 		if _player == null:
@@ -125,6 +135,17 @@ func _process(delta: float) -> void:
 				queue_free()
 	queue_redraw()
 
+func _advance_print(delta: float) -> void:
+	if delta <= 0.0 or (is_inside_tree() and get_tree().paused):
+		return
+	var step := minf(delta, 0.1)
+	_print_time += step
+	_print_recoil = maxf(_print_recoil - step / PRINT_RECOIL_TIME, 0.0)
+	queue_redraw()
+
+func _holds_freed_impression() -> bool:
+	return false
+
 func _go(s: int) -> void:
 	state = s
 	_t = 0.0
@@ -133,7 +154,9 @@ func _is_player_setting() -> bool:
 	return _player != null and _player.get("setting") == true
 
 func _creep(speed: float, delta: float) -> void:
+	var previous_x := global_position.x
 	global_position.x = move_toward(global_position.x, _player.global_position.x, speed * delta)
+	_print_stride += absf(global_position.x - previous_x) * PRINT_STRIDE_RADIANS
 
 func _resolve_reach(d: float) -> void:
 	var b := _bank()
@@ -141,6 +164,7 @@ func _resolve_reach(d: float) -> void:
 		var since_strike: int = Time.get_ticks_msec() - _player.last_strike_ms
 		if since_strike >= 0 and since_strike <= PARRY_WINDOW_MS:
 			# RUNG BACK — its reach caught on your point and played back
+			_print_recoil = 1.0
 			_gain(RES_PARRY)
 			parried.emit()
 			if b != null:
@@ -158,6 +182,7 @@ func on_player_strike(pos: Vector2, big: bool) -> void:
 	if state == S.DOWN or state == S.FREED:
 		return
 	if global_position.distance_to(pos) <= STRIKE_HIT_RANGE:
+		_print_recoil = 1.0 if big else 0.72
 		_gain(RES_HIT * (1.6 if big else 1.0))
 		if state == S.DOWN:
 			return
@@ -202,56 +227,16 @@ const GREY := Color(0.55, 0.52, 0.58)
 const WARM := Color(0.96, 0.80, 0.42)      # the "heard" glow
 
 func _draw() -> void:
-	var j := _jit
-	var c := Vector2(0, -26) + j
-
-	# freed — a calm figure, standing, fading warm
-	if state == S.FREED:
-		var a := clampf(1.0 - _t / LEAVE_TIME, 0.0, 1.0)
-		draw_circle(Vector2(0, -28), 20.0, Color(WARM.r, WARM.g, WARM.b, 0.5 * a))
-		draw_arc(Vector2(0, -28), 25.0, 0, TAU, 24, Color(WARM.r, WARM.g, WARM.b, a), 2.5)
-		draw_line(Vector2(-9, 8), Vector2(-7, -18), Color(INK.r, INK.g, INK.b, a), 3.0)
-		draw_line(Vector2(9, 8), Vector2(7, -18), Color(INK.r, INK.g, INK.b, a), 3.0)
-		return
-
-	# shattered — bursting into the words it was mid-saying (main draws the splatter)
-	if state == S.DOWN:
-		var bb := clampf(1.0 - _t / BURST_TIME, 0.0, 1.0)
-		draw_arc(c, 30.0 + (1.0 - bb) * 26.0, 0, TAU, 22, Color(PINK.r, PINK.g, PINK.b, bb), 3.0)
-		return
-
-	var reaching := state == S.REACH
-	var accent := PINK if reaching else GREY
-
-	# legs
-	draw_line(Vector2(-9, 8), c + Vector2(-5, 4), INK, 3.0)
-	draw_line(Vector2(9, 8), c + Vector2(5, 4), INK, 3.0)
-	# body: a longing figure
-	draw_circle(c, 22.0, BODY)
-	draw_arc(c, 22.0, 0, TAU, 22, PALE, 2.5)
-
-	# arms reach OUT as the hum swells — the visual half of the tell
-	var ext := clampf(_reach_t / REACH_WIND, 0.0, 1.0) if reaching else 0.0
-	draw_line(c, c + Vector2(_face * (16.0 + ext * 46.0), -6.0 - ext * 6.0), accent, 3.5)
-	draw_line(c, c + Vector2(_face * (11.0 + ext * 22.0), 9.0 + ext * 8.0), accent, 3.0)
-
-	# resonance rim (pink): posture / shatter meter
-	if resonance > 0.01:
-		draw_arc(c, 27.0, -PI / 2.0, -PI / 2.0 + TAU * resonance, 26, PINK, 4.0)
-
-	# HP pips under it
-	var total := int(round(HP_MAX))
-	var remaining := int(ceil(hp))
-	for i in range(total):
-		var px := Vector2(-((total - 1) * 9.0) * 0.5 + i * 9.0, 22.0)
-		var pip := PALE if i < remaining else Color(GREY.r, GREY.g, GREY.b, 0.4)
-		draw_line(px + Vector2(0, -4), px + Vector2(0, 4), pip, 3.0)
-
-	# the eye: open, longing; pink when reaching
-	draw_circle(c + Vector2(_face * 5.0, -2.0), 3.4, PALE)
-	draw_circle(c + Vector2(_face * 6.0, -2.0), 1.6, accent)
-
-	# SET-mercy halo: fills warm as you kneel near — heard at last
-	if _set > 0.01:
-		var p := clampf(_set / SET_FREE_TIME, 0.0, 1.0)
-		draw_arc(c, 34.0, -PI / 2.0, -PI / 2.0 + TAU * p, 28, Color(WARM.r, WARM.g, WARM.b, 0.9), 3.0)
+	var pose := {
+		"phase": S.keys()[state].to_lower(), "clock": _print_time,
+		"stride": _print_stride, "recoil": _print_recoil, "face": _face,
+		"jitter": _jit * 0.42, "state_time": _t,
+		"reach": clampf(_reach_t / REACH_WIND, 0.0, 1.0),
+		"recover": clampf(_t / RECOVER_TIME, 0.0, 1.0),
+		"leave": clampf(_t / LEAVE_TIME, 0.0, 1.0),
+		"burst": clampf(_t / BURST_TIME, 0.0, 1.0),
+		"held": _holds_freed_impression(),
+		"resonance": resonance, "listening": clampf(_set / SET_FREE_TIME, 0.0, 1.0),
+		"hp": hp, "hp_total": int(HP_MAX),
+	}
+	PrintPress.draw_auditioner(self, pose, INK, BODY, PALE, PINK, GREY, WARM)

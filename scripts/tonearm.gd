@@ -26,6 +26,8 @@ const HP_MAX := 6.0
 const HP_PER_HIT := 1.0
 const HP_PER_BIG := 1.6
 const MAX_FRAME_STEP := 0.1
+const RESOLUTION_SETTLE_TIME := 1.1
+const HIT_RECOIL_DECAY := 5.5
 
 enum S { DORMANT, GESTURE, WAITING, COUNTING, SWEEP, RECOVERY, STAGGER, FREED, DOWN }
 var state: int = S.DORMANT
@@ -41,6 +43,9 @@ var _face := -1.0
 var _engaged := false
 var _gestured := false
 var _opening_hit := false
+var _visual_time := 0.0
+var _resolution_age := RESOLUTION_SETTLE_TIME
+var _hit_recoil := 0.0
 
 func _ready() -> void:
 	add_to_group("hears_strikes")
@@ -63,6 +68,12 @@ func _process(delta: float) -> void:
 	# Pausing freezes both the count and the act of listening. A frame hitch must
 	# never eat an entire tell and deliver a sweep the player did not see.
 	if delta <= 0.0 or (is_inside_tree() and get_tree().paused):
+		return
+	_visual_time += minf(delta, MAX_FRAME_STEP)
+	_hit_recoil = maxf(_hit_recoil - delta * HIT_RECOIL_DECAY, 0.0)
+	if not outcome.is_empty():
+		_resolution_age = minf(_resolution_age + delta, RESOLUTION_SETTLE_TIME)
+		queue_redraw()
 		return
 	if not is_instance_valid(_player):
 		_player = get_tree().get_first_node_in_group("player")
@@ -170,6 +181,7 @@ func on_player_strike(pos: Vector2, big: bool) -> void:
 	_opening_hit = true
 	_listening = 0.0
 	hp = maxf(hp - (HP_PER_BIG if big else HP_PER_HIT), 0.0)
+	_hit_recoil = 1.0
 	_sound("thud", -9.0, 0.7)
 	if hp <= 0.0:
 		_resolve_outcome("shattered")
@@ -179,6 +191,8 @@ func _resolve_outcome(result: String) -> void:
 	if not outcome.is_empty() or (result != "freed" and result != "shattered"):
 		return
 	restore_outcome(result)
+	# A live resolution moves into its held pose; a restored one starts there.
+	_resolution_age = 0.0
 	if result == "freed":
 		freed.emit(global_position)
 		_sound("freed", -5.0, 0.8)
@@ -194,6 +208,9 @@ func restore_outcome(result: String) -> void:
 	_engaged = false
 	_opening_hit = true
 	_go(S.FREED if result == "freed" else S.DOWN)
+	_visual_time = 0.0
+	_resolution_age = RESOLUTION_SETTLE_TIME
+	_hit_recoil = 0.0
 	if result == "shattered":
 		hp = 0.0
 	remove_from_group("strikable")
@@ -208,6 +225,9 @@ func reset_attempt() -> void:
 	_opening_hit = false
 	_count = 0
 	_go(S.WAITING if _gestured else S.DORMANT)
+	_visual_time = 0.0
+	_hit_recoil = 0.0
+	_resolution_age = RESOLUTION_SETTLE_TIME
 
 func _draw() -> void:
 	var pose := {
@@ -219,5 +239,7 @@ func _draw() -> void:
 		"gesture": clampf(_t / GESTURE_TIME, 0.0, 1.0),
 		"sweep": clampf(_t / SWEEP_TIME, 0.0, 1.0),
 		"recovery": clampf(_t / (PARRY_RECOVER_TIME if state == S.STAGGER else RECOVER_TIME), 0.0, 1.0),
+		"clock": _visual_time, "hit_recoil": _hit_recoil,
+		"settle": clampf(_resolution_age / RESOLUTION_SETTLE_TIME, 0.0, 1.0),
 	}
 	Press.draw_tonearm(self, pose, ink, stock)

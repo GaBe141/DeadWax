@@ -657,6 +657,7 @@ func _respawn() -> void:
 		player.set("_buffer", 0.0)
 		player.set("_recover", 0.0)
 	player.refill_air_strikes()
+	player.reset_animation()
 	camera.reset_smoothing()
 	if not development_mode:
 		for encounter in get_tree().get_nodes_in_group("chapter_boss"):

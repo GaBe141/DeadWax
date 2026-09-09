@@ -8,6 +8,7 @@ signal on_beat
 signal took_hit
 
 const ProgressionScript := preload("res://scripts/progression_state.gd")
+const PressScript := preload("res://scripts/press.gd")
 
 # -- RUN / JUMP (the honest legs) --------------------------------------------
 const RUN_SPEED := 340.0
@@ -69,10 +70,28 @@ var _coyote := 0.0
 var _buffer := 0.0
 var _strike_cd := 0.0
 var _recover := 0.0
-var _boil_t := 0.0
 var _hit_flash := 0.0
-var _shape_pts := PackedVector2Array()
-var _jit := []
+
+# Presentation has its own clock and impulses. None feed back into movement,
+# contact, strike cooldowns or the 100 ms combat clock.
+const STRIDE_LENGTH := 112.0
+const STRIKE_POSE_TIME := 0.22
+const LAND_POSE_TIME := 0.24
+const LAUNCH_POSE_TIME := 0.26
+var _print_time := 0.0
+var _stride := 0.0
+var _run_blend := 0.0
+var _air_blend := 0.0
+var _hood_blend := 0.0
+var _set_blend := 0.0
+var _look_face := 1.0
+var _land_pose := 0.0
+var _land_strength := 0.0
+var _launch_pose := 0.0
+var _strike_pose := 0.0
+var _strike_big := false
+var _hit_direction := 1.0
+var _animation_grounded := true
 
 const INK := Color(0.13, 0.12, 0.11)
 const IRON := Color(0.36, 0.35, 0.37)
@@ -92,10 +111,6 @@ func _ready() -> void:
 	rect.size = Vector2(34, 52)
 	cs.shape = rect
 	add_child(cs)
-	_shape_pts = _teardrop()
-	_jit.resize(_shape_pts.size())
-	for i in _jit.size():
-		_jit[i] = Vector2.ZERO
 	z_index = 10
 
 func air_strike_capacity() -> int:
@@ -117,6 +132,7 @@ func _has_gather() -> bool:
 	)
 
 func _physics_process(delta: float) -> void:
+	var grounded_before := is_on_floor()
 	hooded = Input.is_action_pressed("lift")
 	setting = Input.is_action_pressed("set") and is_on_floor() and not hooded
 	_stagger = maxf(_stagger - delta, 0.0)
@@ -152,6 +168,7 @@ func _physics_process(delta: float) -> void:
 
 	if _buffer > 0.0 and _coyote > 0.0 and _stagger <= 0.0 and not setting:
 		velocity.y = JUMP_VELOCITY
+		_launch_pose = LAUNCH_POSE_TIME
 		_buffer = 0.0
 		_coyote = 0.0
 	if Input.is_action_just_released("jump") and velocity.y < 0.0:
@@ -161,7 +178,12 @@ func _physics_process(delta: float) -> void:
 	if Input.is_action_just_pressed("strike") and _strike_cd <= 0.0 and not hooded and _stagger <= 0.0 and not setting:
 		_strike()
 
+	var landing_speed := velocity.y
 	move_and_slide()
+	_animation_grounded = is_on_floor()
+	if not grounded_before and _animation_grounded and landing_speed > 80.0:
+		_land_pose = LAND_POSE_TIME
+		_land_strength = clampf(landing_speed / 950.0, 0.25, 1.0)
 
 func _strike() -> void:
 	_strike_cd = STRIKE_COOLDOWN
@@ -225,6 +247,10 @@ func _strike() -> void:
 		velocity = velocity * AIR_KEEP + aim * AIR_IMPULSE
 		launched = true
 
+	_strike_pose = STRIKE_POSE_TIME
+	_strike_big = big
+	if launched:
+		_launch_pose = LAUNCH_POSE_TIME
 	struck.emit(global_position, big, launched)
 
 func take_hit(from_pos: Vector2) -> void:
@@ -234,67 +260,62 @@ func take_hit(from_pos: Vector2) -> void:
 	velocity = away * 520.0 + Vector2(0, -260)
 	_stagger = 0.28
 	_hit_flash = 0.35
+	_hit_direction = signf(away.x) if absf(away.x) > 0.01 else -facing
 	noise = 1.0
 	took_hit.emit()
 
-# -- scratchy visuals: boil = crackle readout; hood = silhouette change -------
+# -- the animated impression -------------------------------------------------
 
 func _process(delta: float) -> void:
+	var step := minf(delta, 0.1)
+	_print_time += step
 	_hit_flash = maxf(_hit_flash - delta, 0.0)
-	_boil_t -= delta
-	if _boil_t <= 0.0:
-		_boil_t = 0.09
-		var amp := 1.2 + noise * 4.0
-		for i in _jit.size():
-			_jit[i] = Vector2(randf_range(-amp, amp), randf_range(-amp, amp))
-		queue_redraw()
+	_stride = fmod(_stride + absf(velocity.x) * step * TAU / STRIDE_LENGTH, TAU)
+	var running := clampf(absf(velocity.x) / RUN_SPEED, 0.0, 1.0) if _animation_grounded else 0.0
+	_run_blend = move_toward(_run_blend, running, step * 7.0)
+	_air_blend = move_toward(_air_blend, 0.0 if _animation_grounded else 1.0, step * 10.0)
+	_hood_blend = move_toward(_hood_blend, 1.0 if hooded else 0.0, step * 7.0)
+	_set_blend = move_toward(_set_blend, 1.0 if setting else 0.0, step * 6.0)
+	_look_face = lerpf(_look_face, facing, 1.0 - exp(-step * 18.0))
+	_land_pose = maxf(_land_pose - step, 0.0)
+	_launch_pose = maxf(_launch_pose - step, 0.0)
+	_strike_pose = maxf(_strike_pose - step, 0.0)
+	queue_redraw()
 
 func _draw() -> void:
-	if hooded:
-		# the 45-sleeve comes up: a cone, accents drained
-		var hood := PackedVector2Array([
-			Vector2(-24, 26), Vector2(0, -44), Vector2(24, 26), Vector2(-24, 26)
-		])
-		draw_colored_polygon(hood, Color(0.30, 0.28, 0.33))
-		var outline := PackedVector2Array()
-		for i in hood.size():
-			outline.append(hood[i] + _jit[i % _jit.size()] * 0.5)
-		draw_polyline(outline, HOODGREY, 3.0, true)
-		draw_circle(Vector2(0, -12), 9.0, Color(0.08, 0.07, 0.09))
-		draw_circle(Vector2(-3.0, -13.0), 1.6, HOODGREY)
-		draw_circle(Vector2(3.5, -12.0), 1.6, HOODGREY)
-		return
-	var flash := _hit_flash > 0.0 and int(_hit_flash * 20.0) % 2 == 0
-	draw_colored_polygon(_shape_pts, PALE if flash else _body)
-	var outline := PackedVector2Array()
-	for i in _shape_pts.size():
-		outline.append(_shape_pts[i] + _jit[i])
-	outline.append(_shape_pts[0] + _jit[0])
-	draw_polyline(outline, INK, 3.0, true)
-	draw_polyline(PackedVector2Array([Vector2(0, -34), Vector2(12, -43), Vector2(25, -39)]), INK, 2.5, true)
-	# eyes
-	draw_circle(Vector2(-5.0, 0.0), 2.6, PALE)
-	draw_circle(Vector2(5.0, 0.0), 2.6, PALE)
-	# pink accents ARE the crackle meter: glow with noise, drain when quiet
-	if noise > 0.03:
-		var pa := Color(PINK.r, PINK.g, PINK.b, clampf(noise, 0.0, 1.0))
-		draw_circle(Vector2(-5.0, 0.0), 1.1, pa)
-		draw_circle(Vector2(5.0, 0.0), 1.1, pa)
-		draw_polyline(PackedVector2Array([Vector2(12, -43), Vector2(25, -39)]), pa, 2.0, true)
-		draw_line(Vector2(facing * 8.0, 18.0), Vector2(facing * 15.0, 24.0), pa, 2.0)
-	if setting:
-		# SET: point lowered, playing soft — defenseless, listening
-		draw_arc(Vector2(0, 20), 13.0, 0, TAU, 20, Color(PINK.r, PINK.g, PINK.b, 0.55), 2.0)
-		draw_arc(Vector2(0, 20), 21.0, 0, TAU, 24, Color(PINK.r, PINK.g, PINK.b, 0.28), 2.0)
-		draw_line(Vector2(facing * 6.0, 8.0), Vector2(facing * 11.0, 22.0), PINK, 2.5)
+	PressScript.draw_skip(self, _animation_pose(), {
+		"ink": INK, "body": _body, "pale": PALE, "pink": PINK, "hood": HOODGREY,
+	})
 
-func _teardrop() -> PackedVector2Array:
-	var pts := PackedVector2Array()
-	pts.append(Vector2(0, -34))
-	for i in range(15):
-		var t := lerpf(-0.55, 3.69, i / 14.0)
-		pts.append(Vector2(0, 8) + Vector2(cos(t), sin(t)) * 19.0)
-	return pts
+func _animation_pose() -> Dictionary:
+	return {
+		"time": _print_time, "stride": _stride, "run": _run_blend,
+		"air": _air_blend, "vertical": clampf(velocity.y / 950.0, -1.0, 1.0),
+		"hood": _hood_blend, "set": _set_blend, "face": _look_face,
+		"land": _land_pose / LAND_POSE_TIME, "impact": _land_strength,
+		"launch": _launch_pose / LAUNCH_POSE_TIME,
+		"strike": _strike_pose / STRIKE_POSE_TIME, "big": _strike_big,
+		"hurt": _hit_flash / 0.35, "hit_direction": _hit_direction, "noise": noise,
+	}
+
+## Recovery and passages move the body instantly; the impression starts at rest
+## instead of carrying an old fall, hit, or landing into the next room.
+func reset_animation() -> void:
+	_print_time = 0.0
+	_stride = 0.0
+	_run_blend = 0.0
+	_air_blend = 0.0
+	_hood_blend = 1.0 if hooded else 0.0
+	_set_blend = 0.0
+	_look_face = facing
+	_land_pose = 0.0
+	_land_strength = 0.0
+	_launch_pose = 0.0
+	_strike_pose = 0.0
+	_strike_big = false
+	_hit_flash = 0.0
+	_animation_grounded = true
+	queue_redraw()
 
 func set_page(stock: Color) -> void:
 	_body = IRON_REVERSED if stock.get_luminance() < 0.45 else IRON
