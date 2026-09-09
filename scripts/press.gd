@@ -48,6 +48,49 @@ const CARD_STOCK_MIX := 0.10
 const CARD_PAD := Vector2(12.0, 7.0)
 const CARD_RULE := 2.0
 
+static var _lamp_texture: GradientTexture2D
+static var _unshaded: CanvasItemMaterial
+static var _glow: CanvasItemMaterial
+
+## Soft native light falloff, shared by the lamps and their small printed glow.
+static func light_texture() -> GradientTexture2D:
+	if _lamp_texture == null:
+		var gradient := Gradient.new()
+		gradient.offsets = PackedFloat32Array([0.0, 0.18, 0.42, 0.72, 1.0])
+		gradient.colors = PackedColorArray([Color.WHITE, Color(0.82, 0.82, 0.82),
+			Color(0.38, 0.38, 0.38), Color(0.08, 0.08, 0.08), Color.BLACK])
+		_lamp_texture = GradientTexture2D.new()
+		_lamp_texture.width = 256
+		_lamp_texture.height = 256
+		_lamp_texture.gradient = gradient
+		_lamp_texture.fill = GradientTexture2D.FILL_RADIAL
+		_lamp_texture.fill_from = Vector2(0.5, 0.5)
+		_lamp_texture.fill_to = Vector2(1.0, 0.5)
+	return _lamp_texture
+
+static func unshaded_material() -> CanvasItemMaterial:
+	if _unshaded == null:
+		_unshaded = CanvasItemMaterial.new()
+		_unshaded.light_mode = CanvasItemMaterial.LIGHT_MODE_UNSHADED
+	return _unshaded
+
+static func glow_material() -> CanvasItemMaterial:
+	if _glow == null:
+		_glow = CanvasItemMaterial.new()
+		_glow.light_mode = CanvasItemMaterial.LIGHT_MODE_UNSHADED
+		_glow.blend_mode = CanvasItemMaterial.BLEND_MODE_ADD
+	return _glow
+
+static func draw_lamp(canvas: CanvasItem, ink: Color, stock: Color, tint: Color) -> void:
+	var frame := ink.lerp(stock, 0.20)
+	canvas.draw_line(Vector2(0, -66), Vector2(0, -13), frame, 2.0, true)
+	canvas.draw_colored_polygon(PackedVector2Array([Vector2(-15, -8), Vector2(-6, -17),
+		Vector2(6, -17), Vector2(15, -8)]), frame)
+	canvas.draw_rect(Rect2(-8, -7, 16, 19), tint.lerp(Color.WHITE, 0.48))
+	canvas.draw_rect(Rect2(-8, -7, 16, 19), frame, false, 2.0)
+	canvas.draw_line(Vector2(-12, 14), Vector2(12, 14), frame, 3.0, true)
+	canvas.draw_line(Vector2(0, -6), Vector2(0, 12), Color(frame, 0.6), 1.0)
+
 static func menu_button_style(ink: Color, stock: Color, highlighted := false, focused := false) -> StyleBoxFlat:
 	var style := StyleBoxFlat.new()
 	style.bg_color = ink if highlighted else stock.lerp(ink, 0.045)

@@ -19,7 +19,7 @@ On the Dead Wax Wyse, the lightweight project commands are:
 .\deadwax.cmd play    play the campaign with a local runtime log
 .\deadwax.cmd dev     open the original mechanics rooms and planned-world tools
 .\deadwax.cmd editor  open the project in Godot
-.\deadwax.cmd check   import resources; run all ten native test suites
+.\deadwax.cmd check   import resources; run all eleven native test suites
 .\deadwax.cmd vibe    start Mistral Vibe in this repository
 ```
 
@@ -133,8 +133,8 @@ The checkpoint is `user://deadwax-save.json`. Writes are validated and keep a
 `.bak` recovery copy of the previous valid checkpoint. Volume, fullscreen,
 and reduced camera motion are saved separately in
 `user://deadwax-settings.cfg`. Reduced camera motion removes camera smoothing
-and shake, and freezes decorative ambient motion and parallax. Escape/gamepad
-Back opens pause; gamepad Start keeps its role as
+and shake, and freezes decorative ambient motion, parallax, and slow lamp
+modulation. Escape/gamepad Back opens pause; gamepad Start keeps its role as
 the Book. The needle can take three hits, or four with Spare Groove, before
 recovering at the active room entry with full health and preserved progress.
 Continue also starts there at full health.
@@ -271,6 +271,7 @@ unchanged for topology checks. See `ROUTING.md` for both loaders.
 - Door strictness: `GAP_MIN/GAP_MAX/EVENNESS` in `scripts/refrain_door.gd`
 - B-side length and rewind: constants atop `scripts/pressing_state.gd`
 - Type, ink, plates and paper: `scripts/press.gd` and `assets/shaders/`
+- Room light placement and exposure: `scripts/lighting_profiles.gd`
 - All SFX are synthesized in `scripts/audio_bank.gd` — still no audio assets
 
 ## How it looks
@@ -290,6 +291,11 @@ is there, never how it is inked:
 - **Exposed edges.** Lamination, scoring, and rivets are clipped to the actual
   platform faces, at least 10 pixels below their walkable tops. They never
   cover a landing or bridge a gap.
+- **Lamps and shadows.** Each authored room has two to four native
+  `PointLight2D` sources and one `CanvasModulate` for ambient exposure. Lights
+  stay fixed in the world as the artwork moves in parallax. Real platform
+  faces cast shadows through polygons inset by 2 pixels; these add no physics.
+  Lighting stays on canvas layer 0, leaving the sheet, HUD, and menus unchanged.
 - **The sheet.** A screen-space tooth and a pressed-in vignette sit over the
   world and under the type. It is static: paper does not swim when the camera
   pans, film grain does.
@@ -300,22 +306,26 @@ is there, never how it is inked:
   heading pulled from its leading ALL-CAPS line. Not a floating caption.
 
 Ink and stock come from the room's own `ink` and `bg_color`; turning A→B→A
-reprints every layer and restores the authored palette. Pause freezes scenery,
-and reduced motion disables its ambient movement and parallax. These layers
-change no platforms, routes, encounters, or rewards.
+reprints every layer and restores the authored palette and exposure. The B-side
+gets extra ambient fill to keep white ink readable. Pause freezes scenery and
+lighting; reduced motion stops ambient movement, parallax, and slow lamp
+modulation while encounter outcomes can still change the light's energy.
+Development rooms and grayboxes have no room lighting. These layers change no
+platforms, routes, encounters, or rewards.
 
 ## Development checks
 
 Run `.\deadwax.cmd check` before committing. It imports resources and runs the
 dependency-free native smoke, save-store, campaign, Tonearm, Overture,
-sprite-animation, residents, economy-state, economy integration, and scenery
-suites. These cover the
-original combat and progression invariants, all planned-room routes, validated
+sprite-animation, residents, economy-state, economy integration, scenery, and
+lighting suites. These cover the original combat and progression invariants,
+all planned-room routes, validated
 checkpoint recovery, both chapters' room graph, boss outcomes, old-demo save
 continuation, campaign state restoration, grounded conversations, resident
 pause behavior, harmless petting, silent return visits, purchase transactions,
 item effects, compatibility with saves made before the stall opened, scenery
-clipping and lifecycle, palette restoration, parallax, and reduced motion.
+clipping and lifecycle, palette restoration, parallax, native light and
+occluder setup, UI isolation, and reduced motion.
 GitHub runs the checks on pushes and pull requests. Gameplay feel, real audio,
 rendering, and controller behavior still require `PLAYTEST.md`.
 

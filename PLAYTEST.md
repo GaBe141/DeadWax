@@ -61,6 +61,15 @@ Runtime errors are written to `.godot/deadwax-play.log`.
 - [ ] Pause, the Book, and the shop freeze decorative motion and parallax. Reduced camera motion also stops both while playing; static scenery still reflects live encounter outcomes and palette changes.
 - [ ] In an isolated native preview, A→B→A reprints every layer and restores the authored palette without changing geometry or rewards. The scenery suite checks this without granting campaign Refrains; development grayboxes retain their original halftone backdrop.
 
+## Lighting
+
+- [ ] The fifteen authored rooms have two to four fixed light sources each. Lamps, windows, and openings produce distinct pools of light without washing out print, grooves, passages, or boss tells at 1280×720 and in fullscreen.
+- [ ] Walk through a wide room and descend the Well: sources stay fixed in world space while the artwork moves in parallax. Inspect the Well's top, middle, and bottom, both Whistlers banks, and the Stalls service lane for readable landings.
+- [ ] In a native preview, toggle shadows on the same view: actual platform faces block light, with no false walls or dark seams across their walkable tops. Soft shadow edges remain steady without streaks or flicker. Occluders change no collision or movement.
+- [ ] Pause, the Book, and the shop freeze slow light modulation. Reduced camera motion also stops it during play; Addie and Tonearm outcome changes still update their light energy and remain correct after returning or Continue.
+- [ ] The sheet, HUD, Book, shop, pause, and title retain their original colours and contrast. Room changes leave one ambient modulator for the active authored room, with no lingering lights from the previous room.
+- [ ] In an isolated native preview, the B-side receives extra ambient fill and returning to A restores the authored exposure. Development rooms and grayboxes create no room lighting and keep their previous appearance.
+
 ## Sprite animation
 
 - [ ] Skip's idle breath/blink, running feet, takeoff stretch, falling pose, and landing squash read clearly at normal game size.
@@ -106,7 +115,7 @@ Runtime errors are written to `.godot/deadwax-play.log`.
 - [ ] Escape/gamepad Back pauses the chapter. Resume does not also jump or enter a passage with the confirming input.
 - [ ] Returning to title and quitting preserve the checkpoint. A save failure is visible and prevents a silent departure.
 - [ ] Volume including mute, fullscreen, and reduced camera motion work from settings and survive a relaunch.
-- [ ] Reduced camera motion removes camera smoothing, hit shake, decorative ambient motion, and scenery parallax; movement and passage transitions still work normally.
+- [ ] Reduced camera motion removes camera smoothing, hit shake, decorative ambient motion, scenery parallax, and slow lamp modulation; movement and passage transitions still work normally.
 - [ ] Keyboard, D-pad, stick, and menu focus behave correctly with a controller, if available.
 
 The native save suite tests malformed checkpoints and backup recovery using

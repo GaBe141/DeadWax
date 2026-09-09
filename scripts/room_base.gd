@@ -9,6 +9,7 @@ const PressScript := preload("res://scripts/press.gd")
 const RefrainPickupScript := preload("res://scripts/refrain_pickup.gd")
 const RoomExitScript := preload("res://scripts/room_exit.gd")
 const AtmosphereScript := preload("res://scripts/room_atmosphere.gd")
+const LightingScript := preload("res://scripts/room_lighting.gd")
 
 signal refrain_collected(refrain: int)
 signal route_requested(target_room: StringName, target_entry: StringName)
@@ -44,6 +45,7 @@ var _notes: Array[Control] = []
 var _grooves: Array[Node2D] = []
 var _backdrop: ColorRect
 var atmosphere: Node2D
+var lighting: Node2D
 
 ## Authored rooms opt in after laying their real platforms. Decoration never
 ## authors collision: foreground strips inherit the existing solid rectangles.
@@ -58,10 +60,18 @@ func setup_atmosphere(outcomes: Dictionary = {}) -> void:
 	atmosphere.name = "Atmosphere"
 	atmosphere.call("setup", room_id, cam_limits, _solid_color(), _stock_color(), surfaces, outcomes)
 	add_child(atmosphere)
+	lighting = LightingScript.new()
+	lighting.name = "Lighting"
+	lighting.call("setup", room_id, cam_limits, surfaces, outcomes)
+	lighting.ink = _solid_color()
+	lighting.stock = _stock_color()
+	add_child(lighting)
 
 func set_scenery_motion(reduced: bool) -> void:
 	if atmosphere != null:
 		atmosphere.call("set_reduced_motion", reduced)
+	if lighting != null:
+		lighting.call("set_reduced_motion", reduced)
 
 func sync_scenery_camera() -> void:
 	if atmosphere != null:
@@ -116,6 +126,8 @@ func apply_side(next_side: int) -> void:
 		PressScript.retint_backdrop(_backdrop, solid)
 	if atmosphere != null:
 		atmosphere.call("reink", solid, stock)
+	if lighting != null:
+		lighting.call("reink", solid, stock)
 	for hot in _grooves:
 		if is_instance_valid(hot):
 			hot.call("set_current_side", next_side)
