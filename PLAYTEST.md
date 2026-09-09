@@ -1,6 +1,8 @@
 # Dead Wax playtest
 
-Use this checklist for a 10–15 minute prototype pass. Run `.\deadwax.cmd play` from the project root; runtime errors are written to `.godot/deadwax-play.log`.
+Run `.\deadwax.cmd play` for the authored opening. Start with the chapter
+checklist, then use `.\deadwax.cmd dev` for focused mechanics regressions.
+Runtime errors are written to `.godot/deadwax-play.log`.
 
 ## Session
 
@@ -11,7 +13,53 @@ Use this checklist for a 10–15 minute prototype pass. Run `.\deadwax.cmd play`
 - Overall frame pacing: smooth / occasional hitch / frequent hitch
 - Audio clarity and latency:
 
-## Cross-room checks
+## Opening chapter
+
+- [ ] Boot reaches the title screen; New Game begins at the Headshell. Continue is available only with a readable campaign checkpoint.
+- [ ] Starting a new game over an existing one asks the player to confirm the replacement.
+- [ ] The title, menus, room signage, player silhouette, and HUD remain legible at 1280×720 and in fullscreen.
+- [ ] Headshell's movement/jump prompt and the first E/Y passage are understandable without external instructions.
+- [ ] Horn Plaza clearly offers the west practice loop and the east market route.
+- [ ] Holding Hood still beneath the horn for about 1.4 seconds produces its quiet answer. Polishing there grants one Shine.
+- [ ] High Street's Looper gives three ticks and swings on four; the upper route lets the player pass without fighting.
+- [ ] Four evenly spaced J/X strikes open Practice's physical lock and record Count-In once. Returning through the plaza is clear.
+- [ ] A player who skips Practice can still open the Descent Gate with the same pattern; the Book's discovery state never gates the solution.
+- [ ] In the Stalls, standing on the live groove and striking carries the player toward the upper walkway.
+- [ ] A missed launch lands safely in the service lane; the steps return to either bank without a Refrain or restart.
+- [ ] In the Yard, holding Set nearby for one bar frees a voice. Striking another demonstrates the distinct shatter outcome.
+- [ ] Neither combat nor mercy is required to leave the Yard; both choices remain readable.
+- [ ] The Descent Gate blocks passage until its four-strike pattern is performed; the exit beyond it enters Overture Stair.
+- [ ] Every stair can be climbed on the return trip with a normal jump.
+- [ ] Entering Overture Stair does not end the chapter. E/Y at its grounded listening point presents the chapter ending once.
+- [ ] Ending text accurately describes the first chapter; no passage leads into an unfinished graybox.
+- [ ] TAB, M, and G do nothing during normal chapter play.
+
+## Recovery, saves, and settings
+
+- [ ] The HUD starts at NEEDLE 3/3. Three hits recover at the active room entry with full health and preserved progression/outcomes.
+- [ ] R and falling out of the room also recover at that entry; reverse traversal uses the correct arrival.
+- [ ] Passage, lock, encounter, polishing, Book, pause, title, and quit save without a visible hitch or repeated reward.
+- [ ] Leave a polished patch and opened door, return, then quit and Continue: the patch stays spent, the door stays open, and Shine/Count-In match the prior session.
+- [ ] Freed and shattered Yard voices stay gone after returning and after Continue.
+- [ ] Continue resumes at the saved room entry with full needle health, rather than at a mid-air position.
+- [ ] Opening the Book pauses play, shows the correct Shine and learned Count-In, and keeps unknown entries unnamed.
+- [ ] I/Start closes the Book; Escape closes it without immediately opening pause.
+- [ ] Escape/gamepad Back pauses the chapter. Resume does not also jump or enter a passage with the confirming input.
+- [ ] Returning to title and quitting preserve the checkpoint. A save failure is visible and prevents a silent departure.
+- [ ] Volume including mute, fullscreen, and reduced camera motion work from settings and survive a relaunch.
+- [ ] Reduced camera motion removes camera smoothing and hit shake; movement and passage transitions still work normally.
+- [ ] Keyboard, D-pad, stick, and menu focus behave correctly with a controller, if available.
+
+The native save suite tests malformed checkpoints and backup recovery using
+isolated test paths. Do not corrupt a player's real checkpoint for this pass.
+
+## Development mechanics route
+
+Run `.\deadwax.cmd dev`, or launch Godot with `-- --dev-rooms`. This opens
+the original five-room circuit and enables TAB/M/G in debug builds. Progression
+here is session-only; the campaign checkpoint must remain unchanged.
+
+### Cross-room checks
 
 - [ ] The game opens at 1280×720 in **The Label** with HUD and synthesized audio.
 - [ ] A/D or arrows move; Space jumps; J/X strikes; K/C holds Hood; L holds Set.
@@ -29,7 +77,7 @@ Use this checklist for a 10–15 minute prototype pass. Run `.\deadwax.cmd play`
 - [ ] Hood noticeably slows movement, quiets crackle, and muffles the audio bed.
 - [ ] Controller mappings work, if a controller is available.
 
-## 1. The Label
+### 1. The Label
 
 - [ ] A strike near a live groove launches Skip; a strike in dead air does not.
 - [ ] On the first visit, an ordinary jump cannot reach the high shelf above the spawn.
@@ -40,7 +88,7 @@ Use this checklist for a 10–15 minute prototype pass. Run `.\deadwax.cmd play`
 - [ ] The summit passage enters Practice; returning from Practice lands on the summit.
 - [ ] The shelf passage visibly asks for Gather and refuses entry on the first visit.
 
-## 2. The Practice Room
+### 2. The Practice Room
 
 - [ ] Holding Hood near dull wax for about 1.2 seconds grants one Shine.
 - [ ] The dummy hears crackle, ticks three times, then swings on four.
@@ -51,7 +99,7 @@ Use this checklist for a 10–15 minute prototype pass. Run `.\deadwax.cmd play`
 - [ ] Opening the door adds COUNT-IN to the HUD; the pattern worked before it was recorded.
 - [ ] The right passage beyond the door enters The Verse; the left passage returns to Label.
 
-## 3. The Verse
+### 3. The Verse
 
 - [ ] An Auditioner approaches and gives a readable rising reach tell.
 - [ ] A strike/parry breaks the reach as expected.
@@ -59,7 +107,7 @@ Use this checklist for a 10–15 minute prototype pass. Run `.\deadwax.cmd play`
 - [ ] Fighting another Auditioner demonstrates the contrasting shatter outcome.
 - [ ] The right passage enters The Unplayed; the left passage returns to Practice.
 
-## 4. The Unplayed
+### 4. The Unplayed
 
 - [ ] Two directional air-strike breaths work before landing.
 - [ ] Landing, groove launches, and pogo hits refill breaths.
@@ -69,7 +117,7 @@ Use this checklist for a 10–15 minute prototype pass. Run `.\deadwax.cmd play`
 - [ ] Gather does not add a third breath here: The Unplayed still refills to two.
 - [ ] The Smoothed passage is sealed until Gather is collected, then accepts E/Y.
 
-## 5. The Smoothed Floor
+### 5. The Smoothed Floor
 
 - [ ] Raw strikes do not build resonance or remove HP from the muted dummy.
 - [ ] Three successful parries win the bout.
@@ -77,7 +125,7 @@ Use this checklist for a 10–15 minute prototype pass. Run `.\deadwax.cmd play`
 - [ ] The right passage returns to The Label on the far side of the dry baffle.
 - [ ] The left passage returns to The Unplayed's Gather platform.
 
-## 6. Gather return to The Label
+### 6. Gather return to The Label
 
 - [ ] One dry-air strike now launches Skip; a second does not until landing or respawning.
 - [ ] A jump followed by the one Gather breath reaches the high shelf above the spawn.
@@ -85,9 +133,9 @@ Use this checklist for a 10–15 minute prototype pass. Run `.\deadwax.cmd play`
 - [ ] E/Y on the shelf takes the new shortcut to Smoothed's right side.
 - [ ] Follow the reverse passages to The Unplayed: Gather stays gone and capacity stays two.
 
-## 7. The B-side
+### 7. The B-side
 
-Press **G** in a debug build to carry Jump-Cut, then **F** to turn the pressing
+Press **G** in the development rooms to carry Jump-Cut, then **F** to turn the pressing
 over. This is the feel pass that matters most — twelve seconds is a guess.
 
 - [ ] F does nothing, and says nothing, before Jump-Cut is carried.
@@ -102,11 +150,11 @@ over. This is the feel pass that matters most — twelve seconds is a guess.
 - [ ] Flipping on The Smoothed Floor lets resonance build and raw hits land.
 - [ ] Twelve seconds is enough for a round trip, and short enough to feel it.
 
-## 8. The planned world (debug builds, optional)
+### 8. The planned world (development mode, optional)
 
 Scaffolding, not design — check shape and traversal, not feel.
 
-- [ ] **M** drops you into The Headshell; the HUD reads `planned world (graybox n/53)`.
+- [ ] **M** drops you into the grayed-in Headshell; the HUD identifies its graybox index out of 53.
 - [ ] Each stratum reads as its own palette, and the air changes below the Scratch.
 - [ ] Passages name their destination; E/Y crosses and lands you on the near side.
 - [ ] A Refrain shortcut reads SEALED until you carry it; a technique passage never seals.

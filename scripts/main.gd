@@ -1,7 +1,5 @@
 extends Node2D
-## DEAD WAX — M1 bootstrap.
-## Builds everything from code: input map, player, camera, HUD, audio, rooms.
-## In-world passages connect rooms. [TAB] remains a debug cycle; [R] respawns.
+## DEAD WAX — campaign ownership, room transitions, menus and checkpoints.
 
 const SkipScript := preload("res://scripts/skip.gd")
 const WaveScript := preload("res://scripts/strike_wave.gd")
@@ -20,8 +18,12 @@ const WorldMapScript := preload("res://scripts/world_map.gd")
 const GrayboxScript := preload("res://scripts/room_graybox.gd")
 const PressingScript := preload("res://scripts/pressing_state.gd")
 const PressScript := preload("res://scripts/press.gd")
+const ChapterScript := preload("res://scripts/chapter_one.gd")
+const MenuScript := preload("res://scripts/game_menu.gd")
+const SaveScript := preload("res://scripts/save_store.gd")
 
 const MARGIN := 22.0
+const NEEDLE_HEALTH := 3
 
 var player: CharacterBody2D
 var camera: Camera2D
@@ -32,17 +34,35 @@ var room_entry_id: StringName = &"default"
 var progression: RefCounted
 var inventory: CanvasLayer
 var world: RefCounted
-## The planned room currently grayed in, or empty while the hand-built
-## prototype loop is running. Exactly one of the two is live at a time.
+## The authored campaign room, or a graybox id in development mode. Empty
+## only while the original five-room mechanics loop is active.
 var world_room_id: StringName = &""
 var pressing: RefCounted
 var _transition_pending := false
+## Explicit opt-in only. Running from the editor is still the real game.
+var development_mode := false
+var save_path := "user://deadwax-save.json"
+var settings_path := "user://deadwax-settings.cfg"
+var game_menu: CanvasLayer
+var save_store: RefCounted
+var encounters: Dictionary = {}
+var chapter_complete := false
+var _has_session := false
+var _save_queued := false
+var _save_failed := false
+var _last_saved_shine := 0
+var _save_message := ""
+var _save_message_time := 0.0
+var _health := NEEDLE_HEALTH
+var _respawn_pending := false
+var _settings := {"volume": 0.8, "reduced_motion": false, "fullscreen": false}
 
 var title: Label
 var subtitle: Label
 var title_rule: ColorRect
 var controls_note: Label
 var masthead: ColorRect
+var footer_stock: ColorRect
 var feedback: Label
 var status: Label
 var paper: ColorRect
@@ -60,6 +80,9 @@ var _shatter_i := 0
 
 func _ready() -> void:
 	randomize()
+	development_mode = development_mode or (OS.is_debug_build() and "--dev-rooms" in OS.get_cmdline_user_args())
+	if not development_mode and DisplayServer.get_name() != "headless":
+		DisplayServer.window_set_title("Dead Wax — Side One")
 	_setup_input()
 	progression = ProgressionScript.new()
 	progression.connect("refrain_unlocked", _on_refrain_unlocked)
@@ -95,10 +118,44 @@ func _ready() -> void:
 	inventory.shine_source = player
 	inventory.can_open = _can_open_inventory
 	add_child(inventory)
-	_load_room(0)
+	inventory.opened.connect(_on_inventory_opened)
+	if development_mode:
+		_has_session = true
+		_load_room(0)
+		return
+	save_store = SaveScript.new(save_path)
+	game_menu = MenuScript.new()
+	add_child(game_menu)
+	game_menu.new_game_requested.connect(_new_game)
+	game_menu.continue_requested.connect(_continue_game)
+	game_menu.resume_requested.connect(_resume_game)
+	game_menu.title_requested.connect(_return_to_title)
+	game_menu.quit_requested.connect(_quit_game)
+	game_menu.settings_changed.connect(_change_settings)
+	_load_settings()
+	_load_world_room(ChapterScript.START_ROOM)
+	get_tree().auto_accept_quit = false
+	_show_title()
+
+func _exit_tree() -> void:
+	if game_menu != null and get_tree() != null:
+		get_tree().paused = false
+		get_tree().auto_accept_quit = true
+
+func _notification(what: int) -> void:
+	if what == NOTIFICATION_WM_CLOSE_REQUEST and not development_mode:
+		_quit_game()
+
+func _unhandled_input(event: InputEvent) -> void:
+	if event.is_action_pressed("pause_game") and not event.is_echo():
+		if game_menu != null and not game_menu.is_open and _can_open_inventory():
+			_pause_game()
+			get_viewport().set_input_as_handled()
 
 func _process(delta: float) -> void:
-	if OS.is_debug_build() and not _transition_pending:
+	if room == null:
+		return
+	if development_mode and OS.is_debug_build() and not _transition_pending:
 		if Input.is_action_just_pressed("switch_room"):
 			_debug_cycle_room()
 		if Input.is_action_just_pressed("world_map"):
@@ -112,12 +169,14 @@ func _process(delta: float) -> void:
 		_respawn()
 	if player.global_position.y > room.death_y:
 		_respawn()
-		_flash("the deep keeps what falls. (respawned)")
+		_flash("the needle finds you again.")
 
 	if _fb_t > 0.0:
 		_fb_t -= delta
 		feedback.modulate.a = clampf(_fb_t / 0.4, 0.0, 1.0)
 
+	if bool(_settings.reduced_motion):
+		_shake = 0.0
 	if _shake > 0.0:
 		_shake = maxf(_shake - delta * 26.0, 0.0)
 		camera.offset = Vector2(randf_range(-_shake, _shake), randf_range(-_shake, _shake))
@@ -129,14 +188,16 @@ func _process(delta: float) -> void:
 	audio.set_hooded(player.hooded)
 	crackle_bar.size.x = 140.0 * clampf(player.noise, 0.0, 1.0)
 	crackle_bar.color = Color(0.9, 0.25, 0.5) if not player.hooded else Color(0.55, 0.52, 0.58)
-	status.text = "crackle %s   shine %d   hits taken %d%s   %s\n%s" % [
-		"·" if player.noise < 0.05 else "",
-		player.shine,
-		_hits_taken,
-		"   [HOODED]" if player.hooded else "",
-		_pressing_text(),
-		progression.call("hud_text"),
-	]
+	if development_mode:
+		status.text = "crackle   shine %d   hits taken %d   %s\n%s" % [player.shine, _hits_taken, _pressing_text(), progression.call("hud_text")]
+	else:
+		_save_message_time = maxf(0, _save_message_time - delta)
+		var objective := String(room.get("objective_label")) if "objective_label" in room else ""
+		subtitle.text = objective
+		status.text = "NEEDLE %d/%d     %s   SHINE %02d%s" % [_health, NEEDLE_HEALTH, "HUSH" if player.hooded else "CRACKLE", player.shine, "   " + _pressing_text() if not _pressing_text().is_empty() else ""]
+		controls_note.text = _save_message if _save_message_time > 0 else "I / START · THE BOOK     ESC / BACK · PAUSE"
+		if player.shine != _last_saved_shine:
+			_queue_save()
 
 func _pressing_text() -> String:
 	if not bool(progression.call("has_refrain", ProgressionScript.Refrain.JUMP_CUT)):
@@ -159,6 +220,13 @@ func _load_room(i: int, entry_id: StringName = &"default") -> void:
 ## Grays in one room of the planned world. Hand-built rooms always win: Main
 ## only reaches here for ids the prototype loop does not claim.
 func _load_world_room(id: StringName, entry_id: StringName = &"default") -> void:
+	if not development_mode:
+		if not ChapterScript.has_room(id):
+			push_error("This room is not part of the authored chapter: %s" % id)
+			return
+		world_room_id = id
+		_swap_room(ChapterScript.create_room(id), entry_id)
+		return
 	if world == null or not bool(world.call("has_room", id)):
 		push_error("Unknown world room: %s" % id)
 		return
@@ -171,6 +239,7 @@ func _load_world_room(id: StringName, entry_id: StringName = &"default") -> void
 	_swap_room(graybox, entry_id)
 
 func _swap_room(next_room: Node2D, entry_id: StringName) -> void:
+	_capture_encounters()
 	room_entry_id = entry_id
 	if room != null:
 		remove_child(room)
@@ -181,6 +250,17 @@ func _swap_room(next_room: Node2D, entry_id: StringName) -> void:
 	room.route_requested.connect(_on_route_requested)
 	room.route_blocked.connect(_on_route_blocked)
 	add_child(room)
+	if room_entry_id != &"default" and not room.entry_points.has(room_entry_id):
+		room_entry_id = &"default"
+	if not development_mode:
+		_restore_encounters()
+		if chapter_complete:
+			for child in room.get_children():
+				if child.is_in_group("chapter_endpoint"):
+					child.set("used", true)
+					room.set("objective_label", "Side One is complete. Return to the Label whenever you like.")
+		if room.has_signal("chapter_completed"):
+			room.connect("chapter_completed", _on_chapter_completed)
 	room.call("lay_backdrop", room.cam_limits)
 	room.call("apply_side", pressing.side)
 	_apply_room_air()
@@ -198,7 +278,7 @@ func _swap_room(next_room: Node2D, entry_id: StringName) -> void:
 	title.text = String(room.band_name).to_upper()
 	title_rule.size.x = maxf(title.get_minimum_size().x, 90.0)
 	var imprint := String(room.band_desc)
-	if not world_room_id.is_empty():
+	if development_mode and not world_room_id.is_empty():
 		imprint = "GRAYBOX %d/%d · %s" % [
 			int(world.get("room_order").find(world_room_id)) + 1,
 			int(world.call("room_count")),
@@ -209,11 +289,15 @@ func _swap_room(next_room: Node2D, entry_id: StringName) -> void:
 		maxf(title.get_minimum_size().x, subtitle.get_minimum_size().x) + MARGIN * 2.0,
 		78.0
 	)
-	if OS.is_debug_build():
+	if development_mode and OS.is_debug_build():
 		controls_note.text = (
 			"[A/D] move  [SPACE] jump  [J] strike  [K] hood  [L] kneel  [F] flip"
 			+ "  [E] passage  [I] book  [R] respawn  [TAB] room  [M] world  [G] refrains"
 		)
+	else:
+		controls_note.text = "I / START · THE BOOK     ESC / BACK · PAUSE"
+		masthead.size.x = 660
+		_queue_save()
 
 func _wire_room() -> void:
 	for n in get_tree().get_nodes_in_group("hears_strikes"):
@@ -227,6 +311,223 @@ func _wire_room() -> void:
 			n.opened.connect(_on_door_opened)
 		if n.has_signal("freed") and not n.freed.is_connected(_on_freed):
 			n.freed.connect(_on_freed)
+		if not development_mode and n.has_meta("chapter_state_id") and not n.has_meta("save_wired"):
+			n.set_meta("save_wired", true)
+			var key := "%s/%s" % [room.room_id, n.get_meta("chapter_state_id")]
+			if n.has_signal("opened"):
+				n.connect("opened", _remember_encounter.bind(key, "opened"))
+			if n.has_signal("freed"):
+				n.connect("freed", _remember_positioned.bind(key, "freed"))
+			if n.has_signal("shattered"):
+				n.connect("shattered", _remember_positioned.bind(key, "shattered"))
+			if n.has_signal("bout_won"):
+				n.connect("bout_won", _remember_encounter.bind(key, "won"))
+
+# -- a saved pressing ---------------------------------------------------------
+
+func _capture_encounters() -> void:
+	if development_mode or room == null:
+		return
+	for n in room.get_children():
+		if not n.has_meta("chapter_state_id"):
+			continue
+		var key := "%s/%s" % [room.room_id, n.get_meta("chapter_state_id")]
+		if "is_open" in n and bool(n.get("is_open")):
+			encounters[key] = "opened"
+		elif "done" in n and bool(n.get("done")):
+			encounters[key] = "polished"
+
+func _restore_encounters() -> void:
+	if room.has_method("restore_encounters"):
+		room.call("restore_encounters", encounters)
+
+func _remember_positioned(_pos: Vector2, key: String, outcome: String) -> void:
+	_remember_encounter(key, outcome)
+
+func _remember_encounter(key: String, outcome: String) -> void:
+	encounters[key] = outcome
+	_queue_save()
+
+func _queue_save() -> void:
+	if development_mode or not _has_session or _save_queued:
+		return
+	_save_queued = true
+	call_deferred("_flush_save")
+
+func _flush_save() -> void:
+	_save_queued = false
+	_persist_session()
+
+func _persist_session() -> bool:
+	if development_mode or not _has_session or save_store == null:
+		return true
+	_capture_encounters()
+	var data := {
+		"version": 1, "room_id": String(world_room_id), "entry_id": String(room_entry_id),
+		"progression": progression.call("snapshot"), "shine": player.shine,
+		"completed": chapter_complete, "encounters": encounters.duplicate(true),
+		"settings": _settings.duplicate(true),
+	}
+	var saved := bool(save_store.call("save_game", data))
+	if saved and _save_failed and game_menu != null:
+		game_menu.call("set_notice", "")
+	_save_failed = not saved
+	_last_saved_shine = player.shine
+	_save_message = "PRESSING SAVED" if saved else "COULD NOT SAVE · try again from the pause menu"
+	_save_message_time = 2.0 if saved else 8.0
+	if not saved and game_menu != null and game_menu.is_open:
+		game_menu.call("set_notice", "Could not save your pressing. Resume and try again before leaving.")
+	return saved
+
+func _new_game() -> void:
+	_has_session = false
+	# The outgoing room must not copy its finished encounters into a new run.
+	if room != null:
+		remove_child(room)
+		room.queue_free()
+		room = null
+	encounters.clear()
+	chapter_complete = false
+	progression.call("reset")
+	pressing.call("reset")
+	player.shine = 0
+	_reset_player()
+	_load_world_room(ChapterScript.START_ROOM)
+	_has_session = true
+	_resume_game()
+	# Rotate this new pressing into the recovery copy too. A damaged primary
+	# after starting over must never resurrect the previous playthrough.
+	if _persist_session():
+		_persist_session()
+	_flash("something below is still playing.")
+
+func _continue_game() -> void:
+	var data: Dictionary = save_store.call("load_game")
+	if data.is_empty() or not ChapterScript.has_room(StringName(data.get("room_id", ""))):
+		game_menu.call("set_notice", "That pressing could not be read. You can begin a new one.")
+		return
+	_has_session = false
+	if room != null:
+		remove_child(room)
+		room.queue_free()
+		room = null
+	encounters = data.get("encounters", {}).duplicate(true)
+	chapter_complete = bool(data.get("completed", false))
+	progression.call("restore_snapshot", data.progression)
+	pressing.call("reset")
+	player.shine = int(data.shine)
+	_last_saved_shine = player.shine
+	_reset_player()
+	_load_world_room(StringName(data.room_id), StringName(data.entry_id))
+	_has_session = true
+	_resume_game()
+
+func _reset_player() -> void:
+	player.velocity = Vector2.ZERO
+	player.noise = 0.0
+	player.hooded = false
+	player.setting = false
+	player.last_strike_ms = -100000
+	for key in ["_stagger", "_coyote", "_buffer", "_strike_cd", "_recover", "_hit_flash"]:
+		player.set(key, 0.0)
+	_hits_taken = 0
+	_shake = 0
+	_fb_t = 0
+	feedback.modulate.a = 0
+
+func _show_title() -> void:
+	var data: Dictionary = save_store.call("load_game")
+	var valid := not data.is_empty() and ChapterScript.has_room(StringName(data.get("room_id", "")))
+	var label := String(data.get("room_id", "")).replace("_", " ").to_upper()
+	game_menu.call("show_title", valid, label)
+	if not valid and (not data.is_empty() or not String(save_store.get("last_error")).is_empty()):
+		game_menu.call("set_notice", "Your saved pressing could not be read. Begin a new game to start again.")
+	get_tree().paused = true
+	audio.set_crackle(0.0)
+
+func _pause_game() -> void:
+	if _transition_pending or inventory.call("is_open"):
+		return
+	game_menu.call("show_pause")
+	get_tree().paused = true
+	audio.set_crackle(0.0)
+	_persist_session()
+
+func _resume_game() -> void:
+	game_menu.call("close_menu")
+	# Defer so the confirming button cannot also become a jump or passage.
+	call_deferred("_unpause_game")
+
+func _unpause_game() -> void:
+	if game_menu != null and not game_menu.is_open:
+		get_tree().paused = false
+
+func _return_to_title() -> void:
+	if not _persist_session():
+		return
+	_has_session = false
+	_show_title()
+
+func _quit_game() -> void:
+	if not _persist_session():
+		if inventory.call("is_open"):
+			inventory.call("close_inventory")
+		game_menu.call("show_pause")
+		get_tree().paused = true
+		game_menu.call("set_notice", "Could not save, so your game is still open. Resume and try again before leaving.")
+		return
+	get_tree().quit()
+
+func _on_chapter_completed() -> void:
+	if chapter_complete:
+		return
+	chapter_complete = true
+	audio.play("freed", -8.0, 0.7)
+	room.set("objective_label", "Side One is complete. Return to the Label whenever you like.")
+	call_deferred("_show_chapter_ending")
+
+func _show_chapter_ending() -> void:
+	game_menu.call("show_ending")
+	get_tree().paused = true
+	audio.set_crackle(0.0)
+	_persist_session()
+
+func _on_inventory_opened() -> void:
+	audio.set_crackle(0.0)
+	_queue_save()
+
+func _load_settings() -> void:
+	var config := ConfigFile.new()
+	if config.load(settings_path) == OK:
+		var volume: Variant = config.get_value("audio", "volume", 0.8)
+		if (volume is float or volume is int) and is_finite(float(volume)):
+			_settings.volume = clampf(float(volume), 0.0, 1.0)
+		for key in ["reduced_motion", "fullscreen"]:
+			var value: Variant = config.get_value("display", key, false)
+			if value is bool:
+				_settings[key] = value
+	game_menu.settings = _settings.duplicate(true)
+	_apply_settings()
+
+func _change_settings(values: Dictionary) -> void:
+	_settings = values.duplicate(true)
+	_apply_settings()
+	var config := ConfigFile.new()
+	config.set_value("audio", "volume", _settings.volume)
+	config.set_value("display", "reduced_motion", _settings.reduced_motion)
+	config.set_value("display", "fullscreen", _settings.fullscreen)
+	if config.save(settings_path) != OK:
+		game_menu.call("set_notice", "These settings work now, but could not be saved for next time.")
+	_queue_save()
+
+func _apply_settings() -> void:
+	AudioServer.set_bus_volume_db(0, linear_to_db(maxf(0.001, float(_settings.volume))))
+	AudioServer.set_bus_mute(0, float(_settings.volume) <= 0.0)
+	camera.position_smoothing_enabled = not bool(_settings.reduced_motion)
+	if DisplayServer.get_name() != "headless":
+		var mode := DisplayServer.WINDOW_MODE_FULLSCREEN if bool(_settings.fullscreen) else DisplayServer.WINDOW_MODE_WINDOWED
+		if DisplayServer.window_get_mode() != mode:
+			DisplayServer.window_set_mode(mode)
 
 # -- the pressing -------------------------------------------------------------
 
@@ -271,6 +572,7 @@ func _apply_hud_palette(stock: Color) -> void:
 	status.add_theme_color_override("font_color", Color(text.r, text.g, text.b, 0.85))
 	controls_note.add_theme_color_override("font_color", Color(text.r, text.g, text.b, 0.4))
 	masthead.color = Color(stock.r, stock.g, stock.b, 0.92)
+	footer_stock.color = Color(stock.r, stock.g, stock.b, 0.96)
 	feedback.add_theme_color_override(
 		"font_outline_color", Color(stock.r, stock.g, stock.b, 0.9)
 	)
@@ -339,8 +641,14 @@ func _debug_toggle_world() -> void:
 	_flash("the planned world, grayed in.")
 
 func _respawn() -> void:
+	_health = NEEDLE_HEALTH
+	_respawn_pending = false
 	player.global_position = room.entry_position(room_entry_id)
 	player.velocity = Vector2.ZERO
+	if not development_mode:
+		player.set("_stagger", 0.0)
+		player.set("_buffer", 0.0)
+		player.set("_recover", 0.0)
 	player.refill_air_strikes()
 	camera.reset_smoothing()
 
@@ -392,12 +700,25 @@ func _on_freed(_pos: Vector2) -> void:
 func _on_player_hit() -> void:
 	_hits_taken += 1
 	_shake = 6.0
+	if not development_mode and not _respawn_pending:
+		_health = maxi(0, _health - 1)
+		if _health == 0:
+			_respawn_pending = true
+			call_deferred("_recover_needle")
+		else:
+			_flash("hold steady. %d left." % _health)
+
+func _recover_needle() -> void:
+	_respawn()
+	_flash("the needle lifts. what you learned stays.")
 
 func _on_refrain_collected(refrain: int) -> void:
 	progression.call("unlock_refrain", refrain)
 
 func _on_route_requested(target_room: StringName, target_entry: StringName) -> void:
-	if _transition_pending:
+	if _transition_pending or (game_menu != null and game_menu.is_open) or bool(inventory.call("is_open")):
+		return
+	if not development_mode and not ChapterScript.has_room(target_room):
 		return
 	if ROOM_IDS.find(target_room) < 0 and (
 		world == null or not bool(world.call("has_room", target_room))
@@ -415,12 +736,13 @@ func _complete_route_transition(target_room: StringName, target_entry: StringNam
 	else:
 		_load_world_room(target_room, target_entry)
 	_transition_pending = false
+	_queue_save()
 
 func _on_route_blocked(message: String) -> void:
 	_flash(message)
 
 func _can_open_inventory() -> bool:
-	return not _transition_pending
+	return _has_session and not _transition_pending and (game_menu == null or not game_menu.is_open)
 
 func _on_refrain_unlocked(refrain: int) -> void:
 	audio.play("freed", -7.0)
@@ -429,9 +751,11 @@ func _on_refrain_unlocked(refrain: int) -> void:
 		_flash("GATHER — one breath follows you into the dry.")
 	else:
 		_flash("%s — remembered." % progression.call("refrain_label", refrain))
+	_queue_save()
 
 func _on_technique_discovered(technique: int) -> void:
-	_flash("%s — learned, never locked." % progression.call("technique_label", technique))
+	_flash("%s — a rhythm remembered." % progression.call("technique_label", technique))
+	_queue_save()
 
 func _word_splatter(pos: Vector2) -> void:
 	var words := ["BRIGHT", "LY", "OH", "!!"]
@@ -506,6 +830,13 @@ func _build_hud() -> void:
 	feedback.modulate.a = 0.0
 	layer.add_child(feedback)
 
+	footer_stock = ColorRect.new()
+	footer_stock.position = Vector2(0, 634)
+	footer_stock.size = Vector2(1280, 86)
+	footer_stock.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	footer_stock.visible = not development_mode
+	layer.add_child(footer_stock)
+
 	status = Label.new()
 	status.position = Vector2(MARGIN, 648)
 	PressScript.set_body(status, PressScript.SIZE_SMALL, Color(0.1, 0.09, 0.09, 0.85))
@@ -524,7 +855,7 @@ func _build_hud() -> void:
 	controls_note.size = Vector2(1280 - MARGIN, 20)
 	controls_note.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
 	PressScript.set_body(controls_note, PressScript.SIZE_TINY, Color(0.1, 0.09, 0.09, 0.4))
-	controls_note.visible = OS.is_debug_build()
+	controls_note.visible = true
 	layer.add_child(controls_note)
 
 # -- input --------------------------------------------------------------------
@@ -541,10 +872,27 @@ func _setup_input() -> void:
 	_action("flip", [KEY_F], [JOY_BUTTON_RIGHT_SHOULDER])
 	_action("enter_passage", [KEY_E], [JOY_BUTTON_Y])
 	_action("inventory", [KEY_I], [JOY_BUTTON_START])
-	_action("restart", [KEY_R], [JOY_BUTTON_BACK])
+	_action("restart", [KEY_R], [JOY_BUTTON_BACK] if development_mode else [])
 	_action("switch_room", [KEY_TAB])
 	_action("world_map", [KEY_M])
 	_action("debug_grant", [KEY_G])
+	_action("pause_game", [KEY_ESCAPE], [] if development_mode else [JOY_BUTTON_BACK])
+	# Native Godot's default UI actions may only include keyboard events.
+	# Give every menu the same explicit controller vocabulary as the game.
+	for pair in [["ui_accept", JOY_BUTTON_A], ["ui_cancel", JOY_BUTTON_B],
+		["ui_left", JOY_BUTTON_DPAD_LEFT], ["ui_right", JOY_BUTTON_DPAD_RIGHT],
+		["ui_up", JOY_BUTTON_DPAD_UP], ["ui_down", JOY_BUTTON_DPAD_DOWN]]:
+		var event := InputEventJoypadButton.new()
+		event.button_index = int(pair[1])
+		if not InputMap.action_has_event(pair[0], event):
+			InputMap.action_add_event(pair[0], event)
+	for mapping in [["ui_left", JOY_AXIS_LEFT_X, -1.0], ["ui_right", JOY_AXIS_LEFT_X, 1.0],
+		["ui_up", JOY_AXIS_LEFT_Y, -1.0], ["ui_down", JOY_AXIS_LEFT_Y, 1.0]]:
+		var motion := InputEventJoypadMotion.new()
+		motion.axis = int(mapping[1])
+		motion.axis_value = float(mapping[2])
+		if not InputMap.action_has_event(mapping[0], motion):
+			InputMap.action_add_event(mapping[0], motion)
 
 func _action(action_name: String, keys: Array, pad_buttons: Array = [], axes: Array = []) -> void:
 	if InputMap.has_action(action_name):

@@ -1,20 +1,61 @@
-# DEAD WAX — game prototype
+# DEAD WAX — The Label
 
-Open this folder in **Godot 4.7.1** and press **F5**. Everything is built from
-code at runtime — the editor viewport is supposed to look empty.
+An authored eight-room opening chapter about a stylus, a street of worn
+records, and the song still playing underneath it. Start at the Headshell,
+learn to launch from live wax, choose what to do with the voices in the Yard,
+and count in the Descent Gate. The chapter ends at the listening point in
+the Overture Stair.
+
+Open this folder in **Godot 4.7.x** and press **F5**, or run
+`.\deadwax.cmd play`. The title screen offers **New Game** and **Continue**.
+Everything is built from code at runtime, so an empty editor viewport is
+expected. The current playable build is this first chapter; the larger 53-room map
+remains development scaffolding.
 
 On the Dead Wax Wyse, the lightweight project commands are:
 
 ```text
 .\deadwax.cmd doctor  check the local toolchain and repository
-.\deadwax.cmd play    run the prototype with a local runtime log
+.\deadwax.cmd play    play the opening chapter with a local runtime log
+.\deadwax.cmd dev     open the original mechanics rooms and planned-world tools
 .\deadwax.cmd editor  open the project in Godot
-.\deadwax.cmd check   import resources and run the smoke suite
+.\deadwax.cmd check   import resources; run smoke, save, and campaign suites
 .\deadwax.cmd vibe    start Mistral Vibe in this repository
 ```
 
-See `PLAYTEST.md` for the repeatable five-room playtest and `ROUTING.md` for
-the compact traversal layout.
+See `PLAYTEST.md` for the opening and mechanics playtests, and `ROUTING.md`
+for the chapter route and development atlases.
+
+## The opening chapter
+
+```text
+HEADSHELL <-> HORN PLAZA <-> STALLS <-> YARD <-> DESCENT GATE <-> OVERTURE STAIR
+                 |   |
+           HIGH STREET <-> PRACTICE ROOM
+```
+
+The plaza is the junction: west leads to the Looper and Tick's Count-In
+lesson; east leads through the market to the way down. Practice also returns
+directly to the plaza. Doors respond to four even strikes whether or not
+the Book has recorded the technique. The street has room to slip past its
+encounter, and the Yard's voices can be heard or shattered.
+
+## Saving and settings
+
+The chapter saves at passages, opened locks, resolved encounters, polishing,
+the Book, pause, title, and quit. Continue starts at the entry used for the
+saved room, carrying learned techniques, Shine, opened doors, encounter
+outcomes, and chapter completion. Freed and shattered voices stay gone;
+polished wax cannot pay out twice.
+
+The checkpoint is `user://deadwax-save.json`. Writes are validated and keep a
+`.bak` recovery copy of the previous valid checkpoint. Volume, fullscreen,
+and reduced camera motion are saved separately in
+`user://deadwax-settings.cfg`. Reduced camera motion removes camera smoothing
+and shake. Escape/gamepad Back opens pause; gamepad Start keeps its role as
+the Book. The needle can take three hits before recovering at the active room
+entry with full health and preserved progress. Continue also starts there at
+full health.
 
 ## Controls
 
@@ -29,12 +70,12 @@ the compact traversal layout.
 - **W/S** (or arrows) — aim directional strikes while airborne.
 - **E** (or gamepad Y) — enter a nearby room passage.
 - **I** (or gamepad Start) — open **The Book**, the full-screen inventory.
+- **Escape** (or gamepad Back) — pause; Escape inside the Book closes it first.
 - **F** (or right shoulder) — **FLIP**: turn the pressing over. Needs the
   **Jump-Cut**. Silent until you carry it.
-- **R** respawn at the current entry · **TAB** debug-build room cycle
-- **M** (debug builds) — walk the **planned world**: all 53 rooms of
-  `data/world_map.json`, grayed in. TAB then cycles that atlas instead.
-- **G** (debug builds) — grant every Refrain, for feel-testing.
+- **R** respawn at the current room entry.
+
+TAB, M, and G are available only in the opt-in development rooms below.
 
 ## Character progression
 
@@ -43,17 +84,19 @@ skill tree:
 
 - **Strike, Hood, and Set** are core verbs available from the start.
 - **Count-In** and **Step-Turn** are knowledge techniques. Discovering one
-  records it in the HUD and future save data, but never gates the input or
+  records it in the Book and save data, but never gates the input or
   solution itself. Count-In is recorded when you prove it at a groove-lock.
-- **Gather, Rest, and Jump-Cut** are earned Refrains. The first playable slice
-  is **Gather**, waiting at the end of The Unplayed. It preserves one breath in
+- **Gather, Rest, and Jump-Cut** are earned Refrains. In the development
+  circuit, **Gather** waits at the end of The Unplayed. It preserves one breath in
   dry wax; rooms that already grant more keep their original capacity.
   **Jump-Cut** turns the pressing over (see The B-side); it is chalked in The
   Mispress Core, deep in the Undersong.
 
-Progression currently lasts for the running session: it survives R respawns
-and physical room transitions, then resets on a fresh launch. Rest is
-represented in progression state but does not have a gameplay effect yet.
+The opening records Count-In; the Refrain pickups and thick-air mechanics
+remain available in the development rooms. Campaign progression is saved to
+disk. Development-room progression lasts for that session and does not write
+the campaign save. Rest is represented in progression state but does not have
+a gameplay effect yet.
 
 ## The B-side
 
@@ -87,7 +130,13 @@ remain unnamed until the session records them; opening the Book never unlocks
 or equips anything. Use arrows, D-pad, or the left stick to select an entry, and press
 I/Start again or Escape to close it.
 
-## The playable route
+## Development rooms
+
+Run `.\deadwax.cmd dev`, or pass `-- --dev-rooms` to Godot. This explicitly
+enables the original five-room mechanics circuit and the full graybox atlas.
+TAB cycles rooms, M switches between the two atlases, and G grants every
+Refrain for feel-testing. These tools also require a debug build. Normal
+chapter play never routes into an unfinished shell.
 
 ```text
 LABEL <-> PRACTICE <-> VERSE <-> UNPLAYED <-> SMOOTHED <-> LABEL
@@ -112,16 +161,16 @@ LABEL <-> PRACTICE <-> VERSE <-> UNPLAYED <-> SMOOTHED <-> LABEL
 
 ## The planned world
 
-The five rooms above are hand-built. Behind them, `data/world_map.json` plans
+The five development rooms above are hand-built. `data/world_map.json` plans
 53 rooms across six strata, and the runtime now grays every one of them in:
 correct footprint, stratum palette and air, one passage per planned route, and
-Refrain seals where the plan asks for them. Press **M** in a debug build to
-walk it.
+Refrain seals where the plan asks for them. Press **M** in the opt-in
+development rooms to walk it.
 
-These are shells, not designed rooms — structure to build into, and a way to
-feel the shape and scale of the full map before it is authored. A graybox is
-replaced by writing a room script that claims its id; hand-authored rooms
-always win. See `ROUTING.md` for how the plan becomes geometry.
+These are shells for feeling the map's shape and scale. The opening uses
+eight of the plan's identities through `scripts/chapter_one.gd`, with its own
+authored geometry and passages. The complete graybox atlas remains available
+unchanged for topology checks. See `ROUTING.md` for both loaders.
 
 ## What to feel for (bring notes)
 
@@ -166,11 +215,12 @@ palettes and both faces of the pressing flow through the same press unchanged.
 
 ## Development checks
 
-The dependency-free smoke suite validates all project resources, compact-map
-topology, every current prototype passage, named arrivals, the runtime input
-map, and the grayed-in world: every planned room boots, its passages match the
-plan, its arrivals resolve, its climbs fit a plain jump, and a walk from the
-Headshell still reaches all 53 rooms and every Refrain. Run
-`.\deadwax.cmd check` before committing. GitHub runs the same checks on pushes and
-pull requests. Gameplay feel, real audio, and controller behavior still require
-the manual checklist in `PLAYTEST.md`.
+Run `.\deadwax.cmd check` before committing. It imports resources and runs the
+dependency-free native smoke, save-store, and campaign suites. These cover the
+original combat and progression invariants, all planned-room routes, validated
+checkpoint recovery, the opening's room graph, and campaign state restoration.
+GitHub runs the checks on pushes and pull requests. Gameplay feel, real audio,
+rendering, and controller behavior still require `PLAYTEST.md`.
+
+There is no `export_presets.cfg` yet; this checkout runs through Godot rather
+than a configured distributable build.

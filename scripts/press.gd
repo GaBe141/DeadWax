@@ -25,6 +25,9 @@ const SIZE_HEADING := 17
 const SIZE_BODY := 15
 const SIZE_SMALL := 13
 const SIZE_TINY := 11
+const SIZE_COVER := 108
+const SIZE_MENU_TITLE := 62
+const SIZE_MENU_ACTION := 23
 
 const TRACKING_DISPLAY := 2
 const LINE_SPACING := 2
@@ -43,6 +46,27 @@ const MISREGISTER := Vector2(2.0, -1.5)
 const CARD_STOCK_MIX := 0.10
 const CARD_PAD := Vector2(12.0, 7.0)
 const CARD_RULE := 2.0
+
+static func menu_button_style(ink: Color, stock: Color, highlighted := false, focused := false) -> StyleBoxFlat:
+	var style := StyleBoxFlat.new()
+	style.bg_color = ink if highlighted else stock.lerp(ink, 0.045)
+	style.border_color = PINK if focused else ink.lerp(stock, 0.78)
+	style.set_border_width_all(2 if focused else 1)
+	style.content_margin_left = 16
+	style.content_margin_right = 16
+	style.content_margin_top = 10
+	style.content_margin_bottom = 10
+	return style
+
+## Non-colliding printed architecture. Rooms select the subject and scale;
+## the press holds the drawing vocabulary just as it holds their plates.
+static func impression(kind: StringName, size: Vector2, ink: Color, stock: Color) -> Node2D:
+	var mark := preload("res://scripts/press_impression.gd").new()
+	mark.kind = kind
+	mark.extent = size
+	mark.ink = ink
+	mark.stock = stock
+	return mark
 
 # -- surfaces -----------------------------------------------------------------
 
@@ -217,3 +241,33 @@ static func recard(root: Control, ink: Color, stock: Color, accent := PINK) -> v
 				rect.color = stock.lerp(ink, CARD_STOCK_MIX)
 		elif child is Label:
 			(child as Label).add_theme_color_override("font_color", ink)
+
+
+## The record on its sleeve. A static illustration, never an active pressing.
+static func draw_record(canvas: CanvasItem, size: Vector2, ink: Color, paper: Color, accent := PINK) -> void:
+	var radius := minf(size.x, size.y) * 0.47
+	var center := size * 0.5
+	canvas.draw_circle(center + Vector2(5.0, 7.0), radius, Color(ink, 0.12))
+	canvas.draw_circle(center, radius, ink, true, -1.0, true)
+	for groove in range(34):
+		var groove_radius := radius * (0.40 + float(groove) * 0.017)
+		canvas.draw_arc(center, groove_radius, 0.0, TAU, 160, Color(paper, 0.09), 1.0, true)
+	canvas.draw_arc(center, radius * 0.975, 0.0, TAU, 160, Color(paper, 0.30), 1.0, true)
+	canvas.draw_arc(center, radius * 0.83, -0.91, -0.11, 48, Color(paper, 0.17), 2.0, true)
+	canvas.draw_arc(center, radius * 0.64, 2.18, 3.17, 48, Color(paper, 0.13), 2.0, true)
+	canvas.draw_circle(center + Vector2(1.5, -1.0), radius * 0.33, accent, true, -1.0, true)
+	canvas.draw_arc(center, radius * 0.29, 0.0, TAU, 96, Color(ink, 0.30), 1.0, true)
+	canvas.draw_circle(center, 5.0, paper, true, -1.0, true)
+
+
+## A constant-size focus frame around a slider, visible with keyboard or pad.
+static func menu_slider_style(focused := false) -> StyleBoxFlat:
+	var style := StyleBoxFlat.new()
+	style.bg_color = Color.TRANSPARENT
+	style.border_color = PINK if focused else Color.TRANSPARENT
+	style.set_border_width_all(2)
+	style.content_margin_left = 10.0
+	style.content_margin_right = 10.0
+	style.content_margin_top = 3.0
+	style.content_margin_bottom = 3.0
+	return style

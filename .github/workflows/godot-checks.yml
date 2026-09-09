@@ -58,3 +58,8 @@ jobs:
 
       - name: Run native smoke suite
         run: godot --headless --path . --script res://tests/smoke_test.gd
+
+      - name: Validate save recovery and campaign flow
+        run: |
+          godot --headless --path . --script res://tests/save_store_test.gd
+          godot --headless --path . --script res://tests/campaign_test.gd

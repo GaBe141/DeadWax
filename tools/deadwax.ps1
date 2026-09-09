@@ -1,7 +1,7 @@
 [CmdletBinding()]
 param(
     [Parameter(Position = 0)]
-    [ValidateSet('doctor', 'editor', 'play', 'check', 'test', 'vibe', 'help')]
+    [ValidateSet('doctor', 'editor', 'play', 'dev', 'check', 'test', 'vibe', 'help')]
     [string] $Action = 'doctor'
 )
 
@@ -110,6 +110,7 @@ Dead Wax developer commands
   deadwax.cmd doctor  Check Godot, Git, Vibe, storage, and repository state.
   deadwax.cmd editor  Open the project in the Godot editor.
   deadwax.cmd play    Run the game directly with a local runtime log.
+  deadwax.cmd dev     Open the mechanics rooms with developer shortcuts enabled.
   deadwax.cmd check   Import resources, then run the native smoke suite.
   deadwax.cmd test    Run only the native smoke suite.
   deadwax.cmd vibe    Start Mistral Vibe in this repository.
@@ -171,13 +172,23 @@ switch ($Action) {
             '--path', ('"' + $ProjectRoot + '"'), '--log-file', ('"' + $logPath + '"')
         ) | Out-Null
     }
+    'dev' {
+        $godot = Get-GodotExecutable
+        $version = Get-GodotVersion -Executable (Get-GodotExecutable -Console)
+        Write-Host "Opening the development rooms with Godot $version"
+        Start-Process -FilePath $godot -WorkingDirectory $ProjectRoot -ArgumentList @(
+            '--path', ('"' + $ProjectRoot + '"'), '--', '--dev-rooms'
+        ) | Out-Null
+    }
     'test' {
         $godot = Get-GodotExecutable -Console
         $version = Get-GodotVersion -Executable $godot
         Write-Host "Running Dead Wax smoke tests with Godot $version"
-        Invoke-Godot -Executable $godot -GodotArguments @(
-            '--headless', '--path', $ProjectRoot, '--script', 'res://tests/smoke_test.gd'
-        )
+        foreach ($suite in @('smoke_test', 'save_store_test', 'campaign_test')) {
+            Invoke-Godot -Executable $godot -GodotArguments @(
+                '--headless', '--path', $ProjectRoot, '--script', ('res://tests/' + $suite + '.gd')
+            )
+        }
     }
     'check' {
         $godot = Get-GodotExecutable -Console
@@ -187,9 +198,11 @@ switch ($Action) {
             '--headless', '--path', $ProjectRoot, '--import'
         )
         Write-Host 'Running native smoke tests'
-        Invoke-Godot -Executable $godot -GodotArguments @(
-            '--headless', '--path', $ProjectRoot, '--script', 'res://tests/smoke_test.gd'
-        )
+        foreach ($suite in @('smoke_test', 'save_store_test', 'campaign_test')) {
+            Invoke-Godot -Executable $godot -GodotArguments @(
+                '--headless', '--path', $ProjectRoot, '--script', ('res://tests/' + $suite + '.gd')
+            )
+        }
     }
     'vibe' {
         $vibe = Get-VibeExecutable

@@ -1212,6 +1212,9 @@ func _check_project_boot() -> void:
 
 	var initial_master_effects := AudioServer.get_bus_effect_count(0)
 	var main := packed.instantiate()
+	# Exercise the original mechanics atlas explicitly. Normal boot is the
+	# authored campaign title, covered separately by campaign_test.gd.
+	main.set("development_mode", true)
 	root.add_child(main)
 	await process_frame
 	await process_frame

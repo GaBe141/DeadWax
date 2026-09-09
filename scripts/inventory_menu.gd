@@ -369,7 +369,7 @@ func _slot_description(slot: StringName) -> String:
 		&"rest":
 			return "A remembered Refrain. Its effect is quiet here; another groove may answer it."
 		&"jump-cut":
-			return "A remembered Refrain. Its effect is quiet here; another groove may answer it."
+			return "Turn the pressing over with F or the right shoulder. Ink and air invert for twelve seconds; the A-side rewinds the time you spend."
 	return "The groove has no readable note."
 
 func _locked_description(slot: StringName) -> String:

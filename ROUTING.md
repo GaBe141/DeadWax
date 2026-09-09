@@ -1,6 +1,57 @@
 # Dead Wax routing
 
-## Playable prototype loop
+## The authored opening
+
+Normal play starts at a title screen, then loads the Headshell. The chapter
+contains eight authored rooms and ends at the Overture Stair's listening
+point. Every passage stays inside this chapter.
+
+```text
+HEADSHELL <-> HORN PLAZA <-> STALLS <-> YARD <-> DESCENT GATE <-> OVERTURE STAIR
+                 |   |
+           HIGH STREET <-> PRACTICE ROOM
+```
+
+The west branch returns through Practice to the plaza; the east route crosses
+the market and the Yard before reaching the descent. The chapter uses exact
+planned IDs: `headshell`, `horn_plaza`, `high_street`, `practice_room`,
+`the_stalls`, `groove_yard`, `label_descent`, and `overture_stair`. The room
+connections follow contacts in the plan, while their geometry is authored for
+this opening rather than expanded from a grid cell.
+
+`scripts/chapter_one.gd` owns the chapter registry and factory.
+`scripts/room_opening.gd` authors geometry, encounters, named arrivals, and
+the `objective_label` shown in the HUD. Its doorways emit semantic route
+intent through `room_base.gd`. `Main` performs deferred transitions and keeps
+`room_entry_id` for respawn and Continue. The Overture endpoint asks for E/Y
+while grounded near the reached platform, then emits `chapter_completed`;
+Main saves completion and presents the ending.
+
+Count-In locks are physical listening doors. Knowing the technique does not
+open a door by itself, and an unrecorded player can still prove the pattern.
+The High Street encounter has a quiet upper route, and the Yard's encounters
+do not seal the passage. A missed market launch lands in a service lane with
+short recovery steps. Every return staircase can be climbed with a plain jump.
+
+## Campaign continuity
+
+Main owns the progression model, checkpoint location, Shine, and encounter
+outcome map. Chapter entities carry a stable `chapter_state_id`; saved keys
+combine `room_id/encounter_id`. Opened doors, heard or shattered voices,
+won encounters, and polished wax restore when a room is recreated.
+`room_opening.gd::restore_encounters` applies these outcomes silently, without
+granting knowledge or emitting fresh rewards.
+
+`scripts/save_store.gd` validates the versioned checkpoint, installs completed
+writes, and retains the previous valid checkpoint as a recovery backup.
+Continue returns to the saved room entry, not an arbitrary mid-jump position.
+The chapter persists across launches; the development atlases remain
+session-only and do not overwrite its checkpoint.
+
+## Development prototype loop
+
+Run `.\deadwax.cmd dev` or pass `-- --dev-rooms` to Godot to enable these
+mechanics rooms. They are separate from the eight-room chapter.
 
 The five runtime rooms form one compact circuit:
 
@@ -75,19 +126,18 @@ are walkable today — as structure, not as design.
 - Climbs are ladders of two alternating columns, sized so every hop fits inside
   Skip's plain jump. No graybox needs a Refrain to cross itself.
 
-Hand-authored rooms always win: Main only grays in ids the prototype loop does
-not claim, and the five-room circuit is untouched. In debug builds `M` toggles
-between the prototype loop and the planned world, and `TAB` cycles whichever
-atlas is live.
+In development mode, Main loads the original five rooms with `_load_room`
+and planned shells with `_load_world_room`. Prototype IDs and planned IDs
+remain disjoint. M toggles these atlases; TAB cycles whichever is live.
+In normal play, `_load_world_room` resolves only the authored chapter registry
+and refuses any room outside it. An authored chapter room and its planned
+graybox therefore share an identity without replacing the development shell.
 
-## Trade-offs and next pass
+## Scope
 
-- Grayboxes are shells. They carry topology, air, and gating — no encounters,
-  no lessons, no hand-placed grooves. Replacing one means writing a room script
-  that claims its id, exactly as the current five do.
-- Progression is still session-only, so a world walk resets on relaunch.
-- Encounter completion is not persistent, so the Smoothed passage is placed
-  past the bout but is not locked to victory. Add world-state persistence
-  before making that gate mandatory.
-- The three Spindle junctions should eventually become a separate fast-travel
-  network. That is the next large reduction in cross-act retraversal.
+- Grayboxes carry topology, air, and gating, with no authored encounters or
+  lessons. They are not the finished 53-room game.
+- Development progression resets on relaunch. Its Smoothed passage remains
+  unlocked to support combat testing; campaign outcome persistence does not
+  change that circuit.
+- The three planned Spindle junctions do not provide fast travel yet.
