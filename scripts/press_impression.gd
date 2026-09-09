@@ -13,6 +13,33 @@ func _draw() -> void:
 	var mid := Color(ink, 0.35)
 	var base := Vector2(-w / 2.0, h / 2.0)
 	match kind:
+		&"resting_arm":
+			var pivot := Vector2(w * 0.32, -h * 0.27)
+			draw_circle(pivot, w * 0.07, mid)
+			draw_line(pivot, Vector2(-w * 0.24, -h * 0.10), mid, 15)
+			draw_line(Vector2(-w * 0.24, -h * 0.10), Vector2(-w * 0.34, h * 0.28), mid, 12)
+			draw_arc(Vector2(-w * 0.34, h * 0.32), w * 0.11, 0.0, PI, 28, mid, 5)
+		&"organ", &"overture":
+			for i in range(9):
+				var length := h * (0.50 + 0.40 * absf(i - 4.0) / 4.0)
+				var x := -w * 0.45 + i * w * 0.11
+				draw_rect(Rect2(Vector2(x, h * 0.45 - length), Vector2(w * 0.06, length)), faded)
+				draw_line(Vector2(x + w * 0.025, h * 0.45 - length), Vector2(x + w * 0.025, h * 0.36), mid, 2)
+				draw_rect(Rect2(Vector2(x, h * 0.12), Vector2(w * 0.06, h * 0.05)), mid)
+			draw_rect(Rect2(Vector2(-w * 0.49, h * 0.45), Vector2(w * 0.98, h * 0.05)), mid)
+		&"column":
+			draw_rect(Rect2(Vector2(-w * 0.25, -h * 0.45), Vector2(w * 0.50, h * 0.90)), faded)
+			for i in range(5):
+				draw_line(Vector2(-w * 0.20 + i * w * 0.10, -h * 0.43), Vector2(-w * 0.20 + i * w * 0.10, h * 0.43), faded, 3)
+			for y in [-h * 0.47, h * 0.43]:
+				draw_rect(Rect2(Vector2(-w * 0.40, y), Vector2(w * 0.80, h * 0.04)), mid)
+		&"counter":
+			draw_rect(Rect2(Vector2(-w * 0.47, -h * 0.15), Vector2(w * 0.94, h * 0.64)), faded)
+			draw_line(Vector2(-w * 0.5, -h * 0.15), Vector2(w * 0.5, -h * 0.15), mid, 11)
+			for i in range(7):
+				var x := -w * 0.40 + i * w * 0.12
+				draw_rect(Rect2(Vector2(x, -h * 0.44), Vector2(w * 0.075, h * 0.25)), mid)
+				draw_line(Vector2(x + w * 0.014, -h * 0.35), Vector2(x + w * 0.055, -h * 0.35), faded, 2)
 		&"horn":
 			draw_colored_polygon(PackedVector2Array([
 				Vector2(-w * 0.10, h * 0.26), Vector2(w * 0.07, h * 0.22),

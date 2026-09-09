@@ -38,6 +38,7 @@ var _background: ColorRect
 var _can_continue := false
 var _save_label := ""
 var _return_screen := "title"
+var _ending_outcome := ""
 
 
 class RecordArt extends Control:
@@ -87,7 +88,8 @@ func show_pause() -> void:
 	_show_screen("pause")
 
 
-func show_ending() -> void:
+func show_ending(outcome: String = "") -> void:
+	_ending_outcome = outcome
 	_show_screen("ending")
 
 
@@ -204,7 +206,7 @@ func _show_screen(next_screen: String) -> void:
 
 
 func _build_title() -> void:
-	_page.add_child(_label("01 / THE LABEL", PressScript.SIZE_SMALL, FADED))
+	_page.add_child(_label("THE LABEL  /  THE OVERTURE", PressScript.SIZE_SMALL, FADED))
 	_page.add_child(_label("DEAD WAX", PressScript.SIZE_COVER, INK, true))
 	_page.add_child(_paragraph("Some things only answer\nwhen you listen."))
 	_space(16.0)
@@ -231,11 +233,15 @@ func _build_pause() -> void:
 
 
 func _build_ending() -> void:
-	_page.add_child(_label("END OF SIDE ONE", PressScript.SIZE_SMALL, FADED))
-	_page.add_child(_label("A LITTLE\nLESS ALONE.", PressScript.SIZE_MENU_TITLE, INK, true))
-	_page.add_child(_paragraph("You found an answer in the noise.\nThere is more wax beneath your feet."))
+	_page.add_child(_label("THE OVERTURE IS COMPLETE", PressScript.SIZE_SMALL, FADED))
+	if _ending_outcome == "freed":
+		_page.add_child(_label("THE ARM\nCOMES HOME.", PressScript.SIZE_MENU_TITLE, INK, true))
+		_page.add_child(_paragraph("You stayed long enough to hear it.\nAt the Headshell, the grip is open again."))
+	else:
+		_page.add_child(_label("THE GRIP\nSTAYS EMPTY.", PressScript.SIZE_MENU_TITLE, INK, true))
+		_page.add_child(_paragraph("The Tonearm will not reach for you again.\nThe quiet remembers how you left it."))
 	_space(12.0)
-	_page.add_child(_label("The descent is still being pressed.", PressScript.SIZE_SMALL, FADED))
+	_page.add_child(_paragraph("Return through the gallery to see what changed.\nThe world below the Scratch is still being made."))
 	_space(18.0)
 	_button("Continue exploring", resume_requested.emit, true)
 	_button("Save & return to title", title_requested.emit)

@@ -3,8 +3,8 @@
 ## The authored opening
 
 Normal play starts at a title screen, then loads the Headshell. The chapter
-contains eight authored rooms and ends at the Overture Stair's listening
-point. Every passage stays inside this chapter.
+starts with eight authored rooms in the Label, then continues through seven
+new Overture rooms. Every passage stays inside the fifteen-room authored campaign.
 
 ```text
 HEADSHELL <-> HORN PLAZA <-> STALLS <-> YARD <-> DESCENT GATE <-> OVERTURE STAIR
@@ -19,13 +19,17 @@ planned IDs: `headshell`, `horn_plaza`, `high_street`, `practice_room`,
 connections follow contacts in the plan, while their geometry is authored for
 this opening rather than expanded from a grid cell.
 
-`scripts/chapter_one.gd` owns the chapter registry and factory.
+`scripts/campaign.gd` combines the two chapter registries and rejects unfinished
+destinations. `scripts/chapter_one.gd` owns the Label registry and factory;
+`scripts/chapter_two.gd` owns the Overture registry and factory.
 `scripts/room_opening.gd` authors geometry, encounters, named arrivals, and
 the `objective_label` shown in the HUD. Its doorways emit semantic route
 intent through `room_base.gd`. `Main` performs deferred transitions and keeps
-`room_entry_id` for respawn and Continue. The Overture endpoint asks for E/Y
-while grounded near the reached platform, then emits `chapter_completed`;
-Main saves completion and presents the ending.
+`room_entry_id` for respawn and Continue. The former Overture endpoint now
+leads into the Bootlegger's stall with a supported `from_bootlegger` return.
+The final listening point is in the Arm, available after resolving the boss;
+grounded E/Y emits `chapter_completed`. Main saves completion and presents the
+ending matching the force or listening outcome.
 
 Count-In locks are physical listening doors. Knowing the technique does not
 open a door by itself, and an unrecorded player can still prove the pattern.
@@ -34,6 +38,19 @@ do not seal the passage. A missed market launch lands in a service lane with
 short recovery steps. Every return staircase can be climbed with a plain jump.
 
 ## Campaign continuity
+
+The Overture follows planned contacts:
+`overture_stair ↔ bootlegger ↔ whistlers ↔ addie ↔ overture_well ↔ worn_gallery ↔ smoothed_floor ↔ the_arm`.
+The additional `worn_gallery ↔ the_arm` contact is a shortcut released from
+the Arm side. Forward access through HUSH requires `smoothed_floor/hush=won`;
+the gallery shortcut requires `the_arm/gallery_shortcut=opened`. These are
+encounter outcomes, never knowledge or Refrain permissions. Reverse passages
+remain usable. The unfinished Drop is not a destination in this build.
+
+`scripts/room_overture.gd` authors the seven new rooms. Both boss attempts
+reset when Main recovers the player, while saved resolutions restore silently.
+The Tonearm's strike, contact, and pogo origin is its grounded tip; its overhead
+beam is visual architecture.
 
 Main owns the progression model, checkpoint location, Shine, and encounter
 outcome map. Chapter entities carry a stable `chapter_state_id`; saved keys
@@ -51,7 +68,7 @@ session-only and do not overwrite its checkpoint.
 ## Development prototype loop
 
 Run `.\deadwax.cmd dev` or pass `-- --dev-rooms` to Godot to enable these
-mechanics rooms. They are separate from the eight-room chapter.
+mechanics rooms. They are separate from the fifteen-room campaign.
 
 The five runtime rooms form one compact circuit:
 
@@ -139,5 +156,5 @@ graybox therefore share an identity without replacing the development shell.
   lessons. They are not the finished 53-room game.
 - Development progression resets on relaunch. Its Smoothed passage remains
   unlocked to support combat testing; campaign outcome persistence does not
-  change that circuit.
+change that circuit.
 - The three planned Spindle junctions do not provide fast travel yet.

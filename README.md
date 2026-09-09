@@ -1,30 +1,30 @@
-# DEAD WAX — The Label
+# DEAD WAX — The Label & The Overture
 
-An authored eight-room opening chapter about a stylus, a street of worn
-records, and the song still playing underneath it. Start at the Headshell,
-learn to launch from live wax, choose what to do with the voices in the Yard,
-and count in the Descent Gate. The chapter ends at the listening point in
-the Overture Stair.
+A fifteen-room playable journey about a stylus, a street of worn records,
+and the song still playing underneath it. Start at the Headshell, count in
+the Descent Gate, then follow the Overture through wind-played grooves,
+Addie's doorway, HUSH's duel, and the Tonearm. How you answer the Tonearm
+changes what waits at home.
 
 Open this folder in **Godot 4.7.x** and press **F5**, or run
 `.\deadwax.cmd play`. The title screen offers **New Game** and **Continue**.
 Everything is built from code at runtime, so an empty editor viewport is
-expected. The current playable build is this first chapter; the larger 53-room map
-remains development scaffolding.
+expected. The Label and Overture are authored; the remainder of the planned
+53-room world is still development scaffolding.
 
 On the Dead Wax Wyse, the lightweight project commands are:
 
 ```text
 .\deadwax.cmd doctor  check the local toolchain and repository
-.\deadwax.cmd play    play the opening chapter with a local runtime log
+.\deadwax.cmd play    play the campaign with a local runtime log
 .\deadwax.cmd dev     open the original mechanics rooms and planned-world tools
 .\deadwax.cmd editor  open the project in Godot
-.\deadwax.cmd check   import resources; run smoke, save, and campaign suites
+.\deadwax.cmd check   import resources; run all five native test suites
 .\deadwax.cmd vibe    start Mistral Vibe in this repository
 ```
 
-See `PLAYTEST.md` for the opening and mechanics playtests, and `ROUTING.md`
-for the chapter route and development atlases.
+See `PLAYTEST.md` for campaign and mechanics playtests, and `ROUTING.md`
+for the authored route and development atlases.
 
 ## The opening chapter
 
@@ -40,13 +40,46 @@ directly to the plaza. Doors respond to four even strikes whether or not
 the Book has recorded the technique. The street has room to slip past its
 encounter, and the Yard's voices can be heard or shattered.
 
+## Into the Overture
+
+The old listening point is now the passage into the Bootlegger's stall.
+Continue an existing demo save to carry on from the room where you stopped.
+
+```text
+OVERTURE STAIR <-> BOOTLEGGER <-> WHISTLERS <-> ADDIE <-> OVERTURE WELL
+                                                               |
+                                                        WORN GALLERY
+                                                          |      |
+                                                     HUSH <-> THE ARM
+```
+
+The gallery's direct passage to the Arm opens after reaching the arena from
+HUSH's side. The well and wind course have return routes, so the descent
+does not strand you below the Label.
+
+HUSH's burnished floor asks for three parries; ordinary hits do not win his
+bout. The Tonearm points up once and never attacks first. Striking commits
+to its measured sweeps; openings let you strike back. Staying close and
+holding Set offers another answer. Both outcomes persist, and the final
+listening point asks for E/Y after the encounter is resolved. The Headshell
+has different words and scenery when you return.
+
+Gather and Jump-Cut still belong to later regions. The Overture remains dry;
+this extension earns its traversal through grooves, wind, and ordinary jumps.
+
 ## Saving and settings
 
 The chapter saves at passages, opened locks, resolved encounters, polishing,
 the Book, pause, title, and quit. Continue starts at the entry used for the
 saved room, carrying learned techniques, Shine, opened doors, encounter
-outcomes, and chapter completion. Freed and shattered voices stay gone;
+outcomes, and chapter completion. Resolved voices never return to combat;
 polished wax cannot pay out twice.
+
+Earlier demo saves remain valid. Their old Overture-Stair completion flag is
+reinterpreted as an unfinished extended journey; room, entry, Shine, knowledge,
+and encounter choices are retained. Completion now also requires a resolved
+Tonearm encounter. An unfinished HUSH or Tonearm attempt resets on recovery;
+a resolved encounter stays resolved.
 
 The checkpoint is `user://deadwax-save.json`. Writes are validated and keep a
 `.bak` recovery copy of the previous valid checkpoint. Volume, fullscreen,
@@ -167,8 +200,8 @@ correct footprint, stratum palette and air, one passage per planned route, and
 Refrain seals where the plan asks for them. Press **M** in the opt-in
 development rooms to walk it.
 
-These are shells for feeling the map's shape and scale. The opening uses
-eight of the plan's identities through `scripts/chapter_one.gd`, with its own
+These are shells for feeling the map's shape and scale. The campaign uses
+fifteen of the plan's identities through `scripts/campaign.gd`, with its own
 authored geometry and passages. The complete graybox atlas remains available
 unchanged for topology checks. See `ROUTING.md` for both loaders.
 
@@ -216,9 +249,10 @@ palettes and both faces of the pressing flow through the same press unchanged.
 ## Development checks
 
 Run `.\deadwax.cmd check` before committing. It imports resources and runs the
-dependency-free native smoke, save-store, and campaign suites. These cover the
+dependency-free native smoke, save-store, campaign, Tonearm, and Overture suites. These cover the
 original combat and progression invariants, all planned-room routes, validated
-checkpoint recovery, the opening's room graph, and campaign state restoration.
+checkpoint recovery, both chapters' room graph, boss outcomes, old-demo save
+continuation, and campaign state restoration.
 GitHub runs the checks on pushes and pull requests. Gameplay feel, real audio,
 rendering, and controller behavior still require `PLAYTEST.md`.
 

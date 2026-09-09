@@ -18,7 +18,7 @@ const WorldMapScript := preload("res://scripts/world_map.gd")
 const GrayboxScript := preload("res://scripts/room_graybox.gd")
 const PressingScript := preload("res://scripts/pressing_state.gd")
 const PressScript := preload("res://scripts/press.gd")
-const ChapterScript := preload("res://scripts/chapter_one.gd")
+const ChapterScript := preload("res://scripts/campaign.gd")
 const MenuScript := preload("res://scripts/game_menu.gd")
 const SaveScript := preload("res://scripts/save_store.gd")
 
@@ -246,6 +246,10 @@ func _swap_room(next_room: Node2D, entry_id: StringName) -> void:
 		room.queue_free()
 	room = next_room
 	room.progression = progression
+	if "session_outcomes" in room:
+		room.set("session_outcomes", encounters)
+	if not development_mode and room.room_id == &"the_arm":
+		encounters["the_arm/gallery_shortcut"] = "opened"
 	room.refrain_collected.connect(_on_refrain_collected)
 	room.route_requested.connect(_on_route_requested)
 	room.route_blocked.connect(_on_route_blocked)
@@ -258,7 +262,7 @@ func _swap_room(next_room: Node2D, entry_id: StringName) -> void:
 			for child in room.get_children():
 				if child.is_in_group("chapter_endpoint"):
 					child.set("used", true)
-					room.set("objective_label", "Side One is complete. Return to the Label whenever you like.")
+					room.set("objective_label", "The Tonearm is quiet. The way home is still yours.")
 		if room.has_signal("chapter_completed"):
 			room.connect("chapter_completed", _on_chapter_completed)
 	room.call("lay_backdrop", room.cam_limits)
@@ -412,7 +416,7 @@ func _continue_game() -> void:
 		room.queue_free()
 		room = null
 	encounters = data.get("encounters", {}).duplicate(true)
-	chapter_complete = bool(data.get("completed", false))
+	chapter_complete = ChapterScript.saved_completion(data)
 	progression.call("restore_snapshot", data.progression)
 	pressing.call("reset")
 	player.shine = int(data.shine)
@@ -421,6 +425,9 @@ func _continue_game() -> void:
 	_load_world_room(StringName(data.room_id), StringName(data.entry_id))
 	_has_session = true
 	_resume_game()
+	# Repair the old demo's ending flag and any obsolete arrival on disk only
+	# after the saved room, progress and encounter choices have been restored.
+	_queue_save()
 
 func _reset_player() -> void:
 	player.velocity = Vector2.ZERO
@@ -479,15 +486,15 @@ func _quit_game() -> void:
 	get_tree().quit()
 
 func _on_chapter_completed() -> void:
-	if chapter_complete:
+	if chapter_complete or not ChapterScript.encounter_resolved(encounters):
 		return
 	chapter_complete = true
 	audio.play("freed", -8.0, 0.7)
-	room.set("objective_label", "Side One is complete. Return to the Label whenever you like.")
+	room.set("objective_label", "The Tonearm is quiet. The way home is still yours.")
 	call_deferred("_show_chapter_ending")
 
 func _show_chapter_ending() -> void:
-	game_menu.call("show_ending")
+	game_menu.call("show_ending", String(encounters.get(ChapterScript.FINAL_ENCOUNTER, "")))
 	get_tree().paused = true
 	audio.set_crackle(0.0)
 	_persist_session()
@@ -651,6 +658,10 @@ func _respawn() -> void:
 		player.set("_recover", 0.0)
 	player.refill_air_strikes()
 	camera.reset_smoothing()
+	if not development_mode:
+		for encounter in get_tree().get_nodes_in_group("chapter_boss"):
+			if room.is_ancestor_of(encounter) and encounter.has_method("reset_attempt"):
+				encounter.call("reset_attempt")
 
 # -- events -------------------------------------------------------------------
 
@@ -680,12 +691,15 @@ func _on_parried() -> void:
 
 func _on_shattered(pos: Vector2) -> void:
 	_shake = 11.0
-	_flash(SHATTER_LINES[_shatter_i % SHATTER_LINES.size()])
+	if not development_mode and world_room_id == &"the_arm":
+		_flash("THE TONEARM FALLS SILENT.")
+	else:
+		_flash(SHATTER_LINES[_shatter_i % SHATTER_LINES.size()])
 	_shatter_i += 1
 	_word_splatter(pos)
 
 func _on_bout_won() -> void:
-	_flash("the bout is yours. he'd nod. once.")
+	_flash("HUSH LOWERS THE POINT." if world_room_id == &"smoothed_floor" else "the bout is yours. he'd nod. once.")
 
 func _on_door_opened() -> void:
 	var discovered := bool(
@@ -695,7 +709,7 @@ func _on_door_opened() -> void:
 		_flash("it was listening. it always was.")
 
 func _on_freed(_pos: Vector2) -> void:
-	_flash("heard at last. it goes — and stays gone.")
+	_flash("IT POINTS HOME." if world_room_id == &"the_arm" else "heard at last. it goes — and stays gone.")
 
 func _on_player_hit() -> void:
 	_hits_taken += 1

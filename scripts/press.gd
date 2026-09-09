@@ -68,6 +68,14 @@ static func impression(kind: StringName, size: Vector2, ink: Color, stock: Color
 	mark.stock = stock
 	return mark
 
+static func draw_tonearm(canvas: CanvasItem, pose: Dictionary, ink: Color, stock: Color) -> void:
+	preload("res://scripts/press_tonearm.gd").draw_tonearm(
+		canvas, pose, ink, stock, DisplayFont, BodyFont, SIZE_HEADING, SIZE_SMALL
+	)
+
+static func draw_hush(canvas: CanvasItem, pose: int, ticks: int, parries: int, face: float, time: float, ink: Color, stock: Color) -> void:
+	preload("res://scripts/press_hush.gd").draw(canvas, pose, ticks, parries, face, time, ink, stock)
+
 # -- surfaces -----------------------------------------------------------------
 
 ## An inked plate of `size`, centred on the origin. Replaces a flat ColorRect
@@ -178,7 +186,7 @@ static func card(
 	var body := Label.new()
 	body.text = text
 	set_body(body, size, ink)
-	var body_size := body.get_minimum_size()
+	var body_size := _card_text_size(text, BodyFont, size)
 
 	var head: Label = null
 	var head_size := Vector2.ZERO
@@ -187,7 +195,7 @@ static func card(
 		head.text = heading
 		set_display(head, SIZE_HEADING, ink)
 		head.add_theme_constant_override("font_spacing_glyph", TRACKING_DISPLAY)
-		head_size = head.get_minimum_size()
+		head_size = _card_text_size(heading, DisplayFont, SIZE_HEADING)
 
 	var inner := Vector2(
 		maxf(body_size.x, head_size.x),
@@ -227,6 +235,14 @@ static func card(
 	root.custom_minimum_size = full
 	root.size = full
 	return root
+
+## Labels created outside the tree can still report a cached fallback-font
+## minimum after overrides. Measure the chosen face directly, with the same
+## interline spacing, so the stock already fits when a room positions its card.
+static func _card_text_size(text: String, font: Font, size: int) -> Vector2:
+	var measured := font.get_multiline_string_size(text, HORIZONTAL_ALIGNMENT_LEFT, -1.0, size)
+	measured.y += LINE_SPACING * text.count("\n")
+	return measured.ceil()
 
 ## Re-inks a card built above, in the order its children were added.
 static func recard(root: Control, ink: Color, stock: Color, accent := PINK) -> void:

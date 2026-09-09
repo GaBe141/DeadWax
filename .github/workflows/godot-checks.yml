@@ -63,3 +63,5 @@ jobs:
         run: |
           godot --headless --path . --script res://tests/save_store_test.gd
           godot --headless --path . --script res://tests/campaign_test.gd
+          godot --headless --path . --script res://tests/tonearm_test.gd
+          godot --headless --path . --script res://tests/overture_test.gd

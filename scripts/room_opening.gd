@@ -2,21 +2,18 @@ extends "res://scripts/room_base.gd"
 ## Chapter one: a small inhabited circuit, then a deliberate descent.
 ## Geometry and encounters are authored here; every surface comes from Press.
 
-signal chapter_completed
-
 const DoorScript := preload("res://scripts/refrain_door.gd")
 const DummyScript := preload("res://scripts/test_pressing.gd")
 const AuditionerScript := preload("res://scripts/auditioner.gd")
-const MarkerScript := preload("res://scripts/chapter_marker.gd")
 const HORN_LISTEN_TIME := 1.4
 const HORN_LISTEN_RADIUS := 135.0
 const HORN_POSITION := Vector2(790, 574)
 
 var objective_label := "Find a way out of the Headshell."
+var session_outcomes: Dictionary = {}
 var _scenery: Array[Node2D] = []
 var _horn_time := 0.0
 var _horn_heard := false
-var _endpoint: Node2D
 
 func configure(id: StringName) -> void:
 	room_id = id
@@ -79,12 +76,13 @@ func configure(id: StringName) -> void:
 		&"overture_stair":
 			band_name = "The Overture Stair"
 			band_desc = "Below the Label, something is still singing."
-			objective_label = "Descend to the listening point."
+			objective_label = "Follow the worn stairs to the Bootlegger's stall."
 			bg_color = Color("e3bfb6")
 			cam_limits = Rect2(0, 0, 1800, 1080)
 			death_y = 1350.0
 			spawn_pos = Vector2(160, 404)
 			register_entry(&"from_label_descent", Vector2(180, 404))
+			register_entry(&"from_bootlegger", Vector2(1510, 824))
 
 func _ready() -> void:
 	match room_id:
@@ -104,7 +102,16 @@ func _build_headshell() -> void:
 	platform(Vector2(640, 620), Vector2(1280, 80))
 	_impression(&"headshell", Vector2(385, 347), Vector2(480, 310))
 	_impression(&"arch", Vector2(1100, 397), Vector2(190, 330))
-	sign_label(Vector2(125, 380), "THE GRIP IS OPEN\nSomething let go of you.")
+	var arm_outcome := String(session_outcomes.get("the_arm/tonearm", ""))
+	if arm_outcome == "freed":
+		_impression(&"resting_arm", Vector2(355, 300), Vector2(350, 280))
+		sign_label(Vector2(125, 380), "THE ARM CAME HOME\nThe grip is open. It can let go.")
+		objective_label = "Home sounds different when something has come back."
+	elif arm_outcome == "shattered":
+		sign_label(Vector2(125, 380), "THE GRIP IS EMPTY\nNothing is holding it open.")
+		objective_label = "The cradle stays empty. The street is still here."
+	else:
+		sign_label(Vector2(125, 380), "THE GRIP IS OPEN\nSomething let go of you.")
 	sign_label(Vector2(535, 330), "A / D or left stick — move\nSPACE / A — jump")
 	platform(Vector2(745, 550), Vector2(140, 60))
 	sign_label(Vector2(915, 286), "THE LABEL\nA little daylight.\n[E / Y] at a passage")
@@ -211,12 +218,7 @@ func _build_overture_stair() -> void:
 	_impression(&"arch", Vector2(1580, 622), Vector2(300, 450))
 	sign_label(Vector2(265, 225), "THE OVERTURE\nThe walls are worn so thin\nyou can hear the other side.")
 	sign_label(Vector2(1180, 545), "THE FIRST NOTE\nYou came all this way.\nStay long enough to hear it.")
-	_endpoint = MarkerScript.new()
-	_endpoint.position = Vector2(1590, 824)
-	_endpoint.ink = ink
-	_endpoint.stock = bg_color
-	_endpoint.activated.connect(_on_chapter_completed)
-	add_child(_endpoint)
+	_exit(Vector2(1590, 824), &"bootlegger", "THE BOOTLEGGER")
 
 func _floor(width: float) -> void:
 	platform(Vector2(width / 2.0, 630), Vector2(width, 60))
@@ -275,8 +277,6 @@ func apply_side(next_side: int) -> void:
 		previous.queue_free()
 		add_child(next_picture)
 		_scenery[index] = next_picture
-	if _endpoint != null:
-		_endpoint.call("reink", _solid_color(), _stock_color())
 
 func _process(delta: float) -> void:
 	if room_id != &"horn_plaza" or _horn_heard:
@@ -296,9 +296,6 @@ func _process(delta: float) -> void:
 		if bank != null:
 			bank.call("play", "freed", -11.0, 0.7)
 		route_blocked.emit("For a moment, the great horn answers your silence.")
-
-func _on_chapter_completed() -> void:
-	chapter_completed.emit()
 
 ## Main keeps the outcomes. Recreating a room only applies its own stable
 ## entries; this method neither records completion nor unlocks knowledge.

@@ -3,7 +3,7 @@ extends SceneTree
 ## Geometry checks are conservative support/hop checks, not a feel playtest.
 
 const MainScene := preload("res://scenes/main.tscn")
-const ChapterScript := preload("res://scripts/chapter_one.gd")
+const ChapterScript := preload("res://scripts/campaign.gd")
 const ProgressionScript := preload("res://scripts/progression_state.gd")
 const SaveScript := preload("res://scripts/save_store.gd")
 const SkipScript := preload("res://scripts/skip.gd")
@@ -51,7 +51,7 @@ func _run() -> void:
 
 func _check_registry() -> void:
 	var ids: Array[StringName] = ChapterScript.room_ids()
-	_check(ids.size() == 8, "opening chapter contains eight authored rooms")
+	_check(ids.size() == 15, "campaign contains fifteen authored rooms")
 	_check(ids.has(ChapterScript.START_ROOM) and ids.has(ChapterScript.END_ROOM), "chapter endpoints belong to registry")
 	_check(not ChapterScript.has_room(&"unauthored_room"), "unknown room is outside authored campaign")
 	_check(ChapterScript.create_room(&"unauthored_room") == null, "unknown room cannot create a shell in campaign")
@@ -78,7 +78,7 @@ func _check_registry() -> void:
 			if child.is_in_group("room_exit"):
 				exit_count += 1
 				_check(ChapterScript.has_room(child.target_room), "%s passage remains in the authored chapter" % id)
-				_check(not child.is_locked(), "%s passage never gates on knowledge techniques" % id)
+				_check(child.required_refrain == -1, "%s passage never requires an unearned Refrain or recorded technique" % id)
 				portals.append(child.position)
 				edges.append({"source": id, "target": child.target_room, "entry": child.target_entry})
 		_check(exit_count > 0, "%s has a way out" % id)
@@ -359,7 +359,10 @@ func _check_unknown_saved_entry() -> void:
 	_check(_main._persist_session() and _main.save_store.load_game().entry_id == "default", "next checkpoint repairs the obsolete arrival on disk")
 
 func _check_ending() -> void:
-	_main._load_world_room(ChapterScript.END_ROOM, &"from_label_descent")
+	# Combat outcomes are exercised in tonearm_test and overture_test. This
+	# check covers the final interaction and its menu/save/Continue boundary.
+	_main.encounters["the_arm/tonearm"] = "freed"
+	_main._load_world_room(ChapterScript.END_ROOM, &"from_smoothed_floor")
 	await _frames(3)
 	var marker: Node2D = null
 	for child in _main.room.get_children():

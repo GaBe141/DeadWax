@@ -30,9 +30,27 @@ Runtime errors are written to `.godot/deadwax-play.log`.
 - [ ] Neither combat nor mercy is required to leave the Yard; both choices remain readable.
 - [ ] The Descent Gate blocks passage until its four-strike pattern is performed; the exit beyond it enters Overture Stair.
 - [ ] Every stair can be climbed on the return trip with a normal jump.
-- [ ] Entering Overture Stair does not end the chapter. E/Y at its grounded listening point presents the chapter ending once.
-- [ ] Ending text accurately describes the first chapter; no passage leads into an unfinished graybox.
+- [ ] Overture Stair's lower passage enters the Bootlegger's stall; the return lands on its lower platform.
+- [ ] No passage leads into an unfinished graybox.
 - [ ] TAB, M, and G do nothing during normal chapter play.
+
+## The Overture
+
+- [ ] The Bootlegger's nearby E/Y conversation is readable and does not enter a passage or advance multiple lines at once.
+- [ ] The Whistlers' wind/launch route is readable; a missed jump has a safe recovery path and both return exits are reachable.
+- [ ] Addie can be heard or shattered. The saved choice stays consistent on return and Continue.
+- [ ] The Well's descent has a legible return climb, with no hop requiring an unavailable Refrain.
+- [ ] HUSH is distinct from the practice dummy. His three ticks and swing are readable; raw hits do not build resonance or count toward victory.
+- [ ] Three parries win HUSH's bout, open the forward passage, and leave him resolved on return.
+- [ ] Before that victory, the forward passage refuses entry; the direct Gallery→Arm shortcut is also closed.
+- [ ] The Tonearm points upward and does not attack because of movement or noise alone. A nearby strike initiates its count.
+- [ ] The grounded tip's sweep, recovery opening, parry, and damage all agree visually. The overhead beam does not deal invisible contact damage.
+- [ ] Holding Set after its gesture offers a peaceful resolution; committed strikes in its openings offer the force outcome.
+- [ ] Recovery resets an unfinished boss attempt; a completed encounter never starts fighting again.
+- [ ] Reaching the Arm opens the gallery return shortcut. It stays open after Continue.
+- [ ] Boss resolution alone does not open a menu. Grounded E/Y at the final listening point shows the appropriate ending once.
+- [ ] The Headshell's return text/scenery match the Tonearm's saved outcome.
+- [ ] An old completed eight-room demo save continues into the Overture with its Shine, room entry, Count-In, and prior choices intact.
 
 ## Recovery, saves, and settings
 
