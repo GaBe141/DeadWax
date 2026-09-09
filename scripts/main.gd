@@ -461,7 +461,7 @@ func _reset_player() -> void:
 	player.hooded = false
 	player.setting = false
 	player.last_strike_ms = -100000
-	for key in ["_stagger", "_coyote", "_buffer", "_strike_cd", "_recover", "_hit_flash"]:
+	for key in ["_stagger", "_coyote", "_buffer", "_strike_cd", "_strike_buffer", "_recover", "_hit_flash"]:
 		player.set(key, 0.0)
 	_hits_taken = 0
 	_shake = 0
@@ -774,6 +774,7 @@ func _respawn() -> void:
 	_respawn_pending = false
 	player.global_position = room.entry_position(room_entry_id)
 	player.velocity = Vector2.ZERO
+	player.cancel_pending_strike()
 	if not development_mode:
 		player.set("_stagger", 0.0)
 		player.set("_buffer", 0.0)
@@ -793,6 +794,10 @@ func _respawn() -> void:
 func _on_struck(pos: Vector2, big: bool, launched: bool) -> void:
 	var w := WaveScript.new()
 	w.big = big
+	w.launched = launched
+	w.hit_radius = SkipScript.POGO_RANGE
+	w.ink = room.call("_solid_color")
+	w.stock = room.call("_stock_color")
 	w.max_r = 190.0 * (0.55 + 0.6 * player.air_density) * (1.35 if big else 1.0)
 	w.life = 0.26 + 0.18 * player.air_density
 	add_child(w)

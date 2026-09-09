@@ -30,8 +30,9 @@ const MAX_FALL := 1150.0
 # -- STRIKE (the whole game) --------------------------------------------------
 const STRIKE_RADIUS := 190.0       # how far your point reaches a live groove
 const STRIKE_COOLDOWN := 0.20
-const STRIKE_RECOVER := 0.16       # M2: real recovery — the swing commits (weight)
-const STRIKE_RECOVER_ACCEL := 0.35 # movement damped mid-recovery so a swing feels planted
+const STRIKE_BUFFER := 0.09       # a slightly early tap survives the end of recovery
+const STRIKE_RECOVER := 0.10
+const STRIKE_RECOVER_ACCEL := 0.80 # a little weight without trapping a change of direction
 const GROOVE_IMPULSE := 900.0
 const GROOVE_KEEP := 0.25
 const AIR_IMPULSE := 620.0         # thick-air jet (below the Scratch only)
@@ -83,6 +84,7 @@ var _stagger := 0.0
 var _coyote := 0.0
 var _buffer := 0.0
 var _strike_cd := 0.0
+var _strike_buffer := 0.0
 var _recover := 0.0
 var _hit_flash := 0.0
 
@@ -126,6 +128,13 @@ func _ready() -> void:
 	cs.shape = rect
 	add_child(cs)
 	z_index = 10
+
+func _notification(what: int) -> void:
+	if what == NOTIFICATION_PAUSED:
+		cancel_pending_strike()
+
+func cancel_pending_strike() -> void:
+	_strike_buffer = 0.0
 
 func add_shine(amount: int) -> bool:
 	if amount <= 0 or amount > 2147483647 - shine:
@@ -185,6 +194,7 @@ func _physics_process(delta: float) -> void:
 	_coyote = COYOTE_TIME if is_on_floor() else _coyote - delta
 	_buffer = JUMP_BUFFER if Input.is_action_just_pressed("jump") else _buffer - delta
 	_strike_cd -= delta
+	_strike_buffer = maxf(_strike_buffer - delta, 0.0)
 	_recover = maxf(_recover - delta, 0.0)
 	noise = maxf(noise - delta * (NOISE_DECAY_HOODED if hooded else NOISE_DECAY), 0.0)
 
@@ -199,9 +209,15 @@ func _physics_process(delta: float) -> void:
 	if Input.is_action_just_released("jump") and velocity.y < 0.0:
 		velocity.y *= JUMP_CUT
 
-	# a raised point is silence: no striking while hooded
-	if Input.is_action_just_pressed("strike") and _strike_cd <= 0.0 and not hooded and _stagger <= 0.0 and not setting:
-		_strike()
+	# One fresh tap can wait briefly for cooldown. Silence, Set and damage
+	# discard it; holding the button never starts a string of automatic hits.
+	if hooded or _stagger > 0.0 or setting:
+		cancel_pending_strike()
+	else:
+		if Input.is_action_just_pressed("strike"):
+			_strike_buffer = STRIKE_BUFFER
+		if _strike_buffer > 0.0 and _strike_cd <= 0.0:
+			_strike()
 
 	var landing_speed := velocity.y
 	move_and_slide()
@@ -211,6 +227,7 @@ func _physics_process(delta: float) -> void:
 		_land_strength = clampf(landing_speed / 950.0, 0.25, 1.0)
 
 func _strike() -> void:
+	cancel_pending_strike()
 	_strike_cd = STRIKE_COOLDOWN
 	_recover = STRIKE_RECOVER
 	noise = 1.0
@@ -251,14 +268,16 @@ func _strike() -> void:
 		refill_air_strikes()                   # a launch refuels your breaths (flow)
 		launched = true
 	elif foe != null:
-		# POGO — recoil off the foe you struck; a room of enemies is a set of trampolines
-		var pw: Vector2 = (global_position - foe.global_position).normalized()
-		if pw.length_squared() < 0.01:
-			pw = Vector2.UP
-		var pdir := (pw + Vector2.UP * POGO_UP_BIAS).normalized()
-		velocity = velocity * POGO_KEEP + pdir * POGO_IMPULSE
-		refill_air_strikes()                   # bouncing off a foe refuels your breaths (flow)
-		launched = true
+		# A grounded hit keeps the player's footing. Jumping into the same
+		# strike still rebounds: floor contact updates after move_and_slide.
+		if not is_on_floor() or velocity.y < 0.0:
+			var pw: Vector2 = (global_position - foe.global_position).normalized()
+			if pw.length_squared() < 0.01:
+				pw = Vector2.UP
+			var pdir := (pw + Vector2.UP * POGO_UP_BIAS).normalized()
+			velocity = velocity * POGO_KEEP + pdir * POGO_IMPULSE
+			refill_air_strikes()
+			launched = true
 	elif can_air_strike() and air_strikes_left > 0:
 		# Gather holds one breath even when the pooled unplayed is far away.
 		air_strikes_left -= 1
@@ -274,11 +293,13 @@ func _strike() -> void:
 
 	_strike_pose = STRIKE_POSE_TIME
 	_strike_big = big
+	_look_face = facing
 	if launched:
 		_launch_pose = LAUNCH_POSE_TIME
 	struck.emit(global_position, big, launched)
 
 func take_hit(from_pos: Vector2) -> void:
+	cancel_pending_strike()
 	var away := (global_position - from_pos).normalized()
 	if away.length_squared() < 0.01:
 		away = Vector2.UP

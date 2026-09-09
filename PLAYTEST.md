@@ -52,6 +52,16 @@ Runtime errors are written to `.godot/deadwax-play.log`.
 - [ ] The Headshell's return text/scenery match the Tonearm's saved outcome.
 - [ ] An old completed eight-room demo save continues into the Overture with its Shine, room entry, Count-In, and prior choices intact.
 
+## Attack feel
+
+- [ ] Standing beside a vulnerable foe, J/X lands a hit without launching Skip. Starting or reversing a run during the short recovery stays responsive.
+- [ ] Jumping into a nearby foe and striking rebounds upward; pressing jump and strike together also works. Enemy reach remains 120 px, and every enemy rebound registers a hit.
+- [ ] Live grooves still launch from the ground or air and take priority when an enemy is nearby. Whistlers' directed launches and groove echoes retain their timing.
+- [ ] A fresh press during the last 90 ms of the 200 ms cooldown produces one follow-up when ready. Earlier presses and holding J/X do not create repeated attacks.
+- [ ] Queue a follow-up, then raise Hood, Set, take a hit, open pause/Book/shop, recover, or change rooms: no stale strike fires afterward.
+- [ ] HUSH and the muted practice dummy give no enemy rebound from raw hits. Three correctly timed parries still win; the actual strike must fall within the unchanged 100 ms window.
+- [ ] The immediate circular strike impression reads clearly on both sides of the wax at normal game size. Fainter groove/air echoes do not imply a larger enemy-hit radius or hide enemy tells; there is no animation delay or hitstop.
+
 ## Scenery and depth
 
 - [ ] The fifteen authored rooms have distinct distant architecture and a still field of paper light. The plaza reads as a town, the Stalls as a shuttered market, and the Well as a continuous shaft at its top, middle, and bottom.
@@ -187,7 +197,7 @@ here is session-only; the campaign checkpoint must remain unchanged.
 
 ### 5. The Smoothed Floor
 
-- [ ] Raw strikes do not build resonance or remove HP from the muted dummy.
+- [ ] Raw strikes do not build resonance, remove HP, or give an enemy rebound from the muted dummy.
 - [ ] Three successful parries win the bout.
 - [ ] The third parry produces **the bout is yours** without shatter effects.
 - [ ] The right passage returns to The Label on the far side of the dry baffle.
@@ -233,6 +243,7 @@ Scaffolding, not design — check shape and traversal, not feel.
 ## Feel questions
 
 - Does the 100 ms parry window feel fair after learning the three-tick tell?
+- Do grounded hits and airborne rebounds feel distinct, with reliable quick follow-ups?
 - Does Hood feel meaningfully quieter rather than merely slower?
 - Is Set/mercy discoverable without being explained first?
 - Is thick-air movement expressive or frustrating?

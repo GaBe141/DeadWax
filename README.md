@@ -19,7 +19,7 @@ On the Dead Wax Wyse, the lightweight project commands are:
 .\deadwax.cmd play    play the campaign with a local runtime log
 .\deadwax.cmd dev     open the original mechanics rooms and planned-world tools
 .\deadwax.cmd editor  open the project in Godot
-.\deadwax.cmd check   import resources; run all eleven native test suites
+.\deadwax.cmd check   import resources; run all twelve native test suites
 .\deadwax.cmd vibe    start Mistral Vibe in this repository
 ```
 
@@ -142,9 +142,11 @@ Continue also starts there at full health.
 ## Controls
 
 - **A/D** move · **SPACE** jump (stubby on purpose — the strike does the flying)
-- **J** (or X) — **STRIKE**: near a live groove it launches you; below the
-  Scratch it jets you through thick air; near the dummy it builds resonance.
-  After finding **GATHER**, one air-strike breath follows you into dry rooms.
+- **J** (or X) — **STRIKE**: hit nearby foes while keeping your footing.
+  Jumping and striking a vulnerable foe gives an upward rebound; live grooves
+  launch you from the ground or air and take priority over enemy rebounds.
+  Thick air supplies directional jets; after finding **GATHER**, one air-strike
+  breath follows you into dry rooms.
 - **K hold** (or C) — **HOOD UP**: silence. Slower, softer, your crackle
   drains fast, the world goes lowpass-muffled, and things stop hearing you.
   Hold it beside dull grey wax to **polish** (mints shine).
@@ -159,6 +161,15 @@ Continue also starts there at full health.
 - **R** respawn at the current room entry.
 
 TAB, M, and G are available only in the opt-in development rooms below.
+
+A ready strike answers immediately. A press in the last 90 ms of the 200 ms
+cooldown queues one follow-up; holding the button does not repeat attacks.
+Ground recovery lasts 100 ms and keeps 80% movement acceleration. Hood, Set,
+damage, menus, recovery, and passages cancel a queued strike.
+
+The immediate circular impression shows the 120 px enemy-hit reach; fainter
+echoes show groove and air responses. Muted HUSH does not give a rebound from
+raw hits. His three-parry challenge and the 100 ms parry window stay the same.
 
 ## Character progression
 
@@ -258,6 +269,7 @@ unchanged for topology checks. See `ROUTING.md` for both loaders.
 ## What to feel for (bring notes)
 
 - Does the parry window (100 ms) feel fair after learning the tell?
+- Do grounded hits, jump rebounds, and quick follow-up presses feel deliberate?
 - Does hood-stealth read — do you *feel* quieter, does the dummy calming
   down land?
 - Is the count-in door forgiving enough at fast and slow tempos?
@@ -317,15 +329,16 @@ platforms, routes, encounters, or rewards.
 
 Run `.\deadwax.cmd check` before committing. It imports resources and runs the
 dependency-free native smoke, save-store, campaign, Tonearm, Overture,
-sprite-animation, residents, economy-state, economy integration, scenery, and
-lighting suites. These cover the original combat and progression invariants,
-all planned-room routes, validated
+sprite-animation, residents, economy-state, economy integration, scenery,
+lighting, and attack-feel suites. These cover the original combat and
+progression invariants, all planned-room routes, validated
 checkpoint recovery, both chapters' room graph, boss outcomes, old-demo save
 continuation, campaign state restoration, grounded conversations, resident
 pause behavior, harmless petting, silent return visits, purchase transactions,
 item effects, compatibility with saves made before the stall opened, scenery
 clipping and lifecycle, palette restoration, parallax, native light and
-occluder setup, UI isolation, and reduced motion.
+occluder setup, UI isolation, reduced motion, grounded hits, airborne rebounds,
+strike buffering and cancellation, and unchanged parry timing.
 GitHub runs the checks on pushes and pull requests. Gameplay feel, real audio,
 rendering, and controller behavior still require `PLAYTEST.md`.
 

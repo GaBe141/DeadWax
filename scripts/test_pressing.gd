@@ -58,7 +58,7 @@ func _ready() -> void:
 	z_index = 8
 
 func is_pogoable() -> bool:
-	return state != S.DOWN
+	return not muted and state != S.DOWN
 
 func _bank() -> Node:
 	return get_tree().get_first_node_in_group("audio_bank")

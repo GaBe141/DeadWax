@@ -16,6 +16,9 @@ static func draw(canvas: CanvasItem, pose: Dictionary, palette: Dictionary) -> v
 	var face: float = pose.face
 	var land: float = pose.land
 	var strike: float = pose.strike
+	# Contact is immediate. The tip snaps on the first frame and settles quickly;
+	# there is no visual windup to wait through.
+	var snap := pow(clampf((strike - 0.40) / 0.60, 0.0, 1.0), 0.75)
 	var hurt: float = pose.hurt
 	var noise: float = pose.noise
 	var breath := sin(time * 2.7)
@@ -27,10 +30,10 @@ static func draw(canvas: CanvasItem, pose: Dictionary, palette: Dictionary) -> v
 		1.0 - compression * 0.24 + rise * 0.16 - kneel * 0.30
 	)
 	stretch.y += breath * 0.018 * (1.0 - run) + cos(stride * 2.0) * run * 0.045
-	var tilt := face * (run * 0.13 + strike * 0.20 + kneel * 0.08)
+	var tilt := face * (run * 0.13 + snap * 0.24 + kneel * 0.08)
 	tilt -= float(pose.hit_direction) * sin(hurt * PI) * 0.23
 	var bob := -absf(step) * run * 3.5 - sin(float(pose.launch) * PI) * 2.0
-	var offset := Vector2(face * strike * 3.0, bob)
+	var offset := Vector2(face * snap * 5.0, bob)
 	var anchor := Vector2(0, 26)
 	var translation := anchor + offset - (anchor * stretch).rotated(tilt)
 
@@ -56,8 +59,8 @@ static func draw(canvas: CanvasItem, pose: Dictionary, palette: Dictionary) -> v
 	_outline(canvas, body, ink, time, 0.55 + noise * 1.6)
 
 	# The flexible pickup tip trails the run and snaps with the strike.
-	var tip := Vector2(face * (24 - run * 6 + strike * 15), -39 + step * run * 5 + strike * 29 + kneel * 14)
-	var elbow := Vector2(face * (11 - run * 5), -43 + step * run * 3 + strike * 10)
+	var tip := Vector2(face * (24 - run * 6 + snap * 23), -39 + step * run * 5 + snap * 33 + kneel * 14)
+	var elbow := Vector2(face * (11 - run * 5), -43 + step * run * 3 + snap * 14)
 	var stem := PackedVector2Array([Vector2(0, -34), elbow, tip])
 	canvas.draw_polyline(stem, Color(ink, 1.0 - hood), 2.5, true)
 	if noise > 0.03:
@@ -98,11 +101,11 @@ static func draw(canvas: CanvasItem, pose: Dictionary, palette: Dictionary) -> v
 	canvas.draw_set_transform(Vector2.ZERO)
 
 	# Strike and landing marks are short impressions, rooted at the actual body.
-	if strike > 0.0:
-		var radius := 32.0 + (1.0 - strike) * 22.0
+	if snap > 0.0:
+		var radius := 42.0 + (1.0 - snap) * 13.0
 		var start := -1.15 if face >= 0 else PI - 0.50
 		var end := 0.50 if face >= 0 else PI + 1.15
-		canvas.draw_arc(Vector2(0, -7), radius, start, end, 18, Color(pink, strike * 0.9), 3.5 if pose.big else 2.0, true)
+		canvas.draw_arc(Vector2(0, -7), radius, start, end, 18, Color(pink, snap * 0.9), 4.0 if pose.big else 2.8, true)
 	if land > 0.0 and float(pose.impact) > 0.35:
 		for side in [-1.0, 1.0]:
 			var puff := Vector2(side * (20 + (1.0 - land) * 21), 25 - sin(land * PI) * 5)
