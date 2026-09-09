@@ -19,7 +19,7 @@ On the Dead Wax Wyse, the lightweight project commands are:
 .\deadwax.cmd play    play the campaign with a local runtime log
 .\deadwax.cmd dev     open the original mechanics rooms and planned-world tools
 .\deadwax.cmd editor  open the project in Godot
-.\deadwax.cmd check   import resources; run all nine native test suites
+.\deadwax.cmd check   import resources; run all ten native test suites
 .\deadwax.cmd vibe    start Mistral Vibe in this repository
 ```
 
@@ -133,7 +133,8 @@ The checkpoint is `user://deadwax-save.json`. Writes are validated and keep a
 `.bak` recovery copy of the previous valid checkpoint. Volume, fullscreen,
 and reduced camera motion are saved separately in
 `user://deadwax-settings.cfg`. Reduced camera motion removes camera smoothing
-and shake. Escape/gamepad Back opens pause; gamepad Start keeps its role as
+and shake, and freezes decorative ambient motion and parallax. Escape/gamepad
+Back opens pause; gamepad Start keeps its role as
 the Book. The needle can take three hits, or four with Spare Groove, before
 recovering at the active room entry with full health and preserved progress.
 Continue also starts there at full health.
@@ -281,8 +282,14 @@ is there, never how it is inked:
 - **Plates.** A platform is an inked plate, not a filled rectangle: pressure
   varies across it, the edge bites unevenly into the stock, and a second plate
   in the accent colour never quite registers with the first.
-- **Stock.** Each room is printed over a halftone tint block in its own ink, so
-  the space behind the platforms is a page rather than a void.
+- **Stock and depth.** The fifteen authored rooms have a still field of paper
+  light beneath distant architecture and a nearer layer of hanging cloth,
+  shelves, record rings, and other room-specific cuts. The far artwork stays
+  static; selected middle details move gently. Camera travel gives both planes
+  parallax. Development rooms and grayboxes retain their halftone backdrop.
+- **Exposed edges.** Lamination, scoring, and rivets are clipped to the actual
+  platform faces, at least 10 pixels below their walkable tops. They never
+  cover a landing or bridge a gap.
 - **The sheet.** A screen-space tooth and a pressed-in vignette sit over the
   world and under the type. It is static: paper does not swim when the camera
   pans, film grain does.
@@ -292,19 +299,23 @@ is there, never how it is inked:
 - **Signage.** Room text is pasted up as a card with stock, a struck rule, and a
   heading pulled from its leading ALL-CAPS line. Not a floating caption.
 
-Ink and stock come from the room's own `ink` and `bg_color`, so all six strata
-palettes and both faces of the pressing flow through the same press unchanged.
+Ink and stock come from the room's own `ink` and `bg_color`; turning A→B→A
+reprints every layer and restores the authored palette. Pause freezes scenery,
+and reduced motion disables its ambient movement and parallax. These layers
+change no platforms, routes, encounters, or rewards.
 
 ## Development checks
 
 Run `.\deadwax.cmd check` before committing. It imports resources and runs the
 dependency-free native smoke, save-store, campaign, Tonearm, Overture,
-sprite-animation, residents, economy-state, and economy integration suites. These cover the
+sprite-animation, residents, economy-state, economy integration, and scenery
+suites. These cover the
 original combat and progression invariants, all planned-room routes, validated
 checkpoint recovery, both chapters' room graph, boss outcomes, old-demo save
 continuation, campaign state restoration, grounded conversations, resident
 pause behavior, harmless petting, silent return visits, purchase transactions,
-item effects, and compatibility with saves made before the stall opened.
+item effects, compatibility with saves made before the stall opened, scenery
+clipping and lifecycle, palette restoration, parallax, and reduced motion.
 GitHub runs the checks on pushes and pull requests. Gameplay feel, real audio,
 rendering, and controller behavior still require `PLAYTEST.md`.
 

@@ -11,6 +11,7 @@ extends RefCounted
 const PlateShader := preload("res://assets/shaders/plate.gdshader")
 const PaperShader := preload("res://assets/shaders/paper.gdshader")
 const BackdropShader := preload("res://assets/shaders/backdrop.gdshader")
+const RoomAirShader := preload("res://assets/shaders/room_air.gdshader")
 
 const DisplayFont := preload("res://assets/fonts/BigShoulders-Bold.ttf")
 const DisplayLight := preload("res://assets/fonts/BigShoulders-Regular.ttf")
@@ -88,6 +89,12 @@ static func draw_hound(canvas: CanvasItem, pose: Dictionary, ink: Color, stock: 
 static func draw_shop_item(canvas: CanvasItem, item_id: StringName, size: Vector2, ink: Color, stock: Color) -> void:
 	preload("res://scripts/press_shop.gd").draw(canvas, item_id, size, ink, stock)
 
+static func draw_room_depth(canvas: CanvasItem, room_id: StringName, layer: StringName, bounds: Rect2, pose: Dictionary, ink: Color, stock: Color) -> void:
+	if room_id in [&"bootlegger", &"whistlers", &"addie", &"overture_well", &"worn_gallery", &"smoothed_floor", &"the_arm"]:
+		preload("res://scripts/press_overture_depth.gd").draw(canvas, room_id, layer, bounds, pose, ink, stock)
+	else:
+		preload("res://scripts/press_label_depth.gd").draw(canvas, room_id, layer, bounds, pose, ink, stock)
+
 static func draw_auditioner(canvas: CanvasItem, pose: Dictionary, ink: Color, body: Color, pale: Color, accent: Color, grey: Color, warm: Color) -> void:
 	preload("res://scripts/press_auditioner.gd").draw_auditioner(canvas, pose, ink, body, pale, accent, grey, warm)
 
@@ -144,6 +151,26 @@ static func retint_backdrop(rect: ColorRect, ink: Color) -> void:
 	var mat := rect.material as ShaderMaterial
 	if mat != null:
 		mat.set_shader_parameter("ink", ink)
+
+static func room_air(size: Vector2, ink: Color, stock: Color, warmth: float, depth: float) -> ColorRect:
+	var rect := ColorRect.new()
+	rect.size = size
+	rect.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	var material := ShaderMaterial.new()
+	material.shader = RoomAirShader
+	material.set_shader_parameter("field_px", size)
+	material.set_shader_parameter("ink", ink)
+	material.set_shader_parameter("stock", stock)
+	material.set_shader_parameter("warmth", warmth)
+	material.set_shader_parameter("depth", depth)
+	rect.material = material
+	return rect
+
+static func reink_room_air(rect: ColorRect, ink: Color, stock: Color) -> void:
+	var material := rect.material as ShaderMaterial
+	if material != null:
+		material.set_shader_parameter("ink", ink)
+		material.set_shader_parameter("stock", stock)
 
 ## The sheet itself: tooth and a pressed-in vignette, over everything.
 static func paper_overlay(tint: Color) -> ColorRect:

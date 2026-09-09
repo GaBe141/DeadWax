@@ -8,6 +8,7 @@ const PressingScript := preload("res://scripts/pressing_state.gd")
 const PressScript := preload("res://scripts/press.gd")
 const RefrainPickupScript := preload("res://scripts/refrain_pickup.gd")
 const RoomExitScript := preload("res://scripts/room_exit.gd")
+const AtmosphereScript := preload("res://scripts/room_atmosphere.gd")
 
 signal refrain_collected(refrain: int)
 signal route_requested(target_room: StringName, target_entry: StringName)
@@ -42,6 +43,29 @@ var _skins: Array[ColorRect] = []
 var _notes: Array[Control] = []
 var _grooves: Array[Node2D] = []
 var _backdrop: ColorRect
+var atmosphere: Node2D
+
+## Authored rooms opt in after laying their real platforms. Decoration never
+## authors collision: foreground strips inherit the existing solid rectangles.
+func setup_atmosphere(outcomes: Dictionary = {}) -> void:
+	if atmosphere != null:
+		return
+	var surfaces: Array[Rect2] = []
+	for skin in _skins:
+		if skin.size.x >= 100 and skin.size.y >= 20 and skin.size.y <= 200:
+			surfaces.append(Rect2(skin.get_parent().position + skin.position, skin.size))
+	atmosphere = AtmosphereScript.new()
+	atmosphere.name = "Atmosphere"
+	atmosphere.call("setup", room_id, cam_limits, _solid_color(), _stock_color(), surfaces, outcomes)
+	add_child(atmosphere)
+
+func set_scenery_motion(reduced: bool) -> void:
+	if atmosphere != null:
+		atmosphere.call("set_reduced_motion", reduced)
+
+func sync_scenery_camera() -> void:
+	if atmosphere != null:
+		atmosphere.call("sync_camera")
 
 func platform(pos: Vector2, size: Vector2) -> void:
 	var b := StaticBody2D.new()
@@ -64,6 +88,7 @@ func lay_backdrop(bounds: Rect2) -> void:
 	_backdrop = PressScript.backdrop(bounds.size, _solid_color())
 	_backdrop.position = bounds.position
 	_backdrop.z_index = -100
+	_backdrop.visible = atmosphere == null
 	add_child(_backdrop)
 
 func groove(pos: Vector2, groove_side: int = PressingScript.Side.A) -> void:
@@ -89,6 +114,8 @@ func apply_side(next_side: int) -> void:
 			PressScript.recard(note, solid, stock, PressScript.PINK)
 	if _backdrop != null:
 		PressScript.retint_backdrop(_backdrop, solid)
+	if atmosphere != null:
+		atmosphere.call("reink", solid, stock)
 	for hot in _grooves:
 		if is_instance_valid(hot):
 			hot.call("set_current_side", next_side)

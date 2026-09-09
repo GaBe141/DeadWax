@@ -99,6 +99,7 @@ func _ready() -> void:
 	# The sides of the authored page are walls, not accidental death pits.
 	platform(Vector2(-25, 470), Vector2(50, 1300))
 	platform(Vector2(cam_limits.size.x + 25, 470), Vector2(50, 1300))
+	setup_atmosphere(session_outcomes)
 
 func _build_headshell() -> void:
 	platform(Vector2(640, 620), Vector2(1280, 80))
@@ -273,6 +274,10 @@ func _impression(kind: StringName, pos: Vector2, size: Vector2) -> void:
 	var picture := PressScript.impression(kind, size, ink, bg_color)
 	picture.position = pos
 	picture.z_index = -30
+	if kind in [&"facade", &"market", &"stair"]:
+		picture.modulate.a = 0.56
+	elif kind == &"headstone":
+		picture.modulate.a = 0.75
 	picture.set_meta("impression_kind", kind)
 	picture.set_meta("impression_size", size)
 	_scenery.append(picture)
@@ -289,6 +294,7 @@ func apply_side(next_side: int) -> void:
 		)
 		next_picture.position = previous.position
 		next_picture.z_index = previous.z_index
+		next_picture.modulate = previous.modulate
 		next_picture.set_meta("impression_kind", previous.get_meta("impression_kind"))
 		next_picture.set_meta("impression_size", previous.get_meta("impression_size"))
 		remove_child(previous)

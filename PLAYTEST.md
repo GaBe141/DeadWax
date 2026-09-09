@@ -52,6 +52,15 @@ Runtime errors are written to `.godot/deadwax-play.log`.
 - [ ] The Headshell's return text/scenery match the Tonearm's saved outcome.
 - [ ] An old completed eight-room demo save continues into the Overture with its Shine, room entry, Count-In, and prior choices intact.
 
+## Scenery and depth
+
+- [ ] The fifteen authored rooms have distinct distant architecture and a still field of paper light. The plaza reads as a town, the Stalls as a shuttered market, and the Well as a continuous shaft at its top, middle, and bottom.
+- [ ] Walk and jump through a wide room and descend the Well: far and middle planes move gently with the camera; recovery and room changes introduce no scenery jump after the arrival settles.
+- [ ] Floor engraving stays inside real platform faces, at least 10 pixels below their tops. Check the Stalls service lane, both Whistlers return stairs, and the Well climb: landing edges, gaps, passages, and player silhouettes remain clear.
+- [ ] HUSH's point and the Tonearm's gesture, counted beats, sweep, and openings remain readable against the new backgrounds at 1280×720 and in fullscreen.
+- [ ] Pause, the Book, and the shop freeze decorative motion and parallax. Reduced camera motion also stops both while playing; static scenery still reflects live encounter outcomes and palette changes.
+- [ ] In an isolated native preview, A→B→A reprints every layer and restores the authored palette without changing geometry or rewards. The scenery suite checks this without granting campaign Refrains; development grayboxes retain their original halftone backdrop.
+
 ## Sprite animation
 
 - [ ] Skip's idle breath/blink, running feet, takeoff stretch, falling pose, and landing squash read clearly at normal game size.
@@ -97,7 +106,7 @@ Runtime errors are written to `.godot/deadwax-play.log`.
 - [ ] Escape/gamepad Back pauses the chapter. Resume does not also jump or enter a passage with the confirming input.
 - [ ] Returning to title and quitting preserve the checkpoint. A save failure is visible and prevents a silent departure.
 - [ ] Volume including mute, fullscreen, and reduced camera motion work from settings and survive a relaunch.
-- [ ] Reduced camera motion removes camera smoothing and hit shake; movement and passage transitions still work normally.
+- [ ] Reduced camera motion removes camera smoothing, hit shake, decorative ambient motion, and scenery parallax; movement and passage transitions still work normally.
 - [ ] Keyboard, D-pad, stick, and menu focus behave correctly with a controller, if available.
 
 The native save suite tests malformed checkpoints and backup recovery using

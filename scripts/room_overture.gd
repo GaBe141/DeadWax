@@ -103,6 +103,7 @@ func _ready() -> void:
 		&"the_arm": _build_arm()
 	platform(Vector2(-25, cam_limits.size.y / 2.0), Vector2(50, cam_limits.size.y + 400))
 	platform(Vector2(cam_limits.size.x + 25, cam_limits.size.y / 2.0), Vector2(50, cam_limits.size.y + 400))
+	setup_atmosphere(session_outcomes)
 
 func _build_bootlegger() -> void:
 	_floor(1700)
@@ -322,6 +323,8 @@ func _impression(kind: StringName, pos: Vector2, size: Vector2) -> void:
 	var picture := PressScript.impression(kind, size, ink, bg_color)
 	picture.position = pos
 	picture.z_index = -30
+	if kind in [&"overture", &"organ", &"column"]:
+		picture.modulate.a = 0.52
 	picture.set_meta("impression_kind", kind)
 	picture.set_meta("impression_size", size)
 	_scenery.append(picture)

@@ -285,6 +285,7 @@ func _swap_room(next_room: Node2D, entry_id: StringName) -> void:
 			room.connect("chapter_completed", _on_chapter_completed)
 	room.call("lay_backdrop", room.cam_limits)
 	room.call("apply_side", pressing.side)
+	room.call("set_scenery_motion", bool(_settings.reduced_motion))
 	_apply_room_air()
 
 	# wire the room's listeners after they enter the tree
@@ -648,6 +649,8 @@ func _apply_settings() -> void:
 	AudioServer.set_bus_volume_db(0, linear_to_db(maxf(0.001, float(_settings.volume))))
 	AudioServer.set_bus_mute(0, float(_settings.volume) <= 0.0)
 	camera.position_smoothing_enabled = not bool(_settings.reduced_motion)
+	if room != null:
+		room.call("set_scenery_motion", bool(_settings.reduced_motion))
 	if DisplayServer.get_name() != "headless":
 		var mode := DisplayServer.WINDOW_MODE_FULLSCREEN if bool(_settings.fullscreen) else DisplayServer.WINDOW_MODE_WINDOWED
 		if DisplayServer.window_get_mode() != mode:
@@ -778,6 +781,8 @@ func _respawn() -> void:
 	player.refill_air_strikes()
 	player.reset_animation()
 	camera.reset_smoothing()
+	camera.force_update_scroll()
+	room.call("sync_scenery_camera")
 	if not development_mode:
 		for encounter in get_tree().get_nodes_in_group("chapter_boss"):
 			if room.is_ancestor_of(encounter) and encounter.has_method("reset_attempt"):
