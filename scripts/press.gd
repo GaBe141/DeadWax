@@ -102,6 +102,12 @@ static func menu_button_style(ink: Color, stock: Color, highlighted := false, fo
 	style.content_margin_bottom = 10
 	return style
 
+## Focus is drawn over the current button state, so its backing stays clear.
+static func menu_focus_style(ink: Color, stock: Color) -> StyleBoxFlat:
+	var style := menu_button_style(ink, stock, false, true)
+	style.bg_color = Color.TRANSPARENT
+	return style
+
 ## Non-colliding printed architecture. Rooms select the subject and scale;
 ## the press holds the drawing vocabulary just as it holds their plates.
 static func impression(kind: StringName, size: Vector2, ink: Color, stock: Color) -> Node2D:
@@ -350,8 +356,8 @@ static func recard(root: Control, ink: Color, stock: Color, accent := PINK) -> v
 			(child as Label).add_theme_color_override("font_color", ink)
 
 
-## The record on its sleeve. A static illustration, never an active pressing.
-static func draw_record(canvas: CanvasItem, size: Vector2, ink: Color, paper: Color, accent := PINK) -> void:
+## Only groove glints turn; the label and its type stay upright on the sleeve.
+static func draw_record(canvas: CanvasItem, size: Vector2, ink: Color, paper: Color, accent := PINK, phase: float = 0.0) -> void:
 	var radius := minf(size.x, size.y) * 0.47
 	var center := size * 0.5
 	canvas.draw_circle(center + Vector2(5.0, 7.0), radius, Color(ink, 0.12))
@@ -360,11 +366,24 @@ static func draw_record(canvas: CanvasItem, size: Vector2, ink: Color, paper: Co
 		var groove_radius := radius * (0.40 + float(groove) * 0.017)
 		canvas.draw_arc(center, groove_radius, 0.0, TAU, 160, Color(paper, 0.09), 1.0, true)
 	canvas.draw_arc(center, radius * 0.975, 0.0, TAU, 160, Color(paper, 0.30), 1.0, true)
-	canvas.draw_arc(center, radius * 0.83, -0.91, -0.11, 48, Color(paper, 0.17), 2.0, true)
-	canvas.draw_arc(center, radius * 0.64, 2.18, 3.17, 48, Color(paper, 0.13), 2.0, true)
+	canvas.draw_arc(center, radius * 0.83, -0.91 + phase, -0.11 + phase, 48, Color(paper, 0.17), 2.0, true)
+	canvas.draw_arc(center, radius * 0.64, 2.18 + phase, 3.17 + phase, 48, Color(paper, 0.13), 2.0, true)
+	for groove in 5:
+		var start := phase + groove * 1.7
+		canvas.draw_arc(center, radius * (0.46 + groove * 0.08), start, start + 0.32, 16, Color(paper, 0.09), 1.0, true)
 	canvas.draw_circle(center + Vector2(1.5, -1.0), radius * 0.33, accent, true, -1.0, true)
 	canvas.draw_arc(center, radius * 0.29, 0.0, TAU, 96, Color(ink, 0.30), 1.0, true)
 	canvas.draw_circle(center, 5.0, paper, true, -1.0, true)
+
+## A short ink stroke responds to focus without moving the button or its text.
+static func draw_ui_focus(canvas: CanvasItem, size: Vector2, accent: Color, level: float, press: float) -> void:
+	var width := maxf(size.x - 24.0, 0.0)
+	var y := maxf(size.y - 5.0, 0.0)
+	if level > 0.0 and width > 0.0:
+		canvas.draw_line(Vector2(12, y), Vector2(12 + width * level, y), Color(accent, level * 0.72), 2.0, true)
+	if press > 0.0:
+		var reach := minf(width, 28.0 + (1.0 - press) * 70.0)
+		canvas.draw_line(Vector2(12, y - 3), Vector2(12 + reach, y - 3), Color(accent, press * 0.7), 3.0, true)
 
 
 ## A constant-size focus frame around a slider, visible with keyboard or pad.

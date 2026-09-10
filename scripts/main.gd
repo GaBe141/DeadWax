@@ -23,6 +23,7 @@ const MenuScript := preload("res://scripts/game_menu.gd")
 const SaveScript := preload("res://scripts/save_store.gd")
 const EconomyScript := preload("res://scripts/economy_state.gd")
 const ShopScript := preload("res://scripts/shop_menu.gd")
+const HudMotionScript := preload("res://scripts/hud_motion.gd")
 
 const MARGIN := 22.0
 const NEEDLE_HEALTH := 3
@@ -73,6 +74,7 @@ var feedback: Label
 var status: Label
 var paper: ColorRect
 var crackle_bar: ColorRect
+var hud_motion: Node
 var _fb_t := 0.0
 var _shake := 0.0
 var _hits_taken := 0
@@ -321,6 +323,7 @@ func _swap_room(next_room: Node2D, entry_id: StringName) -> void:
 		controls_note.text = "I / START · THE BOOK     ESC / BACK · PAUSE"
 		masthead.size.x = 660
 		_queue_save()
+	hud_motion.present_room()
 
 func _wire_room() -> void:
 	for n in get_tree().get_nodes_in_group("hears_strikes"):
@@ -606,19 +609,7 @@ func _purchase_item(item_id: StringName) -> bool:
 	return true
 
 func _on_shine_earned(amount: int) -> void:
-	var mote := Label.new()
-	PressScript.set_body(mote, 17, Color(0.96, 0.71, 0.32))
-	mote.add_theme_color_override("font_outline_color", Color(0.15, 0.12, 0.13))
-	mote.add_theme_constant_override("outline_size", 5)
-	mote.text = "+%d SHINE" % amount
-	mote.z_index = 40
-	mote.position = player.position + Vector2(26, -70)
-	add_child(mote)
-	var tween := create_tween()
-	tween.set_parallel(true)
-	tween.tween_property(mote, "position:y", mote.position.y - 38.0, 1.15)
-	tween.tween_property(mote, "modulate:a", 0.0, 0.7).set_delay(0.45)
-	tween.chain().tween_callback(mote.queue_free)
+	hud_motion.show_shine(amount)
 	_queue_save()
 
 func _load_settings() -> void:
@@ -649,6 +640,9 @@ func _apply_settings() -> void:
 	AudioServer.set_bus_volume_db(0, linear_to_db(maxf(0.001, float(_settings.volume))))
 	AudioServer.set_bus_mute(0, float(_settings.volume) <= 0.0)
 	camera.position_smoothing_enabled = not bool(_settings.reduced_motion)
+	for interface in [game_menu, inventory, shop, hud_motion]:
+		if interface != null:
+			interface.call("set_reduced_motion", bool(_settings.reduced_motion))
 	if room != null:
 		room.call("set_scenery_motion", bool(_settings.reduced_motion))
 	if DisplayServer.get_name() != "headless":
@@ -775,6 +769,7 @@ func _respawn() -> void:
 	player.global_position = room.entry_position(room_entry_id)
 	player.velocity = Vector2.ZERO
 	player.cancel_pending_strike()
+	hud_motion.reset_transients()
 	if not development_mode:
 		player.set("_stagger", 0.0)
 		player.set("_buffer", 0.0)
@@ -843,6 +838,7 @@ func _on_freed(_pos: Vector2) -> void:
 
 func _on_player_hit() -> void:
 	_hits_taken += 1
+	hud_motion.present_status()
 	_shake = 6.0
 	if not development_mode and not _respawn_pending:
 		_health = maxi(0, _health - 1)
@@ -920,6 +916,7 @@ func _flash(text: String) -> void:
 	feedback.text = text
 	feedback.modulate.a = 1.0
 	_fb_t = 1.4
+	hud_motion.present_feedback()
 
 # -- hud ----------------------------------------------------------------------
 
@@ -1001,6 +998,25 @@ func _build_hud() -> void:
 	PressScript.set_body(controls_note, PressScript.SIZE_TINY, Color(0.1, 0.09, 0.09, 0.4))
 	controls_note.visible = true
 	layer.add_child(controls_note)
+
+	var shine_notice := Label.new()
+	shine_notice.name = "ShineReceipt"
+	shine_notice.position = Vector2(MARGIN, 618.0 if development_mode else 674.0)
+	shine_notice.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	PressScript.set_body(shine_notice, PressScript.SIZE_SMALL, PressScript.PINK)
+	layer.add_child(shine_notice)
+	# HUD controls never intercept the world. These impressions are cosmetic.
+	for control in [masthead, title, title_rule, subtitle, feedback, status, crackle_bar, controls_note]:
+		control.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	hud_motion = HudMotionScript.new()
+	hud_motion.name = "HudMotion"
+	hud_motion.title = title
+	hud_motion.subtitle = subtitle
+	hud_motion.title_rule = title_rule
+	hud_motion.feedback = feedback
+	hud_motion.status = status
+	hud_motion.shine_notice = shine_notice
+	layer.add_child(hud_motion)
 
 # -- input --------------------------------------------------------------------
 

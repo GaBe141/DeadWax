@@ -7,6 +7,7 @@ signal close_requested
 
 const Press := preload("res://scripts/press.gd")
 const Economy := preload("res://scripts/economy_state.gd")
+const UiMotionScript := preload("res://scripts/ui_motion.gd")
 const PAPER := Color("e4d9c3")
 const STOCK := Color("c9bbaa")
 const INK := Color("211d24")
@@ -37,6 +38,9 @@ var _footer: Label
 var _buy: Button
 var _leave: Button
 var _art: ItemArt
+var _motion: Node
+var _reduced_motion := false
+var _entrance_parts: Array[Control] = []
 
 class ItemArt extends Control:
 	var item_id: StringName = &"spare_groove"
@@ -50,6 +54,10 @@ func _ready() -> void:
 	layer = 120
 	process_mode = Node.PROCESS_MODE_ALWAYS
 	_catalog = Economy.catalog()
+	_motion = UiMotionScript.new()
+	_motion.name = "UiMotion"
+	add_child(_motion)
+	_motion.reduced_motion = _reduced_motion
 	_build()
 	close_shop()
 
@@ -82,18 +90,28 @@ func _input(event: InputEvent) -> void:
 	if _opening_gate and event.is_action("ui_accept"):
 		get_viewport().set_input_as_handled()
 
+func set_reduced_motion(enabled: bool) -> void:
+	_reduced_motion = enabled
+	if _motion != null:
+		_motion.reduced_motion = enabled
+
 func show_shop(snapshot: Dictionary) -> void:
 	if overlay == null:
 		return
+	_motion.settle()
 	is_open = true
 	_opening_gate = true
 	_close_pending = false
 	_selected = StringName(_catalog[0].id) if not _catalog.is_empty() else &""
 	overlay.show()
-	refresh_shop(snapshot)
+	refresh_shop(snapshot, "", false)
+	for index in _entrance_parts.size():
+		_motion.reveal(_entrance_parts[index], 0.0, 0.20, float(index) * 0.025)
 	call_deferred("_focus_selected")
 
-func refresh_shop(snapshot: Dictionary, notice: String = "") -> void:
+func refresh_shop(snapshot: Dictionary, notice: String = "", animate := true) -> void:
+	var previous_shine := int(_snapshot.get("shine", 0))
+	var previous_health := int(_snapshot.get("max_health", 3))
 	_snapshot = snapshot.duplicate(true)
 	_purchase_pending = false
 	if overlay == null:
@@ -101,6 +119,15 @@ func refresh_shop(snapshot: Dictionary, notice: String = "") -> void:
 	_notice.text = notice
 	_notice.visible = not notice.is_empty()
 	_refresh_view()
+	# Main supplies the completed transaction (or failure) before any feedback.
+	# Opening and silent refreshes never masquerade as a purchase.
+	if is_open and animate and not notice.is_empty():
+		_motion.reveal(_notice, 0.0, 0.18)
+		if previous_shine != int(_snapshot.get("shine", 0)):
+			_motion.pulse(_balance)
+			_motion.pulse(_art)
+		if previous_health != int(_snapshot.get("max_health", 3)):
+			_motion.pulse(_needle)
 	if is_open and _buy.disabled and get_viewport().gui_get_focus_owner() == _buy:
 		call_deferred("_focus_selected")
 
@@ -115,6 +142,7 @@ func close_shop() -> void:
 	var focused := get_viewport().gui_get_focus_owner()
 	if focused != null and overlay.is_ancestor_of(focused):
 		focused.release_focus()
+	_motion.settle()
 
 func selected_item() -> StringName:
 	return _selected
@@ -154,6 +182,7 @@ func _build() -> void:
 	var header := HBoxContainer.new()
 	header.add_theme_constant_override("separation", 18)
 	sheet.add_child(header)
+	_entrance_parts.append(header)
 	var introduction := VBoxContainer.new()
 	introduction.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	header.add_child(introduction)
@@ -191,6 +220,7 @@ func _build() -> void:
 	_catalog_column.size_flags_stretch_ratio = 0.95
 	_catalog_column.add_theme_constant_override("separation", 11)
 	_columns.add_child(_catalog_column)
+	_entrance_parts.append(_catalog_column)
 	_catalog_column.add_child(_label("ON THE COUNTER", Press.SIZE_HEADING, FADED, true))
 	for index in _catalog.size():
 		var item: Dictionary = _catalog[index]
@@ -210,6 +240,7 @@ func _build() -> void:
 	_detail_column.size_flags_stretch_ratio = 1.2
 	_detail_column.add_theme_constant_override("separation", 9)
 	_columns.add_child(_detail_column)
+	_entrance_parts.append(_detail_column)
 	_art = ItemArt.new()
 	_art.custom_minimum_size = Vector2(200.0, 126.0)
 	_art.size_flags_horizontal = Control.SIZE_EXPAND_FILL
@@ -234,11 +265,14 @@ func _build() -> void:
 	_footer = _label("ARROWS / STICK  select     ENTER / A  inspect / buy     ESC / B  leave", Press.SIZE_TINY, FADED)
 	_footer.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	sheet.add_child(_footer)
+	_entrance_parts.append(_footer)
 	var paper := Press.paper_overlay(INK)
 	overlay.add_child(paper)
 	_resize()
 
 func _resize() -> void:
+	if _motion != null:
+		_motion.settle()
 	if _margin == null:
 		return
 	var narrow := overlay.size.x < 1050.0
@@ -285,8 +319,11 @@ func _refresh_view() -> void:
 func _select(item_id: StringName, inspect: bool) -> void:
 	if not is_open or _close_pending:
 		return
+	var changed := item_id != _selected
 	_selected = item_id
 	_refresh_view()
+	if changed:
+		_motion.reveal(_detail_column, 0.0, 0.16)
 	if inspect and not _opening_gate and not _buy.disabled:
 		_buy.grab_focus()
 
@@ -335,6 +372,7 @@ func _button(text: String, callback: Callable) -> Button:
 	button.custom_minimum_size.y = 44.0
 	button.pressed.connect(callback)
 	_style_button(button)
+	_motion.bind_button(button, AMBER)
 	return button
 
 func _style_button(button: Button, selected := false) -> void:
@@ -348,7 +386,7 @@ func _style_button(button: Button, selected := false) -> void:
 	button.add_theme_stylebox_override("normal", Press.menu_button_style(INK, PAPER, selected))
 	button.add_theme_stylebox_override("hover", Press.menu_button_style(INK, PAPER, true))
 	button.add_theme_stylebox_override("pressed", Press.menu_button_style(INK, PAPER, true, true))
-	button.add_theme_stylebox_override("focus", Press.menu_button_style(INK, PAPER, selected, true))
+	button.add_theme_stylebox_override("focus", Press.menu_focus_style(INK, PAPER))
 	button.add_theme_stylebox_override("disabled", Press.menu_button_style(INK, PAPER))
 
 func _label(text: String, font_size: int, color: Color, display := false) -> Label:

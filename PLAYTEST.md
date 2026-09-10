@@ -52,6 +52,15 @@ Runtime errors are written to `.godot/deadwax-play.log`.
 - [ ] The Headshell's return text/scenery match the Tonearm's saved outcome.
 - [ ] An old completed eight-room demo save continues into the Overture with its Shine, room entry, Count-In, and prior choices intact.
 
+## Interface animation
+
+- [ ] Title, pause, settings, the Book, and the stall reveal their content quickly over a fully opaque background. Text stays readable at 1280×720 and at narrower window sizes.
+- [ ] Mouse hover and keyboard/controller focus show a moving ink accent without moving the button's hitbox. Fast navigation does not leave stale highlights or steal focus.
+- [ ] Open and immediately close each menu; reopen or switch pages before the animation ends. Actions still respond immediately, with no delayed close, purchase, or focus change.
+- [ ] Book descriptions and stall balances update immediately. Purchases animate only after a result; silently restoring a save or reopening the shop does not replay a reward.
+- [ ] Enter a room, earn Shine, or take damage: the HUD responds without hiding values. Shine receipts clear on recovery and passages. Pausing freezes the world and HUD while the active menu continues.
+- [ ] Enable Reduced motion during a transition: page motion, record movement, focus effects, and HUD transforms settle immediately. The interface stays fully usable and notifications still expire during play.
+
 ## Attack feel
 
 - [ ] Standing beside a vulnerable foe, J/X lands a hit without launching Skip. Starting or reversing a run during the short recovery stays responsive.

@@ -8,6 +8,7 @@ signal closed
 const ProgressionScript := preload("res://scripts/progression_state.gd")
 const PressScript := preload("res://scripts/press.gd")
 const EconomyScript := preload("res://scripts/economy_state.gd")
+const UiMotionScript := preload("res://scripts/ui_motion.gd")
 
 ## Above this size The Book is shouting, and shouting is set in wood type.
 const DISPLAY_AT := 24
@@ -38,11 +39,19 @@ var _slot_buttons: Dictionary = {}
 var _selected_slot: StringName = &"strike"
 var _open := false
 var _tree_was_paused := false
+var _motion: Node
+var _reduced_motion := false
+var _entrance_parts: Array[Control] = []
+var _detail_stack: VBoxContainer
 
 func _ready() -> void:
 	layer = 100
 	process_mode = Node.PROCESS_MODE_ALWAYS
 	add_to_group("inventory_menu")
+	_motion = UiMotionScript.new()
+	_motion.name = "UiMotion"
+	add_child(_motion)
+	_motion.reduced_motion = _reduced_motion
 	_build_menu()
 	if progression != null:
 		progression.connect("refrain_unlocked", _on_progression_changed)
@@ -71,17 +80,25 @@ func _input(event: InputEvent) -> void:
 func is_open() -> bool:
 	return _open
 
+func set_reduced_motion(enabled: bool) -> void:
+	_reduced_motion = enabled
+	if _motion != null:
+		_motion.reduced_motion = enabled
+
 func open_inventory() -> void:
 	if _open:
 		return
 	if can_open.is_valid() and not bool(can_open.call()):
 		return
 	_tree_was_paused = get_tree().paused
+	_motion.settle()
 	_open = true
 	overlay.show()
 	_refresh()
 	_focus_selected()
 	get_tree().paused = true
+	for index in _entrance_parts.size():
+		_motion.reveal(_entrance_parts[index], 0.0, 0.20, float(index) * 0.025)
 	call_deferred("_focus_selected")
 	opened.emit()
 
@@ -93,6 +110,7 @@ func close_inventory() -> void:
 	var focus_owner := get_viewport().gui_get_focus_owner()
 	if focus_owner != null and overlay.is_ancestor_of(focus_owner):
 		focus_owner.release_focus()
+	_motion.settle()
 	get_tree().paused = _tree_was_paused
 	closed.emit()
 
@@ -141,6 +159,7 @@ func _build_menu() -> void:
 	overlay.mouse_filter = Control.MOUSE_FILTER_STOP
 	add_child(overlay)
 	overlay.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	overlay.resized.connect(_settle_motion)
 
 	var background := ColorRect.new()
 	background.color = DEEP
@@ -170,6 +189,7 @@ func _build_menu() -> void:
 	var header := HBoxContainer.new()
 	header.custom_minimum_size.y = 62.0
 	page.add_child(header)
+	_entrance_parts.append(header)
 
 	var title_stack := VBoxContainer.new()
 	title_stack.add_theme_constant_override("separation", -2)
@@ -206,6 +226,7 @@ func _build_menu() -> void:
 	shelves.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	shelves.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	content.add_child(shelves)
+	_entrance_parts.append(shelves)
 	_add_shelf(shelves, "CORE VERBS — ALWAYS YOURS", CORE_SLOTS)
 	_add_shelf(shelves, "KNOWLEDGE — NAMED, NEVER GRANTED", _technique_slots())
 	_add_shelf(shelves, "REFRAINS — CARRIED", _refrain_slots())
@@ -223,28 +244,30 @@ func _build_menu() -> void:
 	detail_margin.add_theme_constant_override("margin_bottom", 24)
 	detail_panel.add_child(detail_margin)
 
-	var detail_stack := VBoxContainer.new()
-	detail_stack.add_theme_constant_override("separation", 12)
-	detail_margin.add_child(detail_stack)
+	_detail_stack = VBoxContainer.new()
+	_detail_stack.add_theme_constant_override("separation", 12)
+	detail_margin.add_child(_detail_stack)
+	_entrance_parts.append(_detail_stack)
 	_detail_kind = _make_label("", 13, PINK)
-	detail_stack.add_child(_detail_kind)
+	_detail_stack.add_child(_detail_kind)
 	_detail_title = _make_label("", 30, PAPER)
 	_detail_title.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	detail_stack.add_child(_detail_title)
+	_detail_stack.add_child(_detail_title)
 	var detail_rule := ColorRect.new()
 	detail_rule.color = VIOLET
 	detail_rule.custom_minimum_size.y = 2.0
-	detail_stack.add_child(detail_rule)
+	_detail_stack.add_child(detail_rule)
 	_detail_state = _make_label("", 15, PAPER_DARK)
-	detail_stack.add_child(_detail_state)
+	_detail_stack.add_child(_detail_state)
 	_detail_description = _make_label("", 17, PAPER)
 	_detail_description.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	_detail_description.size_flags_vertical = Control.SIZE_EXPAND_FILL
-	detail_stack.add_child(_detail_description)
+	_detail_stack.add_child(_detail_description)
 
 	var footer := _make_label("[I / START] toggle     [ESC] close     [ARROWS / STICK] select", 14, PAPER_DARK)
 	footer.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	page.add_child(footer)
+	_entrance_parts.append(footer)
 	overlay.hide()
 
 func _add_shelf(parent: VBoxContainer, title: String, slots: Array) -> void:
@@ -275,6 +298,7 @@ func _add_shelf(parent: VBoxContainer, title: String, slots: Array) -> void:
 		button.pressed.connect(_select_slot.bind(slot))
 		row.add_child(button)
 		_slot_buttons[slot] = button
+		_motion.bind_button(button, PINK)
 
 func _refresh() -> void:
 	if _progress_label == null:
@@ -294,9 +318,10 @@ func _refresh() -> void:
 		var filled := _slot_is_filled(slot)
 		button.text = _slot_card_text(slot, filled)
 		_apply_card_style(button, filled)
-	_select_slot(_selected_slot)
+	_select_slot(_selected_slot, false)
 
-func _select_slot(slot: StringName) -> void:
+func _select_slot(slot: StringName, animate := true) -> void:
+	var changed := slot != _selected_slot
 	_selected_slot = slot
 	if _detail_title == null:
 		return
@@ -306,6 +331,12 @@ func _select_slot(slot: StringName) -> void:
 	_detail_state.text = _slot_state(slot, filled)
 	_detail_state.modulate = PINK if filled else FADED
 	_detail_description.text = _slot_description(slot) if filled else _locked_description(slot)
+	if animate and changed and _open:
+		_motion.reveal(_detail_stack, 0.0, 0.16)
+
+func _settle_motion() -> void:
+	if _motion != null:
+		_motion.settle()
 
 func _focus_selected() -> void:
 	if not _open:
@@ -425,6 +456,8 @@ func _shine_count() -> int:
 
 func _on_progression_changed(_id: int) -> void:
 	_refresh()
+	if _open:
+		_motion.pulse(_progress_label)
 
 ## The Book is set from the same case as the world: wood type for the headings
 ## it shouts, set text for everything it merely records.

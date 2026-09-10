@@ -19,7 +19,7 @@ On the Dead Wax Wyse, the lightweight project commands are:
 .\deadwax.cmd play    play the campaign with a local runtime log
 .\deadwax.cmd dev     open the original mechanics rooms and planned-world tools
 .\deadwax.cmd editor  open the project in Godot
-.\deadwax.cmd check   import resources; run all twelve native test suites
+.\deadwax.cmd check   import resources; run all thirteen native test suites
 .\deadwax.cmd vibe    start Mistral Vibe in this repository
 ```
 
@@ -325,12 +325,20 @@ modulation while encounter outcomes can still change the light's energy.
 Development rooms and grayboxes have no room lighting. These layers change no
 platforms, routes, encounters, or rewards.
 
+Menus now reveal their type in short impressions, with moving ink accents for
+mouse and controller focus. The sleeve's record turns gently while its label
+stays upright. The Book and stall respond to selections and purchase results;
+room headings, feedback, and Shine receipts animate on the HUD. Text and
+balances update immediately, and closing a panel never waits for animation.
+Reduced motion settles interface effects immediately. Open menus keep their
+own animation while gameplay and the HUD remain paused underneath.
+
 ## Development checks
 
 Run `.\deadwax.cmd check` before committing. It imports resources and runs the
 dependency-free native smoke, save-store, campaign, Tonearm, Overture,
 sprite-animation, residents, economy-state, economy integration, scenery,
-lighting, and attack-feel suites. These cover the original combat and
+lighting, attack-feel, and GUI-animation suites. These cover the original combat and
 progression invariants, all planned-room routes, validated
 checkpoint recovery, both chapters' room graph, boss outcomes, old-demo save
 continuation, campaign state restoration, grounded conversations, resident
@@ -338,7 +346,8 @@ pause behavior, harmless petting, silent return visits, purchase transactions,
 item effects, compatibility with saves made before the stall opened, scenery
 clipping and lifecycle, palette restoration, parallax, native light and
 occluder setup, UI isolation, reduced motion, grounded hits, airborne rebounds,
-strike buffering and cancellation, and unchanged parry timing.
+strike buffering and cancellation, unchanged parry timing, menu interruption,
+focus, and reduced-motion behavior.
 GitHub runs the checks on pushes and pull requests. Gameplay feel, real audio,
 rendering, and controller behavior still require `PLAYTEST.md`.
 

@@ -10,6 +10,7 @@ signal quit_requested
 signal settings_changed(settings: Dictionary)
 
 const PressScript := preload("res://scripts/press.gd")
+const MotionScript := preload("res://scripts/ui_motion.gd")
 
 const PAPER := Color(0.90, 0.87, 0.79)
 const STOCK := Color(0.82, 0.78, 0.70)
@@ -39,25 +40,42 @@ var _can_continue := false
 var _save_label := ""
 var _return_screen := "title"
 var _ending_outcome := ""
+var _motion: Node
+var _record: RecordArt
 
 
 class RecordArt extends Control:
-	## A sleeve illustration, with no animation or gameplay state.
+	## The glints turn slowly; the separate label remains upright.
 	var ink := Color.BLACK
 	var paper := Color.WHITE
 	var accent := Color.MAGENTA
+	var phase := 0.0
+	var reduced_motion := false
+	var _draw_left := 0.0
 
 	func _ready() -> void:
 		mouse_filter = Control.MOUSE_FILTER_IGNORE
 		resized.connect(queue_redraw)
 
 	func _draw() -> void:
-		PressScript.draw_record(self, size, ink, paper, accent)
+		PressScript.draw_record(self, size, ink, paper, accent, phase)
+
+	func _process(delta: float) -> void:
+		if reduced_motion or delta <= 0.0 or not is_visible_in_tree():
+			return
+		phase = fmod(phase + minf(delta, 0.1) * 0.18, TAU)
+		_draw_left -= delta
+		if _draw_left <= 0.0:
+			_draw_left = 1.0 / 30.0
+			queue_redraw()
 
 
 func _ready() -> void:
 	layer = 110
 	process_mode = Node.PROCESS_MODE_ALWAYS
+	_motion = MotionScript.new()
+	_motion.name = "MenuMotion"
+	add_child(_motion)
 	_build_frame()
 	close_menu()
 
@@ -94,6 +112,8 @@ func show_ending(outcome: String = "") -> void:
 
 
 func close_menu() -> void:
+	if _motion != null:
+		_motion.settle()
 	is_open = false
 	screen = ""
 	if overlay == null:
@@ -102,6 +122,18 @@ func close_menu() -> void:
 	var focus_owner := get_viewport().gui_get_focus_owner()
 	if focus_owner != null and overlay.is_ancestor_of(focus_owner):
 		focus_owner.release_focus()
+
+func set_reduced_motion(enabled: bool) -> void:
+	settings.reduced_motion = enabled
+	if _motion != null:
+		_motion.reduced_motion = enabled
+	if is_instance_valid(_record):
+		_record.reduced_motion = enabled
+		_record.queue_redraw()
+	if is_instance_valid(_page):
+		var checkbox := _page.get_node_or_null("ReducedMotion") as CheckButton
+		if checkbox != null:
+			checkbox.set_pressed_no_signal(enabled)
 
 
 func set_notice(message: String) -> void:
@@ -161,6 +193,8 @@ func _build_frame() -> void:
 func _show_screen(next_screen: String) -> void:
 	if overlay == null:
 		return
+	_motion.settle()
+	_motion.reduced_motion = bool(settings.get("reduced_motion", false))
 	is_open = true
 	screen = next_screen
 	overlay.show()
@@ -202,6 +236,12 @@ func _show_screen(next_screen: String) -> void:
 	if screen != "title":
 		_footer.text += "     ESC / B  back"
 	_resize_layout()
+	var order := 0
+	for child in _page.get_children():
+		if child is Control and (child is Label or child is BaseButton or child is Container):
+			_motion.reveal(child, 0.0, 0.20, minf(order * 0.012, 0.06))
+			order += 1
+	_motion.reveal(_art, 0.0, 0.24)
 	call_deferred("_focus_default")
 
 
@@ -293,7 +333,7 @@ func _build_settings() -> void:
 	_space(10.0)
 	_checkbox("Fullscreen", "fullscreen")
 	_checkbox("Reduced motion", "reduced_motion")
-	_page.add_child(_label("Steadies camera movement and shake.", PressScript.SIZE_TINY, FADED))
+	_page.add_child(_label("Steadies the camera, scenery, and interface.", PressScript.SIZE_TINY, FADED))
 	_space(22.0)
 	_button("Back", _show_screen.bind(_return_screen))
 
@@ -333,9 +373,11 @@ func _build_art() -> void:
 	_art.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	_content.add_child(_art)
 	var record := RecordArt.new()
+	_record = record
 	record.ink = INK
 	record.paper = PAPER
 	record.accent = PINK
+	record.reduced_motion = bool(settings.get("reduced_motion", false))
 	_art.add_child(record)
 	record.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 
@@ -365,6 +407,8 @@ func _build_art() -> void:
 func _resize_layout() -> void:
 	if overlay == null or _margin == null:
 		return
+	if _motion != null:
+		_motion.settle()
 	var narrow := overlay.size.x < NARROW_AT
 	var margin_size := 28 if narrow else 54
 	_margin.add_theme_constant_override("margin_left", margin_size)
@@ -390,6 +434,8 @@ func _open_subpage(next_screen: String) -> void:
 
 func _update_setting(key: String, value: Variant) -> void:
 	settings[key] = value
+	if key == "reduced_motion":
+		set_reduced_motion(bool(value))
 	settings_changed.emit(settings.duplicate(true))
 
 
@@ -419,14 +465,17 @@ func _button(text: String, action: Callable, default_focus := false) -> Button:
 
 
 func _style_button(button: Button) -> void:
+	_motion.bind_button(button, PINK)
 	button.add_theme_font_override("font", PressScript.BodyFont)
 	button.add_theme_font_size_override("font_size", PressScript.SIZE_BODY)
-	for color_key in ["font_color", "font_hover_color", "font_focus_color", "font_pressed_color"]:
+	for color_key in ["font_color", "font_focus_color"]:
 		button.add_theme_color_override(color_key, INK)
+	for color_key in ["font_hover_color", "font_pressed_color", "font_hover_pressed_color"]:
+		button.add_theme_color_override(color_key, PAPER)
 	button.add_theme_stylebox_override("normal", PressScript.menu_button_style(INK, PAPER))
 	button.add_theme_stylebox_override("hover", PressScript.menu_button_style(INK, PAPER, true))
 	button.add_theme_stylebox_override("pressed", PressScript.menu_button_style(INK, PAPER, true, true))
-	button.add_theme_stylebox_override("focus", PressScript.menu_button_style(INK, PAPER, false, true))
+	button.add_theme_stylebox_override("focus", PressScript.menu_focus_style(INK, PAPER))
 
 
 func _label(text: String, font_size: int, color: Color, display := false) -> Label:
