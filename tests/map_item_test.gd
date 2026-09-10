@@ -103,10 +103,10 @@ func _check_chart() -> void:
 		_check(pair not in chart_pairs and link.a in actual_ids and link.b in actual_ids, "chart passage is unique and connects authored rooms: " + pair)
 		chart_pairs.append(pair)
 		if link.shortcut:
-			_check(pair == _pair(&"worn_gallery", &"the_arm"), "only the gallery return is marked as a shortcut")
+			_check(pair in [_pair(&"worn_gallery", &"the_arm"), _pair(&"the_stalls", &"worn_gallery")], "only earned Gallery returns are marked as shortcuts")
 	real_pairs.sort()
 	chart_pairs.sort()
-	_check(chart_pairs == real_pairs and chart_pairs.size() == 16, "chart routes exactly match physical campaign passages, including the HUSH route and return shortcut")
+	_check(chart_pairs == real_pairs and chart_pairs.size() == 17, "chart routes exactly match physical campaign passages, including HUSH and both return shortcuts")
 	var rooms := ChartScript.rooms()
 	var original := ChartScript.rooms()
 	rooms[0].label = "changed fixture"

@@ -71,30 +71,39 @@ func _ready() -> void:
 	# Clip each printed face below its walkable edge. Even an engraving that
 	# reaches beyond its intended strokes cannot cover a player or bridge a gap.
 	for surface in surfaces:
-		var band := Rect2(surface.position + Vector2(3, 10), surface.size - Vector2(6, 10))
-		if band.size.x <= 0 or band.size.y <= 0:
-			continue
-		foreground_bands.append(band)
-		var clip := Control.new()
-		clip.position = band.position
-		clip.size = band.size
-		clip.clip_contents = true
-		clip.mouse_filter = Control.MOUSE_FILTER_IGNORE
-		foreground.add_child(clip)
-		var face := DepthLayer.new()
-		face.room_id = room_id
-		face.plane = &"foreground"
-		face.bounds = bounds
-		face.ink = ink
-		face.stock = stock
-		face.pose = _pose.duplicate()
-		face.pose["surfaces"] = [surface]
-		face.pose["view"] = bounds
-		face.position = -band.position
-		clip.add_child(face)
-		_foreground_art.append(face)
+		_add_surface_art(surface)
 	_update_pose()
 	sync_camera()
+
+func add_surface(surface: Rect2) -> void:
+	if surfaces.has(surface):
+		return
+	surfaces.append(surface)
+	_add_surface_art(surface)
+
+func _add_surface_art(surface: Rect2) -> void:
+	var band := Rect2(surface.position + Vector2(3, 10), surface.size - Vector2(6, 10))
+	if band.size.x <= 0 or band.size.y <= 0:
+		return
+	foreground_bands.append(band)
+	var clip := Control.new()
+	clip.position = band.position
+	clip.size = band.size
+	clip.clip_contents = true
+	clip.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	get_node("Foreground").add_child(clip)
+	var face := DepthLayer.new()
+	face.room_id = room_id
+	face.plane = &"foreground"
+	face.bounds = bounds
+	face.ink = ink
+	face.stock = stock
+	face.pose = _pose.duplicate()
+	face.pose["surfaces"] = [surface]
+	face.pose["view"] = bounds
+	face.position = -band.position
+	clip.add_child(face)
+	_foreground_art.append(face)
 
 func _process(delta: float) -> void:
 	if delta <= 0.0 or get_tree().paused:

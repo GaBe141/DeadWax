@@ -133,7 +133,11 @@ func _check_geometry(room: Node2D, points: Array[Vector2]) -> void:
 				supported = true
 				reachable = reachable or reached.has(index)
 		_check(supported, "%s arrival/passage %s has floor beneath the player" % [room.room_id, point])
-		_check(reachable, "%s arrival/passage %s has a route over jump-sized steps" % [room.room_id, point])
+		var optional_loft: bool = room.room_id == &"the_stalls" and point.y == room.entry_points[&"from_worn_gallery"].y
+		if optional_loft:
+			_check(not reachable, "Stalls loft is an optional earned return, above the ordinary jump route")
+		else:
+			_check(reachable, "%s arrival/passage %s has a route over jump-sized steps" % [room.room_id, point])
 
 func _supports(solid: Rect2, center: Vector2) -> bool:
 	return absf(solid.position.y - center.y - PLAYER_HALF_HEIGHT) < 1.0 and center.x >= solid.position.x + 17.0 and center.x <= solid.end.x - 17.0

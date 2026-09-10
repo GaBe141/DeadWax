@@ -52,11 +52,24 @@ Runtime errors are written to `.godot/deadwax-play.log`.
 - [ ] The Headshell's return text/scenery match the Tonearm's saved outcome.
 - [ ] An old completed eight-room demo save continues into the Overture with its Shine, room entry, Count-In, and prior choices intact.
 
+## Gather and the return journey
+
+- [ ] Before resolving the Tonearm, there is no Gather reward or practice ledge. Both peaceful and force outcomes reveal the pressing; resolving alone does not collect it or show an ending.
+- [ ] Walk to the pressing. Its impression floats but its collection reach stays fixed. Gather appears in the Book; jump then Strike near the crest to land on the nearby shelf. A missed attempt lands on the ordinary floor and landing refills one breath.
+- [ ] With Gather, grounded attacks stay grounded, including beside HUSH or a closed Tonearm. Jump-and-strike works; dry air provides only one breath per landing. Live grooves and thick-air behavior still work.
+- [ ] On the first visit to the Stalls, notice the upper room without reaching it by ordinary jumps or the live groove. Return with Gather, jump from the right bank beside the balcony's left edge, Strike near the crest, then steer onto it.
+- [ ] Beside the loft voice, holding Set immediately does nothing. Hold Hood for all three visible/audible notes, lower it in the silence, then press and hold Set. Two answers open the Gallery passage. Test keyboard and controller; turning the volume off still leaves usable cues.
+- [ ] An early or late response can be retried. Leaving resets an unfinished conversation. Pause freezes the phrase; Reduced motion steadies the sleeve while functional note and response cues continue.
+- [ ] Use the loft→Gallery passage and return. Both arrivals have safe standing room; the ordinary market and Gallery routes still work.
+- [ ] Return to the plaza and Headshell: the discovered phrase plays with rests and responds to Hood. Leaving fades it out; pause, Book, map, and shop suspend it. Continue restores it without restarting a reward; New Game clears it.
+- [ ] An old completed save without Gather can revisit the Arm and collect it. Recovery and Continue preserve Gather, the resolved voice, its shortcut, and the same Shine balance.
+- [ ] Check pickup, practice signage, loft voice cues, both nearby passage cards, and the seventeen-route map at 1280×720 and 960×540.
+
 ## Folded map
 
 - [ ] New Game begins without the map. Walk right in the Headshell: the folded page is visible before the first raised block, clear of both arrival positions, and collects once on approach.
 - [ ] Collection announces the map without opening a panel or changing Shine, health, Refrains, or knowledge. M / D-pad Down opens the map from play, and the Book gains an Open map button.
-- [ ] The map marks the current room, names explored rooms, and leaves unvisited names hidden. Its routes match the fifteen playable rooms; the dashed gallery shortcut does not claim to unlock a passage.
+- [ ] The map marks the current room, names explored rooms, and leaves unvisited names hidden. Its seventeen routes match the fifteen playable rooms; dashed shortcuts do not claim to unlock a passage.
 - [ ] Closing with M, D-pad Down, Escape/Back, or the Close button returns to the same position without a jump, attack, or passage input leaking through. The map, Book, stall, and pause menu cannot overlap.
 - [ ] D-pad Down still navigates the Book, including after collecting the map. Use A on its Open map button, or keyboard M, to unfold it there.
 - [ ] Explore, recover, Continue, and return to the Headshell: ownership and explored marks survive and the pickup stays gone. An old save without map data still loads and can collect it; New Game restores the pickup.

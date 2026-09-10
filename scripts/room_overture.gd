@@ -13,12 +13,18 @@ const ListeningPostScript := preload("res://scripts/listening_post.gd")
 const ResidentScript := preload("res://scripts/resident.gd")
 const WindScript := preload("res://scripts/wind_groove.gd")
 const MarkerScript := preload("res://scripts/chapter_marker.gd")
+const ProgressionScript := preload("res://scripts/progression_state.gd")
+
+const GATHER_POSITION := Vector2(1465, 554)
+const GATHER_LEDGE_POSITION := Vector2(1660, 424)
+const GATHER_LEDGE_SIZE := Vector2(200, 28)
 
 var session_outcomes: Dictionary = {}
 var objective_label := "Follow the worn song below the Label."
 var _scenery: Array[Node2D] = []
 var _endpoint: Node2D
 var _seal_note: Control
+var _gather_reward_built := false
 
 func configure(id: StringName) -> void:
 	room_id = id
@@ -72,6 +78,7 @@ func configure(id: StringName) -> void:
 			register_entry(&"from_overture_well", Vector2(180, 574))
 			register_entry(&"from_smoothed_floor", Vector2(2380, 574))
 			register_entry(&"from_the_arm", Vector2(1930, 574))
+			register_entry(&"from_the_stalls", Vector2(390, 494))
 		&"smoothed_floor":
 			band_name = "The Smoothed Floor"
 			band_desc = "Someone has burnished every last ring away."
@@ -216,6 +223,10 @@ func _build_gallery() -> void:
 	platform(Vector2(980, 370), Vector2(240, 40))
 	platform(Vector2(1260, 450), Vector2(220, 40))
 	platform(Vector2(1515, 540), Vector2(200, 40))
+	_outcome_exit(
+		Vector2(490, 494), &"the_stalls", "THE STALLS", "the_stalls/loft_voice", ["freed"],
+		"A VOICE HOLDS THE LATCH", "A voice above the Stalls has not finished its song."
+	)
 	_auditioner(Vector2(900, 587), &"gallery_near_voice")
 	_auditioner(Vector2(1340, 587), &"gallery_far_voice")
 	sign_label(Vector2(215, 287), "ALMOST RUBBED AWAY\nThe Hood softens your approach.\nThe arcade leaves them room.")
@@ -261,6 +272,7 @@ func _build_arm() -> void:
 	sign_label(Vector2(445, 275), "THE ARM\nIt points home.\nIt will not swing first.")
 	sign_label(Vector2(670, 408), "AN OPEN HAND\nYou can kneel beside it.\nYou can choose to strike.")
 	_seal_note = _note(Vector2(1645, 195), "THE SEAL", "The arm has held this way\nfor a very long time.")
+	_ensure_endpoint()
 
 func _floor(width: float) -> void:
 	platform(Vector2(width / 2.0, 630), Vector2(width, 60))
@@ -368,10 +380,13 @@ func _process(_delta: float) -> void:
 			objective_label = "The doorway is quiet. The well waits below."
 
 func _ensure_endpoint() -> void:
-	if room_id != &"the_arm" or _endpoint != null:
+	if room_id != &"the_arm":
 		return
 	var outcome := String(session_outcomes.get("the_arm/tonearm", ""))
 	if outcome not in ["freed", "shattered"]:
+		return
+	_ensure_arm_reward()
+	if _endpoint != null:
 		return
 	objective_label = "The seal is open. Reach it and listen beyond."
 	if _seal_note != null:
@@ -387,6 +402,29 @@ func _ensure_endpoint() -> void:
 	_endpoint.prompt = "[E / Y]  Listen beyond"
 	_endpoint.activated.connect(_on_chapter_completed)
 	add_child(_endpoint)
+
+func _ensure_arm_reward() -> void:
+	if _gather_reward_built:
+		return
+	_gather_reward_built = true
+	# An optional breath-height shelf, with a continuous floor beneath it.
+	# The listening point and both passages remain reachable without Gather.
+	platform(GATHER_LEDGE_POSITION, GATHER_LEDGE_SIZE)
+	get_child(-1).name = "GatherPracticeLedge"
+	if atmosphere != null:
+		refresh_atmosphere(session_outcomes)
+	_note(Vector2(1480, 225), "A BREATH TO CARRY HOME", "Jump beside the ledge.\nStrike [J / X] near the crest.\nThen steer onto it. Land: refill.")
+	if progression != null and bool(progression.call("has_refrain", ProgressionScript.Refrain.GATHER)):
+		return
+	var pickup := RefrainPickupScript.new()
+	pickup.name = "GatherReward"
+	pickup.position = GATHER_POSITION
+	pickup.progression = progression
+	pickup.refrain = ProgressionScript.Refrain.GATHER
+	pickup.reink(_solid_color(), _stock_color())
+	pickup.set_reduced_motion(bool(atmosphere.reduced_motion) if atmosphere != null else false)
+	pickup.collected.connect(_on_refrain_pickup_collected)
+	add_child(pickup)
 
 func _on_chapter_completed() -> void:
 	chapter_completed.emit()

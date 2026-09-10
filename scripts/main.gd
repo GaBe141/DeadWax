@@ -314,6 +314,7 @@ func _swap_room(next_room: Node2D, entry_id: StringName) -> void:
 	room.call("apply_side", pressing.side)
 	room.call("set_scenery_motion", bool(_settings.reduced_motion))
 	_apply_room_air()
+	_sync_home_song()
 
 	# wire the room's listeners after they enter the tree
 	call_deferred("_wire_room")
@@ -397,7 +398,16 @@ func _remember_positioned(_pos: Vector2, key: String, outcome: String) -> void:
 
 func _remember_encounter(key: String, outcome: String) -> void:
 	encounters[key] = outcome
+	if key == "the_stalls/loft_voice" and outcome == "freed":
+		_flash("A LOST PHRASE — carried home.")
+		_sync_home_song()
 	_queue_save()
+
+func _sync_home_song() -> void:
+	if audio != null:
+		audio.set_home_song(not development_mode and _has_session
+			and world_room_id in [&"horn_plaza", &"headshell"]
+			and String(encounters.get("the_stalls/loft_voice", "")) == "freed")
 
 func _queue_save() -> void:
 	if development_mode or not _has_session or _save_queued:
@@ -453,6 +463,7 @@ func _new_game() -> void:
 	_reset_player()
 	_load_world_room(ChapterScript.START_ROOM)
 	_has_session = true
+	_sync_home_song()
 	_resume_game()
 	# Rotate this new pressing into the recovery copy too. A damaged primary
 	# after starting over must never resurrect the previous playthrough.
@@ -485,6 +496,7 @@ func _continue_game() -> void:
 	_reset_player()
 	_load_world_room(StringName(data.room_id), StringName(data.entry_id))
 	_has_session = true
+	_sync_home_song()
 	_resume_game()
 	# Repair the old demo's ending flag and any obsolete arrival on disk only
 	# after the saved room, progress and encounter choices have been restored.
@@ -967,7 +979,7 @@ func _on_refrain_unlocked(refrain: int) -> void:
 	audio.play("freed", -7.0)
 	if refrain == ProgressionScript.Refrain.GATHER:
 		player.refill_air_strikes()
-		_flash("GATHER — one breath follows you into the dry.")
+		_flash("GATHER — a breath to carry home.")
 	else:
 		_flash("%s — remembered." % progression.call("refrain_label", refrain))
 	_queue_save()

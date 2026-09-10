@@ -138,6 +138,12 @@ static func draw_campaign_map(canvas: CanvasItem, size: Vector2, pose: Dictionar
 static func draw_map_pickup(canvas: CanvasItem, pose: Dictionary, ink: Color, stock: Color) -> void:
 	preload("res://scripts/press_map.gd").draw_pickup(canvas, pose, ink, stock)
 
+static func draw_loft_voice(canvas: CanvasItem, pose: Dictionary, ink: Color, stock: Color) -> void:
+	preload("res://scripts/press_discovery.gd").draw_voice(canvas, pose, ink, stock)
+
+static func draw_refrain_pickup(canvas: CanvasItem, pose: Dictionary, ink: Color, stock: Color) -> void:
+	preload("res://scripts/press_discovery.gd").draw_refrain(canvas, pose, ink, stock)
+
 static func map_backing(stock: Color) -> ColorRect:
 	var backing := ColorRect.new()
 	backing.color = stock

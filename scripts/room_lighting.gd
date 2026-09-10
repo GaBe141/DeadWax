@@ -83,19 +83,28 @@ func _ready() -> void:
 	# Only real platform faces stop a light. Insets keep their upper outlines
 	# illuminated and avoid the self-shadow seam of an identical painted edge.
 	for surface in surfaces:
-		var face := surface.grow(-2.0)
-		var polygon := OccluderPolygon2D.new()
-		polygon.polygon = PackedVector2Array([face.position,
-			Vector2(face.end.x, face.position.y), face.end,
-			Vector2(face.position.x, face.end.y)])
-		var occluder := LightOccluder2D.new()
-		occluder.occluder = polygon
-		occluder.occluder_light_mask = 1
-		occluder.sdf_collision = false
-		add_child(occluder)
-		occluders.append(occluder)
+		_add_occluder(surface)
 	reink(ink, stock)
 	_update_lights()
+
+func add_surface(surface: Rect2) -> void:
+	if surfaces.has(surface):
+		return
+	surfaces.append(surface)
+	_add_occluder(surface)
+
+func _add_occluder(surface: Rect2) -> void:
+	var face := surface.grow(-2.0)
+	var polygon := OccluderPolygon2D.new()
+	polygon.polygon = PackedVector2Array([face.position,
+		Vector2(face.end.x, face.position.y), face.end,
+		Vector2(face.position.x, face.end.y)])
+	var occluder := LightOccluder2D.new()
+	occluder.occluder = polygon
+	occluder.occluder_light_mask = 1
+	occluder.sdf_collision = false
+	add_child(occluder)
+	occluders.append(occluder)
 
 func _process(delta: float) -> void:
 	if delta <= 0.0 or get_tree().paused:

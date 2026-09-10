@@ -19,7 +19,7 @@ On the Dead Wax Wyse, the lightweight project commands are:
 .\deadwax.cmd play    play the campaign with a local runtime log
 .\deadwax.cmd dev     open the original mechanics rooms and planned-world tools
 .\deadwax.cmd editor  open the project in Godot
-.\deadwax.cmd check   import resources; run all fourteen native test suites
+.\deadwax.cmd check   import resources; run all eighteen native test suites
 .\deadwax.cmd vibe    start Mistral Vibe in this repository
 ```
 
@@ -64,8 +64,27 @@ holding Set offers another answer. Both outcomes persist, and the final
 listening point asks for E/Y after the encounter is resolved. The Headshell
 has different words and scenery when you return.
 
-Gather and Jump-Cut still belong to later regions. The Overture remains dry;
-this extension earns its traversal through grooves, wind, and ordinary jumps.
+The first descent uses grooves, wind, and ordinary jumps. After either Tonearm
+outcome, a **Gather** pressing appears beside the open seal. Pick it up, jump,
+then Strike near the crest to climb on one held breath. Landing refills it;
+ordinary grounded attacks keep their footing. The nearby shelf offers a safe
+place to try it. Jump-Cut remains a later discovery.
+
+## A phrase to carry home
+
+The Stalls' upper balcony is visible on the first visit, beyond the reach of
+an ordinary jump. Return with Gather, jump beside its left edge, and spend
+your breath to land above the shutters. A small voice is waiting there.
+
+Stand beside it and hold Hood to hear three notes. In the silence, lower Hood
+and press and hold Set. Answer twice; visible note marks and a changing card
+carry the same cues as the sound. The voice opens a passage between the loft
+and the Worn Gallery, and its melody joins the Horn Plaza and Headshell when
+you return. The folded map includes this second dashed shortcut.
+
+Gather, the voice, and its passage survive recovery and Continue. Players
+with an already completed demo can revisit the Arm for the pressing. The
+discovery grants no Shine and leaves both Tonearm endings available.
 
 ## Living ink
 

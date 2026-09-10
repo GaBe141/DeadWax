@@ -38,6 +38,7 @@ const LINKS := [
 	{"a": &"worn_gallery", "b": &"smoothed_floor", "shortcut": false},
 	{"a": &"smoothed_floor", "b": &"the_arm", "shortcut": false},
 	{"a": &"worn_gallery", "b": &"the_arm", "shortcut": true},
+	{"a": &"the_stalls", "b": &"worn_gallery", "shortcut": true},
 ]
 
 static func room_ids() -> Array[StringName]:

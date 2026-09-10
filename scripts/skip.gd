@@ -278,16 +278,21 @@ func _strike() -> void:
 			velocity = velocity * POGO_KEEP + pdir * POGO_IMPULSE
 			refill_air_strikes()
 			launched = true
-	elif can_air_strike() and air_strikes_left > 0:
-		# Gather holds one breath even when the pooled unplayed is far away.
+	elif can_air_strike() and air_strikes_left > 0 and (air_density > 0.0 or not is_on_floor() or velocity.y < 0.0):
+		# Gather follows a jump into dry air; it never turns a grounded jab
+		# into a launch. The room's own thick air still lifts from the floor.
 		air_strikes_left -= 1
-		var aim := Vector2(
-			Input.get_axis("move_left", "move_right"),
-			Input.get_axis("move_up", "move_down")
-		)
-		if aim.length_squared() < 0.01:
-			aim = Vector2.UP
-		aim = aim.normalized()
+		# The carried breath lifts even while steering across a gap. Only
+		# the room's pooled thick air uses directional jet aiming.
+		var aim := Vector2.UP
+		if air_density > 0.0:
+			aim = Vector2(
+				Input.get_axis("move_left", "move_right"),
+				Input.get_axis("move_up", "move_down")
+			)
+			if aim.length_squared() < 0.01:
+				aim = Vector2.UP
+			aim = aim.normalized()
 		velocity = velocity * AIR_KEEP + aim * AIR_IMPULSE
 		launched = true
 

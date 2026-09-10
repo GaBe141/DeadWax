@@ -72,6 +72,22 @@ func set_scenery_motion(reduced: bool) -> void:
 		atmosphere.call("set_reduced_motion", reduced)
 	if lighting != null:
 		lighting.call("set_reduced_motion", reduced)
+	for child in get_children():
+		if child != atmosphere and child != lighting and child.has_method("set_reduced_motion"):
+			child.call("set_reduced_motion", reduced)
+
+## An earned practice ledge needs the same engraving and shadows whether it
+## appeared live or was built while restoring a resolved encounter.
+func refresh_atmosphere(outcomes: Dictionary) -> void:
+	if atmosphere == null:
+		return
+	atmosphere.session_outcomes = outcomes
+	lighting.session_outcomes = outcomes
+	for skin in _skins:
+		if skin.size.x >= 100 and skin.size.y >= 20 and skin.size.y <= 200:
+			var surface := Rect2(skin.get_parent().position + skin.position, skin.size)
+			atmosphere.call("add_surface", surface)
+			lighting.call("add_surface", surface)
 
 func sync_scenery_camera() -> void:
 	if atmosphere != null:

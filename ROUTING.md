@@ -47,6 +47,25 @@ the gallery shortcut requires `the_arm/gallery_shortcut=opened`. These are
 encounter outcomes, never knowledge or Refrain permissions. Reverse passages
 remain usable. The unfinished Drop is not a destination in this build.
 
+The authored return route adds `the_stalls ↔ worn_gallery`, using a loft
+inside the existing Stalls room. Both ends require `the_stalls/loft_voice=freed`.
+The loft's `from_worn_gallery` arrival is on the balcony; the Gallery's
+`from_the_stalls` arrival is on its first arcade step. This campaign shortcut
+is independent of the development atlas. The carried chart has fifteen rooms
+and seventeen undirected passage pairs; both shortcuts remain dashed.
+
+Either Tonearm resolution reveals Gather at (1465,554), alongside an optional
+practice shelf. Collection remains a deliberate world encounter, separate
+from the ending marker. The Stalls balcony rises 200px above the right bank,
+requires an airborne Gather strike, and has a safe floor below. All original
+campaign passages and return stairs remain traversable without Gather.
+
+`loft_voice.gd` presents a three-note call through Hood and accepts a fresh,
+held Set during its silence. Two answers emit its single `freed` outcome.
+Main saves that choice and enables the matching synthesized home melody in
+the plaza and Headshell. Restoring a voice never replays the unlock or adds
+currency. New Game clears the phrase with the other encounter choices.
+
 `scripts/room_overture.gd` authors the seven new rooms. Both boss attempts
 reset when Main recovers the player, while saved resolutions restore silently.
 The Tonearm's strike, contact, and pogo origin is its grounded tip; its overhead

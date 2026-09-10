@@ -8,6 +8,9 @@ const AuditionerScript := preload("res://scripts/auditioner.gd")
 const ResidentScript := preload("res://scripts/resident.gd")
 const HoundScript := preload("res://scripts/hound.gd")
 const MapPickupScript := preload("res://scripts/map_pickup.gd")
+const LoftVoiceScript := preload("res://scripts/loft_voice.gd")
+const OutcomeExitScript := preload("res://scripts/outcome_exit.gd")
+const ProgressionScript := preload("res://scripts/progression_state.gd")
 const HORN_LISTEN_TIME := 1.4
 const HORN_LISTEN_RADIUS := 135.0
 const HORN_POSITION := Vector2(790, 574)
@@ -65,6 +68,7 @@ func configure(id: StringName) -> void:
 			cam_limits = Rect2(0, 0, 2200, 920)
 			register_entry(&"from_horn_plaza", Vector2(170, 574))
 			register_entry(&"from_groove_yard", Vector2(1990, 454))
+			register_entry(&"from_worn_gallery", Vector2(2020, 254))
 		&"groove_yard":
 			band_name = "The Locked-Groove Yard"
 			band_desc = "Worn names. One bar, over and over."
@@ -144,7 +148,10 @@ func _build_horn_plaza() -> void:
 	sign_label(Vector2(600, 242), "THE VOICE\nRuntime: all of it.")
 	sign_label(Vector2(680, 424), "HOLD K / C / B — HOOD\nStand quietly beneath the horn.")
 	_polish(Vector2(790, 574), &"horn_wax")
-	sign_label(Vector2(1280, 260), "THE DESCENT\nEast, through the market.\nThe gate listens for a count.")
+	if String(session_outcomes.get("the_stalls/loft_voice", "")) == "freed":
+		sign_label(Vector2(1280, 260), "THE RETURNING NOTE\nA small song crosses the market.\nThe great horn carries it home.")
+	else:
+		sign_label(Vector2(1280, 260), "THE DESCENT\nEast, through the market.\nThe gate listens for a count.")
 	var hound := HoundScript.new()
 	hound.name = "Hound"
 	hound.position = Vector2(970, 574)
@@ -195,6 +202,7 @@ func _build_practice_room() -> void:
 	_polish(Vector2(520, 574), &"practice_wax")
 
 func _build_stalls() -> void:
+	_refresh_stalls_objective()
 	platform(Vector2(350, 630), Vector2(740, 60))
 	platform(Vector2(1780, 520), Vector2(840, 80))
 	for index in range(4):
@@ -205,7 +213,34 @@ func _build_stalls() -> void:
 	platform(Vector2(900, 435), Vector2(260, 36))
 	platform(Vector2(1200, 410), Vector2(220, 36))
 	sign_label(Vector2(310, 310), "STILL HOT\nStand on the groove. STRIKE [J / X].\nSteer right as it carries you.")
-	sign_label(Vector2(1500, 270), "NOT EVERYTHING IS SPENT\nA live groove answers.\nEmpty air keeps its silence.")
+	sign_label(Vector2(1430, 215), "THE UPPER ROOM\nSomeone kept a song\nabove the shutters.")
+	# This shelf is too high for the legs beneath it, and too far from the
+	# live groove and middle walk. A held breath gives the return its lift.
+	platform(Vector2(1990, 295), Vector2(420, 30))
+	get_child(get_child_count() - 1).name = "LoftBalcony"
+	_impression(&"arch", Vector2(1960, 164), Vector2(460, 225))
+	_impression(&"counter", Vector2(1990, 340), Vector2(410, 90))
+	var loft_voice := LoftVoiceScript.new()
+	loft_voice.name = "LoftVoice"
+	loft_voice.position = Vector2(1870, 254)
+	loft_voice.ink = ink
+	loft_voice.stock = bg_color
+	_persistent(loft_voice, &"loft_voice")
+	add_child(loft_voice)
+	var loft_passage := OutcomeExitScript.new()
+	loft_passage.name = "LoftPassage"
+	loft_passage.position = Vector2(2100, 254)
+	loft_passage.target_room = &"worn_gallery"
+	loft_passage.target_entry = &"from_the_stalls"
+	loft_passage.display_name = "THE GALLERY"
+	loft_passage.session_outcomes = session_outcomes
+	loft_passage.required_outcome_key = "the_stalls/loft_voice"
+	loft_passage.required_outcomes = ["freed"]
+	loft_passage.gate_label = "A SONG STILL HELD"
+	loft_passage.blocked_message = "The upper room is waiting for its last reply."
+	loft_passage.route_requested.connect(_on_exit_route_requested)
+	loft_passage.route_blocked.connect(_on_exit_route_blocked)
+	add_child(loft_passage)
 	# A missed launch lands in the service lane. Short steps return to either
 	# bank, so trying the first groove does not cost a room restart.
 	platform(Vector2(1010, 800), Vector2(1420, 60))
@@ -314,7 +349,7 @@ func apply_side(next_side: int) -> void:
 		add_child(next_picture)
 		_scenery[index] = next_picture
 	for child in get_children():
-		if (child.is_in_group("world_resident") or child.is_in_group("map_pickup")) and child.has_method("reink"):
+		if (child.is_in_group("world_resident") or child.is_in_group("map_pickup") or child.name == &"LoftVoice") and child.has_method("reink"):
 			child.call("reink", _solid_color(), _stock_color())
 
 func set_scenery_motion(reduced: bool) -> void:
@@ -324,6 +359,9 @@ func set_scenery_motion(reduced: bool) -> void:
 			child.call("set_reduced_motion", reduced)
 
 func _process(delta: float) -> void:
+	if room_id == &"the_stalls":
+		_refresh_stalls_objective()
+		return
 	if room_id != &"horn_plaza" or _horn_heard:
 		return
 	var player := get_tree().get_first_node_in_group("player") as CharacterBody2D
@@ -341,6 +379,14 @@ func _process(delta: float) -> void:
 		if bank != null:
 			bank.call("play", "freed", -11.0, 0.7)
 		route_blocked.emit("For a moment, the great horn answers your silence.")
+
+func _refresh_stalls_objective() -> void:
+	if String(session_outcomes.get("the_stalls/loft_voice", "")) == "freed":
+		objective_label = "A small song knows the way home. The gallery passage is open."
+	elif progression != null and progression.has_refrain(ProgressionScript.Refrain.GATHER):
+		objective_label = "The upper room is closer than it was."
+	else:
+		objective_label = "Let the live groove carry you across the market."
 
 ## Main keeps the outcomes. Recreating a room only applies its own stable
 ## entries; this method neither records completion nor unlocks knowledge.
@@ -361,5 +407,8 @@ func restore_encounters(outcomes: Dictionary) -> void:
 			child.set("progress", 1.0)
 			child.queue_redraw()
 		elif outcome in ["freed", "shattered", "won"]:
-			remove_child(child)
-			child.queue_free()
+			if child.has_method("restore_outcome"):
+				child.call("restore_outcome", outcome)
+			else:
+				remove_child(child)
+				child.queue_free()

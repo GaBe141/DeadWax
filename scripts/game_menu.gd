@@ -281,7 +281,7 @@ func _build_ending() -> void:
 		_page.add_child(_label("THE GRIP\nSTAYS EMPTY.", PressScript.SIZE_MENU_TITLE, INK, true))
 		_page.add_child(_paragraph("The Tonearm will not reach for you again.\nThe quiet remembers how you left it."))
 	_space(12.0)
-	_page.add_child(_paragraph("Return through the gallery to see what changed.\nThe world below the Scratch is still being made."))
+	_page.add_child(_paragraph("The market looks different from above.\nFollow the gallery home and see what you can reach."))
 	_space(18.0)
 	_button("Continue exploring", resume_requested.emit, true)
 	_button("Save & return to title", title_requested.emit)

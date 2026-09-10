@@ -453,7 +453,7 @@ func _slot_description(slot: StringName) -> String:
 		&"step-turn":
 			return "The Book remembers a turn taken without losing the measure. Its lesson waits deeper in the record."
 		&"gather":
-			return "Carry one held breath into dry wax. Rooms with thicker air keep their own larger capacity."
+			return "Jump, then Strike near the crest to climb on one held breath. Land to refill it. Thicker air keeps its own larger capacity."
 		&"rest":
 			return "A remembered Refrain. Its effect is quiet here; another groove may answer it."
 		&"jump-cut":
