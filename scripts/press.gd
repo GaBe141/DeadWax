@@ -144,6 +144,9 @@ static func draw_loft_voice(canvas: CanvasItem, pose: Dictionary, ink: Color, st
 static func draw_refrain_pickup(canvas: CanvasItem, pose: Dictionary, ink: Color, stock: Color) -> void:
 	preload("res://scripts/press_discovery.gd").draw_refrain(canvas, pose, ink, stock)
 
+static func draw_opening(canvas: CanvasItem, size: Vector2, pose: Dictionary) -> void:
+	preload("res://scripts/press_opening.gd").draw(canvas, size, pose)
+
 static func map_backing(stock: Color) -> ColorRect:
 	var backing := ColorRect.new()
 	backing.color = stock

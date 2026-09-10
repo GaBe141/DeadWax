@@ -26,6 +26,7 @@ const ShopScript := preload("res://scripts/shop_menu.gd")
 const HudMotionScript := preload("res://scripts/hud_motion.gd")
 const MapStateScript := preload("res://scripts/map_state.gd")
 const MapMenuScript := preload("res://scripts/map_menu.gd")
+const OpeningScript := preload("res://scripts/opening_cutscene.gd")
 
 const MARGIN := 22.0
 const NEEDLE_HEALTH := 3
@@ -56,6 +57,9 @@ var development_mode := false
 var save_path := "user://deadwax-save.json"
 var settings_path := "user://deadwax-settings.cfg"
 var game_menu: CanvasLayer
+var opening: CanvasLayer
+var _opening_mode := ""
+var _opening_closing := false
 var save_store: RefCounted
 var encounters: Dictionary = {}
 var chapter_complete := false
@@ -159,6 +163,11 @@ func _ready() -> void:
 	game_menu.title_requested.connect(_return_to_title)
 	game_menu.quit_requested.connect(_quit_game)
 	game_menu.settings_changed.connect(_change_settings)
+	game_menu.opening_requested.connect(_watch_opening)
+	opening = OpeningScript.new()
+	add_child(opening)
+	opening.shot_started.connect(_on_opening_shot)
+	opening.finished.connect(_on_opening_finished)
 	_load_settings()
 	_load_world_room(ChapterScript.START_ROOM)
 	get_tree().auto_accept_quit = false
@@ -442,7 +451,8 @@ func _persist_session() -> bool:
 		game_menu.call("set_notice", "Could not save your pressing. Resume and try again before leaving.")
 	return saved
 
-func _new_game() -> void:
+func _new_game(play_opening: bool = true) -> void:
+	_cancel_opening()
 	map_menu.close_map()
 	_map_closing = false
 	shop.call("close_shop")
@@ -464,18 +474,22 @@ func _new_game() -> void:
 	_load_world_room(ChapterScript.START_ROOM)
 	_has_session = true
 	_sync_home_song()
-	_resume_game()
 	# Rotate this new pressing into the recovery copy too. A damaged primary
 	# after starting over must never resurrect the previous playthrough.
 	if _persist_session():
 		_persist_session()
-	_flash("something below is still playing.")
+	if play_opening and not development_mode:
+		_begin_opening("new_game")
+	else:
+		_resume_game()
+		_flash("something below is still playing.")
 
 func _continue_game() -> void:
 	var data: Dictionary = save_store.call("load_game")
 	if data.is_empty() or not ChapterScript.has_room(StringName(data.get("room_id", ""))):
 		game_menu.call("set_notice", "That pressing could not be read. You can begin a new one.")
 		return
+	_cancel_opening()
 	map_menu.close_map()
 	_map_closing = false
 	shop.call("close_shop")
@@ -516,6 +530,7 @@ func _reset_player() -> void:
 	feedback.modulate.a = 0
 
 func _show_title() -> void:
+	_cancel_opening()
 	var data: Dictionary = save_store.call("load_game")
 	var valid := not data.is_empty() and ChapterScript.has_room(StringName(data.get("room_id", "")))
 	var label := String(data.get("room_id", "")).replace("_", " ").to_upper()
@@ -526,7 +541,7 @@ func _show_title() -> void:
 	audio.set_crackle(0.0)
 
 func _pause_game() -> void:
-	if _transition_pending or inventory.call("is_open") or shop.is_open or _shop_closing or map_menu.is_open or _map_closing:
+	if _opening_active() or _transition_pending or inventory.call("is_open") or shop.is_open or _shop_closing or map_menu.is_open or _map_closing:
 		return
 	game_menu.call("show_pause")
 	get_tree().paused = true
@@ -534,13 +549,80 @@ func _pause_game() -> void:
 	_persist_session()
 
 func _resume_game() -> void:
+	if _opening_active():
+		return
 	game_menu.call("close_menu")
 	# Defer so the confirming button cannot also become a jump or passage.
 	call_deferred("_unpause_game")
 
 func _unpause_game() -> void:
-	if game_menu != null and not game_menu.is_open and not shop.is_open and not inventory.call("is_open") and not map_menu.is_open and not _map_closing:
+	if not _opening_active() and game_menu != null and not game_menu.is_open and not shop.is_open and not inventory.call("is_open") and not map_menu.is_open and not _map_closing:
 		get_tree().paused = false
+
+# -- before the first footstep ----------------------------------------------
+
+func _opening_active() -> bool:
+	return _opening_closing or (opening != null and opening.is_open)
+
+func _watch_opening() -> void:
+	if development_mode or _opening_active() or game_menu == null or not game_menu.is_open or game_menu.screen != "title":
+		return
+	_begin_opening("replay")
+
+func _begin_opening(mode: String) -> void:
+	_opening_mode = mode
+	_opening_closing = false
+	game_menu.close_menu()
+	get_tree().paused = true
+	player.cancel_pending_strike()
+	player.velocity = Vector2.ZERO
+	audio.set_crackle(0.0)
+	audio.set_home_song(false)
+	audio.stop_opening()
+	opening.set_reduced_motion(bool(_settings.reduced_motion))
+	opening.play_opening()
+
+func _on_opening_shot(index: int) -> void:
+	audio.play_opening_shot(index)
+
+func _cancel_opening() -> void:
+	if opening != null:
+		opening.cancel()
+	_opening_mode = ""
+	_opening_closing = false
+	if audio != null:
+		audio.stop_opening()
+
+func _on_opening_finished() -> void:
+	if _opening_mode.is_empty() or _opening_closing:
+		return
+	_opening_closing = true
+	audio.stop_opening()
+	call_deferred("_finish_opening_handoff")
+
+func _finish_opening_handoff() -> void:
+	await get_tree().process_frame
+	if not _opening_closing:
+		return
+	var mode := _opening_mode
+	_opening_mode = ""
+	_opening_closing = false
+	# Ending/skip input belongs to the film. Clear both held actions and the
+	# player's buffered actions before simulation is allowed to resume.
+	for action in InputMap.get_actions():
+		Input.action_release(action)
+	player.cancel_pending_strike()
+	player.set("_buffer", 0.0)
+	player.set("_coyote", 0.0)
+	player.velocity = Vector2.ZERO
+	player.hooded = false
+	player.setting = false
+	if mode == "replay":
+		_show_title()
+		return
+	_sync_home_song()
+	hud_motion.present_room()
+	_resume_game()
 
 func _return_to_title() -> void:
 	if not _persist_session():
@@ -550,6 +632,7 @@ func _return_to_title() -> void:
 
 func _quit_game() -> void:
 	if not _persist_session():
+		_cancel_opening()
 		if inventory.call("is_open"):
 			inventory.call("close_inventory")
 		shop.call("close_shop")
@@ -619,7 +702,7 @@ func _close_map() -> void:
 func _finish_map_close() -> void:
 	await get_tree().process_frame
 	_map_closing = false
-	if map_menu.is_open or shop.is_open or (game_menu != null and game_menu.is_open) or inventory.is_open():
+	if _opening_active() or map_menu.is_open or shop.is_open or (game_menu != null and game_menu.is_open) or inventory.is_open():
 		return
 	player.set("_buffer", 0.0)
 	get_tree().paused = false
@@ -669,7 +752,7 @@ func _close_shop() -> void:
 func _finish_shop_close() -> void:
 	await get_tree().process_frame
 	_shop_closing = false
-	if shop.is_open or (game_menu != null and game_menu.is_open) or inventory.call("is_open") or map_menu.is_open or _map_closing:
+	if _opening_active() or shop.is_open or (game_menu != null and game_menu.is_open) or inventory.call("is_open") or map_menu.is_open or _map_closing:
 		return
 	player.set("_buffer", 0.0)
 	get_tree().paused = false
@@ -731,7 +814,7 @@ func _apply_settings() -> void:
 	AudioServer.set_bus_volume_db(0, linear_to_db(maxf(0.001, float(_settings.volume))))
 	AudioServer.set_bus_mute(0, float(_settings.volume) <= 0.0)
 	camera.position_smoothing_enabled = not bool(_settings.reduced_motion)
-	for interface in [game_menu, inventory, shop, map_menu, hud_motion]:
+	for interface in [game_menu, inventory, shop, map_menu, hud_motion, opening]:
 		if interface != null:
 			interface.call("set_reduced_motion", bool(_settings.reduced_motion))
 	if room != null:
@@ -947,7 +1030,7 @@ func _on_refrain_collected(refrain: int) -> void:
 	progression.call("unlock_refrain", refrain)
 
 func _on_route_requested(target_room: StringName, target_entry: StringName) -> void:
-	if _transition_pending or (game_menu != null and game_menu.is_open) or bool(inventory.call("is_open")) or shop.is_open or _shop_closing or map_menu.is_open or _map_closing:
+	if _opening_active() or _transition_pending or (game_menu != null and game_menu.is_open) or bool(inventory.call("is_open")) or shop.is_open or _shop_closing or map_menu.is_open or _map_closing:
 		return
 	if not development_mode and not ChapterScript.has_room(target_room):
 		return
@@ -973,7 +1056,7 @@ func _on_route_blocked(message: String) -> void:
 	_flash(message)
 
 func _can_open_inventory() -> bool:
-	return _has_session and not _transition_pending and not _shop_closing and not shop.is_open and not _map_closing and (map_menu == null or not map_menu.is_open) and (game_menu == null or not game_menu.is_open)
+	return not _opening_active() and _has_session and not _transition_pending and not _shop_closing and not shop.is_open and not _map_closing and (map_menu == null or not map_menu.is_open) and (game_menu == null or not game_menu.is_open)
 
 func _on_refrain_unlocked(refrain: int) -> void:
 	audio.play("freed", -7.0)

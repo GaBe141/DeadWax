@@ -24,7 +24,7 @@ func _run() -> void:
 	_main.settings_path = _directory + "/settings.cfg"
 	root.add_child(_main)
 	await _frames(3)
-	_main._new_game()
+	_main._new_game(false)
 	await _physics(4)
 	_main.player.struck.connect(_on_struck)
 	await _grounded_hits()

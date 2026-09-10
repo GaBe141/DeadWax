@@ -8,6 +8,13 @@ changes what waits at home.
 
 Open this folder in **Godot 4.7.x** and press **F5**, or run
 `.\deadwax.cmd play`. The title screen offers **New Game** and **Continue**.
+New Game opens with a 23-second illustrated prologue: a town in the grooves,
+its fading song, and a little needle taking its first steps. **Space / A**
+advances a scene; **Escape / B** skips to the Headshell. **Watch opening**
+on the title screen replays it without replacing your save. Continue goes
+straight to your saved entry. Reduced motion presents still illustrations;
+the captions and original synthesized score tell the same story.
+
 Everything is built from code at runtime, so an empty editor viewport is
 expected. The Label and Overture are authored; the remainder of the planned
 53-room world is still development scaffolding.
@@ -19,7 +26,7 @@ On the Dead Wax Wyse, the lightweight project commands are:
 .\deadwax.cmd play    play the campaign with a local runtime log
 .\deadwax.cmd dev     open the original mechanics rooms and planned-world tools
 .\deadwax.cmd editor  open the project in Godot
-.\deadwax.cmd check   import resources; run all eighteen native test suites
+.\deadwax.cmd check   import resources; run all twenty native test suites
 .\deadwax.cmd vibe    start Mistral Vibe in this repository
 ```
 

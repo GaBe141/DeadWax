@@ -64,7 +64,11 @@ func _title_and_pause() -> void:
 	_check(menu.screen == "title" and _focus_inside(menu.overlay), "rapid page replacement focuses the current title")
 	await _tap(KEY_ENTER)
 	await _physics(3)
-	_check(_main._has_session and not paused and not menu.is_open, "New game accepts physical Enter during its entrance")
+	_check(_main.opening.is_open and paused and not menu.is_open, "New game accepts physical Enter during its entrance and opens the film")
+	_main.opening.skip()
+	await create_timer(0.6).timeout
+	await _physics(3)
+	_check(_main._has_session and not paused and not menu.is_open, "skipping the opening hands the new game into play")
 	_main._pause_game()
 	var hud := _hud_snapshot()
 	world = _world_snapshot()

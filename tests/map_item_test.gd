@@ -23,7 +23,7 @@ func _run() -> void:
 	_check_state_and_schema()
 	await _boot()
 	await _check_chart()
-	_main._new_game()
+	_main._new_game(false)
 	await _physics(4)
 	await _check_pickup()
 	await _check_inputs()
@@ -260,7 +260,7 @@ func _check_persistence() -> void:
 	_main._load_world_room(&"headshell")
 	await _physics(3)
 	_check(_pickup() == null, "Continue cannot regenerate the owned map pickup")
-	_main._new_game()
+	_main._new_game(false)
 	await _physics(4)
 	_check(not _main.map_state.owned and _main.map_state.visited == ["headshell"] and _pickup() != null, "New game restores the pickup and clears the previous journey's map")
 

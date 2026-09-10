@@ -17,7 +17,7 @@ func _run() -> void:
 	_directory = "user://deadwax-residents-test-%d-%d" % [OS.get_process_id(), Time.get_ticks_usec()]
 	_check(DirAccess.make_dir_absolute(_directory) == OK, "create isolated resident directory")
 	await _boot()
-	_main._new_game()
+	_main._new_game(false)
 	await _physics(5)
 	await _check_dialogue(&"bootlegger", &"from_overture_stair", &"bootlegger")
 	await _check_dialogue(&"practice_room", &"from_high_street", &"tick")

@@ -21,7 +21,7 @@ func _run() -> void:
 	_directory = "user://deadwax-economy-test-%d-%d" % [OS.get_process_id(), Time.get_ticks_usec()]
 	_check(DirAccess.make_dir_absolute(_directory) == OK, "create isolated economy directory")
 	await _boot()
-	_main._new_game()
+	_main._new_game(false)
 	await _physics(5)
 	await _check_patch_budget()
 	await _check_earning()
@@ -67,7 +67,7 @@ func _check_patch_budget() -> void:
 	_check(first_visit_budget < int(EconomyScript.item(&"spare_groove").price) + int(EconomyScript.item(&"soft_lining").price), "owning both functional upgrades rewards a later return")
 
 func _check_earning() -> void:
-	_main._new_game()
+	_main._new_game(false)
 	await _physics(4)
 	_check(_main.economy.snapshot() == {"shine": 0, "purchases": []} and _main.player.shine == 0, "new game starts with an empty shared wallet")
 	_check(_main._health == 3 and _main.economy.max_health() == 3, "new game retains the original three-hit capacity")
@@ -109,7 +109,7 @@ func _check_earning() -> void:
 	_check(_main.economy.balance == 1, "a live mercy outcome is not a money farm either")
 
 func _check_shop_boundary() -> void:
-	_main._new_game()
+	_main._new_game(false)
 	await _physics(4)
 	await _tap(KEY_B)
 	_check(not _main.shop.is_open and not paused, "trade input cannot open a shop in another room")
@@ -222,7 +222,7 @@ func _check_continue_and_effects() -> void:
 	await _physics(3)
 	_check(_main._health == 4 and _main.player.position.distance_to(_main.room.entry_position(_main.room_entry_id)) < 5, "the fourth hit recovers at the room entry with owned full health")
 	_check(_main.economy.balance == 0 and _main.economy.snapshot().purchases.size() == 3, "recovery retains every purchase and the spent wallet")
-	_main._new_game()
+	_main._new_game(false)
 	await _physics(5)
 	_check(_main._health == 3 and _main.economy.snapshot() == {"shine": 0, "purchases": []}, "New Game clears purchases, money and spare capacity")
 	_check(not _main.player.warm_thread, "New Game removes the old cosmetic thread")

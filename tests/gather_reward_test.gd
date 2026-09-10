@@ -49,7 +49,7 @@ func _run() -> void:
 	quit(1)
 
 func _earned_reward(outcome: String) -> void:
-	_main._new_game()
+	_main._new_game(false)
 	await _physics(3)
 	await _prepare(&"the_arm", Vector2(1260, 574))
 	var before := _unlocks.size()

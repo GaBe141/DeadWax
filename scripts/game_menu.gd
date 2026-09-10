@@ -8,6 +8,7 @@ signal resume_requested
 signal title_requested
 signal quit_requested
 signal settings_changed(settings: Dictionary)
+signal opening_requested
 
 const PressScript := preload("res://scripts/press.gd")
 const MotionScript := preload("res://scripts/ui_motion.gd")
@@ -246,10 +247,12 @@ func _show_screen(next_screen: String) -> void:
 
 
 func _build_title() -> void:
+	# Keep the replay action and a saved entry on the same printed page.
+	_page.add_theme_constant_override("separation", 6 if _can_continue else 10)
 	_page.add_child(_label("THE LABEL  /  THE OVERTURE", PressScript.SIZE_SMALL, FADED))
 	_page.add_child(_label("DEAD WAX", PressScript.SIZE_COVER, INK, true))
 	_page.add_child(_paragraph("Some things only answer\nwhen you listen."))
-	_space(16.0)
+	_space(8.0 if _can_continue else 16.0)
 	if _can_continue:
 		_button("Continue", continue_requested.emit, true)
 		if not _save_label.is_empty():
@@ -257,6 +260,7 @@ func _build_title() -> void:
 	_button("New game", _request_new_game, not _can_continue)
 	_button("Settings", _open_subpage.bind("settings"))
 	_button("How to play", _open_subpage.bind("controls"))
+	_button("Watch opening", opening_requested.emit)
 	_button("Quit", quit_requested.emit)
 
 

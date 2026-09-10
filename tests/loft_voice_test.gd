@@ -23,7 +23,7 @@ func _run() -> void:
 	_main.settings_path = _directory + "/settings.cfg"
 	root.add_child(_main)
 	await _frames(3)
-	_main._new_game()
+	_main._new_game(false)
 	await _physics(3)
 	_check(not _main.audio.home_song_snapshot().requested, "fresh home has no returned phrase")
 	_main.progression.unlock_refrain(Progression.Refrain.GATHER)
@@ -99,7 +99,7 @@ func _run() -> void:
 	_main._load_world_room(&"headshell", &"from_horn_plaza")
 	await _physics(4)
 	_check(_main.audio.home_song_snapshot().requested, "the phrase also reaches the Headshell")
-	_main._new_game()
+	_main._new_game(false)
 	await _physics(4)
 	_check(not _main.audio.home_song_snapshot().requested and _main.encounters.is_empty(), "New Game clears discovery and music together")
 	_main.queue_free()

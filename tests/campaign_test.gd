@@ -162,6 +162,10 @@ func _check_title_and_new_game() -> void:
 	_check(_main.player.position == start and _main.progression.unlocked_refrains().is_empty(), "title suppresses movement and debug unlocks")
 	_main.game_menu.new_game_requested.emit()
 	await _frames(3)
+	_check(_main.opening.is_open and paused and not _main.game_menu.is_open, "New game begins the opening with the world paused")
+	_main.opening.skip()
+	await create_timer(0.6).timeout
+	await _frames(3)
 	_check(_main._has_session and not paused and not _main.game_menu.is_open, "New game starts a live session")
 	_check(_main.world_room_id == &"headshell" and _main.room_entry_id == &"default", "New game starts in the Headshell")
 	_check(_main.save_store.has_save(), "New game writes a recoverable checkpoint")
@@ -333,7 +337,7 @@ func _check_restart_and_continue() -> void:
 	_check(door != null and door.is_open and door.get_node("block").disabled, "Continue preserves locks in other rooms")
 
 func _check_new_game_reset() -> void:
-	_main._new_game()
+	_main._new_game(false)
 	await _frames(3)
 	_check(_main.world_room_id == ChapterScript.START_ROOM and _main.encounters.is_empty() and _main.player.shine == 0, "New game clears prior room, encounters and Shine")
 	_check(_main.progression.unlocked_refrains().is_empty() and _main.progression.discovered_techniques().is_empty() and not _main.chapter_complete, "New game clears earned progression and completion")

@@ -15,7 +15,12 @@ Runtime errors are written to `.godot/deadwax-play.log`.
 
 ## Opening chapter
 
-- [ ] Boot reaches the title screen; New Game begins at the Headshell. Continue is available only with a readable campaign checkpoint.
+- [ ] Boot reaches the title screen; New Game plays the four-scene opening and hands control to Skip in the Headshell after about 23 seconds. Continue is available only with a readable campaign checkpoint and restores the saved entry without the film.
+- [ ] Watch opening replays from the title and returns there. An existing save, wallet, map, Refrains, and encounter choices survive the replay unchanged.
+- [ ] Holding the title's confirm key or controller A does not immediately advance the first scene. Fresh Space/A or Next advances once; Escape/controller B or Skip ends it after the short fade. Holding movement, jump, strike, Hood, Set, or passage during the film does not act on the first gameplay frame; fresh controls work after handoff.
+- [ ] The town in the record, the worn street, Skip's first feet, and the lit way down read clearly at 1280×720 and 960×540. Captions, title, and Next/Skip remain readable with no overlap; resizing leaves the current shot intact.
+- [ ] Four quiet synthesized cues accompany the film while world sound and simulation remain paused. Next changes the cue; Skip stops it at handoff. Master volume/mute applies. Check a replay after using Hood: the film should not inherit a muffled filter.
+- [ ] Reduced motion holds composed illustrations while the story still advances naturally. Pause, Book, map, and shop do not stack over the film. Normal and skipped endings each return control exactly once.
 - [ ] Starting a new game over an existing one asks the player to confirm the replacement.
 - [ ] The title, menus, room signage, player silhouette, and HUD remain legible at 1280×720 and in fullscreen.
 - [ ] Headshell's movement/jump prompt and the first E/Y passage are understandable without external instructions.

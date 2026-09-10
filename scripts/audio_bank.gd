@@ -12,6 +12,16 @@ const HOME_VOLUME_DB := -14.0
 const HOME_FADE_IN := 1.1
 const HOME_FADE_OUT := 0.8
 const LOFT_CALL_SECONDS := 0.36
+const OPENING_DURATIONS := [5.5, 6.0, 5.5, 6.0]
+const OPENING_VOLUME_DB := -12.0
+# [entrance, frequency, length, strength]. These sparse phrases introduce the
+# world without quoting the three notes that can later be brought home.
+const OPENING_SCORE := [
+	[[0.65, 110.0, 3.8, 0.62], [2.20, 164.8138, 2.4, 0.48], [3.55, 130.8128, 1.3, 0.38]],
+	[[0.70, 110.0, 4.6, 0.24], [0.65, 329.6276, 1.25, 0.60], [2.20, 293.6648, 1.5, 0.58], [3.90, 220.0, 1.5, 0.60]],
+	[[0.60, 220.0, 1.25, 0.58], [2.05, 195.9977, 1.25, 0.56], [3.50, 164.8138, 1.35, 0.54]],
+	[[0.45, 261.6256, 1.6, 0.54], [1.65, 329.6276, 2.25, 0.50], [3.05, 440.0, 2.4, 0.56], [3.05, 220.0, 2.4, 0.22]],
+]
 
 var _sounds := {}
 var _pool: Array[AudioStreamPlayer] = []
@@ -22,6 +32,9 @@ var _home_player: AudioStreamPlayer
 var _home_requested := false
 var _home_gain := 0.0
 var _home_started := false
+var _opening_player: AudioStreamPlayer
+var _opening_shot := -1
+var _opening_tracks: Dictionary = {}
 
 func _ready() -> void:
 	add_to_group("audio_bank")
@@ -45,6 +58,15 @@ func _ready() -> void:
 	if _home_requested:
 		_home_player.play()
 		_home_started = true
+	# The opening is an interface over a paused world. It owns the only audio
+	# player allowed to continue processing there; SFX and home stay pausable.
+	_opening_player = AudioStreamPlayer.new()
+	_opening_player.name = "OpeningAudio"
+	_opening_player.process_mode = Node.PROCESS_MODE_ALWAYS
+	_opening_player.volume_db = OPENING_VOLUME_DB
+	add_child(_opening_player)
+	if _opening_shot >= 0:
+		_start_opening_shot()
 	# the hood filter on the master bus
 	_lowpass = AudioEffectLowPassFilter.new()
 	_lowpass.cutoff_hz = 20000.0
@@ -83,10 +105,47 @@ func home_song_snapshot() -> Dictionary:
 		"paused": _home_player != null and _home_player.stream_paused, "gain": _home_gain,
 		"playback_position": _home_player.get_playback_position() if _home_player != null else 0.0}
 
+## One track per shot, never another SFX voice. Main stops the opening before
+## a new beginning, so duplicate requests cannot replay even a finished cue.
+func play_opening_shot(index: int) -> void:
+	if index < 0 or index >= OPENING_DURATIONS.size() or index == _opening_shot:
+		return
+	_opening_shot = index
+	if _opening_player != null:
+		_start_opening_shot()
+
+func _start_opening_shot() -> void:
+	# Main's Hood updates pause with the world. Clear its last filter setting
+	# here so a film begun from quiet gameplay keeps its full reed harmonics.
+	if _lowpass != null:
+		_lowpass.cutoff_hz = 20000.0
+	if _opening_player.has_stream_playback():
+		_opening_player.get_stream_playback().stop()
+	_opening_player.stop()
+	_opening_player.stream = _opening_track(_opening_shot)
+	_opening_player.volume_db = OPENING_VOLUME_DB
+	_opening_player.play()
+
+func stop_opening() -> void:
+	_opening_shot = -1
+	if _opening_player == null:
+		return
+	if _opening_player.has_stream_playback():
+		_opening_player.get_stream_playback().stop()
+	_opening_player.stop()
+	_opening_player.stream = null
+
+func opening_audio_snapshot() -> Dictionary:
+	return {"shot": _opening_shot, "playing": _opening_player != null and _opening_player.playing,
+		"paused": _opening_player != null and _opening_player.stream_paused,
+		"playback_position": _opening_player.get_playback_position() if _opening_player != null else 0.0,
+		"duration": float(OPENING_DURATIONS[_opening_shot]) if _opening_shot >= 0 else 0.0,
+		"volume_db": _opening_player.volume_db if _opening_player != null else OPENING_VOLUME_DB}
+
 func _exit_tree() -> void:
 	# Release both loops and one-shot playbacks before their bank leaves the tree.
 	# Remove only this bank's filter; another active bank can own its own effect.
-	for player in _pool + [_crackle_player, _home_player]:
+	for player in _pool + [_crackle_player, _home_player, _opening_player]:
 		if is_instance_valid(player):
 			# Finish a looping WAV itself before releasing the player's mixer
 			# handle; stop() alone can leave its loop pending until another mix.
@@ -99,6 +158,7 @@ func _exit_tree() -> void:
 			AudioServer.remove_bus_effect(0, index)
 	_pool.clear()
 	_sounds.clear()
+	_opening_tracks.clear()
 	_lowpass = null
 
 func play(sound_name: String, vol_db := 0.0, pitch := 1.0) -> void:
@@ -120,6 +180,53 @@ func set_hooded(hooded: bool) -> void:
 	_lowpass.cutoff_hz = lerpf(_lowpass.cutoff_hz, target, 0.25)
 
 # -- synthesis ----------------------------------------------------------------
+
+func _opening_track(index: int) -> AudioStreamWAV:
+	if _opening_tracks.has(index):
+		return _opening_tracks[index]
+	# Generate only requested shots: Continue and ordinary room changes do not
+	# spend time synthesizing an opening they will not play.
+	var duration: float = OPENING_DURATIONS[index]
+	var samples := PackedFloat32Array()
+	samples.resize(int(duration * RATE))
+	var grain := RandomNumberGenerator.new()
+	grain.seed = 14100 + index * 73
+	var paper := 0.0
+	for frame in samples.size():
+		var seconds := float(frame) / RATE
+		paper = lerpf(paper, grain.randf_range(-1.0, 1.0), 0.10)
+		var needle_time := seconds - 0.18
+		var needle := 0.0
+		if needle_time >= 0.0 and needle_time < 0.055:
+			var envelope := smoothstep(0.0, 0.006, needle_time) * pow(1.0 - needle_time / 0.055, 3.0)
+			needle = grain.randf_range(-1.0, 1.0) * envelope * 0.045
+		samples[frame] = paper * 0.012 + needle
+	for note in OPENING_SCORE[index]:
+		var voice := _opening_reed(float(note[1]), float(note[2]))
+		var start := int(float(note[0]) * RATE)
+		for frame in voice.size():
+			if start + frame < samples.size():
+				samples[start + frame] += voice[frame] * float(note[3])
+	for frame in samples.size():
+		var seconds := float(frame) / RATE
+		var remaining := float(samples.size() - 1 - frame) / RATE
+		samples[frame] *= smoothstep(0.0, 0.12, seconds) * smoothstep(0.0, 0.4, remaining)
+	var track := _wav(samples)
+	_opening_tracks[index] = track
+	return track
+
+func _opening_reed(frequency: float, duration: float) -> PackedFloat32Array:
+	var samples := PackedFloat32Array()
+	samples.resize(int(duration * RATE))
+	for frame in samples.size():
+		var seconds := float(frame) / RATE
+		var remaining := float(samples.size() - 1 - frame) / RATE
+		var envelope := smoothstep(0.0, 0.15, seconds) * smoothstep(0.0, 0.55, remaining)
+		envelope *= exp(-0.9 * seconds / duration)
+		var phase := TAU * frequency * seconds + 0.018 * sin(TAU * 0.7 * seconds)
+		var reed := sin(phase) + 0.09 * sin(phase * 2.0) + 0.12 * sin(phase * 3.0)
+		samples[frame] = reed * envelope * 0.27
+	return samples
 
 func _build_sounds() -> void:
 	_sounds["strike"] = _mix([_pluck(150.0, 0.22, 0.9), _pluck(310.0, 0.14, 0.5)])
