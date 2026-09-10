@@ -32,7 +32,7 @@ Runtime errors are written to `.godot/deadwax-play.log`.
 - [ ] Every stair can be climbed on the return trip with a normal jump.
 - [ ] Overture Stair's lower passage enters the Bootlegger's stall; the return lands on its lower platform.
 - [ ] No passage leads into an unfinished graybox.
-- [ ] TAB, M, and G do nothing during normal chapter play.
+- [ ] TAB and G do nothing during normal chapter play. M gives a Headshell hint before finding the map and opens it after collection.
 
 ## The Overture
 
@@ -51,6 +51,16 @@ Runtime errors are written to `.godot/deadwax-play.log`.
 - [ ] Boss resolution alone does not open a menu. Grounded E/Y at the final listening point shows the appropriate ending once.
 - [ ] The Headshell's return text/scenery match the Tonearm's saved outcome.
 - [ ] An old completed eight-room demo save continues into the Overture with its Shine, room entry, Count-In, and prior choices intact.
+
+## Folded map
+
+- [ ] New Game begins without the map. Walk right in the Headshell: the folded page is visible before the first raised block, clear of both arrival positions, and collects once on approach.
+- [ ] Collection announces the map without opening a panel or changing Shine, health, Refrains, or knowledge. M / D-pad Down opens the map from play, and the Book gains an Open map button.
+- [ ] The map marks the current room, names explored rooms, and leaves unvisited names hidden. Its routes match the fifteen playable rooms; the dashed gallery shortcut does not claim to unlock a passage.
+- [ ] Closing with M, D-pad Down, Escape/Back, or the Close button returns to the same position without a jump, attack, or passage input leaking through. The map, Book, stall, and pause menu cannot overlap.
+- [ ] D-pad Down still navigates the Book, including after collecting the map. Use A on its Open map button, or keyboard M, to unfold it there.
+- [ ] Explore, recover, Continue, and return to the Headshell: ownership and explored marks survive and the pickup stays gone. An old save without map data still loads and can collect it; New Game restores the pickup.
+- [ ] The map and pickup stay legible at 1280×720 and the supported 960×540 window. Pause freezes pickup motion; Reduced motion steadies the paper and map interface without changing collection reach.
 
 ## Interface animation
 

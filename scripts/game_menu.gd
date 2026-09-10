@@ -357,6 +357,7 @@ func _build_controls() -> void:
 		["Enter passage", "E", "Y"],
 		["Browse stall", "B", "D-pad Up"],
 		["The Book", "I", "Start"],
+		["Map", "M", "D-pad Down"],
 		["Pause", "Esc", "Back"],
 		["Last entrance", "R", "—"],
 	]:

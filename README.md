@@ -19,7 +19,7 @@ On the Dead Wax Wyse, the lightweight project commands are:
 .\deadwax.cmd play    play the campaign with a local runtime log
 .\deadwax.cmd dev     open the original mechanics rooms and planned-world tools
 .\deadwax.cmd editor  open the project in Godot
-.\deadwax.cmd check   import resources; run all thirteen native test suites
+.\deadwax.cmd check   import resources; run all fourteen native test suites
 .\deadwax.cmd vibe    start Mistral Vibe in this repository
 ```
 
@@ -160,7 +160,11 @@ Continue also starts there at full health.
   **Jump-Cut**. Silent until you carry it.
 - **R** respawn at the current room entry.
 
-TAB, M, and G are available only in the opt-in development rooms below.
+After collecting the folded map, **M / D-pad Down** opens it while exploring.
+The Book also has an **Open map** button. In the Book, keyboard M opens the map;
+the controller D-pad retains its usual selection controls.
+TAB and G are available only in the opt-in development rooms below; there M
+continues to switch development atlases.
 
 A ready strike answers immediately. A press in the last 90 ms of the 200 ms
 cooldown queues one follow-up; holding the button does not repeat attacks.
@@ -170,6 +174,19 @@ damage, menus, recovery, and passages cancel a queued strike.
 The immediate circular impression shows the 120 px enemy-hit reach; fainter
 echoes show groove and air responses. Muted HUSH does not give a rebound from
 raw hits. His three-parry challenge and the 100 ms parry window stay the same.
+
+## The folded map
+
+A folded page waits on the Headshell floor, a short walk right of the starting
+point and before the first raised block. Walk close to pick it up. The map marks
+your current room and remembers the rooms you explore; unvisited places stay
+unnamed. It shows the connected Label and Overture, with the gallery shortcut
+drawn as a dashed route. Passages may still need to be opened in the world.
+
+Ownership and explored rooms survive recovery, Continue, and returning to the
+title. Existing saves remain valid: visit the Headshell to collect the page on
+an older journey. New Game clears it along with the rest of that journey.
+Opening the map pauses play; closing it returns you to the same position.
 
 ## Character progression
 
@@ -338,7 +355,7 @@ own animation while gameplay and the HUD remain paused underneath.
 Run `.\deadwax.cmd check` before committing. It imports resources and runs the
 dependency-free native smoke, save-store, campaign, Tonearm, Overture,
 sprite-animation, residents, economy-state, economy integration, scenery,
-lighting, attack-feel, and GUI-animation suites. These cover the original combat and
+lighting, attack-feel, GUI-animation, and map-item suites. These cover the original combat and
 progression invariants, all planned-room routes, validated
 checkpoint recovery, both chapters' room graph, boss outcomes, old-demo save
 continuation, campaign state restoration, grounded conversations, resident
@@ -347,7 +364,8 @@ item effects, compatibility with saves made before the stall opened, scenery
 clipping and lifecycle, palette restoration, parallax, native light and
 occluder setup, UI isolation, reduced motion, grounded hits, airborne rebounds,
 strike buffering and cancellation, unchanged parry timing, menu interruption,
-focus, and reduced-motion behavior.
+focus, reduced-motion behavior, map ownership and save compatibility, the
+authored map graph, and map input/pause boundaries.
 GitHub runs the checks on pushes and pull requests. Gameplay feel, real audio,
 rendering, and controller behavior still require `PLAYTEST.md`.
 

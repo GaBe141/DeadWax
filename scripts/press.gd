@@ -132,6 +132,18 @@ static func draw_skip(canvas: CanvasItem, pose: Dictionary, palette: Dictionary)
 static func draw_strike_wave(canvas: CanvasItem, pose: Dictionary, ink: Color, stock: Color) -> void:
 	preload("res://scripts/press_strike.gd").draw(canvas, pose, ink, stock)
 
+static func draw_campaign_map(canvas: CanvasItem, size: Vector2, pose: Dictionary, ink: Color, stock: Color) -> void:
+	preload("res://scripts/press_map.gd").draw_chart(canvas, size, pose, ink, stock, BodyFont, DisplayFont)
+
+static func draw_map_pickup(canvas: CanvasItem, pose: Dictionary, ink: Color, stock: Color) -> void:
+	preload("res://scripts/press_map.gd").draw_pickup(canvas, pose, ink, stock)
+
+static func map_backing(stock: Color) -> ColorRect:
+	var backing := ColorRect.new()
+	backing.color = stock
+	backing.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	return backing
+
 static func draw_resident(canvas: CanvasItem, kind: StringName, pose: Dictionary, ink: Color, stock: Color) -> void:
 	preload("res://scripts/press_resident.gd").draw(canvas, kind, pose, ink, stock)
 

@@ -7,12 +7,16 @@ const DummyScript := preload("res://scripts/test_pressing.gd")
 const AuditionerScript := preload("res://scripts/auditioner.gd")
 const ResidentScript := preload("res://scripts/resident.gd")
 const HoundScript := preload("res://scripts/hound.gd")
+const MapPickupScript := preload("res://scripts/map_pickup.gd")
 const HORN_LISTEN_TIME := 1.4
 const HORN_LISTEN_RADIUS := 135.0
 const HORN_POSITION := Vector2(790, 574)
 
+signal map_collected
+
 var objective_label := "Find a way out of the Headshell."
 var session_outcomes: Dictionary = {}
+var map_state: RefCounted
 var _scenery: Array[Node2D] = []
 var _horn_time := 0.0
 var _horn_heard := false
@@ -116,6 +120,14 @@ func _build_headshell() -> void:
 	else:
 		sign_label(Vector2(125, 380), "THE GRIP IS OPEN\nSomething let go of you.")
 	sign_label(Vector2(535, 330), "A / D or left stick — move\nSPACE / A — jump")
+	var folded_map := MapPickupScript.new()
+	folded_map.name = "FoldedMap"
+	folded_map.position = Vector2(500, 554)
+	folded_map.map_state = map_state
+	folded_map.ink = ink
+	folded_map.stock = bg_color
+	folded_map.collected.connect(map_collected.emit)
+	add_child(folded_map)
 	platform(Vector2(745, 550), Vector2(140, 60))
 	sign_label(Vector2(915, 286), "THE LABEL\nA little daylight.\n[E / Y] at a passage")
 	_exit(Vector2(1120, 554), &"horn_plaza", "THE PLAZA")
@@ -302,8 +314,14 @@ func apply_side(next_side: int) -> void:
 		add_child(next_picture)
 		_scenery[index] = next_picture
 	for child in get_children():
-		if child.is_in_group("world_resident") and child.has_method("reink"):
+		if (child.is_in_group("world_resident") or child.is_in_group("map_pickup")) and child.has_method("reink"):
 			child.call("reink", _solid_color(), _stock_color())
+
+func set_scenery_motion(reduced: bool) -> void:
+	super.set_scenery_motion(reduced)
+	for child in get_children():
+		if child.is_in_group("map_pickup"):
+			child.call("set_reduced_motion", reduced)
 
 func _process(delta: float) -> void:
 	if room_id != &"horn_plaza" or _horn_heard:

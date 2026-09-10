@@ -4,6 +4,7 @@ extends CanvasLayer
 
 signal opened
 signal closed
+signal map_requested
 
 const ProgressionScript := preload("res://scripts/progression_state.gd")
 const PressScript := preload("res://scripts/press.gd")
@@ -25,6 +26,7 @@ const FADED := Color(0.48, 0.45, 0.50)
 var progression: RefCounted
 var shine_source: Node
 var economy: RefCounted
+var map_state: RefCounted
 var can_open: Callable
 
 var overlay: Control
@@ -43,6 +45,8 @@ var _motion: Node
 var _reduced_motion := false
 var _entrance_parts: Array[Control] = []
 var _detail_stack: VBoxContainer
+var _map_button: Button
+var _map_note: Label
 
 func _ready() -> void:
 	layer = 100
@@ -64,6 +68,10 @@ func _exit_tree() -> void:
 
 func _input(event: InputEvent) -> void:
 	if event is InputEventKey and event.echo:
+		return
+	if _open and event is InputEventKey and event.is_action_pressed("map") and map_state != null and bool(map_state.get("owned")):
+		_request_map()
+		get_viewport().set_input_as_handled()
 		return
 	if event.is_action_pressed("inventory"):
 		toggle_inventory()
@@ -215,6 +223,29 @@ func _build_menu() -> void:
 	_wares_label = _make_label("", 14, PAPER_DARK)
 	_wares_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	page.add_child(_wares_label)
+	var map_row := HBoxContainer.new()
+	map_row.add_theme_constant_override("separation", 18)
+	page.add_child(map_row)
+	_entrance_parts.append(map_row)
+	var map_copy := VBoxContainer.new()
+	map_copy.add_theme_constant_override("separation", 0)
+	map_copy.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	map_row.add_child(map_copy)
+	map_copy.add_child(_make_label("FOLDED MAP", 18, PAPER))
+	_map_note = _make_label("", 13, PAPER_DARK)
+	map_copy.add_child(_map_note)
+	_map_button = Button.new()
+	_map_button.name = "OpenMap"
+	_map_button.custom_minimum_size = Vector2(265, 44)
+	_map_button.focus_mode = Control.FOCUS_ALL
+	_map_button.add_theme_font_override("font", PressScript.BodyFont)
+	_map_button.add_theme_font_size_override("font_size", PressScript.SIZE_SMALL)
+	for key in ["font_color", "font_hover_color", "font_focus_color", "font_pressed_color"]:
+		_map_button.add_theme_color_override(key, PAPER)
+	_map_button.add_theme_color_override("font_disabled_color", PAPER_DARK)
+	_map_button.pressed.connect(_request_map)
+	map_row.add_child(_map_button)
+	_motion.bind_button(_map_button, PINK)
 
 	var content := HBoxContainer.new()
 	content.add_theme_constant_override("separation", 18)
@@ -311,6 +342,7 @@ func _refresh() -> void:
 			if bool(economy.call("has_item", item.id)):
 				carried.append(item.name)
 	_wares_label.text = "FROM THE STALL · " + " / ".join(carried) if not carried.is_empty() else "SHINE · Polish worn wax. Trade at the Bootlegger's stall."
+	_refresh_map()
 	for slot in _all_slots():
 		var button := _slot_buttons.get(slot) as Button
 		if button == null:
@@ -319,6 +351,19 @@ func _refresh() -> void:
 		button.text = _slot_card_text(slot, filled)
 		_apply_card_style(button, filled)
 	_select_slot(_selected_slot, false)
+
+func _refresh_map() -> void:
+	var owned := map_state != null and bool(map_state.get("owned"))
+	_map_note.text = "The places you have reached, kept on one page." if owned else "A folded page waits near the start."
+	_map_button.text = "Open map  [M]" if owned else "Find in the Headshell"
+	_map_button.disabled = not owned
+	_apply_card_style(_map_button, owned)
+	_map_button.modulate = Color.WHITE
+	_map_button.add_theme_stylebox_override("disabled", _card_style(false, false, false))
+
+func _request_map() -> void:
+	if _open and map_state != null and bool(map_state.get("owned")):
+		map_requested.emit()
 
 func _select_slot(slot: StringName, animate := true) -> void:
 	var changed := slot != _selected_slot

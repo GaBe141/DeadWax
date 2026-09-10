@@ -73,3 +73,4 @@ jobs:
           godot --headless --path . --script res://tests/lighting_test.gd
           godot --headless --path . --script res://tests/attack_feel_test.gd
           godot --headless --path . --script res://tests/gui_animation_test.gd
+          godot --headless --path . --script res://tests/map_item_test.gd

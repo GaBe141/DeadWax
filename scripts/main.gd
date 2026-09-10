@@ -24,6 +24,8 @@ const SaveScript := preload("res://scripts/save_store.gd")
 const EconomyScript := preload("res://scripts/economy_state.gd")
 const ShopScript := preload("res://scripts/shop_menu.gd")
 const HudMotionScript := preload("res://scripts/hud_motion.gd")
+const MapStateScript := preload("res://scripts/map_state.gd")
+const MapMenuScript := preload("res://scripts/map_menu.gd")
 
 const MARGIN := 22.0
 const NEEDLE_HEALTH := 3
@@ -40,6 +42,9 @@ var economy: RefCounted
 var shop: CanvasLayer
 var _purchasing := false
 var _shop_closing := false
+var map_state: RefCounted
+var map_menu: CanvasLayer
+var _map_closing := false
 var world: RefCounted
 ## The authored campaign room, or a graybox id in development mode. Empty
 ## only while the original five-room mechanics loop is active.
@@ -94,6 +99,7 @@ func _ready() -> void:
 	_setup_input()
 	progression = ProgressionScript.new()
 	economy = EconomyScript.new()
+	map_state = MapStateScript.new()
 	progression.connect("refrain_unlocked", _on_refrain_unlocked)
 	progression.connect("technique_discovered", _on_technique_discovered)
 
@@ -128,13 +134,18 @@ func _ready() -> void:
 	inventory.progression = progression
 	inventory.shine_source = player
 	inventory.economy = economy
+	inventory.map_state = map_state
 	inventory.can_open = _can_open_inventory
 	add_child(inventory)
 	inventory.opened.connect(_on_inventory_opened)
+	inventory.map_requested.connect(_open_map_from_book)
 	shop = ShopScript.new()
 	add_child(shop)
 	shop.purchase_requested.connect(_purchase_item)
 	shop.close_requested.connect(_close_shop)
+	map_menu = MapMenuScript.new()
+	add_child(map_menu)
+	map_menu.close_requested.connect(_close_map)
 	if development_mode:
 		_has_session = true
 		_load_room(0)
@@ -163,6 +174,10 @@ func _notification(what: int) -> void:
 		_quit_game()
 
 func _unhandled_input(event: InputEvent) -> void:
+	if event.is_action_pressed("map") and not event.is_echo():
+		_open_map()
+		get_viewport().set_input_as_handled()
+		return
 	if event.is_action_pressed("trade") and not event.is_echo():
 		_open_shop()
 		if shop.is_open:
@@ -215,9 +230,13 @@ func _process(delta: float) -> void:
 		var objective := String(room.get("objective_label")) if "objective_label" in room else ""
 		subtitle.text = objective
 		status.text = "NEEDLE %d/%d     %s   SHINE %02d%s" % [_health, _max_health(), "HUSH" if player.hooded else "CRACKLE", player.shine, "   " + _pressing_text() if not _pressing_text().is_empty() else ""]
-		controls_note.text = _save_message if _save_message_time > 0 else "I / START · THE BOOK     ESC / BACK · PAUSE"
+		controls_note.text = _save_message if _save_message_time > 0 else _controls_text()
 		if player.shine != _last_saved_shine:
 			_queue_save()
+
+func _controls_text() -> String:
+	var note := "I / START · THE BOOK     ESC / BACK · PAUSE"
+	return "M / D-PAD DOWN · MAP     " + note if map_state.owned else note
 
 func _pressing_text() -> String:
 	if not bool(progression.call("has_refrain", ProgressionScript.Refrain.JUMP_CUT)):
@@ -268,6 +287,12 @@ func _swap_room(next_room: Node2D, entry_id: StringName) -> void:
 	room.progression = progression
 	if "session_outcomes" in room:
 		room.set("session_outcomes", encounters)
+	if "map_state" in room:
+		room.set("map_state", map_state)
+	if room.has_signal("map_collected"):
+		room.connect("map_collected", _on_map_collected)
+	if not development_mode:
+		map_state.visit(world_room_id)
 	if not development_mode and room.room_id == &"the_arm":
 		encounters["the_arm/gallery_shortcut"] = "opened"
 	room.refrain_collected.connect(_on_refrain_collected)
@@ -320,7 +345,7 @@ func _swap_room(next_room: Node2D, entry_id: StringName) -> void:
 			+ "  [E] passage  [I] book  [R] respawn  [TAB] room  [M] world  [G] refrains"
 		)
 	else:
-		controls_note.text = "I / START · THE BOOK     ESC / BACK · PAUSE"
+		controls_note.text = _controls_text()
 		masthead.size.x = 660
 		_queue_save()
 	hud_motion.present_room()
@@ -394,6 +419,7 @@ func _persist_session() -> bool:
 		"completed": chapter_complete, "encounters": encounters.duplicate(true),
 		"settings": _settings.duplicate(true),
 		"purchases": economy.call("snapshot").purchases,
+		"map": map_state.snapshot(),
 	}
 	var saved := bool(save_store.call("save_game", data))
 	if saved and _save_failed and game_menu != null:
@@ -407,6 +433,8 @@ func _persist_session() -> bool:
 	return saved
 
 func _new_game() -> void:
+	map_menu.close_map()
+	_map_closing = false
 	shop.call("close_shop")
 	_shop_closing = false
 	_has_session = false
@@ -420,6 +448,7 @@ func _new_game() -> void:
 	progression.call("reset")
 	pressing.call("reset")
 	economy.call("reset")
+	map_state.reset()
 	_apply_purchases()
 	_reset_player()
 	_load_world_room(ChapterScript.START_ROOM)
@@ -436,6 +465,8 @@ func _continue_game() -> void:
 	if data.is_empty() or not ChapterScript.has_room(StringName(data.get("room_id", ""))):
 		game_menu.call("set_notice", "That pressing could not be read. You can begin a new one.")
 		return
+	map_menu.close_map()
+	_map_closing = false
 	shop.call("close_shop")
 	_shop_closing = false
 	_has_session = false
@@ -448,6 +479,7 @@ func _continue_game() -> void:
 	progression.call("restore_snapshot", data.progression)
 	pressing.call("reset")
 	economy.call("restore", data.shine, data.get("purchases", []))
+	map_state.restore_snapshot(data.get("map", {"owned": false, "visited": []}))
 	_apply_purchases()
 	_last_saved_shine = player.shine
 	_reset_player()
@@ -482,7 +514,7 @@ func _show_title() -> void:
 	audio.set_crackle(0.0)
 
 func _pause_game() -> void:
-	if _transition_pending or inventory.call("is_open") or shop.is_open or _shop_closing:
+	if _transition_pending or inventory.call("is_open") or shop.is_open or _shop_closing or map_menu.is_open or _map_closing:
 		return
 	game_menu.call("show_pause")
 	get_tree().paused = true
@@ -495,7 +527,7 @@ func _resume_game() -> void:
 	call_deferred("_unpause_game")
 
 func _unpause_game() -> void:
-	if game_menu != null and not game_menu.is_open and not shop.is_open and not inventory.call("is_open"):
+	if game_menu != null and not game_menu.is_open and not shop.is_open and not inventory.call("is_open") and not map_menu.is_open and not _map_closing:
 		get_tree().paused = false
 
 func _return_to_title() -> void:
@@ -509,6 +541,7 @@ func _quit_game() -> void:
 		if inventory.call("is_open"):
 			inventory.call("close_inventory")
 		shop.call("close_shop")
+		map_menu.close_map()
 		game_menu.call("show_pause")
 		get_tree().paused = true
 		game_menu.call("set_notice", "Could not save, so your game is still open. Resume and try again before leaving.")
@@ -532,6 +565,52 @@ func _show_chapter_ending() -> void:
 func _on_inventory_opened() -> void:
 	audio.set_crackle(0.0)
 	_queue_save()
+
+# -- the folded map ----------------------------------------------------------
+
+func _on_map_collected() -> void:
+	if development_mode or not _has_session or world_room_id != &"headshell" or not map_state.collect():
+		return
+	audio.play("freed", -11.0, 1.15)
+	_flash("MAP FOUND — M / D-PAD DOWN · open")
+	_queue_save()
+
+func _open_map() -> void:
+	if development_mode or not _can_open_inventory() or inventory.is_open() or get_tree().paused:
+		return
+	if not map_state.owned:
+		_flash("A folded map waits in the Headshell.")
+		return
+	_show_map()
+
+func _open_map_from_book() -> void:
+	if development_mode or not map_state.owned or not inventory.is_open() or not _can_open_inventory():
+		return
+	inventory.close_inventory()
+	_show_map()
+
+func _show_map() -> void:
+	var snapshot: Dictionary = map_state.snapshot()
+	snapshot["current_room"] = String(world_room_id)
+	map_menu.show_map(snapshot)
+	get_tree().paused = true
+	audio.set_crackle(0.0)
+	_persist_session()
+
+func _close_map() -> void:
+	if not map_menu.is_open or _map_closing:
+		return
+	map_menu.close_map()
+	_map_closing = true
+	call_deferred("_finish_map_close")
+
+func _finish_map_close() -> void:
+	await get_tree().process_frame
+	_map_closing = false
+	if map_menu.is_open or shop.is_open or (game_menu != null and game_menu.is_open) or inventory.is_open():
+		return
+	player.set("_buffer", 0.0)
+	get_tree().paused = false
 
 # -- Shine and the Bootlegger -------------------------------------------------
 
@@ -578,7 +657,7 @@ func _close_shop() -> void:
 func _finish_shop_close() -> void:
 	await get_tree().process_frame
 	_shop_closing = false
-	if shop.is_open or (game_menu != null and game_menu.is_open) or inventory.call("is_open"):
+	if shop.is_open or (game_menu != null and game_menu.is_open) or inventory.call("is_open") or map_menu.is_open or _map_closing:
 		return
 	player.set("_buffer", 0.0)
 	get_tree().paused = false
@@ -640,7 +719,7 @@ func _apply_settings() -> void:
 	AudioServer.set_bus_volume_db(0, linear_to_db(maxf(0.001, float(_settings.volume))))
 	AudioServer.set_bus_mute(0, float(_settings.volume) <= 0.0)
 	camera.position_smoothing_enabled = not bool(_settings.reduced_motion)
-	for interface in [game_menu, inventory, shop, hud_motion]:
+	for interface in [game_menu, inventory, shop, map_menu, hud_motion]:
 		if interface != null:
 			interface.call("set_reduced_motion", bool(_settings.reduced_motion))
 	if room != null:
@@ -856,7 +935,7 @@ func _on_refrain_collected(refrain: int) -> void:
 	progression.call("unlock_refrain", refrain)
 
 func _on_route_requested(target_room: StringName, target_entry: StringName) -> void:
-	if _transition_pending or (game_menu != null and game_menu.is_open) or bool(inventory.call("is_open")) or shop.is_open or _shop_closing:
+	if _transition_pending or (game_menu != null and game_menu.is_open) or bool(inventory.call("is_open")) or shop.is_open or _shop_closing or map_menu.is_open or _map_closing:
 		return
 	if not development_mode and not ChapterScript.has_room(target_room):
 		return
@@ -882,7 +961,7 @@ func _on_route_blocked(message: String) -> void:
 	_flash(message)
 
 func _can_open_inventory() -> bool:
-	return _has_session and not _transition_pending and not _shop_closing and not shop.is_open and (game_menu == null or not game_menu.is_open)
+	return _has_session and not _transition_pending and not _shop_closing and not shop.is_open and not _map_closing and (map_menu == null or not map_menu.is_open) and (game_menu == null or not game_menu.is_open)
 
 func _on_refrain_unlocked(refrain: int) -> void:
 	audio.play("freed", -7.0)
@@ -1033,6 +1112,7 @@ func _setup_input() -> void:
 	_action("enter_passage", [KEY_E], [JOY_BUTTON_Y])
 	_action("trade", [KEY_B], [JOY_BUTTON_DPAD_UP])
 	_action("inventory", [KEY_I], [JOY_BUTTON_START])
+	_action("map", [] if development_mode else [KEY_M], [] if development_mode else [JOY_BUTTON_DPAD_DOWN])
 	_action("restart", [KEY_R], [JOY_BUTTON_BACK] if development_mode else [])
 	_action("switch_room", [KEY_TAB])
 	_action("world_map", [KEY_M])
