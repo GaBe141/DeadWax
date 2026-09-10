@@ -32,6 +32,14 @@ uses 24% opacity and a 32% glaze. This pushes small painted details behind the
 actors and walkable edges. Repeated background arches, windows, cables,
 record rims and motes are sparse; the main room landmarks retain their shape.
 
+Platform faces use subdued joints and broken brush marks, with a small
+stock-coloured fade at their lower edges. Their thin walkable lips stay clear.
+Only world platforms opt into the fade; shared menu plates stay opaque.
+Room ambient light and all lamp outcomes are dimmed by 14%. A broad, static
+vignette on the existing paper sheet joins the edges of the view; it sits
+below the HUD and menus, which retain their full contrast. No screen sampling
+or extra render pass is used, and geometry remains unchanged.
+
 ## Prompt set
 
 All four used the stylized-concept use case and requested a finished game
@@ -104,3 +112,10 @@ The quieter-background pass also passed all 27 suites (7,573 checks). Native
 review compared the old and new Verse Hall and North Warren, checked the
 Headshell, Well, HUSH, title and opening, and verified reduced-motion A→B→A
 restoration in the Gallery at 960 × 540. Only the presentation helpers changed.
+
+The foreground/vignette pass passed the full 27 suites (7,573 checks) on rerun.
+The initial run reported a map held-confirm check failure; an isolated map run
+and the full rerun passed without input-code changes. Final scenery and GUI
+checks also passed after restricting the lower-edge fade to world platforms.
+Native GL review covered the Headshell, Verse Hall, Well, HUSH, North Warren,
+Gallery A→B→A at 960 × 540, and the opaque title menu using isolated saves.

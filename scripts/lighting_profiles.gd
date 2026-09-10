@@ -12,6 +12,8 @@ const WELL_LIGHT := Color(0.86, 0.90, 1.0)
 const STAGE_LIGHT := Color(0.91, 0.93, 1.0)
 const UNPLAYED_LIGHT := Color(0.84, 0.83, 1.0)
 const COPPER_LIGHT := Color(1.0, 0.73, 0.55)
+const AMBIENT_DIM := 0.14
+const LAMP_ENERGY_SCALE := 0.86
 
 static func get_profile(room_id: StringName) -> Dictionary:
 	match room_id:
@@ -168,8 +170,18 @@ static func _profile(ambient: Color, lights: Array) -> Dictionary:
 	# Fresh dictionaries keep controller adjustments out of later room visits.
 	# Cool reflected fill preserves brush colour between the warm local lamps.
 	# Unknown/development identities remain neutral white with no light rig.
-	var fill := ambient.lerp(Color(0.95, 0.97, 1.0), 0.35) if not lights.is_empty() else ambient
-	return {"ambient": fill, "lights": lights}
+	var fill := ambient
+	if not lights.is_empty():
+		fill = ambient.lerp(Color(0.95, 0.97, 1.0), 0.35).darkened(AMBIENT_DIM)
+	var lamps: Array = []
+	for source in lights:
+		var lamp: Dictionary = source.duplicate(true)
+		# Keep live resolution changes in the same exposure as the resting lamp.
+		for key in ["energy", "freed_energy", "shattered_energy"]:
+			if lamp.has(key):
+				lamp[key] = float(lamp[key]) * LAMP_ENERGY_SCALE
+		lamps.append(lamp)
+	return {"ambient": fill, "lights": lamps}
 
 static func _light(id: StringName, position: Vector2, radius: float, stretch: Vector2, color: Color, energy: float, fixture: bool = false, pulse: float = 0.0, glow: bool = false) -> Dictionary:
 	return {"id": id, "position": position, "radius": radius, "stretch": stretch,

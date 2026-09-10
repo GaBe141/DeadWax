@@ -211,8 +211,9 @@ static func draw_pressing(canvas: CanvasItem, pose: Dictionary, ink: Color, wax:
 # -- surfaces -----------------------------------------------------------------
 
 ## An inked plate of `size`, centred on the origin. Replaces a flat ColorRect
-## anywhere a solid surface is wanted.
-static func plate(size: Vector2, ink: Color, stock: Color, accent := PINK, seed := 0.0) -> ColorRect:
+## anywhere a solid surface is wanted. World platforms opt into the lower
+## edge fade; the same material keeps menu backings opaque by default.
+static func plate(size: Vector2, ink: Color, stock: Color, accent := PINK, seed := 0.0, blend_lower_edge := false) -> ColorRect:
 	var rect := ColorRect.new()
 	rect.size = size
 	rect.position = -size / 2.0
@@ -228,6 +229,7 @@ static func plate(size: Vector2, ink: Color, stock: Color, accent := PINK, seed 
 	mat.set_shader_parameter("tooth", PLATE_TOOTH)
 	mat.set_shader_parameter("fringe", PLATE_FRINGE)
 	mat.set_shader_parameter("plate_seed", seed)
+	mat.set_shader_parameter("lower_edge_blend", 1.0 if blend_lower_edge else 0.0)
 	rect.material = mat
 	return rect
 

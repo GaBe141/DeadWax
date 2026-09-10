@@ -101,7 +101,7 @@ func platform(pos: Vector2, size: Vector2) -> void:
 	sh.size = size
 	cs.shape = sh
 	b.add_child(cs)
-	var vis := PressScript.plate(size, _solid_color(), _stock_color(), PressScript.PINK, pos.x + pos.y)
+	var vis := PressScript.plate(size, _solid_color(), _stock_color(), PressScript.PINK, pos.x + pos.y, true)
 	b.add_child(vis)
 	_skins.append(vis)
 	add_child(b)

@@ -119,14 +119,17 @@ static func face(c: CanvasItem, surfaces: Array, p: Dictionary, metal := false) 
 		var r := Rect2(raw.position + Vector2(5, 13), raw.size - Vector2(10, 18))
 		if r.size.x < 16 or r.size.y < 5: continue
 		# All detail remains inside the supplied collider face and its parent clip.
-		for row in range(mini(4, int(r.size.y / 6))):
-			var y := r.position.y + 2 + row * 6
+		for mark in range(mini(5, maxi(1, int(r.size.x / 220)))):
+			var seed := raw.position.x * 0.17 + raw.position.y * 0.31 + mark * 13.0
+			var span := minf(r.size.x * 0.36, 45.0 + grain(seed) * 95.0)
+			var start := r.position.x + 2.0 + grain(seed + 7.0) * maxf(0.0, r.size.x - span - 4.0)
+			var y := r.position.y + 2.0 + grain(seed + 11.0) * minf(21.0, r.size.y - 4.0)
 			var points := PackedVector2Array()
-			for i in range(17):
-				var x := lerpf(r.position.x + 2, r.end.x - 2, i / 16.0)
-				points.append(Vector2(x, clampf(y + sin(i * 1.7 + raw.position.x) * 1.0, r.position.y + 1, r.end.y - 1)))
-			c.draw_polyline(points, fade(p.light, 0.14 if metal else 0.10), 1.0)
+			for i in range(7):
+				var x := minf(r.end.x - 1.0, start + span * i / 6.0)
+				points.append(Vector2(x, clampf(y + sin(i * 1.1 + seed) * 0.8, r.position.y + 1, r.end.y - 1)))
+			c.draw_polyline(points, fade(p.edge, 0.10 if metal else 0.07), 1.0)
 		if r.size.y > 18 and metal:
 			for x in [r.position.x + 7, r.end.x - 7]:
-				c.draw_circle(Vector2(x, r.get_center().y), 2.1, fade(p.copper, 0.62))
-				c.draw_circle(Vector2(x - 0.5, r.get_center().y - 0.5), 0.7, fade(p.gold, 0.72))
+				c.draw_circle(Vector2(x, r.get_center().y), 2.1, fade(p.copper, 0.40))
+				c.draw_circle(Vector2(x - 0.5, r.get_center().y - 0.5), 0.7, fade(p.gold, 0.42))
