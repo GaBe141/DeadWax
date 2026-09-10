@@ -407,6 +407,8 @@ func _remember_positioned(_pos: Vector2, key: String, outcome: String) -> void:
 
 func _remember_encounter(key: String, outcome: String) -> void:
 	encounters[key] = outcome
+	if key == "groove_yard/yard_first_voice" and outcome == "freed":
+		_flash("A NAME REMEMBERED — the Yard keeps its last note.")
 	if key == "the_stalls/loft_voice" and outcome == "freed":
 		_flash("A LOST PHRASE — carried home.")
 		_sync_home_song()

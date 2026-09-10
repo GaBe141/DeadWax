@@ -9,6 +9,8 @@ const ResidentScript := preload("res://scripts/resident.gd")
 const HoundScript := preload("res://scripts/hound.gd")
 const MapPickupScript := preload("res://scripts/map_pickup.gd")
 const LoftVoiceScript := preload("res://scripts/loft_voice.gd")
+const YardVoiceScript := preload("res://scripts/yard_voice.gd")
+const YardMemoryScript := preload("res://scripts/yard_memory.gd")
 const OutcomeExitScript := preload("res://scripts/outcome_exit.gd")
 const ProgressionScript := preload("res://scripts/progression_state.gd")
 const HORN_LISTEN_TIME := 1.4
@@ -23,6 +25,8 @@ var map_state: RefCounted
 var _scenery: Array[Node2D] = []
 var _horn_time := 0.0
 var _horn_heard := false
+var _yard_note: Control
+var _yard_note_outcome := "unprinted"
 
 func configure(id: StringName) -> void:
 	room_id = id
@@ -257,10 +261,45 @@ func _build_groove_yard() -> void:
 	_exit(Vector2(85, 574), &"the_stalls", "THE STALLS")
 	_exit(Vector2(1980, 574), &"label_descent", "THE DESCENT")
 	sign_label(Vector2(285, 310), "WORN NAMES\nSomeone kept writing them\nafter the sound had gone.")
-	sign_label(Vector2(705, 327), "IT ONLY WANTS TO BE HEARD\nHold L / left shoulder nearby.\nKneel. Give it one quiet bar.")
-	_auditioner(Vector2(1110, 587), &"yard_first_voice")
-	sign_label(Vector2(1460, 324), "ONE BAR REMAINS\nYou can strike a voice apart.\nYou can stay and hear it through.")
+	_update_yard_note(String(session_outcomes.get("groove_yard/yard_first_voice", "")))
+	var memory := YardMemoryScript.new()
+	memory.name = "YardMemory"
+	memory.position = Vector2(1110, 587)
+	memory.ink = ink
+	memory.stock = bg_color
+	memory.restore_outcome(String(session_outcomes.get("groove_yard/yard_first_voice", "")))
+	add_child(memory)
+	var voice := YardVoiceScript.new()
+	voice.name = "YardVoice"
+	voice.position = Vector2(1110, 587)
+	voice.ink = ink
+	voice.stock = bg_color
+	_persistent(voice, &"yard_first_voice")
+	voice.freed.connect(_present_yard_outcome.bind("freed"))
+	voice.shattered.connect(_present_yard_outcome.bind("shattered"))
+	add_child(voice)
+	sign_label(Vector2(1530, 324), "ONE BAR REMAINS\nThis voice still reaches.\nHold SET [L / LB] nearby to hear it.")
 	_auditioner(Vector2(1640, 587), &"yard_last_voice")
+
+func _present_yard_outcome(_pos: Vector2, outcome: String) -> void:
+	get_node("YardMemory").present_outcome(outcome)
+	_update_yard_note(outcome)
+
+func _update_yard_note(outcome: String) -> void:
+	if outcome == _yard_note_outcome:
+		return
+	_yard_note_outcome = outcome
+	if is_instance_valid(_yard_note):
+		_notes.erase(_yard_note)
+		remove_child(_yard_note)
+		_yard_note.queue_free()
+	var text := "AN UNFINISHED NAME\nTwo notes. Then it falters.\nYour Hood leaves room to listen."
+	if outcome == "freed":
+		text = "A NAME REMEMBERED\nThe stone keeps the ending.\nStay quietly. It returns."
+	elif outcome == "shattered":
+		text = "A BROKEN IMPRESSION\nTwo notes, left in the stone.\nThe space between stays quiet."
+	sign_label(Vector2(645, 215), text)
+	_yard_note = _notes.back()
 
 func _build_descent_gate() -> void:
 	_floor(1700)
@@ -349,7 +388,7 @@ func apply_side(next_side: int) -> void:
 		add_child(next_picture)
 		_scenery[index] = next_picture
 	for child in get_children():
-		if (child.is_in_group("world_resident") or child.is_in_group("map_pickup") or child.name == &"LoftVoice") and child.has_method("reink"):
+		if (child.is_in_group("world_resident") or child.is_in_group("map_pickup") or child.name in [&"LoftVoice", &"YardVoice", &"YardMemory"]) and child.has_method("reink"):
 			child.call("reink", _solid_color(), _stock_color())
 
 func set_scenery_motion(reduced: bool) -> void:
@@ -391,6 +430,9 @@ func _refresh_stalls_objective() -> void:
 ## Main keeps the outcomes. Recreating a room only applies its own stable
 ## entries; this method neither records completion nor unlocks knowledge.
 func restore_encounters(outcomes: Dictionary) -> void:
+	if room_id == &"groove_yard":
+		get_node("YardMemory").restore_outcome(String(outcomes.get("groove_yard/yard_first_voice", "")))
+		_update_yard_note(String(outcomes.get("groove_yard/yard_first_voice", "")))
 	for child in get_children():
 		if not child.has_meta("chapter_state_id"):
 			continue

@@ -31,7 +31,11 @@ Runtime errors are written to `.godot/deadwax-play.log`.
 - [ ] A player who skips Practice can still open the Descent Gate with the same pattern; the Book's discovery state never gates the solution.
 - [ ] In the Stalls, standing on the live groove and striking carries the player toward the upper walkway.
 - [ ] A missed launch lands safely in the service lane; the steps return to either bank without a Refrain or restart.
-- [ ] In the Yard, holding Set nearby for one bar frees a voice. Striking another demonstrates the distinct shatter outcome.
+- [ ] In the Yard, approach the first voice quietly and raise Hood while standing near it. Hear two notes and notice the empty reply mark. Lower Hood and begin holding Set during the silence: one answer frees it. Try keyboard and controller. A fresh player should understand the exchange from its cues.
+- [ ] Holding Set before hearing the call does not free the first voice. Releasing Hood early, starting Set too early, releasing Set before its response finishes, or missing the silence lets it try again. There is no immediate contact hit during the call, answer, or retry rest. Walking away and returning starts a fresh attempt.
+- [ ] The completed engraving appears at the first voice's original place even if it moved. After a quiet wait nearby its gentle finished phrase returns. Shattering leaves a broken engraving and silence instead. Return, recover, and Continue: the same choice remains with no repeated reward, flash, or resolution sound.
+- [ ] Pause freezes the first voice and its phrase. Reduced motion steadies decorative movement but preserves note/answer cues; muting still leaves a solvable exchange. Review the card, reply marks, both engraving outcomes, and nearby signs at 1280×720 and 960×540.
+- [ ] Ordinary strikes, parries, and airborne rebounds still work on the first voice; striking cancels its unfinished conversation. The second voice still accepts ordinary sustained Set, and both choices grant no Shine or progression.
 - [ ] Neither combat nor mercy is required to leave the Yard; both choices remain readable.
 - [ ] The Descent Gate blocks passage until its four-strike pattern is performed; the exit beyond it enters Overture Stair.
 - [ ] Every stair can be climbed on the return trip with a normal jump.

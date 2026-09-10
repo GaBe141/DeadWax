@@ -26,7 +26,7 @@ On the Dead Wax Wyse, the lightweight project commands are:
 .\deadwax.cmd play    play the campaign with a local runtime log
 .\deadwax.cmd dev     open the original mechanics rooms and planned-world tools
 .\deadwax.cmd editor  open the project in Godot
-.\deadwax.cmd check   import resources; run all twenty native test suites
+.\deadwax.cmd check   import resources; run all twenty-two native test suites
 .\deadwax.cmd vibe    start Mistral Vibe in this repository
 ```
 
@@ -46,6 +46,18 @@ lesson; east leads through the market to the way down. Practice also returns
 directly to the plaza. Doors respond to four even strikes whether or not
 the Book has recorded the technique. The street has room to slip past its
 encounter, and the Yard's voices can be heard or shattered.
+
+The first Yard voice carries a half-remembered name. Stand near it with
+**Hood** raised for its two notes, then lower Hood and begin holding **Set**
+in the silence. One answer is enough. The voice gives you time and will try
+again; holding Set before the phrase does not answer it. Visible note marks
+and a changing card carry the cues with sound off or Reduced motion on.
+
+Hearing it completes a warm engraving where it stood. Stay nearby and its
+finished phrase returns quietly; shattering leaves a fractured impression.
+Both choices survive recovery and Continue, including old saved outcomes.
+The second Yard voice retains ordinary sustained Set. The road stays open,
+and neither choice grants Shine, techniques, or a Refrain.
 
 ## Into the Overture
 

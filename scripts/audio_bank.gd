@@ -12,6 +12,12 @@ const HOME_VOLUME_DB := -14.0
 const HOME_FADE_IN := 1.1
 const HOME_FADE_OUT := 0.8
 const LOFT_CALL_SECONDS := 0.36
+const YARD_NOTES := [195.9977, 220.0, 261.6256]
+const YARD_CALL_SECONDS := 0.40
+const YARD_ANSWER_SECONDS := 1.30
+const YARD_MEMORY_SECONDS := 2.30
+const YARD_ANSWER_TIMING := [[0.025, 0.34], [0.39, 0.36], [0.74, 0.56]]
+const YARD_MEMORY_TIMING := [[0.14, 0.50], [0.86, 0.52], [1.50, 0.76]]
 const OPENING_DURATIONS := [5.5, 6.0, 5.5, 6.0]
 const OPENING_VOLUME_DB := -12.0
 # [entrance, frequency, length, strength]. These sparse phrases introduce the
@@ -253,6 +259,29 @@ func _build_sounds() -> void:
 	_sounds["loft_answer"] = _wav(_home_answer())
 	for note in HOME_NOTES.size():
 		_sounds["loft_note_%d" % (note + 1)] = _wav(_home_note(HOME_NOTES[note], LOFT_CALL_SECONDS))
+	# The Yard asks two hesitant notes. Listening lets them reach a third;
+	# a freed impression remembers that completion quietly, on Main's schedule.
+	for note in range(2):
+		_sounds["yard_note_%d" % (note + 1)] = _wav(_yard_note(YARD_NOTES[note], YARD_CALL_SECONDS, 0.72))
+	_sounds["yard_answer"] = _wav(_yard_phrase(YARD_ANSWER_SECONDS, YARD_ANSWER_TIMING, 0.90))
+	_sounds["yard_memory"] = _wav(_yard_phrase(YARD_MEMORY_SECONDS, YARD_MEMORY_TIMING, 0.60))
+
+func _yard_note(frequency: float, duration: float, strength: float) -> PackedFloat32Array:
+	var samples := _home_note(frequency, duration)
+	for frame in samples.size():
+		samples[frame] *= strength
+	return samples
+
+func _yard_phrase(duration: float, timing: Array, strength: float) -> PackedFloat32Array:
+	var samples := PackedFloat32Array()
+	samples.resize(int(round(duration * RATE)))
+	for note in YARD_NOTES.size():
+		var voice := _yard_note(YARD_NOTES[note], float(timing[note][1]), strength)
+		var start := int(float(timing[note][0]) * RATE)
+		for frame in voice.size():
+			if start + frame < samples.size():
+				samples[start + frame] += voice[frame]
+	return samples
 
 func _home_note(frequency: float, duration: float) -> PackedFloat32Array:
 	var count := int(duration * RATE)

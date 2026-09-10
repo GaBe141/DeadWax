@@ -279,13 +279,13 @@ func _check_encounters() -> void:
 	_check(first != null and last != null, "yard contains two distinct persistent voices")
 	if first != null and last != null:
 		_main.player.position = first.position + Vector2(-150, -13)
-		_main.player.setting = true
-		first.call("_process", 1.21)
-		_main.player.setting = false
+		first.call("advance_phrase", 0.01, true, true, false, false)
+		first.call("advance_phrase", first.CALL_TIME, true, true, false, false)
+		first.call("advance_phrase", first.ANSWER_HOLD, true, false, true, true)
 		for strike in range(4):
 			last.call("on_player_strike", last.position, false)
 		await _frames(2)
-		_check(_main.encounters.get("groove_yard/yard_first_voice") == "freed", "SET mercy records freed outcome")
+		_check(_main.encounters.get("groove_yard/yard_first_voice") == "freed", "hearing the Yard call and answering with fresh Set records freed outcome")
 		_check(_main.encounters.get("groove_yard/yard_last_voice") == "shattered", "striking records a distinct shattered outcome")
 	_main._load_world_room(&"practice_room", &"from_horn_plaza")
 	await _frames(3)
