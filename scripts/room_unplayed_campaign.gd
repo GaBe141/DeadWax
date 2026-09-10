@@ -5,10 +5,17 @@ extends "res://scripts/room_base.gd"
 const AuditionerScript := preload("res://scripts/auditioner.gd")
 const TestPressingScript := preload("res://scripts/test_pressing.gd")
 const ListeningPostScript := preload("res://scripts/listening_post.gd")
+const EchoStationScript := preload("res://scripts/echo_station.gd")
 const OVERLOOK_POSITION := Vector2(980, 384)
 const OVERLOOK_LEDGE_POSITION := Vector2(980, 426)
 const OVERLOOK_LEDGE_SIZE := Vector2(270, 32)
 const DROP_STEP_RISE := 100.0
+const SPOOL_POSITION := Vector2(340, 834)
+const PHRASE_POSITION := Vector2(1010, 554)
+const RECEIVER_POSITION := Vector2(350, 454)
+
+signal discovery_requested(action: StringName, source: Node2D)
+signal discovery_cue(cue: StringName)
 
 # The shared encounters retain their exact strike, reach and mercy rules.
 # Only their campaign lifetime differs from the reforming prototype dummy.
@@ -75,6 +82,7 @@ class CampaignPressing extends TestPressingScript:
 		_print_swing_tail = 0.0
 		queue_redraw()
 
+var discoveries: RefCounted
 var session_outcomes: Dictionary = {}
 var objective_label := "Follow the rooms beneath the seal."
 
@@ -163,6 +171,7 @@ func _ready() -> void:
 	platform(Vector2(-25, cam_limits.size.y / 2.0), Vector2(50, cam_limits.size.y + 400))
 	platform(Vector2(cam_limits.size.x + 25, cam_limits.size.y / 2.0), Vector2(50, cam_limits.size.y + 400))
 	setup_atmosphere(session_outcomes)
+	refresh_discoveries()
 	_reink_children()
 
 func _build_drop() -> void:
@@ -187,15 +196,12 @@ func _build_landing() -> void:
 	_exit(Vector2(1780, 574), &"the_drop", "BACK TO THE CUT")
 	_exit(Vector2(100, 574), &"verse_hall", "THE VERSE HALL")
 	# The overlook is optional. No intermediate steps or passage require its
-	# 190 px ascent, and its listening post changes no progression or income.
+	# 190 px ascent. The surveyor's keepsake changes no traversal or income.
 	platform(OVERLOOK_LEDGE_POSITION, OVERLOOK_LEDGE_SIZE)
 	get_child(-1).name = "GatherOverlook"
 	sign_label(Vector2(1330, 290), "THE UNPLAYED\nNo footprints on this side.\nOnly the mark where you landed.")
 	sign_label(Vector2(285, 270), "WEST — THE VERSE HALL\nSomeone left the seats out.\nSomeone still expects a song.")
-	_listening_post(OVERLOOK_POSITION, "ABOVE THE LANDING", [
-		"From here the scratch looks small.\nThe rooms below it do not.",
-		"The spindle has no destination marked.\nFor now, every way home is on foot.",
-	])
+	_echo_station(OVERLOOK_POSITION, &"collect_survey", "SurveyorsSlip")
 
 func _build_verse() -> void:
 	_floor(2400, 680)
@@ -229,6 +235,7 @@ func _build_north() -> void:
 	_exit(Vector2(1590, 834), &"verse_warren_s", "THE SOUTH WARREN")
 	_auditioner(Vector2(730, 847), &"north_voice", "NorthVoice")
 	_auditioner(Vector2(1280, 847), &"lower_voice", "LowerVoice")
+	_echo_station(RECEIVER_POSITION, &"restore_warren", "WarrenReceiver")
 	sign_label(Vector2(1220, 160), "TWO WAYS THROUGH\nThe Gallery lies across the upper walk.\nThe lower door joins the southern road.")
 	sign_label(Vector2(60, 585), "ROOM ENOUGH\nA patient voice waits below.\nYou can listen, or leave it its space.")
 
@@ -245,6 +252,7 @@ func _build_south() -> void:
 	pressing.position = Vector2(950, 717)
 	_persistent(pressing, &"warren_pressing")
 	add_child(pressing)
+	_echo_station(PHRASE_POSITION, &"record_phrase", "WarrenPhrase")
 	sign_label(Vector2(1370, 380), "THE OLD COUNT\nThree ticks. The swing comes on four.\nStep clear, or strike [J / X] as it lands.")
 	sign_label(Vector2(260, 350), "A ROAD UNDER THE ROAD\nWest: the quiet Gallery.\nEast: the northern rooms.")
 
@@ -258,10 +266,11 @@ func _build_gallery() -> void:
 	_exit(Vector2(1800, 834), &"verse_warren_s", "THE SOUTH WARREN")
 	sign_label(Vector2(1450, 185), "THE DEEP GALLERY\nThe voices stop at the door.\nThe stairs meet the road below.")
 	sign_label(Vector2(210, 440), "TWO EMPTY SEATS\nAn answer was kept here.\nThere is time to hear it.")
+	_echo_station(SPOOL_POSITION, &"collect_spool", "EchoSpool")
 	_listening_post(Vector2(560, 834), "AN UNPLAYED ANSWER", [
 		"Two seats.\nOne turned toward the other.",
 		"The first groove is worn almost flat.\nThe answering groove is untouched.",
-		"No one has scratched out the answer.\nIt is still here.",
+		"The little reel can hold an answer.\nTry the old wire in the southern Warren.",
 		"Above you, the road forks and returns.\nYou can take the other way home.",
 	])
 
@@ -312,3 +321,56 @@ func restore_encounters(outcomes: Dictionary) -> void:
 		if String(outcomes.get(key, "")) in ["freed", "shattered", "won"]:
 			remove_child(child)
 			child.queue_free()
+
+
+func _echo_station(pos: Vector2, action: StringName, station_name: String) -> void:
+	var station := EchoStationScript.new()
+	station.name = station_name
+	station.position = pos
+	station.action = action
+	station.discoveries = discoveries
+	station.ink = ink
+	station.stock = bg_color
+	station.requested.connect(_on_discovery_requested)
+	station.cue_requested.connect(_on_discovery_cue)
+	add_child(station)
+
+func _on_discovery_requested(action: StringName, source: Node2D) -> void:
+	discovery_requested.emit(action, source)
+
+func _on_discovery_cue(cue: StringName) -> void:
+	discovery_cue.emit(cue)
+
+func refresh_discoveries() -> void:
+	# Open the engraving in place; existing walks, collisions and encounter
+	# outcomes never change. Saved restoration arrives as a settled scene.
+	for child in get_children():
+		if child is EchoStationScript:
+			child.discoveries = discoveries
+			child.refresh_discoveries()
+	var held := "missing"
+	var slip := false
+	if discoveries != null:
+		var state: Dictionary = discoveries.call("snapshot")
+		held = String(state.get("echo_spool", "missing"))
+		slip = bool(state.get("survey_slip", false))
+	match room_id:
+		&"deep_gallery":
+			objective_label = "A little reel waits by the empty seats. Take it with E / Y."
+			if held != "missing":
+				objective_label = "The Echo Spool can carry a phrase from the southern Warren's upper walk."
+		&"verse_warren_s":
+			if held == "empty":
+				objective_label = "Record the three notes on the upper walk. Stay close until the phrase ends."
+			elif held == "recorded":
+				objective_label = "Carry the recorded phrase to the northern Warren's western terrace."
+		&"verse_warren_n":
+			if held == "recorded":
+				objective_label = "The horn on the western terrace has been waiting for your phrase."
+			elif held == "restored":
+				objective_label = "The Warren has its answer. The little audience will sing it again."
+		&"the_landing":
+			if slip:
+				objective_label = "The surveyor marked a voice above the Stalls. Carry your borrowed breath home."
+	if held == "restored" and room_id in [&"deep_gallery", &"verse_warren_s"]:
+		objective_label = "The Warren has its answer. Visit the northern alcove, or follow the road home."

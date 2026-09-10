@@ -111,16 +111,35 @@ completion; traveling beyond the seal never shows that ending automatically.
 construction to `scripts/room_unplayed_campaign.gd`. Each passage has a matching
 `from_<room>` arrival. The Drop's maintenance steps rise 100 px, and the Warren
 and Gallery stairs return to their upper doors on ordinary jumps. The Landing's
-190 px Gather overlook is optional, with a listening post and no passage or
-reward on its shelf.
+190 px Gather overlook is optional. Its Surveyor's Slip points back to the
+voice above the Stalls, with no passage, ability, or currency granted by the slip.
 
 The Hall and northern Warren use ordinary Auditioner encounters; the southern
 Warren has a Test Pressing with a route above it. Their existing combat and
 listening rules remain intact. Main persists their stable encounter keys;
 recovery resets unfinished attempts and resolved actors retire silently.
 Fixed listening posts own only their current line and give no progression or
-Shine. The expansion introduces no checkpoint fields or Refrain pickup, and
-the campaign's nine polish patches remain its income source.
+Shine. The campaign's nine polish patches remain its income source, funding
+the same three purchases, and the expansion adds no Refrain pickup.
+
+The Echo Spool gives the existing triangle a local discovery path:
+`deep_gallery → verse_warren_s → verse_warren_n`. Grounded E/Y collects the
+spool at (340,834), records the phrase at (1010,554) on the southern upper walk,
+and plays it into the northern receiver at (350,454). Recording and playback
+each require two uninterrupted seconds within 76 px; leaving, opening a menu,
+or recovering cancels the attempt. The restored receiver reveals its listening
+alcove and can replay the phrase without rewards. This is a visual change
+inside the existing room, not another passage or campaign room. All four
+discovery stations, including the slip at (980,384), use fixed interaction
+origins independent of their animated artwork and of encounter outcomes.
+
+Main owns `discoveries_state.gd`: `echo_spool` advances through `missing`,
+`empty`, `recorded`, and `restored`, while `survey_slip` is a separate boolean.
+The optional version-one root `discoveries` field stores exactly those values;
+absent data starts empty. Main validates and saves a change before presenting
+success, rolling back on a failed write. Continue restores silently and Move
+practice uses a disposable model. The Book reads both items without changing
+the eight groove slots or any gameplay state.
 
 The Drop retains its Scratch stratum heading while sharing the carried guide's
 Unplayed page as the region's approach. This campaign route does not change

@@ -30,6 +30,40 @@ Runtime errors are written to `.godot/deadwax-play.log`.
   parallax. Reink A→B→A and recover: original colours, light exposure and camera
   synchronization return without flashing a reward or revealing new routes.
 
+## The Echo Spool and survey slip
+
+Native development review, 2026-09-11: Godot 4.7.2 GL Compatibility fixtures
+covered pickup, recording, restoration/replay, the real Gallery→South and
+South→North passages, the southern upper jumps, the Landing ascent with and
+without Gather, Book layouts at both window sizes, and A→B→A/reduced motion.
+The northern return climb was verified with resolved encounter fixtures after
+active enemies interrupted the automated jumps. Controller Y has automated
+coverage; human controller feel and listening to the final mix remain manual.
+The final `deadwax.cmd check` run passed all 29 suites and 7,813 checks.
+
+- [ ] Take the spool beside Deep Gallery's empty seats with grounded E/Y.
+  Its origin stays fixed; walking near it or arriving in the room collects nothing.
+- [ ] Follow the lower eastern Gallery passage to South Warren, climb the upper
+  walk and record at the old wire. Three visible notes match the finite phrase;
+  stay nearby on the ledge for the whole two seconds. Muting remains playable.
+- [ ] Leave, jump, recover, or open a menu during recording/playback: the attempt
+  and its sound stop. A fresh E/Y restarts it; holding the key never repeats it.
+- [ ] Carry the phrase to North Warren's western terrace. The receiver opens its
+  shutters and reveals the answering discs. Replay it deliberately with E/Y;
+  repeated plays grant nothing. Repeat with the resident encounters resolved
+  either way; the fixture remains available.
+- [ ] Return, recover, and Continue at each stage: the spool, recorded phrase,
+  restored alcove and survey slip persist without another reward or opening sound.
+- [ ] In the Landing, ordinary jumps cannot reach the 190 px overlook. Start
+  beside its left edge, jump and strike near the crest with Gather, then steer
+  onto it. Take the survey slip and read its Stalls loft clue in the Book.
+- [ ] Inspect both found-item buttons and descriptions at 1280×720 and 960×540.
+  They appear only once found; the eight core/knowledge/Refrain slots retain
+  their existing count. Reading an item never changes it or the player's room.
+- [ ] Pause freezes decoration. Reduced motion holds reels, paper and shutters
+  still while the semantic note cues remain usable. A→B→A restores the fixtures'
+  palettes, and the artwork stays behind Skip without hiding any platform lip.
+
 ## Opening chapter
 
 - [ ] Boot reaches the title screen; New Game plays the four-scene opening and hands control to Skip in the Headshell after about 23 seconds. Continue is available only with a readable campaign checkpoint and restores the saved entry without the film.

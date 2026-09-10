@@ -28,6 +28,7 @@ var progression: RefCounted
 var shine_source: Node
 var economy: RefCounted
 var map_state: RefCounted
+var discoveries: RefCounted
 var can_open: Callable
 
 var overlay: Control
@@ -48,6 +49,7 @@ var _entrance_parts: Array[Control] = []
 var _detail_stack: VBoxContainer
 var _map_button: Button
 var _map_note: Label
+var _discovery_buttons: Dictionary = {}
 
 func _ready() -> void:
 	layer = 100
@@ -225,9 +227,27 @@ func _build_menu() -> void:
 	rule.color = VIOLET
 	rule.custom_minimum_size.y = 2.0
 	page.add_child(rule)
+	var carried_row := HBoxContainer.new()
+	carried_row.add_theme_constant_override("separation", 12)
+	page.add_child(carried_row)
 	_wares_label = _make_label("", 14, PAPER_DARK)
 	_wares_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	page.add_child(_wares_label)
+	_wares_label.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	carried_row.add_child(_wares_label)
+	for slot in [&"echo_spool", &"survey_slip"]:
+		var button := Button.new()
+		button.name = String(slot).to_pascal_case()
+		button.custom_minimum_size = Vector2(150, 34)
+		button.add_theme_font_override("font", PressScript.BodyFont)
+		button.add_theme_font_size_override("font_size", PressScript.SIZE_SMALL)
+		for key in ["font_color", "font_hover_color", "font_focus_color", "font_pressed_color"]:
+			button.add_theme_color_override(key, PAPER)
+		button.focus_entered.connect(_select_slot.bind(slot))
+		button.pressed.connect(_select_slot.bind(slot))
+		carried_row.add_child(button)
+		_discovery_buttons[slot] = button
+		_slot_buttons[slot] = button
+		_motion.bind_button(button, PINK)
 	var map_row := HBoxContainer.new()
 	map_row.add_theme_constant_override("separation", 18)
 	page.add_child(map_row)
@@ -347,6 +367,13 @@ func _refresh() -> void:
 			if bool(economy.call("has_item", item.id)):
 				carried.append(item.name)
 	_wares_label.text = "FROM THE STALL · " + " / ".join(carried) if not carried.is_empty() else "SHINE · Polish worn wax. Trade at the Bootlegger's stall."
+	for slot in _discovery_buttons:
+		var button: Button = _discovery_buttons[slot]
+		button.visible = _slot_is_filled(slot)
+		button.text = _slot_name(slot)
+		_apply_card_style(button, true)
+	if _selected_slot in _discovery_buttons and not _slot_is_filled(_selected_slot):
+		_selected_slot = &"strike"
 	_refresh_map()
 	for slot in _all_slots():
 		var button := _slot_buttons.get(slot) as Button
@@ -398,6 +425,10 @@ func _focus_selected() -> void:
 func _slot_is_filled(slot: StringName) -> bool:
 	if slot in CORE_SLOTS:
 		return true
+	if slot == &"echo_spool":
+		return discoveries != null and discoveries.snapshot().echo_spool != "missing"
+	if slot == &"survey_slip":
+		return discoveries != null and bool(discoveries.snapshot().survey_slip)
 	if progression == null:
 		return false
 	var technique := _progression_id_for_slot(ProgressionScript.TECHNIQUE_KEYS, slot)
@@ -414,6 +445,13 @@ func _slot_card_text(slot: StringName, filled: bool) -> String:
 	return "%s\n%s · %s" % [_slot_name(slot), _slot_kind(slot), _slot_state(slot, true)]
 
 func _slot_state(slot: StringName, filled: bool) -> String:
+	if slot == &"echo_spool" and filled:
+		match String(discoveries.snapshot().echo_spool):
+			"empty": return "EMPTY · A PHRASE TO FIND"
+			"recorded": return "RECORDED · AN ANSWER TO CARRY"
+			"restored": return "RESTORED · THE WARREN SINGS"
+	if slot == &"survey_slip":
+		return "A NOTE FOR THE WAY HOME"
 	if not filled:
 		return "UNLEARNED" if _is_technique_slot(slot) else "UNHEARD"
 	if slot in CORE_SLOTS:
@@ -424,6 +462,8 @@ func _slot_state(slot: StringName, filled: bool) -> String:
 
 func _slot_name(slot: StringName) -> String:
 	match slot:
+		&"echo_spool": return "ECHO SPOOL"
+		&"survey_slip": return "SURVEYOR'S SLIP"
 		&"strike":
 			return "STRIKE"
 		&"hood":
@@ -439,6 +479,8 @@ func _slot_name(slot: StringName) -> String:
 	return "UNKNOWN"
 
 func _slot_kind(slot: StringName) -> String:
+	if slot in [&"echo_spool", &"survey_slip"]:
+		return "FOUND IN THE GROOVES"
 	if slot in CORE_SLOTS:
 		return "CORE VERB"
 	if _is_technique_slot(slot):
@@ -447,6 +489,13 @@ func _slot_kind(slot: StringName) -> String:
 
 func _slot_description(slot: StringName) -> String:
 	match slot:
+		&"echo_spool":
+			match String(discoveries.snapshot().echo_spool):
+				"empty": return "A little reel from the Deep Gallery, still waiting for a voice. Find the three-note pipe on the South Warren's upper walk. Stand beside it and press E / Y to record the whole phrase."
+				"recorded": return "Three notes, safely held. Carry them to the shuttered receiver on the North Warren's western terrace. Press E / Y and stay beside it while the phrase plays."
+				"restored": return "The shutter is open. Three answering discs remember the phrase together. Return to the North Warren's western terrace and press E / Y to hear it again. The spool stays with you."
+		&"survey_slip":
+			return "A surveyor's sketch, tucked above the Landing. A balcony is circled over the Stalls' right bank: 'Jump. Gather at the crest. A voice waits above the shutters.' Its answer may shorten the road home."
 		&"strike":
 			return "Three fresh strikes chain Tap, Sweep, Accent. The last hit lands harder. Ring live wax, launch from grooves, or catch an incoming blow on the beat."
 		&"hood":

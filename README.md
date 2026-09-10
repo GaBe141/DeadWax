@@ -26,7 +26,7 @@ On the Dead Wax Wyse, the lightweight project commands are:
 .\deadwax.cmd play    play the campaign with a local runtime log
 .\deadwax.cmd dev     open the original mechanics rooms and planned-world tools
 .\deadwax.cmd editor  open the project in Godot
-.\deadwax.cmd check   import resources; run all twenty-seven native test suites
+.\deadwax.cmd check   import resources; run all twenty-nine native test suites
 .\deadwax.cmd vibe    start Mistral Vibe in this repository
 ```
 
@@ -110,8 +110,26 @@ ordinary jumps; the Landing's 190 px overlook offers an optional use for Gather.
 Listen at the fixed posts with grounded **E / Y**. Voices retain their familiar
 Set and strike choices, and the pressing can be fought or passed on the upper
 walk. Resolved encounters stay resolved on return, recovery, and Continue.
-The expansion adds places, encounters, and scenery while keeping the existing
-Refrain pickups, nine polish patches, Shine economy, and version-one save format.
+The nine polish patches still fund the three optional shop purchases; these
+rooms add no Shine or Refrain rewards.
+
+An **Echo Spool** waits on the Deep Gallery floor. Stand beside it and press
+**E / Y** to take it, then find the three-note pipe on the **South Warren's
+upper walk**. Press E/Y and stay close for its two-second phrase. Carry the
+recording to the receiver on the **North Warren's western terrace** and play
+it there. The shutter opens onto a little listening alcove, and three answering
+discs wake together. Return and press E/Y to hear it again. The spool stays
+with you, and either encounter choice leaves the whole discovery available.
+
+The Landing's raised overlook holds a **Surveyor's Slip**. Reach it with
+Gather, then press E/Y to keep its sketch of the Stalls balcony. The Book
+retains the clue for the return journey. The slip changes no route or ability;
+the waiting voice above the Stalls still asks for its own answer.
+
+Both discoveries survive recovery and Continue. Recording and playback need
+one fresh press and two uninterrupted seconds nearby on the ground; leaving,
+opening a menu, or recovering cancels the attempt. Visible note marks carry
+the sequence with sound off or Reduced motion on.
 
 ## A phrase to carry home
 
@@ -180,16 +198,21 @@ purchase list.
 ## Saving and settings
 
 The chapter saves at passages, opened locks, resolved encounters, polishing,
-the Book, pause, title, and quit. Continue starts at the entry used for the
-saved room, carrying learned techniques, Shine, opened doors, encounter
-outcomes, and chapter completion. Resolved voices never return to combat;
-polished wax cannot pay out twice.
+discoveries, the Book, pause, title, and quit. Continue starts at the entry used
+for the saved room, carrying learned techniques, Shine, opened doors, encounter
+outcomes, carried discoveries, and chapter completion. Resolved voices never
+return to combat; polished wax cannot pay out twice.
 
 Earlier demo saves remain valid. Their old Overture-Stair completion flag is
 reinterpreted as an unfinished extended journey; room, entry, Shine, knowledge,
 and encounter choices are retained. Completion now also requires a resolved
 Tonearm encounter. An unfinished HUSH or Tonearm attempt resets on recovery;
 a resolved encounter stays resolved.
+
+The version-one checkpoint accepts an optional `discoveries` object containing
+the spool's stage and the survey slip. Older saves start with both uncollected
+and retain their existing progress and balance. A failed discovery save leaves
+the previous stage intact so the interaction can be tried again.
 
 The checkpoint is `user://deadwax-save.json`. Writes are validated and keep a
 `.bak` recovery copy of the previous valid checkpoint. Volume, fullscreen,
@@ -214,7 +237,7 @@ Continue also starts there at full health.
   Hold it beside dull grey wax to **polish** (mints shine).
 - **L hold** — **SET / KNEEL**: listen to an Auditioner instead of breaking it.
 - **W/S** (or arrows) — aim directional strikes while airborne.
-- **E** (or gamepad Y) — enter a nearby passage or listen to a resident.
+- **E** (or gamepad Y) — enter a nearby passage, listen, or use a discovery fixture.
 - **B** (or D-pad Up) — browse the Bootlegger's stall while standing nearby.
 - **I** (or gamepad Start) — open **The Book**, the full-screen inventory.
 - **Escape** (or gamepad Back) — pause; Escape inside the Book closes it first.
@@ -255,6 +278,8 @@ has no enemies, pickups, or exits. **R** resets Skip and the chain; **Esc / Back
 opens pause, where **Return to title** takes you back to the sleeve. Practice
 uses temporary models and never writes your campaign checkpoint, unlocks
 progression, spends Shine, or records map visits. Continue resumes your journey.
+Carried discoveries use the same disposable practice state and leave the
+campaign's spool and slip untouched.
 
 The immediate circular impression shows the 120 px enemy-hit reach; fainter
 echoes show groove and air responses. Muted HUSH does not give a rebound from
@@ -328,7 +353,10 @@ announced before it is found. The Bootlegger has an opinion about this:
 
 The Book is a full-screen, read-only inventory. It pauses the room and records
 the three always-owned core verbs, discovered knowledge techniques, carried
-Refrains, current Shine, and permanent purchases. Inside the game, unknown techniques and Refrains
+Refrains, current Shine, permanent purchases, and carried discoveries. The
+Echo Spool and Surveyor's Slip have separate item buttons; they do not add to
+the eight groove slots for verbs, techniques, and Refrains. Their entries retain
+the next lead and the survey clue. Inside the game, unknown techniques and Refrains
 remain unnamed until the session records them; opening the Book never unlocks
 or equips anything. Use arrows, D-pad, or the left stick to select an entry, and press
 I/Start again or Escape to close it.
@@ -441,7 +469,7 @@ own animation while gameplay and the HUD remain paused underneath.
 
 ## Development checks
 
-Run `.\deadwax.cmd check` before committing. It imports resources and runs 27
+Run `.\deadwax.cmd check` before committing. It imports resources and runs 29
 dependency-free native suites, including smoke, save-store, campaign, Tonearm, Overture,
 sprite-animation, residents, economy-state, economy integration, scenery,
 lighting, attack-feel, GUI-animation, and map-item suites. These cover the original combat and
@@ -460,6 +488,10 @@ unchanged launch/parry rules, and isolation of the title's empty practice floor.
 The Unplayed suite covers the six-room extension, both Tonearm entry outcomes,
 reversible routes without Gather, encounter persistence, and save continuity.
 Map checks cover all 21 places and 24 passage pairs across the three region pages.
+Discovery checks cover ordered spool use, fixed interaction reach, cancellation,
+save validation and rollback, silent restoration, the optional Gather keepsake,
+and practice isolation. Echo audio checks cover lazy finite synthesis, matching
+record/playback notes, pause behavior, and cancellation without stopping other sounds.
 GitHub runs the checks on pushes and pull requests. Gameplay feel, real audio,
 rendering, and controller behavior still require `PLAYTEST.md`.
 

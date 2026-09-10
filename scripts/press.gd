@@ -41,6 +41,9 @@ const CREAM := Color("f1dfb8")
 static func draw_painted_distance(canvas: CanvasItem, room_id: StringName, area: Rect2, ink: Color, stock: Color) -> void:
 	preload("res://scripts/press_painted_world.gd").draw(canvas, room_id, area, ink, stock)
 
+static func draw_echo_station(canvas: CanvasItem, kind: StringName, state: Dictionary, time: float, reduced: bool, ink: Color, stock: Color) -> void:
+	preload("res://scripts/press_echo.gd").draw(canvas, kind, state, time, reduced, ink, stock)
+
 # -- plate defaults -----------------------------------------------------------
 const PLATE_BITE := 2.4
 const PLATE_TOOTH := 0.16

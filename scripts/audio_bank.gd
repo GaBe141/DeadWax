@@ -1,5 +1,5 @@
 extends Node
-## DEAD WAX first audio pass — every sound synthesized at boot, no assets.
+## DEAD WAX audio — core sounds synthesized at boot, rare cues on demand.
 ## Square-wave-era chip plucks + vinyl crackle. The crackle bed IS the noise
 ## meter made audible; the hood pulls a lowpass over the whole world.
 
@@ -18,6 +18,10 @@ const YARD_ANSWER_SECONDS := 1.30
 const YARD_MEMORY_SECONDS := 2.30
 const YARD_ANSWER_TIMING := [[0.025, 0.34], [0.39, 0.36], [0.74, 0.56]]
 const YARD_MEMORY_TIMING := [[0.14, 0.50], [0.86, 0.52], [1.50, 0.76]]
+const ECHO_CUES := ["echo_collect", "echo_record", "echo_play", "echo_complete"]
+const ECHO_NOTES := [293.6648, 440.0, 349.2282]
+const ECHO_PHRASE_SECONDS := 2.0
+const ECHO_TIMING := [[0.12, 0.42], [0.67, 0.42], [1.25, 0.68]]
 const OPENING_DURATIONS := [5.5, 6.0, 5.5, 6.0]
 const OPENING_VOLUME_DB := -12.0
 # [entrance, frequency, length, strength]. These sparse phrases introduce the
@@ -168,6 +172,8 @@ func _exit_tree() -> void:
 	_lowpass = null
 
 func play(sound_name: String, vol_db := 0.0, pitch := 1.0) -> void:
+	if not _sounds.has(sound_name) and sound_name in ECHO_CUES:
+		_sounds[sound_name] = _echo_track(sound_name)
 	if not _sounds.has(sound_name):
 		return
 	var p := _pool[_pool_i]
@@ -176,6 +182,18 @@ func play(sound_name: String, vol_db := 0.0, pitch := 1.0) -> void:
 	p.volume_db = vol_db
 	p.pitch_scale = pitch
 	p.play()
+
+func stop_echo_cues() -> void:
+	# Cancellation belongs to Main/the station. Match cached recordings rather
+	# than pool slots, which can already have been reused by another world cue.
+	for player in _pool:
+		for cue in ECHO_CUES:
+			if _sounds.has(cue) and player.stream == _sounds[cue]:
+				if player.has_stream_playback():
+					player.get_stream_playback().stop()
+				player.stop()
+				player.stream = null
+				break
 
 func set_crackle(noise: float) -> void:
 	# 0 -> silent-ish hiss, 1 -> full campfire
@@ -186,6 +204,54 @@ func set_hooded(hooded: bool) -> void:
 	_lowpass.cutoff_hz = lerpf(_lowpass.cutoff_hz, target, 0.25)
 
 # -- synthesis ----------------------------------------------------------------
+
+func _echo_track(sound_name: String) -> AudioStreamWAV:
+	# A room asks once when an action begins. These finite cues use the same
+	# pausable pool as world sounds and never request the home song or a loop.
+	# Keep them lazy: most play sessions do not yet reach the Unplayed spool.
+	match sound_name:
+		"echo_record", "echo_play":
+			var samples := PackedFloat32Array()
+			samples.resize(int(ECHO_PHRASE_SECONDS * RATE))
+			for note in ECHO_NOTES.size():
+				var voice := _echo_note(ECHO_NOTES[note], float(ECHO_TIMING[note][1]), sound_name == "echo_play")
+				var start := int(float(ECHO_TIMING[note][0]) * RATE)
+				for frame in voice.size():
+					if start + frame < samples.size():
+						samples[start + frame] += voice[frame]
+			return _wav(samples)
+		"echo_collect":
+			var samples := _echo_note(880.0, 0.26, true)
+			for frame in samples.size():
+				var seconds := float(frame) / RATE
+				# The spindle seats with a small, rounded mechanical click.
+				var tap := sin(TAU * 145.0 * seconds) * exp(-70.0 * seconds)
+				samples[frame] = samples[frame] * 0.55 + tap * 0.12 * smoothstep(0.0, 0.003, seconds) * smoothstep(0.0, 0.04, 0.26 - seconds)
+			return _wav(samples)
+		"echo_complete":
+			var samples := PackedFloat32Array()
+			samples.resize(int(1.45 * RATE))
+			for frequency in [146.8324, 174.6141, 220.0, 293.6648]:
+				var voice := _home_note(frequency, 1.45)
+				for frame in voice.size():
+					samples[frame] += voice[frame] * 0.36
+			return _wav(samples)
+	return null
+
+func _echo_note(frequency: float, duration: float, playback: bool) -> PackedFloat32Array:
+	var samples := PackedFloat32Array()
+	samples.resize(int(duration * RATE))
+	for frame in samples.size():
+		var seconds := float(frame) / RATE
+		var remaining := float(samples.size() - 1 - frame) / RATE
+		var envelope := smoothstep(0.0, 0.026, seconds) * smoothstep(0.0, 0.16, remaining) * exp(-1.25 * seconds / duration)
+		var phase := TAU * frequency * seconds
+		# Source and spool retain identical pitches and rests. The source has
+		# a thin resonator edge; playback rounds it into worn, warmer wax.
+		var tone := sin(phase) + (0.10 if playback else 0.24) * sin(phase * 2.0)
+		tone += (0.035 if playback else 0.08) * sin(phase * 3.0)
+		samples[frame] = tone * envelope * (0.25 if playback else 0.23)
+	return samples
 
 func _opening_track(index: int) -> AudioStreamWAV:
 	if _opening_tracks.has(index):

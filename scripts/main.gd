@@ -25,6 +25,7 @@ const EconomyScript := preload("res://scripts/economy_state.gd")
 const ShopScript := preload("res://scripts/shop_menu.gd")
 const HudMotionScript := preload("res://scripts/hud_motion.gd")
 const MapStateScript := preload("res://scripts/map_state.gd")
+const DiscoveriesScript := preload("res://scripts/discoveries_state.gd")
 const MapMenuScript := preload("res://scripts/map_menu.gd")
 const OpeningScript := preload("res://scripts/opening_cutscene.gd")
 const PracticeScript := preload("res://scripts/room_move_practice.gd")
@@ -46,6 +47,7 @@ var shop: CanvasLayer
 var _purchasing := false
 var _shop_closing := false
 var map_state: RefCounted
+var discoveries: RefCounted
 var map_menu: CanvasLayer
 var _map_closing := false
 var world: RefCounted
@@ -111,6 +113,7 @@ func _ready() -> void:
 	progression = ProgressionScript.new()
 	economy = EconomyScript.new()
 	map_state = MapStateScript.new()
+	discoveries = DiscoveriesScript.new()
 	progression.connect("refrain_unlocked", _on_refrain_unlocked)
 	progression.connect("technique_discovered", _on_technique_discovered)
 
@@ -147,6 +150,7 @@ func _ready() -> void:
 	inventory.shine_source = player
 	inventory.economy = economy
 	inventory.map_state = map_state
+	inventory.discoveries = discoveries
 	inventory.can_open = _can_open_inventory
 	add_child(inventory)
 	inventory.opened.connect(_on_inventory_opened)
@@ -307,6 +311,7 @@ func _load_world_room(id: StringName, entry_id: StringName = &"default") -> void
 	_swap_room(graybox, entry_id)
 
 func _swap_room(next_room: Node2D, entry_id: StringName) -> void:
+	_cancel_discovery_attempts()
 	_capture_encounters()
 	room_entry_id = entry_id
 	if room != null:
@@ -318,6 +323,11 @@ func _swap_room(next_room: Node2D, entry_id: StringName) -> void:
 		room.set("session_outcomes", encounters)
 	if "map_state" in room:
 		room.set("map_state", map_state)
+	if "discoveries" in room:
+		room.set("discoveries", discoveries)
+	if room.has_signal("discovery_requested"):
+		room.connect("discovery_requested", _on_discovery_requested)
+		room.connect("discovery_cue", _on_discovery_cue)
 	if room.has_signal("map_collected"):
 		room.connect("map_collected", _on_map_collected)
 	if not development_mode and not practice_mode:
@@ -466,6 +476,7 @@ func _persist_session() -> bool:
 		"settings": _settings.duplicate(true),
 		"purchases": economy.call("snapshot").purchases,
 		"map": map_state.snapshot(),
+		"discoveries": discoveries.snapshot(),
 	}
 	var saved := bool(save_store.call("save_game", data))
 	if saved and _save_failed and game_menu != null:
@@ -497,6 +508,7 @@ func _new_game(play_opening: bool = true) -> void:
 	pressing.call("reset")
 	economy.call("reset")
 	map_state.reset()
+	discoveries.reset()
 	_apply_purchases()
 	_reset_player()
 	_load_world_room(ChapterScript.START_ROOM)
@@ -534,6 +546,7 @@ func _continue_game() -> void:
 	pressing.call("reset")
 	economy.call("restore", data.shine, data.get("purchases", []))
 	map_state.restore_snapshot(data.get("map", {"owned": false, "visited": []}))
+	discoveries.restore_snapshot(data.get("discoveries", DiscoveriesScript.EMPTY))
 	_apply_purchases()
 	_last_saved_shine = player.shine
 	_reset_player()
@@ -560,6 +573,7 @@ func _reset_player() -> void:
 	feedback.modulate.a = 0
 
 func _show_title() -> void:
+	_cancel_discovery_attempts()
 	_cancel_opening()
 	var data: Dictionary = save_store.call("load_game")
 	var valid := not data.is_empty() and ChapterScript.has_room(StringName(data.get("room_id", "")))
@@ -574,6 +588,7 @@ func _pause_game() -> void:
 	if _opening_active() or _transition_pending or inventory.call("is_open") or shop.is_open or _shop_closing or map_menu.is_open or _map_closing:
 		return
 	game_menu.call("show_pause", practice_mode)
+	_cancel_discovery_attempts()
 	get_tree().paused = true
 	audio.set_crackle(0.0)
 	_persist_session()
@@ -668,6 +683,7 @@ func _start_practice() -> void:
 		return
 	_practice_campaign = {
 		"progression": progression, "economy": economy, "map": map_state,
+		"discoveries": discoveries,
 		"pressing": pressing, "encounters": encounters, "completed": chapter_complete,
 		"room_id": world_room_id, "entry_id": room_entry_id, "room_idx": room_idx,
 	}
@@ -680,6 +696,7 @@ func _start_practice() -> void:
 	progression = ProgressionScript.new()
 	economy = EconomyScript.new()
 	map_state = MapStateScript.new()
+	discoveries = DiscoveriesScript.new()
 	pressing = PressingScript.new()
 	encounters = {}
 	chapter_complete = false
@@ -717,6 +734,7 @@ func _leave_practice() -> void:
 	progression = _practice_campaign.progression
 	economy = _practice_campaign.economy
 	map_state = _practice_campaign.map
+	discoveries = _practice_campaign.discoveries
 	pressing = _practice_campaign.pressing
 	encounters = _practice_campaign.encounters
 	chapter_complete = bool(_practice_campaign.completed)
@@ -740,6 +758,7 @@ func _bind_session_models() -> void:
 	inventory.progression = progression
 	inventory.economy = economy
 	inventory.map_state = map_state
+	inventory.discoveries = discoveries
 	if not progression.is_connected("refrain_unlocked", _on_refrain_unlocked):
 		progression.connect("refrain_unlocked", _on_refrain_unlocked)
 		progression.connect("technique_discovered", _on_technique_discovered)
@@ -748,6 +767,7 @@ func _bind_session_models() -> void:
 		pressing.connect("side_ended", _on_side_ended)
 
 func _quit_game() -> void:
+	_cancel_discovery_attempts()
 	if not _persist_session():
 		_cancel_opening()
 		if inventory.call("is_open"):
@@ -775,6 +795,7 @@ func _show_chapter_ending() -> void:
 	_persist_session()
 
 func _on_inventory_opened() -> void:
+	_cancel_discovery_attempts()
 	audio.set_crackle(0.0)
 	_queue_save()
 
@@ -802,6 +823,7 @@ func _open_map_from_book() -> void:
 	_show_map()
 
 func _show_map() -> void:
+	_cancel_discovery_attempts()
 	var snapshot: Dictionary = map_state.snapshot()
 	snapshot["current_room"] = String(world_room_id)
 	map_menu.show_map(snapshot)
@@ -852,6 +874,7 @@ func _open_shop() -> void:
 	player.velocity = Vector2.ZERO
 	player.set("_buffer", 0.0)
 	shop.call("show_shop", _shop_snapshot())
+	_cancel_discovery_attempts()
 	get_tree().paused = true
 	audio.set_crackle(0.0)
 	audio.play("tick", -17.0, 0.8)
@@ -1057,6 +1080,7 @@ func _respawn() -> void:
 		return
 	if shop != null and (shop.is_open or _shop_closing):
 		return
+	_cancel_discovery_attempts()
 	_health = _max_health()
 	_respawn_pending = false
 	player.global_position = room.entry_position(room_entry_id)
@@ -1160,6 +1184,52 @@ func _recover_needle() -> void:
 
 func _on_refrain_collected(refrain: int) -> void:
 	progression.call("unlock_refrain", refrain)
+
+# -- carried discoveries ----------------------------------------------------
+
+func _on_discovery_requested(action: StringName, source: Node2D) -> void:
+	if development_mode or practice_mode or not _has_session or get_tree().paused or not _can_open_inventory() or inventory.is_open():
+		return
+	if room == null or not is_instance_valid(source) or not room.is_ancestor_of(source):
+		return
+	if not source.is_in_group("echo_discovery") or source.get("action") != action:
+		return
+	if DiscoveriesScript.action_room(action) != world_room_id or not player.is_on_floor():
+		return
+	if player.global_position.distance_to(source.global_position) > DiscoveriesScript.INTERACT_RADIUS:
+		return
+	if not bool(source.call("can_request")) or not discoveries.can_apply(action):
+		return
+	var before: Dictionary = discoveries.snapshot()
+	discoveries.apply(action)
+	if not _persist_session():
+		discoveries.restore_snapshot(before)
+		_flash("Could not save this discovery. Stay nearby and try again.")
+		return
+	room.call("refresh_discoveries")
+	match action:
+		&"collect_spool": _flash("ECHO SPOOL — yours to carry.")
+		&"record_phrase": _flash("PHRASE HELD — three notes kept.")
+		&"restore_warren": _flash("AN ANSWER AT LAST.")
+		&"collect_survey": _flash("SURVEYOR'S SLIP — a way home.")
+	_fb_t = 2.4
+
+func _on_discovery_cue(cue: StringName) -> void:
+	if audio == null:
+		return
+	if cue == &"echo_stop":
+		audio.stop_echo_cues()
+	elif not get_tree().paused and cue in [&"echo_collect", &"echo_record", &"echo_play", &"echo_complete"]:
+		audio.play(String(cue), -7.0)
+
+func _cancel_discovery_attempts() -> void:
+	if audio != null and audio.has_method("stop_echo_cues"):
+		audio.stop_echo_cues()
+	if room == null:
+		return
+	for station in get_tree().get_nodes_in_group("echo_discovery"):
+		if room.is_ancestor_of(station):
+			station.call("reset_attempt")
 
 func _on_route_requested(target_room: StringName, target_entry: StringName) -> void:
 	if practice_mode or _opening_active() or _transition_pending or (game_menu != null and game_menu.is_open) or bool(inventory.call("is_open")) or shop.is_open or _shop_closing or map_menu.is_open or _map_closing:
