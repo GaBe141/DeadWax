@@ -30,32 +30,32 @@ static func draw_chart(canvas: CanvasItem, size: Vector2, pose: Dictionary, ink:
 	if scale <= 0.0:
 		return
 	canvas.draw_set_transform((size - Chart.EXTENT * scale) * 0.5, 0.0, Vector2.ONE * scale)
-	var known: Dictionary = {}
-	for id in pose.get("visited", []):
-		known[StringName(id)] = true
 	var current := StringName(pose.get("current_room", ""))
-	known[current] = true
-	var centers: Dictionary = {}
-	for room in Chart.ROOMS:
-		centers[room.id] = room.position
+	var region := StringName(pose.get("region", Chart.region_for_room(current)))
+	var page := Chart.page_snapshot(region, pose.get("visited", []), current)
 	# The shortcut is always dashed: this guide does not claim a gate is open.
-	for link in Chart.LINKS:
-		var from: Vector2 = centers[link.a]
-		var to: Vector2 = centers[link.b]
-		var walked := known.has(link.a) and known.has(link.b)
+	for link in page.links:
+		var from: Vector2 = link.from
+		var to: Vector2 = link.to
+		var walked := bool(link.walked)
 		var color := Color(PINK if walked else ink, 0.82 if walked else 0.20)
 		if bool(link.shortcut):
 			canvas.draw_dashed_line(from, to, color, 2.0, 7.0, true, true)
 		else:
 			canvas.draw_line(from, to, color, 3.0 if walked else 2.0, true)
-	# These are headings on the original paper, not names of unreached rooms.
-	canvas.draw_string(display, Vector2(510, 85), "THE LABEL", HORIZONTAL_ALIGNMENT_LEFT, -1, 30, Color(ink, 0.38))
-	canvas.draw_string(display, Vector2(730, 472), "THE OVERTURE", HORIZONTAL_ALIGNMENT_LEFT, -1, 30, Color(ink, 0.38))
-	for room in Chart.ROOMS:
+	# Border stubs name printed regions, never unreached rooms or a claimed unlock.
+	for boundary in page.boundaries:
+		var center: Vector2 = boundary.position
+		var marker := Rect2(center - Vector2(99, 15), Vector2(198, 30))
+		canvas.draw_rect(marker, stock)
+		canvas.draw_line(marker.position + Vector2(10, 2), Vector2(marker.end.x - 10, marker.position.y + 2), Color(PINK, 0.35), 1.0, true)
+		canvas.draw_string(display, center + Vector2(-99, 9), String(boundary.title),
+			HORIZONTAL_ALIGNMENT_CENTER, 198, 24, Color(ink, 0.75 if boundary.visited else 0.45))
+	for room in page.rooms:
 		var center: Vector2 = room.position
 		var box := Rect2(center - Chart.ROOM_SIZE * 0.5, Chart.ROOM_SIZE)
-		var visited := known.has(room.id)
-		var here: bool = room.id == current
+		var visited := bool(room.visited)
+		var here := bool(room.here)
 		var fill := ink if here else stock.lerp(ink, 0.06 if visited else 0.025)
 		canvas.draw_rect(Rect2(box.position + Vector2(3, 4), box.size), Color("06181d", 0.42))
 		canvas.draw_rect(box, fill)

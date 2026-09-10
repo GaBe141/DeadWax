@@ -20,6 +20,8 @@ var _chart: ChartArt
 var _current: Label
 var _count: Label
 var _close: Button
+var _tabs: Array[Button] = []
+var _region: StringName = &"label"
 var _header: Control
 var _footer: Control
 var _background: ColorRect
@@ -31,6 +33,7 @@ var _close_pending := false
 class ChartArt extends Control:
 	var visited: Array[String] = []
 	var current_room := ""
+	var region: StringName = &"label"
 	var clock := 0.0
 	var reduced_motion := false
 	var _draw_left := 0.0
@@ -47,7 +50,7 @@ class ChartArt extends Control:
 			queue_redraw()
 	func _draw() -> void:
 		Press.draw_campaign_map(self, size, {"visited": visited, "current_room": current_room,
-			"clock": clock, "reduced_motion": reduced_motion}, INK, PAPER)
+			"region": region, "clock": clock, "reduced_motion": reduced_motion}, INK, PAPER)
 
 func _ready() -> void:
 	layer = 115
@@ -78,10 +81,20 @@ func _input(event: InputEvent) -> void:
 		get_viewport().set_input_as_handled()
 		_request_close()
 		return
+	for action in [&"ui_left", &"ui_right"]:
+		if event.is_action(action):
+			get_viewport().set_input_as_handled()
+			if event.is_pressed() and not _opening_gate:
+				_turn_page(-1 if action == &"ui_left" else 1)
+			return
 	if event.is_action("ui_accept"):
 		get_viewport().set_input_as_handled()
 		if event.is_pressed() and not _opening_gate:
-			_request_close()
+			var focused := get_viewport().gui_get_focus_owner()
+			if focused in _tabs:
+				_select_region(Chart.REGIONS[_tabs.find(focused)].id)
+			else:
+				_request_close()
 		return
 	for action in ["inventory", "trade", "enter_passage", "strike", "jump", "lift", "set", "restart", "flip"]:
 		if event.is_action(action):
@@ -107,7 +120,7 @@ func show_map(snapshot: Dictionary) -> void:
 	_chart.visited = visited
 	_chart.current_room = current
 	_chart.clock = 0.0
-	_chart.queue_redraw()
+	_select_region(Chart.region_for_room(StringName(current)))
 	_current.text = Chart.room_label(StringName(current))
 	_count.text = "%02d / %02d PLACES VISITED" % [visited.size(), ids.size()]
 	is_open = true
@@ -145,6 +158,32 @@ func current_room() -> String:
 func close_button() -> Button:
 	return _close
 
+func selected_region() -> StringName:
+	return _region
+
+func region_buttons() -> Array[Button]:
+	return _tabs.duplicate()
+
+func _select_region(region: StringName) -> void:
+	if Chart.region_title(region).is_empty():
+		return
+	_region = region
+	_chart.region = region
+	_chart.queue_redraw()
+	for index in _tabs.size():
+		var selected: bool = Chart.REGIONS[index].id == region
+		_tabs[index].set_pressed_no_signal(selected)
+		_tabs[index].add_theme_stylebox_override("normal", Press.menu_button_style(INK, PAPER, selected))
+
+func _turn_page(direction: int) -> void:
+	var index := 0
+	for at in Chart.REGIONS.size():
+		if Chart.REGIONS[at].id == _region:
+			index = at
+	index = posmod(index + direction, Chart.REGIONS.size())
+	_select_region(Chart.REGIONS[index].id)
+	_tabs[index].grab_focus()
+
 func _request_close() -> void:
 	if is_open and not _close_pending:
 		_close_pending = true
@@ -173,7 +212,7 @@ func _build() -> void:
 	overlay.add_child(_margin)
 	_margin.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	var sheet := VBoxContainer.new()
-	sheet.add_theme_constant_override("separation", 14)
+	sheet.add_theme_constant_override("separation", 10)
 	_margin.add_child(sheet)
 	_header = HBoxContainer.new()
 	_header.add_theme_constant_override("separation", 30)
@@ -191,6 +230,22 @@ func _build() -> void:
 	location.add_child(_current)
 	_count = _label("", Press.SIZE_TINY, FADED)
 	location.add_child(_count)
+	var pages := HBoxContainer.new()
+	pages.name = "RegionPages"
+	pages.add_theme_constant_override("separation", 12)
+	sheet.add_child(pages)
+	for region in Chart.REGIONS:
+		var tab := Button.new()
+		tab.name = String(region.id).to_pascal_case() + "Page"
+		tab.text = region.title
+		tab.toggle_mode = true
+		tab.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		tab.custom_minimum_size.y = 42
+		_style_button(tab)
+		pages.add_child(tab)
+		_tabs.append(tab)
+		_motion.bind_button(tab, Press.PINK)
+		tab.pressed.connect(_select_region.bind(region.id))
 	_chart = ChartArt.new()
 	_chart.name = "CampaignChart"
 	_chart.size_flags_vertical = Control.SIZE_EXPAND_FILL
@@ -203,29 +258,32 @@ func _build() -> void:
 	var legend := VBoxContainer.new()
 	legend.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	_footer.add_child(legend)
-	legend.add_child(_label("INK  visited     FAINT  unvisited     DASH  shortcut", Press.SIZE_SMALL, FADED))
-	legend.add_child(_label("Routes may need opening.  M / D-pad Down or ESC / B to close.", Press.SIZE_SMALL, INK))
+	legend.add_child(_label("INK  visited     FAINT  unvisited     DASH  shortcut (may need opening)", Press.SIZE_SMALL, FADED))
+	legend.add_child(_label("Left / Right: turn page    M / D-pad Down or ESC / B: close", Press.SIZE_SMALL, INK))
 	_close = Button.new()
 	_close.name = "CloseMap"
 	_close.text = "Fold away"
 	_close.custom_minimum_size = Vector2(160, 46)
-	_close.focus_mode = Control.FOCUS_ALL
-	_close.add_theme_font_override("font", Press.BodyFont)
-	_close.add_theme_font_size_override("font_size", Press.SIZE_BODY)
-	_close.add_theme_color_override("font_color", INK)
-	_close.add_theme_color_override("font_focus_color", INK)
-	for key in ["font_hover_color", "font_pressed_color", "font_hover_pressed_color"]:
-		_close.add_theme_color_override(key, PAPER)
-	_close.add_theme_stylebox_override("normal", Press.menu_button_style(INK, PAPER))
-	_close.add_theme_stylebox_override("hover", Press.menu_button_style(INK, PAPER, true))
-	_close.add_theme_stylebox_override("pressed", Press.menu_button_style(INK, PAPER, true, true))
-	_close.add_theme_stylebox_override("focus", Press.menu_focus_style(INK, PAPER))
+	_style_button(_close)
 	_footer.add_child(_close)
 	_motion.bind_button(_close, Press.PINK)
 	_close.pressed.connect(_request_close)
 	var tooth := Press.paper_overlay(INK)
 	overlay.add_child(tooth)
 	_resize_layout()
+
+func _style_button(button: Button) -> void:
+	button.focus_mode = Control.FOCUS_ALL
+	button.add_theme_font_override("font", Press.BodyFont)
+	button.add_theme_font_size_override("font_size", Press.SIZE_BODY)
+	button.add_theme_color_override("font_color", INK)
+	button.add_theme_color_override("font_focus_color", INK)
+	for key in ["font_hover_color", "font_pressed_color", "font_hover_pressed_color"]:
+		button.add_theme_color_override(key, PAPER)
+	button.add_theme_stylebox_override("normal", Press.menu_button_style(INK, PAPER))
+	button.add_theme_stylebox_override("hover", Press.menu_button_style(INK, PAPER, true))
+	button.add_theme_stylebox_override("pressed", Press.menu_button_style(INK, PAPER, true, true))
+	button.add_theme_stylebox_override("focus", Press.menu_focus_style(INK, PAPER))
 
 func _resize_layout() -> void:
 	if _margin == null:

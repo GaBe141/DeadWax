@@ -1,6 +1,6 @@
 extends SceneTree
-## Authored atmosphere is presentation only. Baseline component counts were
-## captured from the fifteen live rooms before atmosphere was integrated.
+## Authored atmosphere is presentation only. Baseline component counts lock
+## the playable geometry and entities independently of decorative layers.
 const MainScene := preload("res://scenes/main.tscn")
 const SaveScript := preload("res://scripts/save_store.gd")
 const CampaignScript := preload("res://scripts/campaign.gd")
@@ -23,7 +23,13 @@ const BASELINE := {
 	&"overture_well": [17, 17, 2, 1, 2, 1],
 	&"worn_gallery": [8, 8, 0, 1, 4, 3],
 	&"smoothed_floor": [3, 3, 0, 0, 2, 1],
-	&"the_arm": [3, 3, 0, 0, 2, 1],
+	&"the_arm": [3, 3, 0, 0, 3, 1],
+	&"the_drop": [14, 14, 0, 0, 2, 0],
+	&"the_landing": [4, 4, 0, 0, 2, 0],
+	&"verse_hall": [8, 8, 0, 0, 2, 1],
+	&"verse_warren_n": [9, 9, 0, 0, 3, 2],
+	&"verse_warren_s": [7, 7, 0, 0, 2, 1],
+	&"deep_gallery": [7, 7, 0, 0, 2, 0],
 }
 var _main: Node2D
 var _directory: String
@@ -34,7 +40,7 @@ func _init() -> void:
 	call_deferred("_run")
 
 func _run() -> void:
-	for path in [PaintedWorld.LABEL_PATH, PaintedWorld.OVERTURE_PATH, PaintedWorld.WELL_PATH]:
+	for path in [PaintedWorld.LABEL_PATH, PaintedWorld.OVERTURE_PATH, PaintedWorld.WELL_PATH, PaintedWorld.UNPLAYED_PATH]:
 		var painting := PaintedWorld.texture(path)
 		_check(painting != null and painting.get_width() >= 700 and painting.get_height() >= 700,
 			path + " imports its production painting at full usable resolution")

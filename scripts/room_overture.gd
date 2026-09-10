@@ -103,6 +103,7 @@ func configure(id: StringName) -> void:
 			cam_limits = Rect2(0, 0, 2250, 850)
 			register_entry(&"from_smoothed_floor", Vector2(185, 574))
 			register_entry(&"from_worn_gallery", Vector2(2020, 574))
+			register_entry(&"from_the_drop", Vector2(1640, 574))
 
 func _ready() -> void:
 	match room_id:
@@ -270,6 +271,8 @@ func _build_arm() -> void:
 	_impression(&"arch", Vector2(1820, 345), Vector2(350, 490))
 	_exit(Vector2(85, 574), &"smoothed_floor", "HUSH'S FLOOR")
 	_exit(Vector2(2150, 574), &"worn_gallery", "GALLERY SHORTCUT")
+	_outcome_exit(Vector2(1985, 574), &"the_drop", "THE DROP", "the_arm/tonearm",
+		["freed", "shattered"], "THE ARM HOLDS THE WAY", "The Tonearm still holds the way below.")
 	var arm := TonearmScript.new()
 	arm.name = "Tonearm"
 	arm.position = Vector2(1260, 574)
@@ -396,7 +399,7 @@ func _ensure_endpoint() -> void:
 	_ensure_arm_reward()
 	if _endpoint != null:
 		return
-	objective_label = "The seal is open. Reach it and listen beyond."
+	objective_label = "The seal is open. Listen here, or explore the Drop."
 	if _seal_note != null:
 		_notes.erase(_seal_note)
 		remove_child(_seal_note)

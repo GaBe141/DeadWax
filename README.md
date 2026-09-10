@@ -1,10 +1,10 @@
-# DEAD WAX — The Label & The Overture
+# DEAD WAX — The Label, Overture & Unplayed
 
-A fifteen-room playable journey about a stylus, a street of worn records,
+A playable journey through 21 authored rooms about a stylus, a street of worn records,
 and the song still playing underneath it. Start at the Headshell, count in
 the Descent Gate, then follow the Overture through wind-played grooves,
 Addie's doorway, HUSH's duel, and the Tonearm. How you answer the Tonearm
-changes what waits at home.
+changes what waits at home and opens the way into the six rooms beneath its seal.
 
 Open this folder in **Godot 4.7.x** and press **F5**, or run
 `.\deadwax.cmd play`. The title screen offers **New Game** and **Continue**.
@@ -16,8 +16,8 @@ straight to your saved entry. Reduced motion presents still illustrations;
 the captions and original synthesized score tell the same story.
 
 Everything is built from code at runtime, so an empty editor viewport is
-expected. The Label and Overture are authored; the remainder of the planned
-53-room world is still development scaffolding.
+expected. The Label, Overture, and first stretch of the Unplayed are authored;
+the remainder of the planned 53-room world is still development scaffolding.
 
 On the Dead Wax Wyse, the lightweight project commands are:
 
@@ -26,7 +26,7 @@ On the Dead Wax Wyse, the lightweight project commands are:
 .\deadwax.cmd play    play the campaign with a local runtime log
 .\deadwax.cmd dev     open the original mechanics rooms and planned-world tools
 .\deadwax.cmd editor  open the project in Godot
-.\deadwax.cmd check   import resources; run all twenty-six native test suites
+.\deadwax.cmd check   import resources; run all twenty-seven native test suites
 .\deadwax.cmd vibe    start Mistral Vibe in this repository
 ```
 
@@ -88,6 +88,30 @@ outcome, a **Gather** pressing appears beside the open seal. Pick it up, jump,
 then Strike near the crest to climb on one held breath. Landing refills it;
 ordinary grounded attacks keep their footing. The nearby shelf offers a safe
 place to try it. Jump-Cut remains a later discovery.
+
+## Beneath the seal
+
+After freeing or shattering the Tonearm, the eastern passage in the Arm opens
+into **The Drop**. The final listening point remains a separate choice: entering
+the new region does not show an ending or collect Gather for you. Old completed
+saves can return to the Arm and continue through the same passage.
+
+```text
+THE ARM <-> THE DROP <-> THE LANDING <-> VERSE HALL <-> NORTH WARREN
+NORTH WARREN <-> DEEP GALLERY <-> SOUTH WARREN <-> NORTH WARREN
+```
+
+Maintenance ledges make the Drop a climb home as well as a descent. Beyond the
+Landing, the Verse Hall and Warren offer upper walks around waiting voices and
+an old pressing. The Deep Gallery has a quiet answer and two ways back through
+the Warren. Every passage in this loop is usable in both directions with
+ordinary jumps; the Landing's 190 px overlook offers an optional use for Gather.
+
+Listen at the fixed posts with grounded **E / Y**. Voices retain their familiar
+Set and strike choices, and the pressing can be fought or passed on the upper
+walk. Resolved encounters stay resolved on return, recovery, and Continue.
+The expansion adds places, encounters, and scenery while keeping the existing
+Refrain pickups, nine polish patches, Shine economy, and version-one save format.
 
 ## A phrase to carry home
 
@@ -241,8 +265,15 @@ raw hits. His three-parry challenge and the 100 ms parry window stay the same.
 A folded page waits on the Headshell floor, a short walk right of the starting
 point and before the first raised block. Walk close to pick it up. The map marks
 your current room and remembers the rooms you explore; unvisited places stay
-unnamed. It shows the connected Label and Overture, with the gallery shortcut
-drawn as a dashed route. Passages may still need to be opened in the world.
+unnamed. Three pages cover **The Label**, **The Overture**, and **The Unplayed**,
+including the Drop on the Unplayed sheet. The guide contains all 21 rooms and
+24 real passage pairs; both Gallery shortcuts remain dashed. Passages may still
+need to be opened in the world.
+
+Opening the guide selects your current region. Click a region tab or use
+**Left / Right** on the keyboard or D-pad to turn pages. Border markers show
+where a real passage continues onto another sheet without revealing an
+unvisited room's name. Browsing pages never moves Skip or changes a route.
 
 Ownership and explored rooms survive recovery, Continue, and returning to the
 title. Existing saves remain valid: visit the Headshell to collect the page on
@@ -340,7 +371,7 @@ Refrain seals where the plan asks for them. Press **M** in the opt-in
 development rooms to walk it.
 
 These are shells for feeling the map's shape and scale. The campaign uses
-fifteen of the plan's identities through `scripts/campaign.gd`, with its own
+21 of the plan's identities through `scripts/campaign.gd`, with its own
 authored geometry and passages. The complete graybox atlas remains available
 unchanged for topology checks. See `ROUTING.md` for both loaders.
 
@@ -370,8 +401,8 @@ Dead Wax uses a rich illustrated world: gouache-like distance, pencil contours,
 cream wax faces, petrol cloth, aged brass and warm coral notes. `scripts/press.gd`
 remains its central drawing vocabulary; rooms supply their palette and subject.
 
-- **Painted distance.** Three original paintings in `assets/art/` cover the Label,
-  Overture halls, and vertical Well. Each of the fifteen rooms adds its own
+- **Painted distance.** Four original paintings in `assets/art/` cover the Label,
+  Overture halls, vertical Well, and Unplayed. Each of the 21 rooms adds its own
   palette and drawn architecture. The far plane stays cached; selected middle
   details move gently and camera travel gives the scenery parallax.
 - **Characters.** Layered clothes, wax masks, articulated limbs and worn brass
@@ -410,12 +441,12 @@ own animation while gameplay and the HUD remain paused underneath.
 
 ## Development checks
 
-Run `.\deadwax.cmd check` before committing. It imports resources and runs the
-dependency-free native smoke, save-store, campaign, Tonearm, Overture,
+Run `.\deadwax.cmd check` before committing. It imports resources and runs 27
+dependency-free native suites, including smoke, save-store, campaign, Tonearm, Overture,
 sprite-animation, residents, economy-state, economy integration, scenery,
 lighting, attack-feel, GUI-animation, and map-item suites. These cover the original combat and
 progression invariants, all planned-room routes, validated
-checkpoint recovery, both chapters' room graph, boss outcomes, old-demo save
+checkpoint recovery, all three chapter registries, boss outcomes, old-demo save
 continuation, campaign state restoration, grounded conversations, resident
 pause behavior, harmless petting, silent return visits, purchase transactions,
 item effects, compatibility with saves made before the stall opened, scenery
@@ -426,6 +457,9 @@ focus, reduced-motion behavior, map ownership and save compatibility, the
 authored map graph, and map input/pause boundaries. Combo and practice suites
 also cover fresh-input chains, expiry and cancellation, finisher strength,
 unchanged launch/parry rules, and isolation of the title's empty practice floor.
+The Unplayed suite covers the six-room extension, both Tonearm entry outcomes,
+reversible routes without Gather, encounter persistence, and save continuity.
+Map checks cover all 21 places and 24 passage pairs across the three region pages.
 GitHub runs the checks on pushes and pull requests. Gameplay feel, real audio,
 rendering, and controller behavior still require `PLAYTEST.md`.
 

@@ -4,7 +4,8 @@ extends Node2D
 
 const Press := preload("res://scripts/press.gd")
 const OVERTURE_IDS := [&"overture_stair", &"bootlegger", &"whistlers", &"addie", &"overture_well", &"worn_gallery", &"smoothed_floor", &"the_arm"]
-const AMBIENT_IDS := [&"headshell", &"practice_room", &"the_stalls", &"bootlegger", &"whistlers", &"addie", &"overture_well"]
+const UNPLAYED_IDS := [&"the_drop", &"the_landing", &"verse_hall", &"verse_warren_n", &"verse_warren_s", &"deep_gallery"]
+const AMBIENT_IDS := [&"headshell", &"practice_room", &"the_stalls", &"bootlegger", &"whistlers", &"addie", &"overture_well", &"the_drop", &"the_landing", &"verse_hall", &"verse_warren_n", &"verse_warren_s", &"deep_gallery"]
 const REDRAW_STEP := 1.0 / 24.0
 
 var room_id: StringName
@@ -46,8 +47,8 @@ func setup(id: StringName, field: Rect2, next_ink: Color, next_stock: Color,
 func _ready() -> void:
 	add_to_group("room_atmosphere")
 	_pose = {"clock": 0.0, "motion": 1.0, "view": bounds, "surfaces": surfaces, "outcome": ""}
-	var depth := 1.0 if room_id in OVERTURE_IDS else 0.0
-	var warmth := 0.75 if room_id in [&"headshell", &"bootlegger", &"addie"] else 0.25
+	var depth := 1.0 if room_id in OVERTURE_IDS or room_id in UNPLAYED_IDS else 0.0
+	var warmth := 0.75 if room_id in [&"headshell", &"bootlegger", &"addie", &"the_landing", &"deep_gallery"] else 0.25
 	_air = Press.room_air(bounds.size, ink, stock, warmth, depth)
 	_air.name = "Air"
 	_air.position = bounds.position

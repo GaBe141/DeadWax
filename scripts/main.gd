@@ -336,7 +336,7 @@ func _swap_room(next_room: Node2D, entry_id: StringName) -> void:
 			for child in room.get_children():
 				if child.is_in_group("chapter_endpoint"):
 					child.set("used", true)
-					room.set("objective_label", "The Tonearm is quiet. The way home is still yours.")
+					room.set("objective_label", "The Tonearm is quiet. The Drop is open; home is still yours.")
 		if room.has_signal("chapter_completed"):
 			room.connect("chapter_completed", _on_chapter_completed)
 	room.call("lay_backdrop", room.cam_limits)

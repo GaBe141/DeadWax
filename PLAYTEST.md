@@ -15,9 +15,9 @@ Runtime errors are written to `.godot/deadwax-play.log`.
 
 ## Painted world review
 
-- [ ] Review all fifteen rooms at 1280×720 and 960×540: cream faces and upper
+- [ ] Review all 21 rooms at 1280×720 and 960×540: cream faces and upper
   platform lips remain visible against the painted distance. Inspect the Well
-  at top, middle and bottom; Whistlers' catch lane and the Stalls loft remain clear.
+  and Drop at top, middle and bottom; Whistlers' catch lane and the Stalls loft remain clear.
 - [ ] Check the Looper's guard/open states, HUSH's count/swing and the Tonearm's
   tip contact. Brass mechanisms and strike ribbons must follow the same timing.
 - [ ] Live groove housings show the returning echo; the spent face looks dormant.
@@ -80,6 +80,21 @@ Runtime errors are written to `.godot/deadwax-play.log`.
 - [ ] The Headshell's return text/scenery match the Tonearm's saved outcome.
 - [ ] An old completed eight-room demo save continues into the Overture with its Shine, room entry, Count-In, and prior choices intact.
 
+## Beneath the seal
+
+- [ ] Before resolving the Tonearm, the Arm's eastern passage refuses entry. Test both freed and shattered outcomes: either opens the Drop, while the final listening point remains a separate grounded E/Y choice. Entering the passage never opens an ending menu or collects Gather.
+- [ ] Leave Gather where it appeared and walk Arm→Drop→Landing→Verse Hall→North Warren. Take North→Deep Gallery→South→North, then return all the way to the Arm. Every route works with ordinary jumps, with no restart needed to escape a lower floor.
+- [ ] Climb the Drop's maintenance ledges from bottom to top. Takeoff edges remain visible, each upper platform can be reached without hitting the underside, and a missed jump has a usable route back up.
+- [ ] Check every new passage with keyboard E and controller Y in both directions. Each arrival provides safe standing room, R returns to that named entry, and holding the entering button does not immediately send Skip back through the arrival door.
+- [ ] Follow the Verse Hall's upper walk past its voice, and the southern Warren's upper walk past the pressing. The northern Warren and Gallery connect upper and lower routes without forcing an encounter or an unavailable ability.
+- [ ] Hear and shatter the new voices on separate runs. Defeat the Warren pressing, leave, return, recover, and Continue: resolved encounters stay absent, unfinished attempts reset, and no encounter awards Shine or a Refrain.
+- [ ] At each fixed listening post, grounded E/Y advances one line per fresh press. Its card remains readable and does not trigger a nearby passage. Holding the input, standing too far away, and opening a menu cannot advance it repeatedly.
+- [ ] With Gather, reach the Landing's 190 px overlook using a jump and one airborne strike. Read its optional post and drop safely back to the floor. Without Gather, both ordinary passages remain reachable and the shelf grants nothing merely for entering the room.
+- [ ] Review the violet Unplayed painting, drawn seating, architecture, lamps, and passage arches at 1280×720 and 960×540. Skip, voices, pressing tells, and platform tops remain clear; decoration does not resemble a usable ledge or cover a landing edge.
+- [ ] Pause and Reduced motion settle the new scenery and lamps as in the older rooms. In an isolated visual fixture, A→B→A restores every new room's authored palette and light exposure without changing its routes or rewards.
+- [ ] Save and Continue from each new room, including reverse arrivals. The same room entry, map visits, purchases, Shine, and prior outcomes return. An old completed Tonearm save can use the new passage without a new game; its recorded ending stays complete, and unfinished saves retain the separate Arm listening choice.
+- [ ] Opening the map in the expansion selects the Unplayed page. Browse the other sheets, close, and reopen: it returns to the current region, while unvisited room names remain hidden on every page.
+
 ## Gather and the return journey
 
 - [ ] Before resolving the Tonearm, there is no Gather reward or practice ledge. Both peaceful and force outcomes reveal the pressing; resolving alone does not collect it or show an ending.
@@ -91,13 +106,15 @@ Runtime errors are written to `.godot/deadwax-play.log`.
 - [ ] Use the loft→Gallery passage and return. Both arrivals have safe standing room; the ordinary market and Gallery routes still work.
 - [ ] Return to the plaza and Headshell: the discovered phrase plays with rests and responds to Hood. Leaving fades it out; pause, Book, map, and shop suspend it. Continue restores it without restarting a reward; New Game clears it.
 - [ ] An old completed save without Gather can revisit the Arm and collect it. Recovery and Continue preserve Gather, the resolved voice, its shortcut, and the same Shine balance.
-- [ ] Check pickup, practice signage, loft voice cues, both nearby passage cards, and the seventeen-route map at 1280×720 and 960×540.
+- [ ] Check pickup, practice signage, loft voice cues, both nearby passage cards, and the 24-route map at 1280×720 and 960×540.
 
 ## Folded map
 
 - [ ] New Game begins without the map. Walk right in the Headshell: the folded page is visible before the first raised block, clear of both arrival positions, and collects once on approach.
 - [ ] Collection announces the map without opening a panel or changing Shine, health, Refrains, or knowledge. M / D-pad Down opens the map from play, and the Book gains an Open map button.
-- [ ] The map marks the current room, names explored rooms, and leaves unvisited names hidden. Its seventeen routes match the fifteen playable rooms; dashed shortcuts do not claim to unlock a passage.
+- [ ] The map marks the current room, names explored rooms, and leaves unvisited names hidden. Its 24 passage pairs match the 21 playable rooms; dashed shortcuts do not claim to unlock a passage.
+- [ ] Label, Overture, and Unplayed tabs select distinct sheets. Mouse clicks, keyboard Left/Right, and D-pad Left/Right all turn pages; controller A on a focused tab selects it without closing the guide. The selected tab and focus remain clear at both supported window sizes.
+- [ ] Opening or reopening selects the player's current region. Boundary markers show the region reached by each real passage without naming an unvisited room. Paging changes no map visits, position, health, Shine, purchases, or progression.
 - [ ] Closing with M, D-pad Down, Escape/Back, or the Close button returns to the same position without a jump, attack, or passage input leaking through. The map, Book, stall, and pause menu cannot overlap.
 - [ ] D-pad Down still navigates the Book, including after collecting the map. Use A on its Open map button, or keyboard M, to unfold it there.
 - [ ] Explore, recover, Continue, and return to the Headshell: ownership and explored marks survive and the pickup stays gone. An old save without map data still loads and can collect it; New Game restores the pickup.
@@ -130,7 +147,7 @@ Runtime errors are written to `.godot/deadwax-play.log`.
 
 ## Scenery and depth
 
-- [ ] The fifteen authored rooms have distinct distant architecture and a still field of paper light. The plaza reads as a town, the Stalls as a shuttered market, and the Well as a continuous shaft at its top, middle, and bottom.
+- [ ] The 21 authored rooms have distinct distant architecture and a still field of paper light. The plaza reads as a town, the Stalls as a shuttered market, the Well and Drop as continuous descents, and the Unplayed as rooms waiting for an audience.
 - [ ] Walk and jump through a wide room and descend the Well: far and middle planes move gently with the camera; recovery and room changes introduce no scenery jump after the arrival settles.
 - [ ] Floor engraving stays inside real platform faces, at least 10 pixels below their tops. Check the Stalls service lane, both Whistlers return stairs, and the Well climb: landing edges, gaps, passages, and player silhouettes remain clear.
 - [ ] HUSH's point and the Tonearm's gesture, counted beats, sweep, and openings remain readable against the new backgrounds at 1280×720 and in fullscreen.
@@ -139,7 +156,7 @@ Runtime errors are written to `.godot/deadwax-play.log`.
 
 ## Lighting
 
-- [ ] The fifteen authored rooms have two to four fixed light sources each. Lamps, windows, and openings produce distinct pools of light without washing out print, grooves, passages, or boss tells at 1280×720 and in fullscreen.
+- [ ] The 21 authored rooms have two to four fixed light sources each. Lamps, windows, and openings produce distinct pools of light without washing out print, grooves, passages, or boss tells at 1280×720 and in fullscreen.
 - [ ] Walk through a wide room and descend the Well: sources stay fixed in world space while the artwork moves in parallax. Inspect the Well's top, middle, and bottom, both Whistlers banks, and the Stalls service lane for readable landings.
 - [ ] In a native preview, toggle shadows on the same view: actual platform faces block light, with no false walls or dark seams across their walkable tops. Soft shadow edges remain steady without streaks or flicker. Occluders change no collision or movement.
 - [ ] Pause, the Book, and the shop freeze slow light modulation. Reduced camera motion also stops it during play; Addie and Tonearm outcome changes still update their light energy and remain correct after returning or Continue.

@@ -10,6 +10,8 @@ const BRASS_LIGHT := Color(1.0, 0.86, 0.64)
 const LAMP_LIGHT := Color(1.0, 0.80, 0.59)
 const WELL_LIGHT := Color(0.86, 0.90, 1.0)
 const STAGE_LIGHT := Color(0.91, 0.93, 1.0)
+const UNPLAYED_LIGHT := Color(0.84, 0.83, 1.0)
+const COPPER_LIGHT := Color(1.0, 0.73, 0.55)
 
 static func get_profile(room_id: StringName) -> Dictionary:
 	match room_id:
@@ -115,6 +117,50 @@ static func get_profile(room_id: StringName) -> Dictionary:
 				focus,
 				_light(&"spindle_reflection", Vector2(650, 320), 460, Vector2(1.20, 1.10), WELL_LIGHT, 0.29),
 				_light(&"return_arch_lamp", Vector2(1890, 360), 400, Vector2(1.0, 1.10), LAMP_LIGHT, 0.30, true),
+			])
+		&"the_drop":
+			return _profile(Color(0.67, 0.62, 0.71), [
+				# Four pools follow the full descent and its reversible stair. Lamp
+				# origins are clear of the alternating real platforms and top pier.
+				_light(&"scar_mouth", Vector2(320, 130), 470, Vector2(1.20, 1.05), PAPER_LIGHT, 0.35),
+				_light(&"torn_copper", Vector2(1140, 620), 540, Vector2(1.10, 1.25), COPPER_LIGHT, 0.38, true),
+				_light(&"return_glimmer", Vector2(430, 1040), 520, Vector2(1.10, 1.25), UNPLAYED_LIGHT, 0.36, true),
+				_light(&"lower_wound", Vector2(1270, 1150), 480, Vector2(1.10, 1.05), COPPER_LIGHT, 0.34),
+			])
+		&"the_landing":
+			return _profile(Color(0.73, 0.68, 0.76), [
+				_light(&"west_reflection", Vector2(340, 340), 460, Vector2(1.10, 1.10), UNPLAYED_LIGHT, 0.31),
+				_light(&"dormant_spindle", Vector2(980, 205), 540, Vector2(1.20, 1.10), COPPER_LIGHT, 0.37),
+				_light(&"verse_sconce", Vector2(1580, 335), 450, Vector2(1.10, 1.10), BRASS_LIGHT, 0.34, true),
+			])
+		&"verse_hall":
+			return _profile(Color(0.69, 0.66, 0.75), [
+				_light(&"first_written_arch", Vector2(340, 380), 440, Vector2(1.10, 1.15), COPPER_LIGHT, 0.32, true),
+				_light(&"high_verse", Vector2(920, 295), 500, Vector2(1.15, 1.15), UNPLAYED_LIGHT, 0.35),
+				_light(&"answer_arch", Vector2(1560, 335), 500, Vector2(1.10, 1.20), BRASS_LIGHT, 0.34, true),
+				_light(&"warren_spill", Vector2(2160, 390), 450, Vector2(1.10, 1.10), UNPLAYED_LIGHT, 0.31),
+			])
+		&"verse_warren_n":
+			return _profile(Color(0.69, 0.65, 0.73), [
+				_light(&"upper_west_burrow", Vector2(300, 210), 420, Vector2(1.10, 1.10), COPPER_LIGHT, 0.33, true),
+				_light(&"upper_east_burrow", Vector2(1450, 245), 440, Vector2(1.10, 1.10), BRASS_LIGHT, 0.32, true),
+				_light(&"lower_gathering", Vector2(660, 705), 490, Vector2(1.20, 0.95), UNPLAYED_LIGHT, 0.35),
+				_light(&"lower_way", Vector2(1190, 720), 430, Vector2(1.10, 1.0), COPPER_LIGHT, 0.32, true),
+			])
+		&"verse_warren_s":
+			return _profile(Color(0.69, 0.64, 0.71), [
+				_light(&"west_record_house", Vector2(300, 460), 450, Vector2(1.10, 1.10), BRASS_LIGHT, 0.33, true),
+				# The pressing's centre stays steady: scenery never adds a false
+				# pulse to the encounter's own count and swing presentation.
+				_light(&"quiet_bar", Vector2(910, 350), 550, Vector2(1.20, 1.20), UNPLAYED_LIGHT, 0.38),
+				_light(&"gallery_sconce", Vector2(1550, 485), 460, Vector2(1.05, 1.15), COPPER_LIGHT, 0.34, true),
+			])
+		&"deep_gallery":
+			return _profile(Color(0.67, 0.65, 0.75), [
+				_light(&"unheard_duet", Vector2(500, 575), 520, Vector2(1.20, 1.15), COPPER_LIGHT, 0.37),
+				_light(&"closed_score", Vector2(910, 425), 500, Vector2(1.10, 1.20), UNPLAYED_LIGHT, 0.35),
+				_light(&"upper_gallery", Vector2(1660, 300), 410, Vector2(1.10, 1.05), BRASS_LIGHT, 0.32, true),
+				_light(&"lower_gallery", Vector2(1500, 695), 450, Vector2(1.10, 1.0), UNPLAYED_LIGHT, 0.32, true),
 			])
 	return _profile(Color.WHITE, [])
 

@@ -28,6 +28,7 @@ func _run() -> void:
 	await _check_pickup()
 	await _check_inputs()
 	await _check_persistence()
+	await _check_region_journey()
 	await _check_old_save()
 	await _check_development()
 	await _close()
@@ -47,7 +48,11 @@ func _check_state_and_schema() -> void:
 	var state := MapStateScript.new()
 	_check(state.snapshot() == {"owned": false, "visited": []}, "map starts unowned without history")
 	_check(state.visit(&"headshell") and not state.visit(&"headshell"), "a real visit is recorded once, even before finding the map")
-	_check(not state.visit(&"the_drop") and not state.visit(&"label"), "planned and prototype rooms cannot enter the carried map")
+	_check(not state.visit(&"rooms_to_let") and not state.visit(&"label"), "planned and prototype rooms cannot enter the carried map")
+	var expanded := MapStateScript.new()
+	for id in [&"the_drop", &"the_landing", &"verse_hall", &"verse_warren_n", &"deep_gallery", &"verse_warren_s"]:
+		_check(expanded.visit(id), "new authored room records a map visit: " + String(id))
+	_check(MapStateScript.valid_snapshot(expanded.snapshot()), "expanded visits retain the version-one map schema")
 	_check(state.collect() and not state.collect(), "collecting the map is idempotent")
 	var snapshot := state.snapshot()
 	var copied := snapshot.duplicate(true)
@@ -65,7 +70,7 @@ func _check_state_and_schema() -> void:
 		{"owned": 1, "visited": []}, {"owned": "yes", "visited": []},
 		{"owned": true, "visited": "headshell"}, {"owned": true, "visited": [1]},
 		{"owned": true, "visited": [true]}, {"owned": true, "visited": ["missing_room"]},
-		{"owned": true, "visited": ["the_drop"]}, {"owned": true, "visited": ["label"]},
+		{"owned": true, "visited": ["rooms_to_let"]}, {"owned": true, "visited": ["label"]},
 		{"owned": true, "visited": ["headshell", "headshell"]},
 		{"owned": true, "visited": [], "extra": true}]
 	for index in invalid.size():
@@ -83,7 +88,7 @@ func _check_chart() -> void:
 	var chart_ids := ChartScript.room_ids()
 	actual_ids.sort()
 	chart_ids.sort()
-	_check(chart_ids == actual_ids and chart_ids.size() == 15, "folded chart names exactly the fifteen authored rooms")
+	_check(chart_ids == actual_ids and chart_ids.size() == 21, "folded chart names exactly the twenty-one authored rooms")
 	var real_pairs: Array[String] = []
 	for id in actual_ids:
 		var room := CampaignScript.create_room(id)
@@ -106,11 +111,30 @@ func _check_chart() -> void:
 			_check(pair in [_pair(&"worn_gallery", &"the_arm"), _pair(&"the_stalls", &"worn_gallery")], "only earned Gallery returns are marked as shortcuts")
 	real_pairs.sort()
 	chart_pairs.sort()
-	_check(chart_pairs == real_pairs and chart_pairs.size() == 17, "chart routes exactly match physical campaign passages, including HUSH and both return shortcuts")
+	_check(chart_pairs == real_pairs and chart_pairs.size() == 24, "chart routes exactly match physical campaign passages, including the Unplayed loop and both return shortcuts")
 	var rooms := ChartScript.rooms()
 	var original := ChartScript.rooms()
 	rooms[0].label = "changed fixture"
 	_check(ChartScript.rooms() == original, "chart copies cannot alter shared room names or geometry")
+	var page_ids: Array[StringName] = []
+	var page_pairs: Array[String] = []
+	for region in ChartScript.REGIONS:
+		var page := ChartScript.page_snapshot(region.id, ["headshell"], &"the_drop")
+		for room in page.rooms:
+			_check(room.id not in page_ids and ChartScript.region_for_room(room.id) == region.id, "each authored place belongs to exactly one map page: " + String(room.id))
+			page_ids.append(room.id)
+			_check(not String(room.title).is_empty() if room.id in [&"headshell", &"the_drop"] else String(room.title).is_empty(), "unvisited place names stay absent from drawing data: " + String(room.id))
+			var box := Rect2(room.position - ChartScript.ROOM_SIZE * 0.5, ChartScript.ROOM_SIZE)
+			_check(Rect2(Vector2.ZERO, ChartScript.EXTENT).encloses(box), "room card fits its page: " + String(room.id))
+		for boundary in page.boundaries:
+			_check(ChartScript.region_for_room(boundary.id) != region.id and String(boundary.title).begins_with("TO THE "), "boundary marker names a different printed region without disclosing room names")
+		for link in page.links:
+			var pair := _pair(link.a, link.b)
+			_check(pair in chart_pairs, "page never invents a passage: " + pair)
+			if pair not in page_pairs: page_pairs.append(pair)
+	page_ids.sort()
+	page_pairs.sort()
+	_check(page_ids == actual_ids and page_pairs == real_pairs, "region pages preserve every room and real passage across their boundary markers")
 
 func _check_pickup() -> void:
 	_check(not _main.map_state.owned and _main.map_state.visited == ["headshell"], "New game records its actual start without granting the map")
@@ -187,11 +211,23 @@ func _check_inputs() -> void:
 	_key(KEY_M, false)
 	await _frames(2)
 	_check(_main.map_menu.current_room() == "headshell", "map marks the actual current room")
+	_check(_main.map_menu.selected_region() == &"label" and _main.map_menu.region_buttons().size() == 3, "map opens on the current region with three focusable page controls")
 	var physical := _physical_snapshot()
 	var model := _complete_snapshot()
 	for key in [KEY_D, KEY_J, KEY_R, KEY_E, KEY_I, KEY_B, KEY_F]: await _tap(key)
 	_check(_main.map_menu.is_open and not _main.inventory.is_open() and not _main.shop.is_open and not _main.game_menu.is_open, "map excludes passages, Book, shop and pause-menu overlap")
 	_check(_physical_snapshot() == physical and _complete_snapshot() == model, "map input cannot move, attack, reset, spend or unlock anything")
+	await _tap(KEY_RIGHT)
+	_check(_main.map_menu.selected_region() == &"overture" and _main.map_menu.is_open, "Right turns to Overture without closing the guide")
+	await _tap_pad(JOY_BUTTON_DPAD_RIGHT)
+	_check(_main.map_menu.selected_region() == &"unplayed" and _main.map_menu.is_open, "controller Right turns to Unplayed")
+	await _tap_pad(JOY_BUTTON_A)
+	_check(_main.map_menu.is_open and paused, "confirming a focused page selects it without closing the guide")
+	await _tap(KEY_LEFT)
+	_check(_main.map_menu.selected_region() == &"overture", "Left turns back a page")
+	_main.map_menu.region_buttons()[0].pressed.emit()
+	_check(_main.map_menu.selected_region() == &"label", "clickable page buttons select their own region")
+	_check(_physical_snapshot() == physical and _complete_snapshot() == model, "paging remains a read-only view of frozen play and all campaign state")
 	await _tap(KEY_ESCAPE)
 	await _physics(3)
 	_check(not _main.map_menu.is_open and not paused and not _main.game_menu.is_open, "Escape closes only the map")
@@ -284,6 +320,29 @@ func _check_old_save() -> void:
 	await _physics(3)
 	_check(_pickup() != null and not _main.map_state.owned, "old journeys can return for the map without collecting at their arrival")
 
+func _check_region_journey() -> void:
+	_main.map_state.collect()
+	for id in [&"the_drop", &"the_landing", &"verse_hall", &"verse_warren_n", &"deep_gallery", &"verse_warren_s"]:
+		_main._load_world_room(id)
+		await _physics(3)
+		_check(String(id) in _main.map_state.visited, "entering the expansion records its actual room: " + String(id))
+	var saved_map: Dictionary = _main.map_state.snapshot()
+	_check(_main._persist_session(), "expanded map journey saves through the existing checkpoint format")
+	await _close()
+	await _boot()
+	_main._continue_game()
+	await _physics(4)
+	_check(_main.map_state.snapshot() == saved_map and _main.world_room_id == &"verse_warren_s", "Continue restores all six expansion visits and its saved room")
+	await _tap(KEY_M)
+	_check(_main.map_menu.is_open and _main.map_menu.selected_region() == &"unplayed", "expanded Continue opens its current region automatically")
+	await _tap(KEY_LEFT)
+	_main._close_map()
+	await _physics(3)
+	await _tap(KEY_M)
+	_check(_main.map_menu.selected_region() == &"unplayed", "reopening returns to the player's region instead of stale browsing state")
+	_main._close_map()
+	await _physics(3)
+
 func _check_development() -> void:
 	await _close()
 	_main = MainScene.instantiate()
@@ -348,8 +407,8 @@ func _boot() -> void:
 	_main.player.struck.connect(func(_pos: Vector2, _big: bool, _launched: bool) -> void: _strikes += 1)
 
 func _close() -> void:
-	for code in [KEY_M, KEY_D, KEY_J, KEY_R, KEY_E, KEY_I, KEY_B, KEY_F, KEY_SPACE, KEY_ENTER, KEY_ESCAPE]: _key(code, false)
-	for button in [JOY_BUTTON_DPAD_DOWN, JOY_BUTTON_A, JOY_BUTTON_B]: _joy(button, false)
+	for code in [KEY_M, KEY_D, KEY_J, KEY_R, KEY_E, KEY_I, KEY_B, KEY_F, KEY_SPACE, KEY_ENTER, KEY_ESCAPE, KEY_LEFT, KEY_RIGHT]: _key(code, false)
+	for button in [JOY_BUTTON_DPAD_DOWN, JOY_BUTTON_DPAD_RIGHT, JOY_BUTTON_A, JOY_BUTTON_B]: _joy(button, false)
 	if is_instance_valid(_main):
 		_main.queue_free()
 		await _frames(3)

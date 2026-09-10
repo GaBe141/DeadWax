@@ -91,7 +91,7 @@ func _enter_from_title() -> void:
 		"the room responds immediately without a cutscene or menu left open")
 	_check(_main.room.get_script() == Practice and _main.world_room_id == &"",
 		"practice has its own room factory and no campaign world ID")
-	_check(Campaign.room_ids().size() == 15 and not Campaign.room_ids().has(_main.room.room_id),
+	_check(Campaign.room_ids().size() == 21 and not Campaign.room_ids().has(_main.room.room_id),
 		"the practice room does not enlarge the authored campaign registry")
 	_check(_main.player.is_on_floor() and absf(_main.player.position.y - _main.room.spawn_pos.y) < 1.0,
 		"confirming entry leaves the player grounded on the practice floor")

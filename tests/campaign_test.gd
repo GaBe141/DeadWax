@@ -51,7 +51,7 @@ func _run() -> void:
 
 func _check_registry() -> void:
 	var ids: Array[StringName] = ChapterScript.room_ids()
-	_check(ids.size() == 15, "campaign contains fifteen authored rooms")
+	_check(ids.size() == 21, "campaign contains twenty-one authored rooms")
 	_check(ids.has(ChapterScript.START_ROOM) and ids.has(ChapterScript.END_ROOM), "chapter endpoints belong to registry")
 	_check(not ChapterScript.has_room(&"unauthored_room"), "unknown room is outside authored campaign")
 	_check(ChapterScript.create_room(&"unauthored_room") == null, "unknown room cannot create a shell in campaign")

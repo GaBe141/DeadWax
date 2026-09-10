@@ -2,9 +2,10 @@
 
 ## The authored opening
 
-Normal play starts at a title screen, then loads the Headshell. The chapter
-starts with eight authored rooms in the Label, then continues through seven
-new Overture rooms. Every passage stays inside the fifteen-room authored campaign.
+Normal play starts at a title screen, then loads the Headshell. The opening
+registry contains eight rooms through the Overture Stair, followed by seven
+more Overture rooms and six rooms beneath the Tonearm's seal. Every passage
+stays inside the campaign's 21 authored rooms.
 
 ```text
 HEADSHELL <-> HORN PLAZA <-> STALLS <-> YARD <-> DESCENT GATE <-> OVERTURE STAIR
@@ -19,9 +20,10 @@ planned IDs: `headshell`, `horn_plaza`, `high_street`, `practice_room`,
 connections follow contacts in the plan, while their geometry is authored for
 this opening rather than expanded from a grid cell.
 
-`scripts/campaign.gd` combines the two chapter registries and rejects unfinished
+`scripts/campaign.gd` combines the three chapter registries and rejects unfinished
 destinations. `scripts/chapter_one.gd` owns the Label registry and factory;
-`scripts/chapter_two.gd` owns the Overture registry and factory.
+`scripts/chapter_two.gd` owns the Overture registry and factory;
+`scripts/chapter_three.gd` owns the six-room extension beneath the seal.
 `scripts/room_opening.gd` authors geometry, encounters, named arrivals, and
 the `objective_label` shown in the HUD. Its doorways emit semantic route
 intent through `room_base.gd`. `Main` performs deferred transitions and keeps
@@ -45,20 +47,24 @@ The additional `worn_gallery ↔ the_arm` contact is a shortcut released from
 the Arm side. Forward access through HUSH requires `smoothed_floor/hush=won`;
 the gallery shortcut requires `the_arm/gallery_shortcut=opened`. These are
 encounter outcomes, never knowledge or Refrain permissions. Reverse passages
-remain usable. The unfinished Drop is not a destination in this build.
+remain usable. Either Tonearm resolution also opens the Arm's eastern passage
+into the authored Drop.
 
 The authored return route adds `the_stalls ↔ worn_gallery`, using a loft
 inside the existing Stalls room. Both ends require `the_stalls/loft_voice=freed`.
 The loft's `from_worn_gallery` arrival is on the balcony; the Gallery's
 `from_the_stalls` arrival is on its first arcade step. This campaign shortcut
-is independent of the development atlas. The carried chart has fifteen rooms
-and seventeen undirected passage pairs; both shortcuts remain dashed.
+is independent of the development atlas. The carried chart has 21 rooms and
+24 undirected passage pairs; both shortcuts remain dashed. Its Label, Overture,
+and Unplayed pages retain the full graph, with labeled region markers wherever
+a real passage leaves the current sheet. Unvisited room names stay hidden.
 
 Either Tonearm resolution reveals Gather at (1465,554), alongside an optional
 practice shelf. Collection remains a deliberate world encounter, separate
 from the ending marker. The Stalls balcony rises 200px above the right bank,
-requires an airborne Gather strike, and has a safe floor below. All original
-campaign passages and return stairs remain traversable without Gather.
+requires an airborne Gather strike, and has a safe floor below. The main
+campaign route and its return stairs, including the new Unplayed loop, remain
+traversable without Gather; the optional loft shortcut keeps its earned access.
 
 `loft_voice.gd` presents a three-note call through Hood and accepts a fresh,
 held Set during its silence. Two answers emit its single `freed` outcome.
@@ -84,10 +90,47 @@ Continue returns to the saved room entry, not an arbitrary mid-jump position.
 The chapter persists across launches; the development atlases remain
 session-only and do not overwrite its checkpoint.
 
+## Beyond the open seal
+
+The authored extension follows this reversible route:
+
+```text
+the_arm <-> the_drop <-> the_landing <-> verse_hall <-> verse_warren_n
+verse_warren_n <-> deep_gallery <-> verse_warren_s <-> verse_warren_n
+```
+
+The lower loop has all three pairs: `verse_warren_n ↔ deep_gallery`,
+`deep_gallery ↔ verse_warren_s`, and `verse_warren_s ↔ verse_warren_n`.
+The Arm→Drop passage accepts either saved `the_arm/tonearm=freed` or
+`the_arm/tonearm=shattered`. Its return arrives at `from_the_drop` in the Arm.
+Neither this passage nor any new room requires Gather or the ending's
+`completed` flag. The Arm's explicit listening marker still owns chapter
+completion; traveling beyond the seal never shows that ending automatically.
+
+`scripts/chapter_three.gd` registers the six new IDs and delegates their
+construction to `scripts/room_unplayed_campaign.gd`. Each passage has a matching
+`from_<room>` arrival. The Drop's maintenance steps rise 100 px, and the Warren
+and Gallery stairs return to their upper doors on ordinary jumps. The Landing's
+190 px Gather overlook is optional, with a listening post and no passage or
+reward on its shelf.
+
+The Hall and northern Warren use ordinary Auditioner encounters; the southern
+Warren has a Test Pressing with a route above it. Their existing combat and
+listening rules remain intact. Main persists their stable encounter keys;
+recovery resets unfinished attempts and resolved actors retire silently.
+Fixed listening posts own only their current line and give no progression or
+Shine. The expansion introduces no checkpoint fields or Refrain pickup, and
+the campaign's nine polish patches remain its income source.
+
+The Drop retains its Scratch stratum heading while sharing the carried guide's
+Unplayed page as the region's approach. This campaign route does not change
+`data/world_map.json`: the 53-room development atlas keeps its original graph,
+including its one-way Arm→Drop special.
+
 ## Development prototype loop
 
 Run `.\deadwax.cmd dev` or pass `-- --dev-rooms` to Godot to enable these
-mechanics rooms. They are separate from the fifteen-room campaign.
+mechanics rooms. They are separate from the 21-room campaign.
 
 The five runtime rooms form one compact circuit:
 

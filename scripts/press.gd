@@ -195,7 +195,9 @@ static func draw_shop_item(canvas: CanvasItem, item_id: StringName, size: Vector
 	preload("res://scripts/press_shop.gd").draw(canvas, item_id, size, ink, stock)
 
 static func draw_room_depth(canvas: CanvasItem, room_id: StringName, layer: StringName, bounds: Rect2, pose: Dictionary, ink: Color, stock: Color) -> void:
-	if room_id in [&"bootlegger", &"whistlers", &"addie", &"overture_well", &"worn_gallery", &"smoothed_floor", &"the_arm"]:
+	if room_id in [&"the_drop", &"the_landing", &"verse_hall", &"verse_warren_n", &"verse_warren_s", &"deep_gallery"]:
+		preload("res://scripts/press_unplayed_depth.gd").draw(canvas, room_id, layer, bounds, pose, ink, stock)
+	elif room_id in [&"bootlegger", &"whistlers", &"addie", &"overture_well", &"worn_gallery", &"smoothed_floor", &"the_arm"]:
 		preload("res://scripts/press_overture_depth.gd").draw(canvas, room_id, layer, bounds, pose, ink, stock)
 	else:
 		preload("res://scripts/press_label_depth.gd").draw(canvas, room_id, layer, bounds, pose, ink, stock)

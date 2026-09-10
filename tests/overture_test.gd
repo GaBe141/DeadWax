@@ -7,6 +7,7 @@ const MainScene := preload("res://scenes/main.tscn")
 const CampaignScript := preload("res://scripts/campaign.gd")
 const ChapterOne := preload("res://scripts/chapter_one.gd")
 const ChapterTwo := preload("res://scripts/chapter_two.gd")
+const ChapterThree := preload("res://scripts/chapter_three.gd")
 const SaveScript := preload("res://scripts/save_store.gd")
 const ProgressionScript := preload("res://scripts/progression_state.gd")
 const SkipScript := preload("res://scripts/skip.gd")
@@ -71,8 +72,8 @@ func _check_completion_rules() -> void:
 
 func _check_full_registry() -> void:
 	var ids: Array[StringName] = CampaignScript.room_ids()
-	_check(ids.size() == 15 and ChapterOne.room_ids().size() == 8 and ChapterTwo.room_ids().size() == 7,
-		"campaign combines the eight opening rooms and seven Overture rooms")
+	_check(ids.size() == 21 and ChapterOne.room_ids().size() == 8 and ChapterTwo.room_ids().size() == 7 and ChapterThree.room_ids().size() == 6,
+		"campaign combines eight opening, seven Overture and six Unplayed rooms")
 	_check(CampaignScript.START_ROOM == &"headshell" and CampaignScript.END_ROOM == &"the_arm",
 		"campaign begins at home and ends at the Tonearm")
 	_check(not CampaignScript.has_room(&"undersong_sump") and CampaignScript.create_room(&"undersong_sump") == null,
@@ -131,7 +132,7 @@ func _check_full_registry() -> void:
 		room.free()
 	for edge in edges:
 		_check(edge.entry in entries.get(edge.target, []), "%s > %s resolves a real named arrival" % [edge.source, edge.target])
-	_check(_reachable_rooms(edges, false).size() == ids.size(), "all fifteen authored rooms belong to one connected route")
+	_check(_reachable_rooms(edges, false).size() == ids.size(), "all authored rooms belong to one connected route")
 	var before_hush := _reachable_rooms(edges, true)
 	_check(before_hush.has(&"smoothed_floor") and not before_hush.has(&"the_arm"),
 		"a fresh route reaches HUSH but cannot bypass it through the Gallery shortcut")
