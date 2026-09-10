@@ -26,7 +26,7 @@ On the Dead Wax Wyse, the lightweight project commands are:
 .\deadwax.cmd play    play the campaign with a local runtime log
 .\deadwax.cmd dev     open the original mechanics rooms and planned-world tools
 .\deadwax.cmd editor  open the project in Godot
-.\deadwax.cmd check   import resources; run all twenty-two native test suites
+.\deadwax.cmd check   import resources; run all twenty-four native test suites
 .\deadwax.cmd vibe    start Mistral Vibe in this repository
 ```
 
@@ -207,7 +207,21 @@ continues to switch development atlases.
 A ready strike answers immediately. A press in the last 90 ms of the 200 ms
 cooldown queues one follow-up; holding the button does not repeat attacks.
 Ground recovery lasts 100 ms and keeps 80% movement acceleration. Hood, Set,
-damage, menus, recovery, and passages cancel a queued strike.
+damage, menus, recovery, and passages cancel a queued strike and its combo.
+
+Fresh presses chain **Tap → Sweep → Accent**. Execute the next strike within
+650 ms to keep the chain; a fourth begins another Tap. Each stroke has its own
+pose, ink impression, and sound pitch. Accent uses the existing stronger hit
+against vulnerable foes without increasing reach, launch speed, or the parry
+window. Its strength does not stack with an on-beat groove strike. The three
+marks at the top right show the current stroke and remaining link time.
+
+Choose **Move practice** on the title screen for a wide, empty floor to try
+movement, jumping, Hood, Set, and combos. It uses the starting move set and
+has no enemies, pickups, or exits. **R** resets Skip and the chain; **Esc / Back**
+opens pause, where **Return to title** takes you back to the sleeve. Practice
+uses temporary models and never writes your campaign checkpoint, unlocks
+progression, spends Shine, or records map visits. Continue resumes your journey.
 
 The immediate circular impression shows the 120 px enemy-hit reach; fainter
 echoes show groove and air responses. Muted HUSH does not give a rebound from
@@ -403,7 +417,9 @@ clipping and lifecycle, palette restoration, parallax, native light and
 occluder setup, UI isolation, reduced motion, grounded hits, airborne rebounds,
 strike buffering and cancellation, unchanged parry timing, menu interruption,
 focus, reduced-motion behavior, map ownership and save compatibility, the
-authored map graph, and map input/pause boundaries.
+authored map graph, and map input/pause boundaries. Combo and practice suites
+also cover fresh-input chains, expiry and cancellation, finisher strength,
+unchanged launch/parry rules, and isolation of the title's empty practice floor.
 GitHub runs the checks on pushes and pull requests. Gameplay feel, real audio,
 rendering, and controller behavior still require `PLAYTEST.md`.
 

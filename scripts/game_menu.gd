@@ -9,6 +9,7 @@ signal title_requested
 signal quit_requested
 signal settings_changed(settings: Dictionary)
 signal opening_requested
+signal practice_requested
 
 const PressScript := preload("res://scripts/press.gd")
 const MotionScript := preload("res://scripts/ui_motion.gd")
@@ -41,6 +42,7 @@ var _can_continue := false
 var _save_label := ""
 var _return_screen := "title"
 var _ending_outcome := ""
+var _practice_pause := false
 var _motion: Node
 var _record: RecordArt
 
@@ -98,12 +100,14 @@ func _input(event: InputEvent) -> void:
 
 
 func show_title(can_continue: bool, save_label: String = "") -> void:
+	_practice_pause = false
 	_can_continue = can_continue
 	_save_label = save_label
 	_show_screen("title")
 
 
-func show_pause() -> void:
+func show_pause(practice: bool = false) -> void:
+	_practice_pause = practice
 	_show_screen("pause")
 
 
@@ -248,16 +252,17 @@ func _show_screen(next_screen: String) -> void:
 
 func _build_title() -> void:
 	# Keep the replay action and a saved entry on the same printed page.
-	_page.add_theme_constant_override("separation", 6 if _can_continue else 10)
+	_page.add_theme_constant_override("separation", 3 if _can_continue else 8)
 	_page.add_child(_label("THE LABEL  /  THE OVERTURE", PressScript.SIZE_SMALL, FADED))
 	_page.add_child(_label("DEAD WAX", PressScript.SIZE_COVER, INK, true))
-	_page.add_child(_paragraph("Some things only answer\nwhen you listen."))
-	_space(8.0 if _can_continue else 16.0)
+	_page.add_child(_paragraph("Some things only answer when you listen."))
+	_space(4.0)
 	if _can_continue:
 		_button("Continue", continue_requested.emit, true)
 		if not _save_label.is_empty():
 			_page.add_child(_label(_save_label, PressScript.SIZE_TINY, FADED))
 	_button("New game", _request_new_game, not _can_continue)
+	_button("Move practice", practice_requested.emit)
 	_button("Settings", _open_subpage.bind("settings"))
 	_button("How to play", _open_subpage.bind("controls"))
 	_button("Watch opening", opening_requested.emit)
@@ -267,13 +272,13 @@ func _build_title() -> void:
 func _build_pause() -> void:
 	_page.add_child(_label("THE NEEDLE IS LIFTED", PressScript.SIZE_SMALL, FADED))
 	_page.add_child(_label("TAKE A BREATH.", PressScript.SIZE_MENU_TITLE, INK, true))
-	_page.add_child(_paragraph("The record will wait."))
+	_page.add_child(_paragraph("A blank side. Nothing here is saved." if _practice_pause else "The record will wait."))
 	_space(22.0)
 	_button("Resume", resume_requested.emit, true)
 	_button("Settings", _open_subpage.bind("settings"))
 	_button("How to play", _open_subpage.bind("controls"))
-	_button("Save & return to title", title_requested.emit)
-	_button("Save & quit", quit_requested.emit)
+	_button("Return to title" if _practice_pause else "Save & return to title", title_requested.emit)
+	_button("Quit" if _practice_pause else "Save & quit", quit_requested.emit)
 
 
 func _build_ending() -> void:
@@ -367,7 +372,7 @@ func _build_controls() -> void:
 	]:
 		for cell in row:
 			controls.add_child(_label(String(cell), PressScript.SIZE_SMALL, INK))
-	_page.add_child(_paragraph("A timely strike can answer an incoming blow.\nAn empty needle returns you to your last entrance.\nYour Shine, purchases, and discoveries stay with you."))
+	_page.add_child(_paragraph("Press Strike three times: Tap, Sweep, Accent.\nKeep the rhythm to land a stronger final hit.\nA timely strike can answer an incoming blow.\nTry your moves on the title screen's blank side."))
 	_button("Back", _show_screen.bind(_return_screen), true)
 
 

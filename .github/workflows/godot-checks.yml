@@ -74,3 +74,8 @@ jobs:
           godot --headless --path . --script res://tests/attack_feel_test.gd
           godot --headless --path . --script res://tests/gui_animation_test.gd
           godot --headless --path . --script res://tests/map_item_test.gd
+
+      - name: Validate attack chains and isolated move practice
+        run: |
+          godot --headless --path . --script res://tests/combo_test.gd
+          godot --headless --path . --script res://tests/practice_room_test.gd

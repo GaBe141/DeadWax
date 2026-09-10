@@ -443,7 +443,7 @@ func _slot_kind(slot: StringName) -> String:
 func _slot_description(slot: StringName) -> String:
 	match slot:
 		&"strike":
-			return "Ring live wax, launch from grooves, and catch an incoming blow on the beat."
+			return "Three fresh strikes chain Tap, Sweep, Accent. The last hit lands harder. Ring live wax, launch from grooves, or catch an incoming blow on the beat."
 		&"hood":
 			return "Raise the Hood to quiet your crackle. You move more slowly, but fewer things hear you."
 		&"set":

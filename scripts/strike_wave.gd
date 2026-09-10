@@ -11,6 +11,8 @@ var hit_radius := 120.0
 var ink := Color(0.15, 0.13, 0.12)
 var stock := Color(0.92, 0.90, 0.85)
 var launched := false
+var combo_step := 1
+var facing := 1.0
 
 var _t := 0.0
 var _sid := 0
@@ -33,4 +35,5 @@ func _draw() -> void:
 	Press.draw_strike_wave(self, {
 		"age": _t, "life": life, "hit_radius": hit_radius, "echo_radius": max_r,
 		"big": big, "launched": launched, "seed": _sid,
+		"combo_step": clampi(combo_step, 1, 3), "facing": facing,
 	}, ink, stock)

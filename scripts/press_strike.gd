@@ -13,6 +13,8 @@ static func draw(canvas: CanvasItem, pose: Dictionary, ink: Color, stock: Color)
 	var hit_radius := maxf(float(pose.get("hit_radius", 120.0)), 1.0)
 	var echo_radius := maxf(float(pose.get("echo_radius", hit_radius)), 1.0)
 	var big := bool(pose.get("big", false))
+	var combo_step := clampi(int(pose.get("combo_step", 1)), 1, 3)
+	var facing := -1.0 if float(pose.get("facing", 1.0)) < 0.0 else 1.0
 	var phase := float(int(pose.get("seed", 0)) % 997) * 0.013
 	var color := ink.lerp(PINK, 0.65) if big else ink
 	var contact := clampf(age / CONTACT_TIME, 0.0, 1.0)
@@ -32,6 +34,7 @@ static func draw(canvas: CanvasItem, pose: Dictionary, ink: Color, stock: Color)
 			var direction := Vector2.from_angle(angle)
 			canvas.draw_line(direction * (hit_radius - 13.0), direction * (hit_radius - 4.0),
 				Color(color, burst * 0.55), 2.2 if big else 1.6, true)
+		_combo_stroke(canvas, combo_step, facing, hit_radius, contact, strength, color, stock)
 	# This slow ripple describes a launch or resonant air, not delayed damage.
 	if bool(pose.get("launched", false)) or echo_radius > hit_radius + 12.0:
 		var echo := clampf(age / life, 0.0, 1.0)
@@ -41,6 +44,30 @@ static func draw(canvas: CanvasItem, pose: Dictionary, ink: Color, stock: Color)
 			var points := _arc(echo_reach, phase + index * TAU / 3.0, TAU * 0.23, phase + index + 9, 15)
 			canvas.draw_polyline(points, Color(color, echo_strength), 1.3, true)
 	canvas.draw_set_transform(Vector2.ZERO)
+
+static func _combo_stroke(canvas: CanvasItem, step: int, face: float, radius: float, progress: float, strength: float, ink: Color, stock: Color) -> void:
+	# These inner cuts distinguish the gesture. The same outer 120px footprint
+	# arrives on every first frame; none of these marks adds reach or contact.
+	var points := PackedVector2Array()
+	match step:
+		1:
+			points = PackedVector2Array([Vector2(radius * 0.68, -7), Vector2(radius * 0.91, -1), Vector2(radius * 0.80, 7)])
+		2:
+			points = _arc(radius * 0.82, -1.5 + progress * 0.20, 2.5, 2.8, 25)
+		3:
+			points = PackedVector2Array([Vector2(radius * 0.64, -radius * 0.33),
+				Vector2(radius * 0.85, 0), Vector2(radius * 0.64, radius * 0.29)])
+	for index in points.size(): points[index].x *= face
+	canvas.draw_polyline(points, Color(stock, strength * 0.6), 6.5 if step == 3 else 5.0, true)
+	canvas.draw_polyline(points, Color(ink, strength * 0.85), 4.0 if step == 3 else 2.5, true)
+	if step == 2:
+		var echo := _arc(radius * 0.71, -1.1, 1.7, 1.2, 20)
+		for index in echo.size(): echo[index].x *= face
+		canvas.draw_polyline(echo, Color(ink, strength * 0.35), 1.4, true)
+	elif step == 3:
+		for side in [-1.0, 1.0]:
+			var start := Vector2(face * radius * 0.82, side * radius * 0.32)
+			canvas.draw_line(start, start + Vector2(face * radius * 0.09, side * radius * 0.045), Color(ink, strength * 0.75), 3.0, true)
 
 static func _arc(radius: float, start: float, sweep: float, seed: float, count: int) -> PackedVector2Array:
 	var points := PackedVector2Array()

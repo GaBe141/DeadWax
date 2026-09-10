@@ -16,6 +16,7 @@ static func draw(canvas: CanvasItem, pose: Dictionary, palette: Dictionary) -> v
 	var face: float = pose.face
 	var land: float = pose.land
 	var strike: float = pose.strike
+	var combo_step := clampi(int(pose.get("combo_step", 1)), 1, 3)
 	# Contact is immediate. The tip snaps on the first frame and settles quickly;
 	# there is no visual windup to wait through.
 	var snap := pow(clampf((strike - 0.40) / 0.60, 0.0, 1.0), 0.75)
@@ -30,10 +31,13 @@ static func draw(canvas: CanvasItem, pose: Dictionary, palette: Dictionary) -> v
 		1.0 - compression * 0.24 + rise * 0.16 - kneel * 0.30
 	)
 	stretch.y += breath * 0.018 * (1.0 - run) + cos(stride * 2.0) * run * 0.045
-	var tilt := face * (run * 0.13 + snap * 0.24 + kneel * 0.08)
+	var strike_tilt: float = [0.24, -0.22, 0.08][combo_step - 1]
+	var tilt := face * (run * 0.13 + snap * strike_tilt + kneel * 0.08)
+	if combo_step == 3:
+		stretch += Vector2(0.15, -0.12) * snap
 	tilt -= float(pose.hit_direction) * sin(hurt * PI) * 0.23
 	var bob := -absf(step) * run * 3.5 - sin(float(pose.launch) * PI) * 2.0
-	var offset := Vector2(face * snap * 5.0, bob)
+	var offset := Vector2(face * snap * (-3.0 if combo_step == 2 else 5.0), bob)
 	var anchor := Vector2(0, 26)
 	var translation := anchor + offset - (anchor * stretch).rotated(tilt)
 
@@ -61,6 +65,12 @@ static func draw(canvas: CanvasItem, pose: Dictionary, palette: Dictionary) -> v
 	# The flexible pickup tip trails the run and snaps with the strike.
 	var tip := Vector2(face * (24 - run * 6 + snap * 23), -39 + step * run * 5 + snap * 33 + kneel * 14)
 	var elbow := Vector2(face * (11 - run * 5), -43 + step * run * 3 + snap * 14)
+	if combo_step == 2:
+		tip = tip.lerp(Vector2(face * 50, 7), snap)
+		elbow = elbow.lerp(Vector2(face * 21, -24), snap)
+	elif combo_step == 3:
+		tip = tip.lerp(Vector2(face * 34, 20), snap)
+		elbow = elbow.lerp(Vector2(face * 38, -31), snap)
 	var stem := PackedVector2Array([Vector2(0, -34), elbow, tip])
 	canvas.draw_polyline(stem, Color(ink, 1.0 - hood), 2.5, true)
 	if noise > 0.03:
@@ -102,10 +112,7 @@ static func draw(canvas: CanvasItem, pose: Dictionary, palette: Dictionary) -> v
 
 	# Strike and landing marks are short impressions, rooted at the actual body.
 	if snap > 0.0:
-		var radius := 42.0 + (1.0 - snap) * 13.0
-		var start := -1.15 if face >= 0 else PI - 0.50
-		var end := 0.50 if face >= 0 else PI + 1.15
-		canvas.draw_arc(Vector2(0, -7), radius, start, end, 18, Color(pink, snap * 0.9), 4.0 if pose.big else 2.8, true)
+		_strike_cut(canvas, combo_step, face, snap, pink, bool(pose.big))
 	if land > 0.0 and float(pose.impact) > 0.35:
 		for side in [-1.0, 1.0]:
 			var puff := Vector2(side * (20 + (1.0 - land) * 21), 25 - sin(land * PI) * 5)
@@ -114,6 +121,22 @@ static func draw(canvas: CanvasItem, pose: Dictionary, palette: Dictionary) -> v
 		var pulse := 0.70 + sin(time * 4.0) * 0.15
 		for radius in [14.0, 23.0]:
 			canvas.draw_arc(Vector2(face * 7, 22), radius + sin(time * 3.0) * 1.5, PI, TAU, 24, Color(pink, kneel * pulse * (0.6 if radius == 14 else 0.3)), 2.0, true)
+
+static func _strike_cut(canvas: CanvasItem, step: int, face: float, snap: float, color: Color, big: bool) -> void:
+	var radius := 42.0 + (1.0 - snap) * 13.0
+	var start := -1.15 if step == 1 else (-2.5 if step == 2 else -1.0)
+	var sweep := 1.65 if step == 1 else (3.35 if step == 2 else 1.90)
+	var points := PackedVector2Array()
+	for index in 30:
+		var point := Vector2.from_angle(start + sweep * index / 29.0) * radius
+		point.x *= -1.0 if face < 0.0 else 1.0
+		points.append(point + Vector2(0, -7))
+	canvas.draw_polyline(points, Color(color, snap * 0.9), 4.0 if big or step == 3 else 2.8, true)
+	if step == 3:
+		var direction := -1.0 if face < 0.0 else 1.0
+		for side in [-1.0, 1.0]:
+			var mark := Vector2(direction * (radius - 3), -7 + side * 17)
+			canvas.draw_line(mark, mark + Vector2(direction * 10, side * 5), Color(color, snap * 0.7), 2.4, true)
 
 static func _outline(canvas: CanvasItem, points: PackedVector2Array, color: Color, time: float, amplitude: float) -> void:
 	var outline := PackedVector2Array()

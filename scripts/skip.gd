@@ -33,6 +33,8 @@ const STRIKE_COOLDOWN := 0.20
 const STRIKE_BUFFER := 0.09       # a slightly early tap survives the end of recovery
 const STRIKE_RECOVER := 0.10
 const STRIKE_RECOVER_ACCEL := 0.80 # a little weight without trapping a change of direction
+const COMBO_WINDOW := 0.65
+const COMBO_LENGTH := 3
 const GROOVE_IMPULSE := 900.0
 const GROOVE_KEEP := 0.25
 const AIR_IMPULSE := 620.0         # thick-air jet (below the Scratch only)
@@ -87,6 +89,8 @@ var _strike_cd := 0.0
 var _strike_buffer := 0.0
 var _recover := 0.0
 var _hit_flash := 0.0
+var combo_step := 0
+var combo_remaining := 0.0
 
 # Presentation has its own clock and impulses. None feed back into movement,
 # contact, strike cooldowns or the 100 ms combat clock.
@@ -106,6 +110,7 @@ var _land_strength := 0.0
 var _launch_pose := 0.0
 var _strike_pose := 0.0
 var _strike_big := false
+var _strike_combo := 0
 var _hit_direction := 1.0
 var _animation_grounded := true
 
@@ -135,6 +140,14 @@ func _notification(what: int) -> void:
 
 func cancel_pending_strike() -> void:
 	_strike_buffer = 0.0
+	combo_step = 0
+	combo_remaining = 0.0
+
+func combo_snapshot() -> Dictionary:
+	var label := ""
+	if combo_step > 0:
+		label = ["TAP", "SWEEP", "ACCENT"][combo_step - 1]
+	return {"step": combo_step, "remaining": combo_remaining, "window": COMBO_WINDOW, "label": label}
 
 func add_shine(amount: int) -> bool:
 	if amount <= 0 or amount > 2147483647 - shine:
@@ -195,6 +208,9 @@ func _physics_process(delta: float) -> void:
 	_buffer = JUMP_BUFFER if Input.is_action_just_pressed("jump") else _buffer - delta
 	_strike_cd -= delta
 	_strike_buffer = maxf(_strike_buffer - delta, 0.0)
+	combo_remaining = maxf(combo_remaining - delta, 0.0)
+	if combo_remaining <= 0.0:
+		combo_step = 0
 	_recover = maxf(_recover - delta, 0.0)
 	noise = maxf(noise - delta * (NOISE_DECAY_HOODED if hooded else NOISE_DECAY), 0.0)
 
@@ -227,7 +243,12 @@ func _physics_process(delta: float) -> void:
 		_land_strength = clampf(landing_speed / 950.0, 0.25, 1.0)
 
 func _strike() -> void:
-	cancel_pending_strike()
+	# Consume only this input edge. Public cancellation also clears the chain,
+	# but an executed strike must carry its place into the next fresh press.
+	_strike_buffer = 0.0
+	combo_step = combo_step % COMBO_LENGTH + 1
+	combo_remaining = COMBO_WINDOW
+	_strike_combo = combo_step
 	_strike_cd = STRIKE_COOLDOWN
 	_recover = STRIKE_RECOVER
 	noise = 1.0
@@ -296,6 +317,9 @@ func _strike() -> void:
 		velocity = velocity * AIR_KEEP + aim * AIR_IMPULSE
 		launched = true
 
+	# The accent strengthens the existing hit only after traversal resolves.
+	# A hot groove can already be big; it receives no second beat or impulse.
+	big = big or combo_step == COMBO_LENGTH
 	_strike_pose = STRIKE_POSE_TIME
 	_strike_big = big
 	_look_face = facing
@@ -347,6 +371,7 @@ func _animation_pose() -> Dictionary:
 		"land": _land_pose / LAND_POSE_TIME, "impact": _land_strength,
 		"launch": _launch_pose / LAUNCH_POSE_TIME,
 		"strike": _strike_pose / STRIKE_POSE_TIME, "big": _strike_big,
+		"combo_step": _strike_combo,
 		"hurt": _hit_flash / 0.35, "hit_direction": _hit_direction, "noise": noise,
 	}
 
@@ -365,6 +390,7 @@ func reset_animation() -> void:
 	_launch_pose = 0.0
 	_strike_pose = 0.0
 	_strike_big = false
+	_strike_combo = 0
 	_hit_flash = 0.0
 	_animation_grounded = true
 	queue_redraw()

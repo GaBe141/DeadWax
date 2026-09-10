@@ -27,6 +27,8 @@ const HudMotionScript := preload("res://scripts/hud_motion.gd")
 const MapStateScript := preload("res://scripts/map_state.gd")
 const MapMenuScript := preload("res://scripts/map_menu.gd")
 const OpeningScript := preload("res://scripts/opening_cutscene.gd")
+const PracticeScript := preload("res://scripts/room_move_practice.gd")
+const ComboReadoutScript := preload("res://scripts/combo_readout.gd")
 
 const MARGIN := 22.0
 const NEEDLE_HEALTH := 3
@@ -48,12 +50,16 @@ var map_menu: CanvasLayer
 var _map_closing := false
 var world: RefCounted
 ## The authored campaign room, or a graybox id in development mode. Empty
-## only while the original five-room mechanics loop is active.
+## while the original five-room mechanics loop or Move practice is active.
 var world_room_id: StringName = &""
 var pressing: RefCounted
 var _transition_pending := false
 ## Explicit opt-in only. Running from the editor is still the real game.
 var development_mode := false
+## A blank side outside the campaign. Its models are disposable; the original
+## model objects wait here until the player leaves, without a checkpoint write.
+var practice_mode := false
+var _practice_campaign: Dictionary = {}
 var save_path := "user://deadwax-save.json"
 var settings_path := "user://deadwax-settings.cfg"
 var game_menu: CanvasLayer
@@ -84,6 +90,7 @@ var status: Label
 var paper: ColorRect
 var crackle_bar: ColorRect
 var hud_motion: Node
+var combo_readout: Control
 var _fb_t := 0.0
 var _shake := 0.0
 var _hits_taken := 0
@@ -164,6 +171,7 @@ func _ready() -> void:
 	game_menu.quit_requested.connect(_quit_game)
 	game_menu.settings_changed.connect(_change_settings)
 	game_menu.opening_requested.connect(_watch_opening)
+	game_menu.practice_requested.connect(_start_practice)
 	opening = OpeningScript.new()
 	add_child(opening)
 	opening.shot_started.connect(_on_opening_shot)
@@ -232,7 +240,12 @@ func _process(delta: float) -> void:
 	audio.set_hooded(player.hooded)
 	crackle_bar.size.x = 140.0 * clampf(player.noise, 0.0, 1.0)
 	crackle_bar.color = Color(0.9, 0.25, 0.5) if not player.hooded else Color(0.55, 0.52, 0.58)
-	if development_mode:
+	combo_readout.set_snapshot(player.combo_snapshot())
+	if practice_mode:
+		subtitle.text = room.objective_label
+		status.text = "J / X · STRIKE     SPACE / A · JUMP     K / B · HOOD     L / LB · SET"
+		controls_note.text = _controls_text()
+	elif development_mode:
 		status.text = "crackle   shine %d   hits taken %d   %s\n%s" % [player.shine, _hits_taken, _pressing_text(), progression.call("hud_text")]
 	else:
 		_save_message_time = maxf(0, _save_message_time - delta)
@@ -244,6 +257,8 @@ func _process(delta: float) -> void:
 			_queue_save()
 
 func _controls_text() -> String:
+	if practice_mode:
+		return "A / D / STICK · MOVE     R · RESET     ESC / BACK · PAUSE"
 	var note := "I / START · THE BOOK     ESC / BACK · PAUSE"
 	return "M / D-PAD DOWN · MAP     " + note if map_state.owned else note
 
@@ -258,6 +273,8 @@ func _pressing_text() -> String:
 # -- rooms --------------------------------------------------------------------
 
 func _load_room(i: int, entry_id: StringName = &"default") -> void:
+	if practice_mode:
+		return
 	if i < 0 or i >= ROOM_SCRIPTS.size():
 		push_error("Unknown prototype room index: %d" % i)
 		return
@@ -268,6 +285,8 @@ func _load_room(i: int, entry_id: StringName = &"default") -> void:
 ## Grays in one room of the planned world. Hand-built rooms always win: Main
 ## only reaches here for ids the prototype loop does not claim.
 func _load_world_room(id: StringName, entry_id: StringName = &"default") -> void:
+	if practice_mode:
+		return
 	if not development_mode:
 		if not ChapterScript.has_room(id):
 			push_error("This room is not part of the authored chapter: %s" % id)
@@ -300,9 +319,9 @@ func _swap_room(next_room: Node2D, entry_id: StringName) -> void:
 		room.set("map_state", map_state)
 	if room.has_signal("map_collected"):
 		room.connect("map_collected", _on_map_collected)
-	if not development_mode:
+	if not development_mode and not practice_mode:
 		map_state.visit(world_room_id)
-	if not development_mode and room.room_id == &"the_arm":
+	if not development_mode and not practice_mode and room.room_id == &"the_arm":
 		encounters["the_arm/gallery_shortcut"] = "opened"
 	room.refrain_collected.connect(_on_refrain_collected)
 	room.route_requested.connect(_on_route_requested)
@@ -310,7 +329,7 @@ func _swap_room(next_room: Node2D, entry_id: StringName) -> void:
 	add_child(room)
 	if room_entry_id != &"default" and not room.entry_points.has(room_entry_id):
 		room_entry_id = &"default"
-	if not development_mode:
+	if not development_mode and not practice_mode:
 		_restore_encounters()
 		if chapter_complete:
 			for child in room.get_children():
@@ -361,6 +380,8 @@ func _swap_room(next_room: Node2D, entry_id: StringName) -> void:
 	hud_motion.present_room()
 
 func _wire_room() -> void:
+	if room == null:
+		return
 	for n in get_tree().get_nodes_in_group("hears_strikes"):
 		if not room.is_ancestor_of(n):
 			continue
@@ -372,7 +393,7 @@ func _wire_room() -> void:
 			n.opened.connect(_on_door_opened)
 		if n.has_signal("freed") and not n.freed.is_connected(_on_freed):
 			n.freed.connect(_on_freed)
-		if not development_mode and n.has_meta("chapter_state_id") and not n.has_meta("save_wired"):
+		if not development_mode and not practice_mode and n.has_meta("chapter_state_id") and not n.has_meta("save_wired"):
 			n.set_meta("save_wired", true)
 			var key := "%s/%s" % [room.room_id, n.get_meta("chapter_state_id")]
 			if n.has_signal("opened"):
@@ -387,7 +408,7 @@ func _wire_room() -> void:
 # -- a saved pressing ---------------------------------------------------------
 
 func _capture_encounters() -> void:
-	if development_mode or room == null:
+	if development_mode or practice_mode or room == null:
 		return
 	for n in room.get_children():
 		if not n.has_meta("chapter_state_id"):
@@ -406,6 +427,8 @@ func _remember_positioned(_pos: Vector2, key: String, outcome: String) -> void:
 	_remember_encounter(key, outcome)
 
 func _remember_encounter(key: String, outcome: String) -> void:
+	if practice_mode:
+		return
 	encounters[key] = outcome
 	if key == "groove_yard/yard_first_voice" and outcome == "freed":
 		_flash("A NAME REMEMBERED — the Yard keeps its last note.")
@@ -421,7 +444,7 @@ func _sync_home_song() -> void:
 			and String(encounters.get("the_stalls/loft_voice", "")) == "freed")
 
 func _queue_save() -> void:
-	if development_mode or not _has_session or _save_queued:
+	if development_mode or practice_mode or not _has_session or _save_queued:
 		return
 	_save_queued = true
 	call_deferred("_flush_save")
@@ -431,7 +454,7 @@ func _flush_save() -> void:
 	_persist_session()
 
 func _persist_session() -> bool:
-	if development_mode or not _has_session or save_store == null:
+	if development_mode or practice_mode or not _has_session or save_store == null:
 		return true
 	_capture_encounters()
 	var data := {
@@ -454,6 +477,7 @@ func _persist_session() -> bool:
 	return saved
 
 func _new_game(play_opening: bool = true) -> void:
+	_leave_practice()
 	_cancel_opening()
 	map_menu.close_map()
 	_map_closing = false
@@ -491,6 +515,7 @@ func _continue_game() -> void:
 	if data.is_empty() or not ChapterScript.has_room(StringName(data.get("room_id", ""))):
 		game_menu.call("set_notice", "That pressing could not be read. You can begin a new one.")
 		return
+	_leave_practice()
 	_cancel_opening()
 	map_menu.close_map()
 	_map_closing = false
@@ -519,6 +544,7 @@ func _continue_game() -> void:
 	_queue_save()
 
 func _reset_player() -> void:
+	player.cancel_pending_strike()
 	player.velocity = Vector2.ZERO
 	player.noise = 0.0
 	player.hooded = false
@@ -545,7 +571,7 @@ func _show_title() -> void:
 func _pause_game() -> void:
 	if _opening_active() or _transition_pending or inventory.call("is_open") or shop.is_open or _shop_closing or map_menu.is_open or _map_closing:
 		return
-	game_menu.call("show_pause")
+	game_menu.call("show_pause", practice_mode)
 	get_tree().paused = true
 	audio.set_crackle(0.0)
 	_persist_session()
@@ -629,8 +655,95 @@ func _finish_opening_handoff() -> void:
 func _return_to_title() -> void:
 	if not _persist_session():
 		return
+	_leave_practice()
 	_has_session = false
 	_show_title()
+
+# -- a blank side ------------------------------------------------------------
+
+func _start_practice() -> void:
+	if development_mode or practice_mode or _opening_active() or game_menu == null or game_menu.screen != "title":
+		return
+	_practice_campaign = {
+		"progression": progression, "economy": economy, "map": map_state,
+		"pressing": pressing, "encounters": encounters, "completed": chapter_complete,
+		"room_id": world_room_id, "entry_id": room_entry_id, "room_idx": room_idx,
+	}
+	_has_session = false
+	practice_mode = true
+	if room != null:
+		remove_child(room)
+		room.queue_free()
+		room = null
+	progression = ProgressionScript.new()
+	economy = EconomyScript.new()
+	map_state = MapStateScript.new()
+	pressing = PressingScript.new()
+	encounters = {}
+	chapter_complete = false
+	_bind_session_models()
+	world_room_id = &""
+	_apply_purchases()
+	_reset_player()
+	combo_readout.practice_mode = true
+	_swap_room(PracticeScript.new(), &"default")
+	# The title's confirming Space/A belongs to the menu, not the first jump.
+	call_deferred("_finish_practice_entry")
+
+func _finish_practice_entry() -> void:
+	# Input's physics edge can outlive several render frames on a fast machine.
+	# Keep the title paused through a physics tick before handing over Space/A.
+	await get_tree().physics_frame
+	await get_tree().process_frame
+	if not practice_mode:
+		return
+	for action in InputMap.get_actions():
+		Input.action_release(action)
+	player.cancel_pending_strike()
+	player.set("_buffer", 0.0)
+	_resume_game()
+
+func _leave_practice() -> void:
+	if not practice_mode:
+		return
+	if inventory.is_open():
+		inventory.close_inventory()
+	if room != null:
+		remove_child(room)
+		room.queue_free()
+		room = null
+	progression = _practice_campaign.progression
+	economy = _practice_campaign.economy
+	map_state = _practice_campaign.map
+	pressing = _practice_campaign.pressing
+	encounters = _practice_campaign.encounters
+	chapter_complete = bool(_practice_campaign.completed)
+	world_room_id = _practice_campaign.room_id
+	room_entry_id = _practice_campaign.entry_id
+	room_idx = int(_practice_campaign.room_idx)
+	_practice_campaign.clear()
+	practice_mode = false
+	_has_session = false
+	_bind_session_models()
+	_apply_purchases()
+	_reset_player()
+	hud_motion.reset_transients()
+	combo_readout.practice_mode = false
+	combo_readout.set_snapshot(player.combo_snapshot())
+	audio.set_home_song(false)
+
+func _bind_session_models() -> void:
+	player.progression = progression
+	player.economy = economy
+	inventory.progression = progression
+	inventory.economy = economy
+	inventory.map_state = map_state
+	if not progression.is_connected("refrain_unlocked", _on_refrain_unlocked):
+		progression.connect("refrain_unlocked", _on_refrain_unlocked)
+		progression.connect("technique_discovered", _on_technique_discovered)
+	if not pressing.is_connected("side_changed", _on_side_changed):
+		pressing.connect("side_changed", _on_side_changed)
+		pressing.connect("side_ended", _on_side_ended)
 
 func _quit_game() -> void:
 	if not _persist_session():
@@ -673,7 +786,7 @@ func _on_map_collected() -> void:
 	_queue_save()
 
 func _open_map() -> void:
-	if development_mode or not _can_open_inventory() or inventory.is_open() or get_tree().paused:
+	if development_mode or practice_mode or not _can_open_inventory() or inventory.is_open() or get_tree().paused:
 		return
 	if not map_state.owned:
 		_flash("A folded map waits in the Headshell.")
@@ -816,7 +929,7 @@ func _apply_settings() -> void:
 	AudioServer.set_bus_volume_db(0, linear_to_db(maxf(0.001, float(_settings.volume))))
 	AudioServer.set_bus_mute(0, float(_settings.volume) <= 0.0)
 	camera.position_smoothing_enabled = not bool(_settings.reduced_motion)
-	for interface in [game_menu, inventory, shop, map_menu, hud_motion, opening]:
+	for interface in [game_menu, inventory, shop, map_menu, hud_motion, opening, combo_readout]:
 		if interface != null:
 			interface.call("set_reduced_motion", bool(_settings.reduced_motion))
 	if room != null:
@@ -870,6 +983,7 @@ func _apply_hud_palette(stock: Color) -> void:
 	controls_note.add_theme_color_override("font_color", Color(text.r, text.g, text.b, 0.4))
 	masthead.color = Color(stock.r, stock.g, stock.b, 0.92)
 	footer_stock.color = Color(stock.r, stock.g, stock.b, 0.96)
+	combo_readout.set_palette(text, stock)
 	feedback.add_theme_color_override(
 		"font_outline_color", Color(stock.r, stock.g, stock.b, 0.9)
 	)
@@ -938,6 +1052,8 @@ func _debug_toggle_world() -> void:
 	_flash("the planned world, grayed in.")
 
 func _respawn() -> void:
+	if room == null:
+		return
 	if shop != null and (shop.is_open or _shop_closing):
 		return
 	_health = _max_health()
@@ -945,6 +1061,9 @@ func _respawn() -> void:
 	player.global_position = room.entry_position(room_entry_id)
 	player.velocity = Vector2.ZERO
 	player.cancel_pending_strike()
+	combo_readout.set_snapshot(player.combo_snapshot())
+	if practice_mode:
+		player.set("_strike_cd", 0.0)
 	hud_motion.reset_transients()
 	if not development_mode:
 		player.set("_stagger", 0.0)
@@ -966,6 +1085,8 @@ func _on_struck(pos: Vector2, big: bool, launched: bool) -> void:
 	var w := WaveScript.new()
 	w.big = big
 	w.launched = launched
+	w.combo_step = player.combo_step
+	w.facing = player.facing
 	w.hit_radius = SkipScript.POGO_RANGE
 	w.ink = room.call("_solid_color")
 	w.stock = room.call("_stock_color")
@@ -973,7 +1094,9 @@ func _on_struck(pos: Vector2, big: bool, launched: bool) -> void:
 	w.life = 0.26 + 0.18 * player.air_density
 	add_child(w)
 	w.global_position = pos
-	audio.play("strike", -8.0, randf_range(0.96, 1.05))
+	var pitch: float = [1.0, 1.12, 0.82][clampi(player.combo_step - 1, 0, 2)]
+	audio.play("strike", -6.0 if player.combo_step == 3 else -8.0, pitch * randf_range(0.98, 1.02))
+	combo_readout.set_snapshot(player.combo_snapshot())
 	if big:
 		_shake = 7.0
 	elif launched:
@@ -1032,7 +1155,7 @@ func _on_refrain_collected(refrain: int) -> void:
 	progression.call("unlock_refrain", refrain)
 
 func _on_route_requested(target_room: StringName, target_entry: StringName) -> void:
-	if _opening_active() or _transition_pending or (game_menu != null and game_menu.is_open) or bool(inventory.call("is_open")) or shop.is_open or _shop_closing or map_menu.is_open or _map_closing:
+	if practice_mode or _opening_active() or _transition_pending or (game_menu != null and game_menu.is_open) or bool(inventory.call("is_open")) or shop.is_open or _shop_closing or map_menu.is_open or _map_closing:
 		return
 	if not development_mode and not ChapterScript.has_room(target_room):
 		return
@@ -1058,7 +1181,7 @@ func _on_route_blocked(message: String) -> void:
 	_flash(message)
 
 func _can_open_inventory() -> bool:
-	return not _opening_active() and _has_session and not _transition_pending and not _shop_closing and not shop.is_open and not _map_closing and (map_menu == null or not map_menu.is_open) and (game_menu == null or not game_menu.is_open)
+	return not _opening_active() and (_has_session or practice_mode) and not _transition_pending and not _shop_closing and not shop.is_open and not _map_closing and (map_menu == null or not map_menu.is_open) and (game_menu == null or not game_menu.is_open)
 
 func _on_refrain_unlocked(refrain: int) -> void:
 	audio.play("freed", -7.0)
@@ -1108,6 +1231,11 @@ func _build_hud() -> void:
 	var layer := CanvasLayer.new()
 	layer.layer = 2
 	add_child(layer)
+	combo_readout = ComboReadoutScript.new()
+	combo_readout.name = "ComboReadout"
+	combo_readout.position = Vector2(900, 18)
+	combo_readout.size = Vector2(350, 80)
+	layer.add_child(combo_readout)
 
 	# The masthead is pasted onto the sheet, not floated over it: room signage
 	# lives in world space and will always drift under the corner eventually.

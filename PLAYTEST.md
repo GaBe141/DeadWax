@@ -95,6 +95,11 @@ Runtime errors are written to `.godot/deadwax-play.log`.
 
 ## Attack feel
 
+- [ ] From the title, choose Move practice with mouse, keyboard, and controller. The empty floor starts with Skip standing still; holding the confirming Space/A does not jump. The full title, including Continue and Quit, fits at 1280×720 and 960×540.
+- [ ] Press J/X three times within the link window. Tap, Sweep, and Accent have distinct poses, directional ink, and sound; the readout marks each execution. A fourth starts Tap. Holding Strike never repeats; waiting longer than 650 ms starts a fresh chain.
+- [ ] Try the chain facing both ways, running, jumping, and near the ends of the practice floor. R returns to the start and clears the chain. Hood/Set, Book, and pause cancel the chain; the next strike is Tap. Reduced motion settles the readout while its timing remains truthful.
+- [ ] Pause practice and choose Return to title, then Continue. The campaign entry, Shine, purchases, map, progression, and choices are unchanged. Starting practice without a campaign save does not create Continue. Settings remain usable during practice.
+- [ ] In campaign combat, Accent lands harder on a vulnerable foe with the same 120 px reach. A hot-groove Accent gets the normal on-beat launch, and airborne foe/Gather rebounds do not become stronger on hit three. Muted targets retain their parry-only rules.
 - [ ] Standing beside a vulnerable foe, J/X lands a hit without launching Skip. Starting or reversing a run during the short recovery stays responsive.
 - [ ] Jumping into a nearby foe and striking rebounds upward; pressing jump and strike together also works. Enemy reach remains 120 px, and every enemy rebound registers a hit.
 - [ ] Live grooves still launch from the ground or air and take priority when an enemy is nearby. Whistlers' directed launches and groove echoes retain their timing.
