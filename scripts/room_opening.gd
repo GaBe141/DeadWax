@@ -30,13 +30,15 @@ var _yard_note_outcome := "unprinted"
 
 func configure(id: StringName) -> void:
 	room_id = id
-	bg_color = Color("e8e0cc")
-	ink = Color("26221e")
+	bg_color = Color("152e37")
+	ink = Color("dbc697")
 	spawn_pos = Vector2(160, 574)
 	death_y = 1120.0
 	cam_limits = Rect2(0, 0, 1800, 820)
 	match room_id:
 		&"headshell":
+			bg_color = Color("1b353b")
+			ink = Color("e6c58c")
 			band_name = "The Headshell"
 			band_desc = "The grip is empty. You are still here."
 			objective_label = "Follow the light into the Label."
@@ -44,6 +46,8 @@ func configure(id: StringName) -> void:
 			spawn_pos = Vector2(180, 554)
 			register_entry(&"from_horn_plaza", Vector2(1080, 554))
 		&"horn_plaza":
+			bg_color = Color("254b4e")
+			ink = Color("e3cfaa")
 			band_name = "The Horn Plaza"
 			band_desc = "All of it. That was the length of the song."
 			objective_label = "Find the Count-In west of the plaza, or follow the market east."
@@ -59,6 +63,8 @@ func configure(id: StringName) -> void:
 			register_entry(&"from_horn_plaza", Vector2(180, 574))
 			register_entry(&"from_practice_room", Vector2(1780, 574))
 		&"practice_room":
+			bg_color = Color("383746")
+			ink = Color("ddc7a1")
 			band_name = "The Practice Room"
 			band_desc = "Three. Three. Three."
 			objective_label = "Give the listening door four even strikes."
@@ -66,6 +72,8 @@ func configure(id: StringName) -> void:
 			register_entry(&"from_high_street", Vector2(180, 574))
 			register_entry(&"from_horn_plaza", Vector2(1460, 574))
 		&"the_stalls":
+			bg_color = Color("344642")
+			ink = Color("e4bd85")
 			band_name = "The Stalls"
 			band_desc = "The shutters are down. The wax is still warm."
 			objective_label = "Let the live groove carry you across the market."
@@ -74,6 +82,8 @@ func configure(id: StringName) -> void:
 			register_entry(&"from_groove_yard", Vector2(1990, 454))
 			register_entry(&"from_worn_gallery", Vector2(2020, 254))
 		&"groove_yard":
+			bg_color = Color("243d3d")
+			ink = Color("cbd4b0")
 			band_name = "The Locked-Groove Yard"
 			band_desc = "Worn names. One bar, over and over."
 			objective_label = "Hear what remains. Find the Descent Gate."
@@ -81,6 +91,8 @@ func configure(id: StringName) -> void:
 			register_entry(&"from_the_stalls", Vector2(180, 574))
 			register_entry(&"from_label_descent", Vector2(1880, 574))
 		&"label_descent":
+			bg_color = Color("252e40")
+			ink = Color("d7bf98")
 			band_name = "The Descent Gate"
 			band_desc = "The whole street ends on a held note."
 			objective_label = "Count the gate in: four even strikes."
@@ -91,7 +103,8 @@ func configure(id: StringName) -> void:
 			band_name = "The Overture Stair"
 			band_desc = "Below the Label, something is still singing."
 			objective_label = "Follow the worn stairs to the Bootlegger's stall."
-			bg_color = Color("e3bfb6")
+			bg_color = Color("292d43")
+			ink = Color("d0b9a6")
 			cam_limits = Rect2(0, 0, 1800, 1080)
 			death_y = 1350.0
 			spawn_pos = Vector2(160, 404)
@@ -112,6 +125,9 @@ func _ready() -> void:
 	platform(Vector2(-25, 470), Vector2(50, 1300))
 	platform(Vector2(cam_limits.size.x + 25, 470), Vector2(50, 1300))
 	setup_atmosphere(session_outcomes)
+	for child in get_children():
+		if child.is_in_group("room_exit"):
+			child.call("reink", _solid_color(), _stock_color())
 
 func _build_headshell() -> void:
 	platform(Vector2(640, 620), Vector2(1280, 80))
@@ -390,7 +406,7 @@ func apply_side(next_side: int) -> void:
 		add_child(next_picture)
 		_scenery[index] = next_picture
 	for child in get_children():
-		if (child.is_in_group("world_resident") or child.is_in_group("map_pickup") or child.name in [&"LoftVoice", &"YardVoice", &"YardMemory", &"StreetLooper"]) and child.has_method("reink"):
+		if (child.is_in_group("world_resident") or child.is_in_group("map_pickup") or child.is_in_group("room_exit") or child.name in [&"LoftVoice", &"YardVoice", &"YardMemory", &"StreetLooper"]) and child.has_method("reink"):
 			child.call("reink", _solid_color(), _stock_color())
 
 func set_scenery_motion(reduced: bool) -> void:

@@ -3,7 +3,7 @@ extends RefCounted
 ## Geometry and names are authored data; no factory, save, or gameplay state.
 
 const Chart := preload("res://scripts/campaign_chart.gd")
-const PINK := Color(0.90, 0.25, 0.50)
+const PINK := Color("e1b36f")
 
 static func draw_chart(canvas: CanvasItem, size: Vector2, pose: Dictionary, ink: Color,
 		stock: Color, font: Font, display: Font) -> void:
@@ -11,6 +11,14 @@ static func draw_chart(canvas: CanvasItem, size: Vector2, pose: Dictionary, ink:
 		return
 	# Three panels carry faint fold shadows, with the print crossing their seams.
 	canvas.draw_rect(Rect2(Vector2.ZERO, size), stock.lerp(ink, 0.025))
+	# Faint surveyed relief gives the guide depth without inventing a route.
+	for band in range(15):
+		var contour := PackedVector2Array()
+		for sample in range(51):
+			var x := float(sample) / 50.0 * size.x
+			var y := size.y * (0.12 + band * 0.053) + sin(x * 0.009 + band * 0.4) * 14 + cos(x * 0.017 - band * 0.6) * 6
+			contour.append(Vector2(x, clampf(y, 5, size.y - 5)))
+		canvas.draw_polyline(contour, Color(PINK, 0.055), 1.0, true)
 	for index in 3:
 		var x := size.x * float(index) / 3.0
 		canvas.draw_rect(Rect2(x, 0, size.x / 3.0, size.y), Color(ink, 0.012 if index == 1 else 0.025))
@@ -35,7 +43,7 @@ static func draw_chart(canvas: CanvasItem, size: Vector2, pose: Dictionary, ink:
 		var from: Vector2 = centers[link.a]
 		var to: Vector2 = centers[link.b]
 		var walked := known.has(link.a) and known.has(link.b)
-		var color := Color(ink, 0.65 if walked else 0.17)
+		var color := Color(PINK if walked else ink, 0.82 if walked else 0.20)
 		if bool(link.shortcut):
 			canvas.draw_dashed_line(from, to, color, 2.0, 7.0, true, true)
 		else:
@@ -49,8 +57,11 @@ static func draw_chart(canvas: CanvasItem, size: Vector2, pose: Dictionary, ink:
 		var visited := known.has(room.id)
 		var here: bool = room.id == current
 		var fill := ink if here else stock.lerp(ink, 0.06 if visited else 0.025)
+		canvas.draw_rect(Rect2(box.position + Vector2(3, 4), box.size), Color("06181d", 0.42))
 		canvas.draw_rect(box, fill)
 		canvas.draw_rect(box, PINK if here else Color(ink, 0.70 if visited else 0.18), false, 2.5 if here else 1.5)
+		if visited and not here:
+			canvas.draw_line(box.position + Vector2(3, 3), Vector2(box.end.x - 3, box.position.y + 3), Color(PINK, 0.35), 1.0, true)
 		# Corner scoring gives an unopened place a shape without giving it a name.
 		if not visited:
 			canvas.draw_line(box.position + Vector2(7, 7), box.position + Vector2(26, 7), Color(ink, 0.13), 1.0)
@@ -77,6 +88,7 @@ static func draw_pickup(canvas: CanvasItem, pose: Dictionary, ink: Color, stock:
 	canvas.draw_rect(Rect2(-30, 23, 60, 3), ink)
 	canvas.draw_line(Vector2(-21, 20), Vector2(22, 20), Color(ink, 0.55), 2.0, true)
 	canvas.draw_set_transform(Vector2(0, shift - 4.0))
+	canvas.draw_circle(Vector2(0, -2), 36, Color(PINK, 0.045), true, -1, true)
 	var panels := [
 		PackedVector2Array([Vector2(-26, -19), Vector2(-9, -24), Vector2(-9, 13), Vector2(-26, 18)]),
 		PackedVector2Array([Vector2(-9, -24), Vector2(9, -18), Vector2(9, 20), Vector2(-9, 13)]),

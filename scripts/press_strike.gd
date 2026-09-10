@@ -5,7 +5,7 @@ extends RefCounted
 const CONTACT_TIME := 0.14
 const CONTACT_DRIFT := 6.0
 const BURST_TIME := 0.055
-const PINK := Color(0.90, 0.25, 0.50)
+const PINK := Color("ed987b")
 
 static func draw(canvas: CanvasItem, pose: Dictionary, ink: Color, stock: Color) -> void:
 	var age := maxf(float(pose.get("age", 0.0)), 0.0)
@@ -26,8 +26,10 @@ static func draw(canvas: CanvasItem, pose: Dictionary, ink: Color, stock: Color)
 			var start := phase + index * TAU / 6.0
 			var sweep := (0.74 + sin(index * 8.3 + phase) * 0.08) * TAU / 6.0
 			var points := _arc(radius, start, sweep, phase + index, 12)
-			canvas.draw_polyline(points, Color(stock, strength * 0.45), 5.5 if big else 4.5, true)
-			canvas.draw_polyline(points, Color(color, strength * 0.90), 3.6 if big else 2.6, true)
+			# An opaque brush core and a dry inner edge read against the painted
+			# world. The outer points still mark the same immediate contact radius.
+			_ribbon(canvas,points,6.0 if big else 3.8,Color(color,strength*0.75))
+			canvas.draw_polyline(points,Color(Color("f4ddb0"),strength*0.70),1.5,true)
 		var burst := maxf(1.0 - age / BURST_TIME, 0.0)
 		for index in 8:
 			var angle := phase + index * TAU / 8.0 + 0.18
@@ -58,8 +60,9 @@ static func _combo_stroke(canvas: CanvasItem, step: int, face: float, radius: fl
 			points = PackedVector2Array([Vector2(radius * 0.64, -radius * 0.33),
 				Vector2(radius * 0.85, 0), Vector2(radius * 0.64, radius * 0.29)])
 	for index in points.size(): points[index].x *= face
-	canvas.draw_polyline(points, Color(stock, strength * 0.6), 6.5 if step == 3 else 5.0, true)
-	canvas.draw_polyline(points, Color(ink, strength * 0.85), 4.0 if step == 3 else 2.5, true)
+	canvas.draw_polyline(points,Color(Color("183137"),strength*0.40),7.5 if step==3 else 5.5,true)
+	canvas.draw_polyline(points,Color(ink,strength*0.90),4.6 if step==3 else 3.2,true)
+	canvas.draw_polyline(points,Color(Color("f4ddb0"),strength*0.55),1.0,true)
 	if step == 2:
 		var echo := _arc(radius * 0.71, -1.1, 1.7, 1.2, 20)
 		for index in echo.size(): echo[index].x *= face
@@ -76,3 +79,9 @@ static func _arc(radius: float, start: float, sweep: float, seed: float, count: 
 		var bite := (0.5 + sin(seed * 3.1 + index * 7.7) * 0.5) * minf(radius * 0.018, 2.0)
 		points.append(Vector2.from_angle(angle) * (radius - bite))
 	return points
+
+static func _ribbon(canvas: CanvasItem, points: PackedVector2Array, width: float, color: Color) -> void:
+	var stroke := points.duplicate()
+	for index in range(points.size()-1,-1,-1):
+		stroke.append(points[index]-points[index].normalized()*width*(0.65+0.25*sin(index*1.7)))
+	canvas.draw_colored_polygon(stroke,color)

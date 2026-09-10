@@ -6,10 +6,11 @@ signal close_requested
 const Press := preload("res://scripts/press.gd")
 const Chart := preload("res://scripts/campaign_chart.gd")
 const Motion := preload("res://scripts/ui_motion.gd")
-const PAPER := Color("e7dfc9")
-const STOCK := Color("cfc3ac")
-const INK := Color("28242b")
-const FADED := Color("726975")
+const PAPER := Color("17343c")
+const STOCK := Color("0b222b")
+const INK := Color("f1dfb8")
+const FADED := Color("c0b28b")
+const WorldBackdrop := preload("res://scripts/ui_world_backdrop.gd")
 
 var is_open := false
 var overlay: Control
@@ -162,6 +163,10 @@ func _build() -> void:
 	_background = Press.map_backing(PAPER)
 	overlay.add_child(_background)
 	_background.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	var scenery := WorldBackdrop.new()
+	scenery.kind = &"chart"
+	overlay.add_child(scenery)
+	scenery.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	_margin = MarginContainer.new()
 	_margin.add_theme_constant_override("margin_top", 24)
 	_margin.add_theme_constant_override("margin_bottom", 20)

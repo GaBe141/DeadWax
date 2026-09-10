@@ -1,14 +1,18 @@
 extends RefCounted
+const Paint := preload("res://scripts/figure_paint.gd")
 ## The keeper's engraving. Like every Press impression, this reads only the
 ## explicitly supplied pose and palette, never a player or gameplay singleton.
 
 static func draw_tonearm(canvas: CanvasItem, pose: Dictionary, ink: Color, stock: Color, display_font: Font, body_font: Font, heading_size: int, small_size: int) -> void:
 	var phase: String = pose.phase
 	var face: float = pose.face
-	var accent := Color(0.90, 0.25, 0.50)
-	var warm := Color(0.80, 0.54, 0.24)
-	var pale := stock.lerp(Color.WHITE, 0.28)
-	var muted := stock.lerp(ink, 0.48)
+	var page_ink := ink
+	var paint := Paint.palette(ink,stock)
+	ink = paint.edge
+	var accent: Color = paint.coral
+	var warm: Color = paint.gold
+	var pale: Color = paint.cream
+	var muted: Color = paint.teal
 	var clock: float = pose.get("clock", pose.time)
 	var recoil: float = pose.get("hit_recoil", 0.0)
 	var settle := smoothstep(0.0, 1.0, float(pose.get("settle", 1.0)))
@@ -69,40 +73,55 @@ static func draw_tonearm(canvas: CanvasItem, pose: Dictionary, ink: Color, stock
 		var impact := sin((1.0 - recoil) * PI) * recoil
 		tip += Vector2(-face * 12.0, -6.0) * impact
 		tip_rotation += -face * impact * 0.16
-	var bright := accent if phase == "sweep" else (warm if phase == "freed" else ink)
+	var bright: Color = accent if phase == "sweep" else (warm if phase == "freed" else paint.brass)
 	var offset := Vector2(3.0, 2.0)
 	# Counterweight and overhead mounting plate; fine rules repeat the record's
 	# concentric geometry without making the silhouette read as another dummy.
-	canvas.draw_rect(Rect2(pivot + Vector2(-76.0, -52.0), Vector2(210.0, 38.0)), ink)
+	Paint.shape(canvas,PackedVector2Array([pivot+Vector2(-83,-60),pivot+Vector2(124,-60),pivot+Vector2(139,-43),pivot+Vector2(135,-10),pivot+Vector2(-80,-10)]),paint.coat,ink,3.0)
+	canvas.draw_rect(Rect2(pivot+Vector2(-74,-51),Vector2(191,24)),paint.wood)
+	canvas.draw_line(pivot+Vector2(-73,-49),pivot+Vector2(116,-49),paint.copper,5.0,true)
 	canvas.draw_line(pivot + Vector2(-94.0, -62.0), pivot + Vector2(150.0, -62.0), ink, 2.0, true)
 	for mark in range(7):
 		var x := pivot.x - 60.0 + mark * 27.0
-		canvas.draw_line(Vector2(x, pivot.y - 46.0), Vector2(x, pivot.y - 22.0), muted, 1.0, true)
-	canvas.draw_line(pivot + Vector2(90.0, 0.0), pivot, ink, 27.0, true)
-	canvas.draw_line(pivot + offset, elbow + offset, Color(accent, 0.50), 28.0, true)
-	canvas.draw_line(pivot, elbow, ink, 28.0, true)
-	canvas.draw_line(pivot + Vector2(0.0, -5.0), elbow + Vector2(0.0, -5.0), pale, 3.0, true)
-	canvas.draw_circle(pivot, 38.0, ink, true, -1.0, true)
-	canvas.draw_arc(pivot, 30.0, 0.0, TAU, 64, pale, 2.0, true)
-	canvas.draw_arc(pivot, 23.0, 0.0, TAU, 48, muted, 1.0, true)
-	canvas.draw_circle(pivot, 5.0, pale, true, -1.0, true)
+		canvas.draw_line(Vector2(x,pivot.y-42),Vector2(x,pivot.y-25),Color(paint.shadow,0.7),3.0,true)
+	for x in [-65.0,118.0]: Paint.bolt(canvas,pivot+Vector2(x,-38),5.5,paint.brass,ink,pale)
+	Paint.segment(canvas,pivot+Vector2(95,0),pivot,31,paint.wood,ink,paint.copper)
+	# Broad bevelled beams, riveted collars and a dark underside make the arm
+	# carry physical weight while the original two joints keep their exact arc.
+	Paint.segment(canvas,pivot+offset*2,elbow+offset*2,37,paint.shadow,ink,paint.coat)
+	Paint.segment(canvas,pivot,elbow,30,paint.brass,ink,paint.gold)
+	canvas.draw_line(pivot+Vector2(0,5),elbow+Vector2(0,5),paint.wood,7.0,true)
+	Paint.disc(canvas,pivot,43,paint.coat,ink,paint.teal)
+	Paint.disc(canvas,pivot,32,paint.brass,ink,paint.gold)
+	Paint.disc(canvas,pivot,22,paint.wood,ink,paint.copper)
+	for index in range(8):
+		var bolt := pivot+Vector2.from_angle(index*TAU/8.0)*35
+		Paint.bolt(canvas,bolt,3.0,paint.gold,ink,pale)
+	Paint.bolt(canvas,pivot,9,paint.brass,ink,pale)
 	var shoulder := tip + Vector2(-face * 14.0, -77.0).rotated(tip_rotation)
-	canvas.draw_line(elbow + offset, shoulder + offset, Color(accent, 0.45), 21.0, true)
-	canvas.draw_line(elbow, shoulder, bright, 21.0, true)
-	canvas.draw_line(elbow + Vector2(4.0, 0.0), shoulder + Vector2(4.0, 0.0), pale, 2.0, true)
-	canvas.draw_circle(elbow, 20.0, ink, true, -1.0, true)
-	canvas.draw_arc(elbow, 13.0, 0.0, TAU, 36, pale, 2.0, true)
+	Paint.segment(canvas,elbow+offset,shoulder+offset,29,paint.shadow,ink,paint.teal)
+	Paint.segment(canvas,elbow,shoulder,22,bright,ink,paint.gold)
+	Paint.disc(canvas,elbow,25,paint.coat,ink,paint.teal)
+	Paint.bolt(canvas,elbow,15,paint.brass,ink,pale)
+	for index in range(4):
+		var point := elbow.lerp(shoulder,0.20+index*0.18)
+		canvas.draw_line(point+Vector2(-7,-2),point+Vector2(6,1),Color(paint.wood,0.6),2.0,true)
 	# Headshell, cartridge and visibly grounded stylus. The open cartridge is
 	# separated by a pale slot; the damage/parry point stays at the node origin.
 	canvas.draw_set_transform(tip, tip_rotation)
 	var cartridge := Rect2(Vector2(-32.0, -72.0), Vector2(64.0, 40.0))
-	canvas.draw_rect(cartridge, bright)
-	canvas.draw_rect(Rect2(cartridge.position + Vector2(7.0, 7.0), Vector2(50.0, 7.0)), pale)
+	Paint.shape(canvas,PackedVector2Array([Vector2(-34,-76),Vector2(24,-76),Vector2(35,-64),Vector2(31,-31),Vector2(-29,-31),Vector2(-36,-43)]),paint.coat,ink,2.4)
+	Paint.shape(canvas,PackedVector2Array([Vector2(-31,-73),Vector2(22,-73),Vector2(29,-65),Vector2(-28,-62)]),bright,ink,1.5)
+	canvas.draw_rect(Rect2(cartridge.position+Vector2(7,13),Vector2(50,20)),pale)
+	canvas.draw_rect(Rect2(cartridge.position+Vector2(8,26),Vector2(48,7)),paint.wax)
+	Paint.bolt(canvas,Vector2(-27,-43),3,paint.brass,ink,pale)
+	Paint.bolt(canvas,Vector2(27,-43),3,paint.brass,ink,pale)
 	for vent in range(4):
-		canvas.draw_line(Vector2(-19.0 + vent * 12.0, -48.0), Vector2(-19.0 + vent * 12.0, -39.0), muted, 2.0)
+		canvas.draw_line(Vector2(-18.0+vent*12,-52),Vector2(-18.0+vent*12,-44),paint.shadow,3.0,true)
 	var nib := PackedVector2Array([Vector2(-15.0, -29.0), Vector2(15.0, -29.0), Vector2(4.0, 13.0), Vector2(-4.0, 13.0)])
-	canvas.draw_colored_polygon(nib, accent if pose.open else bright)
-	canvas.draw_line(Vector2(0.0, 13.0), Vector2(face * 13.0, 24.0), ink, 3.0, true)
+	Paint.shape(canvas,nib,accent if pose.open else paint.brass,ink,2.0)
+	canvas.draw_colored_polygon(PackedVector2Array([Vector2(-12,-27),Vector2(0,-27),Vector2(-1,10),Vector2(-4,12)]),paint.gold)
+	Paint.segment(canvas,Vector2(0,13),Vector2(face*13,24),3.5,paint.cream,ink,paint.light)
 	canvas.draw_set_transform(Vector2.ZERO)
 	if phase == "down":
 		canvas.draw_line(tip + Vector2(-22.0, -55.0), tip + Vector2(8.0, -29.0), stock, 5.0, true)
@@ -151,8 +170,8 @@ static func draw_tonearm(canvas: CanvasItem, pose: Dictionary, ink: Color, stock
 	var card_width := maxf(prompt_width + 24.0, 240.0)
 	canvas.draw_rect(Rect2(Vector2(-card_width * 0.5, -215.0), Vector2(card_width, 63.0)), stock.lerp(ink, 0.06))
 	canvas.draw_line(Vector2(-card_width * 0.5 + 12.0, -153.0), Vector2(card_width * 0.5 - 12.0, -153.0), Color(accent, 0.8), 2.0, true)
-	canvas.draw_string(display_font, Vector2(-label_width * 0.5, -192.0), label, HORIZONTAL_ALIGNMENT_LEFT, -1, heading_size, ink)
-	canvas.draw_string(body_font, Vector2(-prompt_width * 0.5, -164.0), prompt, HORIZONTAL_ALIGNMENT_LEFT, -1, small_size, ink)
+	canvas.draw_string(display_font, Vector2(-label_width * 0.5, -192.0), label, HORIZONTAL_ALIGNMENT_LEFT, -1, heading_size, page_ink)
+	canvas.draw_string(body_font, Vector2(-prompt_width * 0.5, -164.0), prompt, HORIZONTAL_ALIGNMENT_LEFT, -1, small_size, page_ink)
 	if pose.engaged:
 		var total: int = pose.health_total
 		var remaining := int(ceil(float(pose.health) * total))

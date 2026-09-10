@@ -2,6 +2,7 @@ extends Node2D
 ## DULL WAX — a patch worn grey. Hood up (hold LIFT) beside it to buff the
 ## shine back in. Restores a small sound; mints one shine.
 
+const Press := preload("res://scripts/press.gd")
 const RADIUS := 70.0
 const POLISH_TIME := 1.2
 
@@ -41,21 +42,4 @@ func _process(delta: float) -> void:
 	queue_redraw()
 
 func _draw() -> void:
-	var rng := RandomNumberGenerator.new()
-	rng.seed = _sid + int(Time.get_ticks_msec() / 100)
-	if done:
-		# buffed: a faint bright ring, plus sparkles while fresh
-		draw_arc(Vector2.ZERO, 26.0, 0, TAU, 24, Color(0.97, 0.95, 0.88, 0.8), 2.5)
-		if _sparkle > 0.0:
-			for i in range(5):
-				var p := Vector2(rng.randf_range(-30, 30), rng.randf_range(-30, 30))
-				draw_line(p - Vector2(4, 0), p + Vector2(4, 0), Color(0.95, 0.85, 0.45, _sparkle), 1.5)
-				draw_line(p - Vector2(0, 4), p + Vector2(0, 4), Color(0.95, 0.85, 0.45, _sparkle), 1.5)
-		return
-	# dull blotch: grey scribble
-	var col := Color(0.5, 0.48, 0.46, 0.55)
-	for i in range(4):
-		var r := 22.0 + i * 4.0 + rng.randf_range(-2, 2)
-		draw_arc(Vector2.ZERO, r, rng.randf_range(0, TAU), rng.randf_range(2.0, 5.5), 14, col, 2.0)
-	if progress > 0.0:
-		draw_arc(Vector2.ZERO, 34.0, -PI / 2.0, -PI / 2.0 + TAU * progress, 24, Color(0.90, 0.25, 0.50, 0.9), 3.0)
+	Press.draw_polish(self, {"done": done, "progress": progress, "sparkle": _sparkle})

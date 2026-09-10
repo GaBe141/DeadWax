@@ -20,6 +20,8 @@ var ambient: CanvasModulate
 var _fixtures: Array[Node2D] = []
 var _clock := 0.0
 var _update_left := 0.0
+var _authored_ink: Color
+var _authored_stock: Color
 
 class Lamp extends Node2D:
 	var ink: Color
@@ -38,6 +40,8 @@ func setup(id: StringName, field: Rect2, floor_surfaces: Array[Rect2],
 
 func _ready() -> void:
 	add_to_group("room_lighting")
+	_authored_ink = ink
+	_authored_stock = stock
 	ambient = CanvasModulate.new()
 	ambient.name = "Ambient"
 	add_child(ambient)
@@ -139,8 +143,10 @@ func reink(next_ink: Color, next_stock: Color) -> void:
 	stock = next_stock
 	if ambient != null:
 		var exposure: Color = profile.get("ambient", Color.WHITE)
-		# Reversed white ink needs a little more fill on its darker paper.
-		ambient.color = exposure.lerp(Color.WHITE, 0.25) if ink.get_luminance() > stock.get_luminance() else exposure
+		# Palette roles are authored, not inferred from brightness. The painted
+		# A-side is dark stock; only an actual swap receives the softer B fill.
+		var reversed := ink == _authored_stock and stock == _authored_ink
+		ambient.color = exposure.lerp(Color.WHITE, 0.25) if reversed else exposure
 	for fixture in _fixtures:
 		fixture.ink = ink
 		fixture.stock = stock

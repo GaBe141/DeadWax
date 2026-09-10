@@ -72,11 +72,14 @@ func _process(delta: float) -> void:
 	queue_redraw()
 
 func _draw() -> void:
+	const PrintPress := preload("res://scripts/press.gd")
 	var rng := RandomNumberGenerator.new()
 	rng.seed = _sid + int(Time.get_ticks_msec() / 100)
 	var half := SIZE / 2.0
-	var ink := Color(0.16, 0.14, 0.15)
-	var pink := Color(0.90, 0.25, 0.50)
+	var brass := PrintPress.BRASS
+	var cream := PrintPress.CREAM
+	var coral := PrintPress.PINK
+	var shadow := PrintPress.DEEP
 
 	if is_open:
 		# bars swing aside and fade
@@ -84,22 +87,27 @@ func _draw() -> void:
 		if a > 0.0:
 			for i in range(4):
 				var y := -half.y + 20 + i * 36
-				draw_line(Vector2(-half.x - 14, y), Vector2(half.x + 14, y + rng.randf_range(-2, 2)), Color(pink.r, pink.g, pink.b, a * 0.7), 3.0)
-		draw_line(Vector2(0, -half.y), Vector2(0, -half.y + 12), ink, 3.0)
-		draw_line(Vector2(0, half.y - 12), Vector2(0, half.y), ink, 3.0)
+				draw_line(Vector2(-half.x - 14, y), Vector2(half.x + 14, y + rng.randf_range(-2, 2)), Color(coral, a * 0.7), 3.0)
+		draw_line(Vector2(0, -half.y), Vector2(0, -half.y + 12), brass, 3.0)
+		draw_line(Vector2(0, half.y - 12), Vector2(0, half.y), brass, 3.0)
 		return
 
 	# closed: a barred lock of taut lines
-	draw_rect(Rect2(-half, SIZE), Color(ink.r, ink.g, ink.b, 0.12))
+	draw_rect(Rect2(-half, SIZE), Color(shadow, 0.30))
 	for i in range(4):
 		var y := -half.y + 20 + i * 36
-		draw_line(Vector2(-half.x - 10, y + rng.randf_range(-1.5, 1.5)), Vector2(half.x + 10, y + rng.randf_range(-1.5, 1.5)), ink, 3.5)
+		var left := Vector2(-half.x - 10, y + rng.randf_range(-1.5, 1.5))
+		var right := Vector2(half.x + 10, y + rng.randf_range(-1.5, 1.5))
+		draw_line(left, right, brass, 3.5)
+		draw_line(left.lerp(right, 0.08), left.lerp(right, 0.86), Color(cream, 0.80), 1.0)
 	# the four listening ticks: fill as the count holds even
 	var got := _times.size()
 	for i in range(4):
 		var p := Vector2(0, -half.y - 18 - 0)
 		p.x = -27 + i * 18
 		if i < got:
-			draw_circle(p, 5.0, pink)
+			draw_circle(p, 5.0, coral)
+			draw_circle(p + Vector2(-1, -1), 1.5, cream)
 		else:
-			draw_arc(p, 5.0, 0, TAU, 12, ink, 1.8)
+			draw_circle(p, 4.2, shadow)
+			draw_arc(p, 5.0, 0, TAU, 12, cream, 1.8)

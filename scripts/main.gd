@@ -240,7 +240,7 @@ func _process(delta: float) -> void:
 	audio.set_crackle(player.noise if not player.hooded else 0.0)
 	audio.set_hooded(player.hooded)
 	crackle_bar.size.x = 140.0 * clampf(player.noise, 0.0, 1.0)
-	crackle_bar.color = Color(0.9, 0.25, 0.5) if not player.hooded else Color(0.55, 0.52, 0.58)
+	crackle_bar.color = PressScript.PINK if not player.hooded else Color("719993")
 	combo_readout.set_snapshot(player.combo_snapshot())
 	if practice_mode:
 		subtitle.text = room.objective_label
@@ -378,6 +378,7 @@ func _swap_room(next_room: Node2D, entry_id: StringName) -> void:
 		controls_note.text = _controls_text()
 		masthead.size.x = 660
 		_queue_save()
+	PressScript.folio_panel(masthead, title.get_theme_color("font_color"), Color(masthead.color, 1.0))
 	hud_motion.present_room()
 
 func _wire_room() -> void:
@@ -977,23 +978,22 @@ func _apply_hud_palette(stock: Color) -> void:
 	if title == null or status == null:
 		return
 	var dark_stock := stock.get_luminance() < 0.45
-	var text := Color(0.94, 0.92, 0.88) if dark_stock else Color(0.1, 0.09, 0.09)
+	var text := PressScript.CREAM if dark_stock else PressScript.DEEP
+	var panel_stock := stock.lerp(PressScript.DEEP if dark_stock else PressScript.CREAM, 0.48)
 	title.add_theme_color_override("font_color", text)
 	subtitle.add_theme_color_override("font_color", Color(text.r, text.g, text.b, 0.72))
 	status.add_theme_color_override("font_color", Color(text.r, text.g, text.b, 0.85))
-	controls_note.add_theme_color_override("font_color", Color(text.r, text.g, text.b, 0.4))
-	masthead.color = Color(stock.r, stock.g, stock.b, 0.92)
-	footer_stock.color = Color(stock.r, stock.g, stock.b, 0.96)
+	controls_note.add_theme_color_override("font_color", Color(text, 0.70))
+	masthead.color = Color(panel_stock, 1.0)
+	footer_stock.color = Color(panel_stock, 1.0)
+	PressScript.folio_panel(masthead, text, panel_stock)
+	PressScript.folio_panel(footer_stock, text, panel_stock)
 	combo_readout.set_palette(text, stock)
 	feedback.add_theme_color_override(
 		"font_outline_color", Color(stock.r, stock.g, stock.b, 0.9)
 	)
 	if paper != null:
-		# Vignette in the ink of the room, so the corners darken on light stock
-		# and the sheet gathers light on dark.
-		PressScript.repaper(
-			paper, Color(0.94, 0.92, 0.88, 1.0) if dark_stock else Color(0.10, 0.09, 0.08, 1.0)
-		)
+		PressScript.repaper(paper, PressScript.DEEP)
 
 ## Turning the pressing over is a Jump-Cut. Without it the input is inert and
 ## says nothing: an unearned Refrain is never announced before it is found.
@@ -1275,9 +1275,7 @@ func _build_hud() -> void:
 	feedback.position = Vector2(0, 236)
 	feedback.size = Vector2(1280, 60)
 	feedback.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	PressScript.set_display(
-		feedback, PressScript.SIZE_BANNER, PressScript.PINK, Color(0.1, 0.09, 0.08, 0.85)
-	)
+	PressScript.set_display(feedback, PressScript.SIZE_BANNER, PressScript.PINK, Color(PressScript.DEEP, 0.85))
 	feedback.add_theme_constant_override("font_spacing_glyph", PressScript.TRACKING_DISPLAY)
 	feedback.modulate.a = 0.0
 	layer.add_child(feedback)

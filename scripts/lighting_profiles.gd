@@ -120,7 +120,10 @@ static func get_profile(room_id: StringName) -> Dictionary:
 
 static func _profile(ambient: Color, lights: Array) -> Dictionary:
 	# Fresh dictionaries keep controller adjustments out of later room visits.
-	return {"ambient": ambient, "lights": lights}
+	# Cool reflected fill preserves brush colour between the warm local lamps.
+	# Unknown/development identities remain neutral white with no light rig.
+	var fill := ambient.lerp(Color(0.95, 0.97, 1.0), 0.35) if not lights.is_empty() else ambient
+	return {"ambient": fill, "lights": lights}
 
 static func _light(id: StringName, position: Vector2, radius: float, stretch: Vector2, color: Color, energy: float, fixture: bool = false, pulse: float = 0.0, glow: bool = false) -> Dictionary:
 	return {"id": id, "position": position, "radius": radius, "stretch": stretch,

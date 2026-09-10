@@ -1,87 +1,120 @@
 extends Node2D
-## Architectural woodcuts used exclusively by the press.
-
+## Close architectural subjects, drawn with the same brush as the distant rooms.
+## These marks have no collision and never change their authored origin/extent.
+const Brush := preload("res://scripts/press_world_brush.gd")
 var kind: StringName = &"facade"
 var extent := Vector2(400, 400)
-var ink := Color(0.14, 0.13, 0.12)
-var stock := Color(0.88, 0.85, 0.78)
+var ink := Color("dbc697")
+var stock := Color("152e37")
 
 func _draw() -> void:
-	var w := extent.x
-	var h := extent.y
-	var faded := Color(ink, 0.18)
-	var mid := Color(ink, 0.35)
-	var base := Vector2(-w / 2.0, h / 2.0)
+	var p := Brush.palette(ink, stock)
+	draw_set_transform(Vector2.ZERO, 0.0, extent / Vector2(400, 400))
 	match kind:
-		&"resting_arm":
-			var pivot := Vector2(w * 0.32, -h * 0.27)
-			draw_circle(pivot, w * 0.07, mid)
-			draw_line(pivot, Vector2(-w * 0.24, -h * 0.10), mid, 15)
-			draw_line(Vector2(-w * 0.24, -h * 0.10), Vector2(-w * 0.34, h * 0.28), mid, 12)
-			draw_arc(Vector2(-w * 0.34, h * 0.32), w * 0.11, 0.0, PI, 28, mid, 5)
-		&"organ", &"overture":
-			for i in range(9):
-				var length := h * (0.50 + 0.40 * absf(i - 4.0) / 4.0)
-				var x := -w * 0.45 + i * w * 0.11
-				draw_rect(Rect2(Vector2(x, h * 0.45 - length), Vector2(w * 0.06, length)), faded)
-				draw_line(Vector2(x + w * 0.025, h * 0.45 - length), Vector2(x + w * 0.025, h * 0.36), mid, 2)
-				draw_rect(Rect2(Vector2(x, h * 0.12), Vector2(w * 0.06, h * 0.05)), mid)
-			draw_rect(Rect2(Vector2(-w * 0.49, h * 0.45), Vector2(w * 0.98, h * 0.05)), mid)
-		&"column":
-			draw_rect(Rect2(Vector2(-w * 0.25, -h * 0.45), Vector2(w * 0.50, h * 0.90)), faded)
-			for i in range(5):
-				draw_line(Vector2(-w * 0.20 + i * w * 0.10, -h * 0.43), Vector2(-w * 0.20 + i * w * 0.10, h * 0.43), faded, 3)
-			for y in [-h * 0.47, h * 0.43]:
-				draw_rect(Rect2(Vector2(-w * 0.40, y), Vector2(w * 0.80, h * 0.04)), mid)
-		&"counter":
-			draw_rect(Rect2(Vector2(-w * 0.47, -h * 0.15), Vector2(w * 0.94, h * 0.64)), faded)
-			draw_line(Vector2(-w * 0.5, -h * 0.15), Vector2(w * 0.5, -h * 0.15), mid, 11)
-			for i in range(7):
-				var x := -w * 0.40 + i * w * 0.12
-				draw_rect(Rect2(Vector2(x, -h * 0.44), Vector2(w * 0.075, h * 0.25)), mid)
-				draw_line(Vector2(x + w * 0.014, -h * 0.35), Vector2(x + w * 0.055, -h * 0.35), faded, 2)
-		&"horn":
-			draw_colored_polygon(PackedVector2Array([
-				Vector2(-w * 0.10, h * 0.26), Vector2(w * 0.07, h * 0.22),
-				Vector2(w * 0.42, -h * 0.34), Vector2(-w * 0.43, -h * 0.46),
-			]), faded)
-			draw_arc(Vector2(0, -h * 0.34), w * 0.41, PI, TAU, 48, mid, 3.0)
-			draw_line(Vector2(-w * 0.1, h * 0.22), Vector2(-w * 0.1, h * 0.48), mid, 14)
-			draw_rect(Rect2(Vector2(-w * 0.25, h * 0.44), Vector2(w * 0.5, h * 0.06)), mid)
-			for i in range(5):
-				draw_line(Vector2(-w * 0.07, h * 0.18), Vector2(lerpf(-w * 0.37, w * 0.36, i / 4.0), -h * 0.32), faded, 2)
-		&"headshell":
-			draw_rect(Rect2(-extent / 2, extent), faded)
-			draw_line(Vector2(-w * 0.43, -h * 0.36), Vector2(w * 0.36, -h * 0.26), mid, 9)
-			draw_line(Vector2(w * 0.36, -h * 0.26), Vector2(w * 0.28, h * 0.40), mid, 11)
-			for i in range(6):
-				draw_rect(Rect2(Vector2(-w * 0.38 + i * w * 0.11, -h * 0.17), Vector2(w * 0.04, h * 0.40)), faded)
-		&"arch", &"headstone":
-			var radius := w * 0.38
-			var crown := Vector2(0, -h * 0.5 + radius)
-			draw_arc(crown, radius, PI, TAU, 48, mid, 13)
-			for side in [-1.0, 1.0]:
-				draw_line(crown + Vector2(side * radius, 0), Vector2(side * radius, h * 0.5), mid, 13)
-			if kind == &"headstone":
-				for i in range(5):
-					draw_line(Vector2(-w * 0.23, i * h * 0.06), Vector2(w * 0.23, i * h * 0.06), faded, 3)
-		&"stair":
-			for i in range(9):
-				var step := Vector2(w / 9, h * (i + 1) / 9)
-				draw_rect(Rect2(base + Vector2(i * w / 9, -step.y), step), faded)
-				draw_line(base + Vector2(i * w / 9, -step.y), base + Vector2((i + 1) * w / 9, -step.y), mid, 3)
-		_:
-			draw_rect(Rect2(-extent / 2, extent), faded)
-			draw_line(Vector2(-w / 2, -h / 2), Vector2(w / 2, -h / 2), mid, 5)
-			for row in range(3):
-				for col in range(4):
-					var p := Vector2(-w * 0.40 + col * w * 0.23, -h * 0.34 + row * h * 0.27)
-					draw_rect(Rect2(p, Vector2(w * 0.10, h * 0.12)), mid)
-			if kind == &"market":
-				for i in range(10):
-					var p := Vector2(-w / 2 + i * w / 10, -h * 0.12)
-					draw_rect(Rect2(p, Vector2(w / 10, h * 0.20)), mid if i % 2 == 0 else faded)
-	# Uneven engraved hatching anchors every subject to the same print stock.
-	for i in range(12):
-		var y := h * 0.5 - i * 4.0
-		draw_line(Vector2(-w * 0.5, y), Vector2(-w * 0.18 + i * 3.0, y - 4), faded, 1)
+		&"headshell": _cradle(p)
+		&"horn": _horn(p)
+		&"resting_arm": _resting(p)
+		&"organ", &"overture": _organ(p)
+		&"column": Brush.column(self, 0, -187, 191, 130, p)
+		&"counter": _counter(p)
+		&"arch": Brush.archway(self, Vector2(0, -30), Vector2(144, 151), 191, p, 17)
+		&"headstone": _headstone(p)
+		&"market": _market(p)
+		&"stair": _stair(p)
+		_: _facade(p)
+	draw_set_transform(Vector2.ZERO)
+
+func _cradle(p: Dictionary) -> void:
+	var body := PackedVector2Array([Vector2(-174, -106), Vector2(-133, -151), Vector2(134, -129),
+		Vector2(175, -88), Vector2(133, 114), Vector2(83, 159), Vector2(-126, 129), Vector2(-161, 91)])
+	Brush.wash(self, body, Brush.fade(p.shadow, 0.78))
+	Brush.stroke(self, PackedVector2Array([body[0], body[1], body[2], body[3], body[4], body[5], body[6], body[7], body[0]]), Brush.fade(p.copper, 0.72), 9)
+	Brush.curve(self, Vector2(-139, -124), Vector2(2, -144), Vector2(139, -108), Brush.fade(p.gold, 0.65), 3)
+	for i in range(6):
+		var x := -112.0 + i * 43
+		Brush.curve(self, Vector2(x, -91), Vector2(x - 16, 16), Vector2(x - 8, 103), Brush.fade(p.body, 0.85), 15)
+		Brush.line(self, Vector2(x - 5, -79), Vector2(x - 12, 81), Brush.fade(p.gold, 0.31), 2)
+	Brush.ellipse(self, Vector2(6, 118), Vector2(65, 18), Brush.fade(p.copper, 0.80), 6)
+	for point in [Vector2(-145, -89), Vector2(139, -74), Vector2(113, 111), Vector2(-134, 88)]:
+		draw_circle(point, 6, p.copper, true, -1, true)
+		draw_circle(point - Vector2(1, 2), 2, p.gold, true, -1, true)
+
+func _horn(p: Dictionary) -> void:
+	Brush.wash(self, PackedVector2Array([Vector2(-33, 89), Vector2(27, 65), Vector2(155, -124), Vector2(-160, -123)]), Brush.fade(p.copper, 0.53))
+	Brush.curve(self, Vector2(-158, -122), Vector2(-107, 46), Vector2(-29, 105), Brush.fade(p.shadow, 0.82), 9)
+	Brush.curve(self, Vector2(151, -121), Vector2(91, 12), Vector2(26, 68), Brush.fade(p.gold, 0.74), 6)
+	Brush.ellipse(self, Vector2(-3, -123), Vector2(159, 53), Brush.fade(p.shadow, 0.80), 18)
+	Brush.ellipse(self, Vector2(-3, -123), Vector2(164, 57), Brush.fade(p.copper, 0.91), 9)
+	Brush.ellipse(self, Vector2(-3, -123), Vector2(157, 50), Brush.fade(p.gold, 0.74), 3)
+	Brush.ellipse(self, Vector2(-3, -123), Vector2(112, 31), Brush.fade(p.body, 0.78), 15)
+	for i in range(6):
+		Brush.curve(self, Vector2(-21, 75), Vector2(-86 + i * 30, -28), Vector2(-135 + i * 54, -87), Brush.fade(p.gold, 0.23), 2)
+	Brush.curve(self, Vector2(-20, 83), Vector2(-49, 139), Vector2(-16, 163), p.copper, 21)
+	Brush.line(self, Vector2(-83, 183), Vector2(78, 180), p.body, 19)
+	Brush.line(self, Vector2(-79, 175), Vector2(74, 173), Brush.fade(p.gold, 0.54), 3)
+
+func _resting(p: Dictionary) -> void:
+	Brush.ellipse(self, Vector2(114, -97), Vector2(38, 36), p.copper, 14)
+	Brush.curve(self, Vector2(101, -91), Vector2(-30, -91), Vector2(-90, -22), Brush.fade(p.body, 0.94), 29)
+	Brush.curve(self, Vector2(102, -103), Vector2(-30, -101), Vector2(-96, -30), Brush.fade(p.gold, 0.61), 5)
+	Brush.curve(self, Vector2(-89, -21), Vector2(-135, 76), Vector2(-101, 135), p.copper, 16)
+	Brush.ellipse(self, Vector2(-105, 146), Vector2(45, 27), Brush.fade(p.gold, 0.52), 6, 0, PI)
+
+func _organ(p: Dictionary) -> void:
+	for i in range(9):
+		var x := -164.0 + i * 41
+		var top := -91.0 - absf(i - 4.0) * 24
+		Brush.curve(self, Vector2(x, top), Vector2(x - 5, 12), Vector2(x + 3, 184), Brush.fade(p.body, 0.24), 20)
+		Brush.curve(self, Vector2(x - 5, top + 6), Vector2(x - 10, 12), Vector2(x - 3, 173), Brush.fade(p.copper, 0.28), 4)
+		Brush.ellipse(self, Vector2(x, top), Vector2(10, 5), Brush.fade(p.gold, 0.26), 2)
+		Brush.line(self, Vector2(x - 13, 99), Vector2(x + 13, 100), Brush.fade(p.copper, 0.27), 6)
+
+func _counter(p: Dictionary) -> void:
+	Brush.wash(self, PackedVector2Array([Vector2(-186, -46), Vector2(189, -36), Vector2(173, 184), Vector2(-175, 178)]), Brush.fade(p.shadow, 0.81))
+	Brush.curve(self, Vector2(-197, -48), Vector2(-4, -59), Vector2(198, -42), Brush.fade(p.copper, 0.76), 19)
+	Brush.curve(self, Vector2(-195, -57), Vector2(-4, -67), Vector2(196, -51), Brush.fade(p.gold, 0.55), 3)
+	for i in range(7):
+		var x := -163.0 + i * 53
+		Brush.curve(self, Vector2(x, -24), Vector2(x - 5, 68), Vector2(x + 4, 170), Brush.fade(p.edge, 0.50), 3)
+		for knot in range(2):
+			Brush.ellipse(self, Vector2(x + 14, 43 + knot * 87), Vector2(9, 3), Brush.fade(p.copper, 0.25), 1)
+	for i in range(5):
+		var x := -132.0 + i * 59
+		Brush.ellipse(self, Vector2(x, -89 - (i % 2) * 24), Vector2(22, 26), Brush.fade(p.body, 0.84), 16)
+		Brush.ellipse(self, Vector2(x, -89 - (i % 2) * 24), Vector2(12, 15), Brush.fade(p.gold, 0.37), 2)
+
+func _headstone(p: Dictionary) -> void:
+	var crown := Vector2(0, -87)
+	Brush.wash(self, PackedVector2Array([Vector2(-118, -85), Vector2(-88, -161), Vector2(4, -192),
+		Vector2(96, -158), Vector2(124, -81), Vector2(112, 185), Vector2(-128, 184)]), Brush.fade(p.body, 0.59))
+	Brush.archway(self, crown, Vector2(113, 99), 185, p, 9)
+	for i in range(5):
+		Brush.line(self, Vector2(-71, -37 + i * 30), Vector2(63 - (i % 2) * 24, -40 + i * 30), Brush.fade(p.light, 0.25), 4)
+	Brush.curve(self, Vector2(-126, 178), Vector2(-86, 108), Vector2(-99, 60), Brush.fade(p.sage, 0.41), 6)
+
+func _market(p: Dictionary) -> void:
+	# A fabric edge and supporting timbers, with no opaque facade behind them.
+	Brush.wash(self, PackedVector2Array([Vector2(-181, -110), Vector2(155, -131), Vector2(196, -52),
+		Vector2(124, -28), Vector2(47, -38), Vector2(-35, -24), Vector2(-197, -38)]), Brush.fade(p.copper, 0.43))
+	Brush.curve(self, Vector2(-194, -36), Vector2(-17, -17), Vector2(194, -53), Brush.fade(p.gold, 0.37), 4)
+	for x in [-164.0, 168.0]:
+		Brush.line(self, Vector2(x, -102), Vector2(x - 8, 190), Brush.fade(p.body, 0.68), 11)
+		Brush.line(self, Vector2(x - 3, -94), Vector2(x - 12, 176), Brush.fade(p.copper, 0.45), 2)
+	for i in range(6):
+		Brush.line(self, Vector2(-142 + i * 52, -101), Vector2(-158 + i * 65, -44), Brush.fade(p.shadow, 0.25), 3)
+
+func _stair(p: Dictionary) -> void:
+	Brush.curve(self, Vector2(-193, -157), Vector2(4, -83), Vector2(197, 167), Brush.fade(p.copper, 0.44), 7)
+	for i in range(8):
+		var a := Vector2(-166 + i * 48, -153 + i * 45)
+		Brush.curve(self, a, a + Vector2(-8, 62), a + Vector2(-1, 107), Brush.fade(p.body, 0.29), 6)
+
+func _facade(p: Dictionary) -> void:
+	Brush.curve(self, Vector2(-197, -137), Vector2(2, -181), Vector2(198, -121), Brush.fade(p.copper, 0.24), 9)
+	Brush.archway(self, Vector2(-83, -20), Vector2(45, 73), 142, _faint(p, 0.33), 8)
+	Brush.archway(self, Vector2(89, -39), Vector2(47, 79), 134, _faint(p, 0.25), 7)
+
+func _faint(p: Dictionary, alpha: float) -> Dictionary:
+	var copy := {}
+	for key in p: copy[key] = Color(p[key], alpha)
+	return copy

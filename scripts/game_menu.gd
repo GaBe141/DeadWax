@@ -13,11 +13,12 @@ signal practice_requested
 
 const PressScript := preload("res://scripts/press.gd")
 const MotionScript := preload("res://scripts/ui_motion.gd")
+const WorldBackdrop := preload("res://scripts/ui_world_backdrop.gd")
 
-const PAPER := Color(0.90, 0.87, 0.79)
-const STOCK := Color(0.82, 0.78, 0.70)
-const INK := Color(0.085, 0.075, 0.095)
-const FADED := Color(0.39, 0.36, 0.37)
+const PAPER := Color("102c35")
+const STOCK := Color("081b23")
+const INK := Color("f2e1bc")
+const FADED := Color("c2ae87")
 const PINK := PressScript.PINK
 const NARROW_AT := 900.0
 
@@ -61,7 +62,13 @@ class RecordArt extends Control:
 		resized.connect(queue_redraw)
 
 	func _draw() -> void:
-		PressScript.draw_record(self, size, ink, paper, accent, phase)
+		var extent := Vector2.ONE * minf(size.x * 0.92, size.y * 0.82)
+		draw_set_transform((size - extent) * 0.5)
+		PressScript.draw_record(self, extent, Color("081b23"), Color("d9bd87"), accent, phase)
+		draw_set_transform(Vector2.ZERO)
+		var center := size * 0.5
+		draw_arc(center, extent.x * 0.47, 0.2, 2.7, 80, Color(accent, 0.34), 1.4, true)
+		draw_arc(center, extent.x * 0.48, 3.3, 5.9, 80, Color(accent, 0.18), 1.0, true)
 
 	func _process(delta: float) -> void:
 		if reduced_motion or delta <= 0.0 or not is_visible_in_tree():
@@ -158,6 +165,10 @@ func _build_frame() -> void:
 	_background = PressScript.plate(Vector2(1280.0, 720.0), PAPER, STOCK)
 	overlay.add_child(_background)
 	_background.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	var scenery := WorldBackdrop.new()
+	scenery.kind = &"title"
+	overlay.add_child(scenery)
+	scenery.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 
 	_margin = MarginContainer.new()
 	_margin.add_theme_constant_override("margin_top", 30)
@@ -400,16 +411,16 @@ func _build_art() -> void:
 	label_stack.add_theme_constant_override("separation", 0)
 	label_stack.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	label_center.add_child(label_stack)
-	var imprint := _label("DEAD WAX", PressScript.SIZE_TITLE, INK, true)
+	var imprint := _label("DEAD WAX", PressScript.SIZE_TITLE, Color("102c35"), true)
 	imprint.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	label_stack.add_child(imprint)
-	var edition := _label("SIDE ONE", PressScript.SIZE_TINY, INK)
+	var edition := _label("SIDE ONE", PressScript.SIZE_TINY, Color("102c35"))
 	edition.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	label_stack.add_child(edition)
 	var hole_space := Control.new()
 	hole_space.custom_minimum_size.y = 25.0
 	label_stack.add_child(hole_space)
-	var speed := _label("33⅓   /   DW—001", PressScript.SIZE_TINY, INK)
+	var speed := _label("33⅓   /   DW—001", PressScript.SIZE_TINY, Color("102c35"))
 	speed.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	label_stack.add_child(speed)
 

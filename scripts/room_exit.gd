@@ -18,11 +18,12 @@ var target_entry: StringName = &"default"
 var display_name := "PASSAGE"
 var required_refrain := -1
 var blocked_message := ""
+var ink := INK
+var stock := CHALK
 
 var _label: Label
 var _near := false
 var _was_locked := false
-var _pulse := 0.0
 
 func _ready() -> void:
 	add_to_group("room_exit")
@@ -30,14 +31,13 @@ func _ready() -> void:
 	_label.position = Vector2(-96, -112)
 	_label.size = Vector2(192, 54)
 	_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	PressScript.set_display(_label, PressScript.SIZE_HEADING, CHALK, INK)
+	PressScript.set_display(_label, PressScript.SIZE_HEADING, ink, stock)
 	_label.add_theme_constant_override("font_spacing_glyph", PressScript.TRACKING_DISPLAY)
 	add_child(_label)
 	_was_locked = is_locked()
 	_refresh_label()
 
-func _process(delta: float) -> void:
-	_pulse += delta
+func _process(_delta: float) -> void:
 	var player := get_tree().get_first_node_in_group("player") as Node2D
 	var near_now := (
 		player != null
@@ -51,7 +51,6 @@ func _process(delta: float) -> void:
 		queue_redraw()
 	if _near and Input.is_action_just_pressed("enter_passage"):
 		try_enter()
-	queue_redraw()
 
 func is_locked() -> bool:
 	return (
@@ -97,18 +96,11 @@ func _required_refrain_label() -> String:
 	return "REFRAIN"
 
 func _draw() -> void:
-	var pulse := 0.72 + sin(_pulse * 3.0) * 0.18 if _near else 0.48
-	var color := Color(PINK.r, PINK.g, PINK.b, pulse)
-	if is_locked():
-		color = Color(INK.r, INK.g, INK.b, 0.72)
-	draw_line(Vector2(-25, 20), Vector2(-25, -55), color, 4.0)
-	draw_line(Vector2(25, 20), Vector2(25, -55), color, 4.0)
-	draw_arc(Vector2(0, -55), 25.0, PI, TAU, 24, color, 4.0)
-	draw_line(Vector2(-34, 22), Vector2(34, 22), color, 3.0)
-	if is_locked():
-		draw_line(Vector2(-19, -30), Vector2(19, -8), color, 4.0)
-		draw_line(Vector2(19, -30), Vector2(-19, -8), color, 4.0)
-	else:
-		draw_line(Vector2(0, 5), Vector2(0, -34), color, 3.0)
-		draw_line(Vector2(0, -34), Vector2(-9, -23), color, 3.0)
-		draw_line(Vector2(0, -34), Vector2(9, -23), color, 3.0)
+	PressScript.draw_passage(self, {"near": _near, "locked": is_locked()}, ink, stock)
+
+func reink(next_ink: Color, next_stock: Color) -> void:
+	ink = next_ink
+	stock = next_stock
+	if _label != null:
+		PressScript.set_display(_label, PressScript.SIZE_HEADING, ink, stock)
+	queue_redraw()

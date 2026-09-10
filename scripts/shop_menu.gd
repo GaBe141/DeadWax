@@ -8,10 +8,11 @@ signal close_requested
 const Press := preload("res://scripts/press.gd")
 const Economy := preload("res://scripts/economy_state.gd")
 const UiMotionScript := preload("res://scripts/ui_motion.gd")
-const PAPER := Color("e4d9c3")
-const STOCK := Color("c9bbaa")
-const INK := Color("211d24")
-const FADED := Color("71646a")
+const PAPER := Color("15343b")
+const STOCK := Color("0a2028")
+const INK := Color("f1dfb8")
+const FADED := Color("c5af83")
+const WorldBackdrop := preload("res://scripts/ui_world_backdrop.gd")
 const AMBER := Color("b87a39")
 
 var is_open := false
@@ -166,6 +167,10 @@ func _build() -> void:
 	var backing := Press.plate(Vector2(1280.0, 720.0), PAPER, STOCK, AMBER)
 	overlay.add_child(backing)
 	backing.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	var scenery := WorldBackdrop.new()
+	scenery.kind = &"stall"
+	overlay.add_child(scenery)
+	scenery.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	_margin = MarginContainer.new()
 	overlay.add_child(_margin)
 	_margin.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)

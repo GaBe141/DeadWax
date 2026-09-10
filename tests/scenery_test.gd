@@ -7,6 +7,7 @@ const CampaignScript := preload("res://scripts/campaign.gd")
 const PatchScript := preload("res://scripts/polish_patch.gd")
 const GrayboxScript := preload("res://scripts/room_graybox.gd")
 const PressingScript := preload("res://scripts/pressing_state.gd")
+const PaintedWorld := preload("res://scripts/press_painted_world.gd")
 const BASELINE := {
 	&"headshell": [4, 4, 0, 0, 1, 0],
 	&"horn_plaza": [3, 3, 0, 1, 4, 1],
@@ -33,6 +34,10 @@ func _init() -> void:
 	call_deferred("_run")
 
 func _run() -> void:
+	for path in [PaintedWorld.LABEL_PATH, PaintedWorld.OVERTURE_PATH, PaintedWorld.WELL_PATH]:
+		var painting := PaintedWorld.texture(path)
+		_check(painting != null and painting.get_width() >= 700 and painting.get_height() >= 700,
+			path + " imports its production painting at full usable resolution")
 	_directory = "user://deadwax-scenery-test-%d-%d" % [OS.get_process_id(), Time.get_ticks_usec()]
 	_check(DirAccess.make_dir_absolute(_directory) == OK, "create isolated scenery directory")
 	_main = MainScene.instantiate()

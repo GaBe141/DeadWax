@@ -18,9 +18,11 @@ void fragment() {
 	float lower = smoothstep(0.22, 1.0, p.y);
 	float light = exp(-dot((p - vec2(0.42, 0.20)) * vec2(1.9, 1.1),
 		(p - vec2(0.42, 0.20)) * vec2(1.9, 1.1)) * 3.4);
-	vec3 paper = mix(stock.rgb, ink.rgb, edge * 0.065 + lower * (0.075 + depth * 0.05));
-	vec3 warm = mix(stock.rgb, vec3(1.0, 0.87, 0.64), warmth * 0.15);
-	paper = mix(paper, warm, light * 0.65);
+	float dark_stock = 1.0 - step(0.40, dot(stock.rgb, vec3(0.2126, 0.7152, 0.0722)));
+	vec3 paper = mix(stock.rgb, ink.rgb, (1.0 - lower) * 0.035 + edge * 0.015);
+	vec3 warm = mix(stock.rgb, vec3(0.63, 0.71, 0.67), 0.14 + warmth * 0.10);
+	paper = mix(paper, warm, light * (0.4 + dark_stock * 0.6));
+	paper = mix(paper, stock.rgb * 0.72, lower * dark_stock * 0.55);
 	vec2 px = p * field_px;
 	float grain = (tooth(floor(px * 0.72)) - 0.5) * 0.016;
 	// Fine fibre takes the place of large, repeating printer-guide squares.

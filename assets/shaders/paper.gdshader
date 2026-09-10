@@ -4,8 +4,8 @@ render_mode blend_mix;
 // purpose: paper does not swim when the camera pans, film grain does.
 
 uniform vec4 tint : source_color = vec4(0.10, 0.09, 0.08, 1.0);
-uniform float grain = 0.055;
-uniform float vignette = 0.30;
+uniform float grain = 0.022;
+uniform float vignette = 0.20;
 uniform float vignette_start = 0.44;
 uniform float paper_seed = 0.0;
 

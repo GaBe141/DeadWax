@@ -15,8 +15,8 @@ var practice_mode := false:
 		practice_mode = value
 		_apply_snapshot()
 var reduced_motion := false
-var _ink := Color("26221e")
-var _stock := Color("e8e0cc")
+var _ink := Color("f1dfb8")
+var _stock := Color("13313a")
 var _snapshot := {"step": 0, "remaining": 0.0, "window": 0.65, "label": "", "input_state": "ready"}
 var _stamp := 0.0
 var _early_t := 0.0
@@ -99,7 +99,14 @@ func set_palette(ink: Color, stock: Color) -> void:
 	_stock = stock
 	if _panel == null:
 		return
-	_panel.add_theme_stylebox_override("panel", Press.menu_button_style(ink, stock))
+	var frame := Press.menu_button_style(ink, stock)
+	frame.border_color = Color("b58d58").lerp(ink, 0.16)
+	frame.border_width_left = 3
+	frame.border_width_top = 2
+	frame.shadow_color = Color(0.01, 0.04, 0.05, 0.42)
+	frame.shadow_size = 5
+	frame.shadow_offset = Vector2(0, 3)
+	_panel.add_theme_stylebox_override("panel", frame)
 	Press.set_display(_headline, Press.SIZE_MENU_ACTION, ink)
 	Press.set_body(_input_hint, Press.SIZE_SMALL, ink, Color.TRANSPARENT, true)
 	Press.set_body(_link_label, Press.SIZE_TINY, ink.lerp(stock, 0.30))

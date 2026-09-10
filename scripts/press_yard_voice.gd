@@ -3,7 +3,7 @@ extends RefCounted
 ## marks follow the supplied stage even when decorative motion is disabled.
 
 const AuditionerPrint := preload("res://scripts/press_auditioner.gd")
-const PINK := Color("df547e")
+const PINK := Color("d7a66b")
 
 static func draw_voice(c: CanvasItem, pose: Dictionary, ink: Color, stock: Color) -> void:
 	var stage := String(pose.get("stage", "waiting"))
@@ -66,6 +66,10 @@ static func draw_memory(c: CanvasItem, pose: Dictionary, ink: Color, stock: Colo
 	# Every cut remains above local y10, clear of the real walkable edge.
 	var edge := PackedVector2Array([Vector2(-116, 5), Vector2(-119, -120), Vector2(-108, -144),
 		Vector2(-71, -160), Vector2(52, -158), Vector2(105, -142), Vector2(119, -112), Vector2(117, 4)])
+	c.draw_colored_polygon(edge, Color(stock.lerp(Color("365559"), 0.35), 0.22))
+	for vein in range(11):
+		var y := -143.0 + vein * 13.0
+		c.draw_line(Vector2(-95, y), Vector2(91, y + sin(vein * 2.1) * 9), Color(warm, 0.035), 2.5, true)
 	c.draw_polyline(edge, faded, 2.2, true)
 	c.draw_polyline(PackedVector2Array([Vector2(-108, -116), Vector2(-98, -137), Vector2(-69, -150), Vector2(48, -149)]),
 		Color(ink, 0.10), 1.0, true)

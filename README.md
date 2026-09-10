@@ -366,42 +366,39 @@ unchanged for topology checks. See `ROUTING.md` for both loaders.
 
 ## How it looks
 
-Dead Wax is printed matter, so it is rendered as printed matter. Everything
-visual lives in `scripts/press.gd` — the press — and rooms only ever say *what*
-is there, never how it is inked:
+Dead Wax uses a rich illustrated world: gouache-like distance, pencil contours,
+cream wax faces, petrol cloth, aged brass and warm coral notes. `scripts/press.gd`
+remains its central drawing vocabulary; rooms supply their palette and subject.
 
-- **Plates.** A platform is an inked plate, not a filled rectangle: pressure
-  varies across it, the edge bites unevenly into the stock, and a second plate
-  in the accent colour never quite registers with the first.
-- **Stock and depth.** The fifteen authored rooms have a still field of paper
-  light beneath distant architecture and a nearer layer of hanging cloth,
-  shelves, record rings, and other room-specific cuts. The far artwork stays
-  static; selected middle details move gently. Camera travel gives both planes
-  parallax. Development rooms and grayboxes retain their halftone backdrop.
-- **Exposed edges.** Lamination, scoring, and rivets are clipped to the actual
-  platform faces, at least 10 pixels below their walkable tops. They never
-  cover a landing or bridge a gap.
-- **Lamps and shadows.** Each authored room has two to four native
-  `PointLight2D` sources and one `CanvasModulate` for ambient exposure. Lights
-  stay fixed in the world as the artwork moves in parallax. Real platform
-  faces cast shadows through polygons inset by 2 pixels; these add no physics.
-  Lighting stays on canvas layer 0, leaving the sheet, HUD, and menus unchanged.
-- **The sheet.** A screen-space tooth and a pressed-in vignette sit over the
-  world and under the type. It is static: paper does not swim when the camera
-  pans, film grain does.
-- **Type.** Big Shoulders for wood type — room names, the one word a moment is
-  worth — and IBM Plex Mono for everything the world says to you. Both SIL OFL;
-  licences ship beside them in `assets/fonts/`.
-- **Signage.** Room text is pasted up as a card with stock, a struck rule, and a
-  heading pulled from its leading ALL-CAPS line. Not a floating caption.
+- **Painted distance.** Three original paintings in `assets/art/` cover the Label,
+  Overture halls, and vertical Well. Each of the fifteen rooms adds its own
+  palette and drawn architecture. The far plane stays cached; selected middle
+  details move gently and camera travel gives the scenery parallax.
+- **Characters.** Layered clothes, wax masks, articulated limbs and worn brass
+  give Skip, the voices, residents, Hound and bosses distinct silhouettes.
+  Their existing animation poses follow the original combat clocks.
+- **Solid surfaces.** Dark textured cutaways have crisp illuminated upper lips.
+  Wood grain, scoring and rivets are clipped to actual platform faces, at least
+  10 pixels below walkable tops. They never cover a landing or bridge a gap.
+- **Light.** Two to four native lamps per authored room cast soft shadows from
+  real platform interiors. Cool ambient fill and amber fixtures keep cream
+  faces readable. Lights stay fixed in world space and affect canvas layer 0;
+  HUD, menus and journals retain their colours.
+- **Objects and interface.** Brass-framed groove housings, wax medallions and
+  lanterns share the palette with dark cloth journal covers and signage.
+  Big Shoulders and IBM Plex Mono remain the display and body faces; their
+  SIL OFL licences ship beside them in `assets/fonts/`.
 
-Ink and stock come from the room's own `ink` and `bg_color`; turning A→B→A
-reprints every layer and restores the authored palette and exposure. The B-side
-gets extra ambient fill to keep white ink readable. Pause freezes scenery and
-lighting; reduced motion stops ambient movement, parallax, and slow lamp
-modulation while encounter outcomes can still change the light's energy.
-Development rooms and grayboxes have no room lighting. These layers change no
-platforms, routes, encounters, or rewards.
+Ink and stock come from each room's `ink` and `bg_color`. Turning A→B→A
+reinks every layer and restores the authored exposure exactly. The actual
+reversed palette receives extra ambient fill. Pause freezes scenery and lights;
+reduced motion holds ambient movement, parallax and slow lamp modulation while
+live encounter outcomes can still update. Development rooms and grayboxes retain
+their halftone backdrop and have no campaign atmosphere or room lighting.
+
+See [the art direction and production prompts](assets/art/ART_DIRECTION.md) for
+asset provenance, dimensions and the rendering approach. Rendering remains
+Godot GL Compatibility; the paintings introduce no runtime dependencies.
 
 Menus now reveal their type in short impressions, with moving ink accents for
 mouse and controller focus. The sleeve's record turns gently while its label

@@ -10,18 +10,19 @@ const ProgressionScript := preload("res://scripts/progression_state.gd")
 const PressScript := preload("res://scripts/press.gd")
 const EconomyScript := preload("res://scripts/economy_state.gd")
 const UiMotionScript := preload("res://scripts/ui_motion.gd")
+const WorldBackdrop := preload("res://scripts/ui_world_backdrop.gd")
 
 ## Above this size The Book is shouting, and shouting is set in wood type.
 const DISPLAY_AT := 24
 
 const CORE_SLOTS := [&"strike", &"hood", &"set"]
 
-const PAPER := Color(0.90, 0.87, 0.79)
-const PAPER_DARK := Color(0.77, 0.72, 0.66)
-const DEEP := Color(0.055, 0.045, 0.070)
-const PINK := Color(0.90, 0.25, 0.50)
-const VIOLET := Color(0.40, 0.29, 0.48)
-const FADED := Color(0.48, 0.45, 0.50)
+const PAPER := Color("f2e1bc")
+const PAPER_DARK := Color("c2ae87")
+const DEEP := Color("102c35")
+const PINK := Color("d6a968")
+const VIOLET := Color("52716d")
+const FADED := Color("78928d")
 
 var progression: RefCounted
 var shine_source: Node
@@ -174,6 +175,10 @@ func _build_menu() -> void:
 	background.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	overlay.add_child(background)
 	background.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	var scenery := WorldBackdrop.new()
+	scenery.kind = &"journal"
+	overlay.add_child(scenery)
+	scenery.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 
 	var edge := ColorRect.new()
 	edge.color = PINK
@@ -518,8 +523,11 @@ func _make_label(text: String, font_size: int, color: Color) -> Label:
 
 func _panel_style() -> StyleBoxFlat:
 	var style := StyleBoxFlat.new()
-	style.bg_color = Color(0.10, 0.075, 0.13, 0.96)
-	style.border_color = VIOLET
+	style.bg_color = Color("14333a")
+	style.border_color = Color("92774f")
+	style.shadow_color = Color(0.01, 0.03, 0.04, 0.5)
+	style.shadow_size = 7
+	style.shadow_offset = Vector2(0, 4)
 	style.border_width_left = 2
 	style.border_width_top = 2
 	style.border_width_right = 2
@@ -535,18 +543,18 @@ func _apply_card_style(button: Button, filled: bool) -> void:
 	button.add_theme_stylebox_override("hover", _card_style(filled, true, false))
 	button.add_theme_stylebox_override("focus", _card_style(filled, true, true))
 	button.add_theme_stylebox_override("pressed", _card_style(filled, true, true))
-	button.modulate = Color.WHITE if filled else Color(0.72, 0.69, 0.74)
+	button.modulate = Color.WHITE if filled else Color(0.78, 0.82, 0.78)
 
 func _card_style(filled: bool, highlighted: bool, focused: bool) -> StyleBoxFlat:
 	var style := StyleBoxFlat.new()
 	style.bg_color = (
-		Color(0.23, 0.14, 0.27, 0.98)
+		Color("21484b")
 		if filled
-		else Color(0.105, 0.085, 0.125, 0.92)
+		else Color("132f37")
 	)
 	if highlighted:
 		style.bg_color = style.bg_color.lightened(0.10)
-	style.border_color = PINK if focused else (VIOLET if filled else Color(0.25, 0.22, 0.28))
+	style.border_color = PINK if focused else (Color("947d59") if filled else Color("405c5c"))
 	style.border_width_left = 3 if focused else 1
 	style.border_width_top = 3 if focused else 1
 	style.border_width_right = 3 if focused else 1

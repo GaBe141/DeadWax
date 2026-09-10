@@ -13,6 +13,23 @@ Runtime errors are written to `.godot/deadwax-play.log`.
 - Overall frame pacing: smooth / occasional hitch / frequent hitch
 - Audio clarity and latency:
 
+## Painted world review
+
+- [ ] Review all fifteen rooms at 1280×720 and 960×540: cream faces and upper
+  platform lips remain visible against the painted distance. Inspect the Well
+  at top, middle and bottom; Whistlers' catch lane and the Stalls loft remain clear.
+- [ ] Check the Looper's guard/open states, HUSH's count/swing and the Tonearm's
+  tip contact. Brass mechanisms and strike ribbons must follow the same timing.
+- [ ] Live groove housings show the returning echo; the spent face looks dormant.
+  Wax medallions polish once, with a readable progress ring and lasting shine.
+- [ ] Passage arches remain distinct from distant windows; nearby prompts,
+  seals, lanterns and signs do not obscure a landing or alter interaction reach.
+- [ ] Title, Book, map, stall, pause/settings, ending and four opening shots
+  use the new cloth/brass treatment with readable text and visible focus.
+- [ ] Pause holds world animation; Reduced motion holds ambient detail and
+  parallax. Reink A→B→A and recover: original colours, light exposure and camera
+  synchronization return without flashing a reward or revealing new routes.
+
 ## Opening chapter
 
 - [ ] Boot reaches the title screen; New Game plays the four-scene opening and hands control to Skip in the Headshell after about 23 seconds. Continue is available only with a readable campaign checkpoint and restores the saved entry without the film.

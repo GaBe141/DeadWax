@@ -28,8 +28,8 @@ var _gather_reward_built := false
 
 func configure(id: StringName) -> void:
 	room_id = id
-	bg_color = Color("e3bfb6")
-	ink = Color("362b30")
+	bg_color = Color("352e3a")
+	ink = Color("e7bf85")
 	spawn_pos = Vector2(160, 574)
 	death_y = 1180.0
 	cam_limits = Rect2(0, 0, 1800, 800)
@@ -43,6 +43,8 @@ func configure(id: StringName) -> void:
 			register_entry(&"from_overture_stair", spawn_pos)
 			register_entry(&"from_whistlers", Vector2(185, 574))
 		&"whistlers":
+			bg_color = Color("263749")
+			ink = Color("c5d3cf")
 			band_name = "The Whistlers"
 			band_desc = "So little wax left, the wind can play it."
 			objective_label = "Strike the whistles to ride west. The lower steps catch a missed note."
@@ -55,7 +57,8 @@ func configure(id: StringName) -> void:
 			band_name = "Addie's Doorway"
 			band_desc = "Adagio in C. A door left open at the last bar."
 			objective_label = "Addie is still waiting to be heard. The well is through her doorway."
-			bg_color = Color("e7c9bd")
+			bg_color = Color("42323d")
+			ink = Color("e4bba6")
 			spawn_pos = Vector2(1580, 574)
 			register_entry(&"from_whistlers", spawn_pos)
 			register_entry(&"from_overture_well", Vector2(180, 574))
@@ -63,7 +66,8 @@ func configure(id: StringName) -> void:
 			band_name = "The Overture Well"
 			band_desc = "The song gets farther away. Its echo does not."
 			objective_label = "Follow the well down. Its staggered ledges also lead home."
-			bg_color = Color("d6b1ad")
+			bg_color = Color("1d2c42")
+			ink = Color("bdcbd6")
 			cam_limits = Rect2(0, 0, 1350, 1570)
 			death_y = 1900.0
 			spawn_pos = Vector2(180, 254)
@@ -73,7 +77,8 @@ func configure(id: StringName) -> void:
 			band_name = "The Worn Gallery"
 			band_desc = "A procession, almost rubbed away."
 			objective_label = "Find HUSH beyond the gallery. Keep your Hood up to soften your approach."
-			bg_color = Color("d9bcb7")
+			bg_color = Color("353448")
+			ink = Color("d9bca6")
 			cam_limits.size.x = 2600.0
 			register_entry(&"from_overture_well", Vector2(180, 574))
 			register_entry(&"from_smoothed_floor", Vector2(2380, 574))
@@ -83,8 +88,8 @@ func configure(id: StringName) -> void:
 			band_name = "The Smoothed Floor"
 			band_desc = "Someone has burnished every last ring away."
 			objective_label = "HUSH asks for three rung-backs. Strike as each swing lands."
-			bg_color = Color("ded5df")
-			ink = Color("494450")
+			bg_color = Color("293845")
+			ink = Color("d5d9cb")
 			muted = true
 			cam_limits.size.x = 2200.0
 			register_entry(&"from_worn_gallery", Vector2(180, 574))
@@ -93,8 +98,8 @@ func configure(id: StringName) -> void:
 			band_name = "The Arm"
 			band_desc = "The empty grip remembers what it was holding."
 			objective_label = "It points home. It will not swing first."
-			bg_color = Color("cfaea9")
-			ink = Color("302631")
+			bg_color = Color("302c42")
+			ink = Color("d8bd91")
 			cam_limits = Rect2(0, 0, 2250, 850)
 			register_entry(&"from_smoothed_floor", Vector2(185, 574))
 			register_entry(&"from_worn_gallery", Vector2(2020, 574))
@@ -111,6 +116,9 @@ func _ready() -> void:
 	platform(Vector2(-25, cam_limits.size.y / 2.0), Vector2(50, cam_limits.size.y + 400))
 	platform(Vector2(cam_limits.size.x + 25, cam_limits.size.y / 2.0), Vector2(50, cam_limits.size.y + 400))
 	setup_atmosphere(session_outcomes)
+	for child in get_children():
+		if child.is_in_group("room_exit"):
+			child.call("reink", _solid_color(), _stock_color())
 
 func _build_bootlegger() -> void:
 	_floor(1700)

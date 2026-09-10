@@ -1,8 +1,16 @@
 extends RefCounted
+const Paint := preload("res://scripts/figure_paint.gd")
 ## A little voice printed in articulated pieces. Pose values are supplied by
 ## the actor; this engraving never moves its origin or reads the scene tree.
 
 static func draw_auditioner(canvas: CanvasItem, pose: Dictionary, ink: Color, body: Color, pale: Color, accent: Color, grey: Color, warm: Color) -> void:
+	var paint := Paint.palette(ink,pale)
+	ink = paint.edge
+	body = paint.coat
+	pale = paint.cream
+	accent = paint.coral
+	grey = paint.brass
+	warm = paint.gold
 	var phase: String = pose.phase
 	var face: float = pose.face
 	var clock: float = pose.clock
@@ -47,26 +55,31 @@ static func draw_auditioner(canvas: CanvasItem, pose: Dictionary, ink: Color, bo
 	if heard and not walking:
 		left_foot = Vector2(-9.0, 8.0)
 		right_foot = Vector2(9.0, 8.0)
-	_limb(canvas, center + Vector2(-7.0, 10.0), left_foot, -4.0 - step * 2.0, inked, 3.5)
-	_limb(canvas, center + Vector2(7.0, 10.0), right_foot, 4.0 + step * 2.0, inked, 3.5)
-	canvas.draw_line(left_foot + Vector2(-3.0, 0.0), left_foot + Vector2(4.0, 0.0), inked, 3.0, true)
-	canvas.draw_line(right_foot + Vector2(-3.0, 0.0), right_foot + Vector2(4.0, 0.0), inked, 3.0, true)
+	_limb(canvas, center + Vector2(-7.0, 10.0), left_foot, -4.0 - step * 2.0, Color(paint.brass,alpha), 5.0)
+	_limb(canvas, center + Vector2(7.0, 10.0), right_foot, 4.0 + step * 2.0, Color(paint.brass,alpha), 5.0)
+	canvas.draw_line(left_foot + Vector2(-4.0, 0.0), left_foot + Vector2(5.0, 0.0), inked, 4.5, true)
+	canvas.draw_line(right_foot + Vector2(-4.0, 0.0), right_foot + Vector2(5.0, 0.0), inked, 4.5, true)
 	# Squash the soft wax on impact. Only the printing transform changes.
 	var squash := Vector2(1.0 + recoil * 0.14 - breath * 0.016, 1.0 - recoil * 0.10 + breath * 0.025)
 	canvas.draw_set_transform(center, rotation, squash)
-	canvas.draw_circle(Vector2(1.3, 0.8), 22.5, Color(accent, 0.32 * alpha), true, -1.0, true)
-	canvas.draw_circle(Vector2.ZERO, 22.0, Color(body, alpha), true, -1.0, true)
-	canvas.draw_arc(Vector2.ZERO, 22.0, 0.0, TAU, 36, edge, 2.5, true)
-	canvas.draw_arc(Vector2(-2.0, 0.0), 15.0, 2.0, 4.5, 16, Color(pale, 0.17 * alpha), 1.2, true)
+	Paint.disc(canvas,Vector2.ZERO,22.0,body,ink,paint.teal,alpha)
+	# The wax face is nestled in an asymmetric hood and a heavy copper wrap.
+	Paint.disc(canvas,Vector2(face*2,-3),15.5,pale,paint.wax,paint.light,alpha)
+	Paint.shape(canvas,PackedVector2Array([Vector2(-21,-10),Vector2(-12,-23),Vector2(7,-23),Vector2(16,-13),Vector2(-6,-17),Vector2(-16,-5)]),Color(paint.teal,alpha),inked,1.2)
+	Paint.shape(canvas,PackedVector2Array([Vector2(-22,8),Vector2(-8,11),Vector2(16,7),Vector2(23,14),Vector2(9,24),Vector2(-14,21)]),Color(paint.copper,alpha),inked,1.3)
+	canvas.draw_line(Vector2(-15,12),Vector2(15,12),Color(paint.coral,alpha*0.8),2.1,true)
+	Paint.hatch(canvas,Vector2(-4,21),22,5,Color(paint.wood,alpha*0.48),5)
 	# The eye narrows through the recoil, then opens as the voice settles.
-	var eye := Vector2(face * 6.0, -2.0)
-	if heard:
-		canvas.draw_arc(eye + Vector2(0.0, -1.0), 4.0, 0.15, PI - 0.15, 12, edge, 1.8, true)
-	elif recoil > 0.35:
-		canvas.draw_line(eye + Vector2(-3.0, -2.0), eye + Vector2(3.0, 2.0), edge, 2.0, true)
-	else:
-		canvas.draw_circle(eye, 3.5, edge, true, -1.0, true)
-		canvas.draw_circle(eye + Vector2(face, 0.0), 1.5, limb_color, true, -1.0, true)
+	for side in [-1.0,1.0]:
+		var eye := Vector2(face*3+side*4.8,-4)
+		if heard:
+			canvas.draw_arc(eye+Vector2(0,-1),2.8,0.15,PI-0.15,12,inked,1.7,true)
+		elif recoil > 0.35:
+			canvas.draw_line(eye+Vector2(-2,-1),eye+Vector2(2,1),inked,1.8,true)
+		else:
+			canvas.draw_circle(eye,2.6,inked,true,-1,true)
+			canvas.draw_circle(eye+Vector2(-0.6,-0.7),0.7,edge,true,-1,true)
+	canvas.draw_arc(Vector2(face*3,1),3.6,0.1,PI-0.1,13,inked,1.1,true)
 	canvas.draw_set_transform(Vector2.ZERO)
 	var far_hand := center + Vector2(face * (13.0 + extension * 22.0), 13.0 + step * 3.0)
 	var near_hand := center + Vector2(face * (18.0 + extension * 48.0 - anticipation * 10.0), -7.0 - extension * 13.0 + breath)
@@ -85,8 +98,10 @@ static func draw_auditioner(canvas: CanvasItem, pose: Dictionary, ink: Color, bo
 	elif phase == "stagger":
 		near_hand = center + Vector2(-face * (27.0 + recoil * 13.0), -18.0)
 		far_hand = center + Vector2(-face * 20.0, 15.0)
-	_limb(canvas, center + Vector2(-face * 9.0, 5.0), far_hand, 8.0, limb_color, 3.0)
-	_limb(canvas, center + Vector2(face * 10.0, -4.0), near_hand, -6.0 - anticipation * 5.0, limb_color, 3.5)
+	_limb(canvas, center + Vector2(-face * 9.0, 5.0), far_hand, 8.0, Color(paint.coat,alpha), 6.5)
+	_limb(canvas, center + Vector2(face * 10.0, -4.0), near_hand, -6.0 - anticipation * 5.0, Color(paint.teal,alpha), 7.0)
+	canvas.draw_circle(near_hand,4.6,edge,true,-1,true)
+	canvas.draw_circle(far_hand,3.8,edge,true,-1,true)
 	canvas.draw_line(near_hand + Vector2(0.0, -3.0), near_hand + Vector2(face * 4.0, 3.0), limb_color, 2.0, true)
 	if heard:
 		return
@@ -96,11 +111,13 @@ static func draw_auditioner(canvas: CanvasItem, pose: Dictionary, ink: Color, bo
 		canvas.draw_arc(center, 34.0 + breath * 0.8, -PI / 2.0, -PI / 2.0 + TAU * float(pose.listening), 36, Color(warm, 0.9), 3.0, true)
 	for index in int(pose.hp_total):
 		var pip := Vector2(-((int(pose.hp_total) - 1) * 9.0) * 0.5 + index * 9.0, 22.0)
+		canvas.draw_line(pip + Vector2(0.0, -5.0), pip + Vector2(0.0, 5.0), ink, 5.0, true)
 		canvas.draw_line(pip + Vector2(0.0, -4.0), pip + Vector2(0.0, 4.0), pale if index < int(ceil(float(pose.hp))) else Color(grey, 0.4), 3.0, true)
 
 static func _limb(canvas: CanvasItem, start: Vector2, end: Vector2, bend: float, color: Color, width: float) -> void:
 	var joint := start.lerp(end, 0.54) + Vector2(bend, absf(bend) * 0.3)
-	canvas.draw_polyline(PackedVector2Array([start, joint, end]), color, width, true)
+	Paint.segment(canvas,start,joint,width,color,Color("13292e",color.a),Color("a3b596",color.a))
+	Paint.segment(canvas,joint,end,width*0.82,color,Color("13292e",color.a),Color("a3b596",color.a))
 
 static func _burst(canvas: CanvasItem, center: Vector2, progress: float, ink: Color, pale: Color, accent: Color) -> void:
 	var alpha := 1.0 - progress

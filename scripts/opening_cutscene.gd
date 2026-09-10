@@ -14,8 +14,8 @@ const CAPTIONS := [
 	"Somewhere below, something is still playing.",
 ]
 const IMPRINTS := ["THE RECORD", "THE WORN SONG", "THE NEEDLE", "SIDE ONE"]
-const INK := Color("29232a")
-const STOCK := Color("e8dfcb")
+const INK := Color("f2e1bc")
+const STOCK := Color("102c35")
 const EXIT_TIME := 0.35
 const REVEAL_TIME := 0.45
 const INPUT_ARM_TIME := 0.20

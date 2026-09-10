@@ -3,6 +3,7 @@ extends StaticBody2D
 ## Strike it -> after ECHO_DELAY its loop comes back around (watch it converge).
 ## Strike again exactly as it lands: ON BEAT (amplified launch).
 
+const Press := preload("res://scripts/press.gd")
 const PressingScript := preload("res://scripts/pressing_state.gd")
 
 const ECHO_DELAY := 0.38
@@ -69,41 +70,8 @@ func _process(_delta: float) -> void:
 	queue_redraw()
 
 func _draw() -> void:
-	var t := _now()
-	var half := SIZE / 2.0
-	if not _live:
-		# Turned over: the same wax, read from the face nobody pressed loud.
-		draw_rect(Rect2(-half, SIZE), SPENT)
-		draw_rect(Rect2(-half * 0.55, SIZE * 0.55), SPENT.darkened(0.12))
-		draw_rect(Rect2(-half, SIZE), SPENT_INK, false, 2.0)
-		return
-	draw_rect(Rect2(-half, SIZE), WAXPALE)
-	draw_rect(Rect2(-half * 0.55, SIZE * 0.55), Color(0.80, 0.76, 0.70))
-
-	# scribble outline, boiling at ~10fps
-	var rng := RandomNumberGenerator.new()
-	rng.seed = _sid + int(t * 10.0)
-	var corners := [
-		Vector2(-half.x, -half.y), Vector2(half.x, -half.y),
-		Vector2(half.x, half.y), Vector2(-half.x, half.y)
-	]
-	var pts := PackedVector2Array()
-	for i in range(5):
-		var c: Vector2 = corners[i % 4]
-		pts.append(c + Vector2(rng.randf_range(-2.0, 2.0), rng.randf_range(-2.0, 2.0)))
-	var hot := is_echo_hot()
-	draw_polyline(pts, HOT if hot else INK, 4.5 if hot else 3.0)
-
-	# the returning echo, made visible — this teaches the timing
-	var echo_t := _ping_at + ECHO_DELAY
-	if _ping_at > 0.0 and t < echo_t + ECHO_WINDOW:
-		var prog := clampf((t - _ping_at) / ECHO_DELAY, 0.0, 1.0)
-		var r := 36.0 + (1.0 - prog) * 150.0
-		var col := Color(HOT.r, HOT.g, HOT.b, 0.25 + 0.75 * prog)
-		var n := 22
-		var ring := PackedVector2Array()
-		for i in range(n + 1):
-			var ang := TAU * float(i) / float(n)
-			var rr := r + rng.randf_range(-2.5, 2.5)
-			ring.append(Vector2(cos(ang), sin(ang)) * rr)
-		draw_polyline(ring, col, 2.0 + 2.0 * prog)
+	var time := _now()
+	var echo := -1.0
+	if _live and _ping_at > 0.0 and time < _ping_at + ECHO_DELAY + ECHO_WINDOW:
+		echo = clampf((time - _ping_at) / ECHO_DELAY, 0.0, 1.0)
+	Press.draw_live_groove(self, {"live": _live, "hot": is_echo_hot(), "echo": echo})

@@ -1,10 +1,9 @@
 extends RefCounted
 ## THE PRESS — every surface, every letterform, one place.
 ##
-## Dead Wax is printed matter: a label, a sleeve, a poster for tomorrow. This
-## holds the whole visual language so a room only ever says *what* is there,
-## never how it is inked. Rooms keep authoring `ink` and `bg_color`; the press
-## decides what those mean on the page.
+## Painted distance, wax faces, brass, cloth and type share one vocabulary.
+## A room says what is there and authors `ink` and `bg_color`; the press
+## interprets those colours across every drawing layer.
 ##
 ## Nothing here reads gameplay state. Colours arrive as arguments.
 
@@ -34,7 +33,13 @@ const TRACKING_DISPLAY := 2
 const LINE_SPACING := 2
 
 # -- the ink ------------------------------------------------------------------
-const PINK := Color(0.90, 0.25, 0.50)
+const PINK := Color("e68b73") # The live note: warm copper against cool wax.
+const BRASS := Color("d6b77c")
+const DEEP := Color("122d37")
+const CREAM := Color("f1dfb8")
+
+static func draw_painted_distance(canvas: CanvasItem, room_id: StringName, area: Rect2, ink: Color, stock: Color) -> void:
+	preload("res://scripts/press_painted_world.gd").draw(canvas, room_id, area, ink, stock)
 
 # -- plate defaults -----------------------------------------------------------
 const PLATE_BITE := 2.4
@@ -82,25 +87,43 @@ static func glow_material() -> CanvasItemMaterial:
 	return _glow
 
 static func draw_lamp(canvas: CanvasItem, ink: Color, stock: Color, tint: Color) -> void:
-	var frame := ink.lerp(stock, 0.20)
-	canvas.draw_line(Vector2(0, -66), Vector2(0, -13), frame, 2.0, true)
-	canvas.draw_colored_polygon(PackedVector2Array([Vector2(-15, -8), Vector2(-6, -17),
-		Vector2(6, -17), Vector2(15, -8)]), frame)
-	canvas.draw_rect(Rect2(-8, -7, 16, 19), tint.lerp(Color.WHITE, 0.48))
-	canvas.draw_rect(Rect2(-8, -7, 16, 19), frame, false, 2.0)
-	canvas.draw_line(Vector2(-12, 14), Vector2(12, 14), frame, 3.0, true)
-	canvas.draw_line(Vector2(0, -6), Vector2(0, 12), Color(frame, 0.6), 1.0)
+	preload("res://scripts/press_props.gd").draw_lamp(canvas, ink, stock, tint, BRASS)
+
+static func draw_live_groove(canvas: CanvasItem, pose: Dictionary) -> void:
+	preload("res://scripts/press_props.gd").draw_groove(canvas, pose, DEEP, CREAM, BRASS, PINK)
+
+static func draw_polish(canvas: CanvasItem, pose: Dictionary) -> void:
+	preload("res://scripts/press_props.gd").draw_polish(canvas, pose, DEEP, BRASS, CREAM, PINK)
+
+static func draw_passage(canvas: CanvasItem, pose: Dictionary, ink: Color, stock: Color) -> void:
+	preload("res://scripts/press_passage.gd").draw(canvas, pose, ink, stock)
 
 static func menu_button_style(ink: Color, stock: Color, highlighted := false, focused := false) -> StyleBoxFlat:
 	var style := StyleBoxFlat.new()
-	style.bg_color = ink if highlighted else stock.lerp(ink, 0.045)
-	style.border_color = PINK if focused else ink.lerp(stock, 0.78)
+	style.bg_color = ink if highlighted else stock.lerp(ink, 0.07)
+	style.border_color = PINK if focused else BRASS.lerp(stock, 0.54)
 	style.set_border_width_all(2 if focused else 1)
+	style.set_corner_radius_all(5)
+	style.shadow_color = Color(DEEP, 0.30)
+	style.shadow_size = 4
+	style.shadow_offset = Vector2(1, 3)
 	style.content_margin_left = 16
 	style.content_margin_right = 16
 	style.content_margin_top = 10
 	style.content_margin_bottom = 10
 	return style
+
+## Cloth, wax and brass on the interface use the same restrained brush grain.
+static func folio_panel(rect: ColorRect, ink: Color, stock: Color) -> void:
+	var material := rect.material as ShaderMaterial
+	if material == null or material.shader != preload("res://assets/shaders/folio_panel.gdshader"):
+		material = ShaderMaterial.new()
+		material.shader = preload("res://assets/shaders/folio_panel.gdshader")
+		rect.material = material
+	material.set_shader_parameter("ink", ink)
+	material.set_shader_parameter("stock", stock)
+	material.set_shader_parameter("brass", BRASS)
+	material.set_shader_parameter("panel_px", rect.size)
 
 ## Focus is drawn over the current button state, so its backing stays clear.
 static func menu_focus_style(ink: Color, stock: Color) -> StyleBoxFlat:
@@ -335,6 +358,7 @@ static func card(
 	sheet.color = stock.lerp(ink, CARD_STOCK_MIX)
 	sheet.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	root.add_child(sheet)
+	folio_panel(sheet, ink, stock)
 
 	# The rule: a single struck line, the cheapest mark that says "printed".
 	var rule := ColorRect.new()
@@ -382,6 +406,7 @@ static func recard(root: Control, ink: Color, stock: Color, accent := PINK) -> v
 				rect.color = Color(ink.r, ink.g, ink.b, 0.35)
 			else:
 				rect.color = stock.lerp(ink, CARD_STOCK_MIX)
+				folio_panel(rect, ink, stock)
 		elif child is Label:
 			(child as Label).add_theme_color_override("font_color", ink)
 

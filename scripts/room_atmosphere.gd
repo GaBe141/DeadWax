@@ -30,6 +30,8 @@ class DepthLayer extends Node2D:
 	var stock: Color
 	var pose: Dictionary
 	func _draw() -> void:
+		if plane == &"far":
+			Press.draw_painted_distance(self, room_id, bounds, ink, stock)
 		Press.draw_room_depth(self, room_id, plane, bounds, pose, ink, stock)
 
 func setup(id: StringName, field: Rect2, next_ink: Color, next_stock: Color,
