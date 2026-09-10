@@ -26,6 +26,12 @@ glaze, drawn architectural details, cloth, fixtures, and clipped material
 marks. Camera parallax moves the cached far plane. These paintings describe
 distant architecture; only the crisp, outlined foreground surfaces are solid.
 
+Gameplay distance is deliberately quiet: the paintings use 52% opacity on
+dark stock, a stronger room-colour tint, and a 24% stock glaze. Light stock
+uses 24% opacity and a 32% glaze. This pushes small painted details behind the
+actors and walkable edges. Repeated background arches, windows, cables,
+record rims and motes are sparse; the main room landmarks retain their shape.
+
 ## Prompt set
 
 All four used the stylized-concept use case and requested a finished game
@@ -93,3 +99,8 @@ Native GL Compatibility review covered all six new rooms at 1280 × 720,
 the Arm's new passage and North Warren at 960 × 540, three map pages at both
 sizes, and the Gallery's reduced-motion A→B→A restoration. Reviews used isolated
 saves. The added painting and code-drawn landmarks remain presentation only.
+
+The quieter-background pass also passed all 27 suites (7,573 checks). Native
+review compared the old and new Verse Hall and North Warren, checked the
+Headshell, Well, HUSH, title and opening, and verified reduced-motion A→B→A
+restoration in the Gallery at 960 × 540. Only the presentation helpers changed.
