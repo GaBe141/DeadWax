@@ -129,6 +129,7 @@ func _ready() -> void:
 	player.progression = progression
 	player.economy = economy
 	player.struck.connect(_on_struck)
+	player.strike_input_rejected.connect(_on_strike_input_rejected)
 	player.on_beat.connect(_on_beat)
 	player.took_hit.connect(_on_player_hit)
 	player.shine_earned.connect(_on_shine_earned)
@@ -1075,11 +1076,17 @@ func _respawn() -> void:
 	camera.force_update_scroll()
 	room.call("sync_scenery_camera")
 	if not development_mode:
-		for encounter in get_tree().get_nodes_in_group("chapter_boss"):
+		var attempts := get_tree().get_nodes_in_group("chapter_boss")
+		for encounter in get_tree().get_nodes_in_group("reset_on_recovery"):
+			if not attempts.has(encounter): attempts.append(encounter)
+		for encounter in attempts:
 			if room.is_ancestor_of(encounter) and encounter.has_method("reset_attempt"):
 				encounter.call("reset_attempt")
 
 # -- events -------------------------------------------------------------------
+
+func _on_strike_input_rejected() -> void:
+	combo_readout.show_early_press()
 
 func _on_struck(pos: Vector2, big: bool, launched: bool) -> void:
 	var w := WaveScript.new()
@@ -1234,7 +1241,7 @@ func _build_hud() -> void:
 	combo_readout = ComboReadoutScript.new()
 	combo_readout.name = "ComboReadout"
 	combo_readout.position = Vector2(900, 18)
-	combo_readout.size = Vector2(350, 80)
+	combo_readout.size = Vector2(350, 104)
 	layer.add_child(combo_readout)
 
 	# The masthead is pasted onto the sheet, not floated over it: room signage

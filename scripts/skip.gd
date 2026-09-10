@@ -4,6 +4,7 @@ extends CharacterBody2D
 ## the flying. HOOD UP (hold) is silence. Every constant is a tuning knob.
 
 signal struck(pos: Vector2, big: bool, launched: bool)
+signal strike_input_rejected
 signal on_beat
 signal took_hit
 signal shine_earned(amount: int)
@@ -147,7 +148,18 @@ func combo_snapshot() -> Dictionary:
 	var label := ""
 	if combo_step > 0:
 		label = ["TAP", "SWEEP", "ACCENT"][combo_step - 1]
-	return {"step": combo_step, "remaining": combo_remaining, "window": COMBO_WINDOW, "label": label}
+	var input_state := "ready"
+	if hooded or setting or _stagger > 0.0:
+		input_state = "blocked"
+	elif _strike_buffer > 0.0:
+		input_state = "queued"
+	elif _strike_cd > STRIKE_BUFFER:
+		input_state = "recover"
+	elif _strike_cd > 0.0:
+		input_state = "buffer"
+	return {"step": combo_step, "remaining": combo_remaining, "window": COMBO_WINDOW, "label": label,
+		"input_state": input_state, "queued": input_state == "queued",
+		"cooldown_remaining": clampf(_strike_cd, 0.0, STRIKE_COOLDOWN), "cooldown_duration": STRIKE_COOLDOWN}
 
 func add_shine(amount: int) -> bool:
 	if amount <= 0 or amount > 2147483647 - shine:
@@ -207,7 +219,10 @@ func _physics_process(delta: float) -> void:
 	_coyote = COYOTE_TIME if is_on_floor() else _coyote - delta
 	_buffer = JUMP_BUFFER if Input.is_action_just_pressed("jump") else _buffer - delta
 	_strike_cd -= delta
-	_strike_buffer = maxf(_strike_buffer - delta, 0.0)
+	# A tap accepted in the final window survives the physics tick that crosses
+	# zero. Cooldown and buffer expiring together must not drop a queued press.
+	if _strike_cd > 0.0:
+		_strike_buffer = maxf(_strike_buffer - delta, 0.0)
 	combo_remaining = maxf(combo_remaining - delta, 0.0)
 	if combo_remaining <= 0.0:
 		combo_step = 0
@@ -231,7 +246,10 @@ func _physics_process(delta: float) -> void:
 		cancel_pending_strike()
 	else:
 		if Input.is_action_just_pressed("strike"):
-			_strike_buffer = STRIKE_BUFFER
+			if _strike_cd <= STRIKE_BUFFER:
+				_strike_buffer = STRIKE_BUFFER
+			else:
+				strike_input_rejected.emit()
 		if _strike_buffer > 0.0 and _strike_cd <= 0.0:
 			_strike()
 

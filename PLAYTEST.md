@@ -27,6 +27,8 @@ Runtime errors are written to `.godot/deadwax-play.log`.
 - [ ] Horn Plaza clearly offers the west practice loop and the east market route.
 - [ ] Holding Hood still beneath the horn for about 1.4 seconds produces its quiet answer. Polishing there grants one Shine.
 - [ ] High Street's Looper gives three ticks and swings on four; the upper route lets the player pass without fighting.
+- [ ] After an opening hit, repeated Tap/Sweep/Accent strikes meet the Looper's visible guard without damage, rebound, or an interrupted count. Step out of range, let it swing, then return during OPEN for a full combo. Parrying instead grants the same opening and existing resonance response.
+- [ ] GUARD, the three ticks, the swing, and OPEN agree with contact and vulnerability at 1280×720 and 960×540. The OPEN bar remains truthful with Reduced motion. Recovery resets an unfinished Looper; a defeated one stays defeated on recovery, return, and Continue without extra Shine.
 - [ ] Four evenly spaced J/X strikes open Practice's physical lock and record Count-In once. Returning through the plaza is clear.
 - [ ] A player who skips Practice can still open the Descent Gate with the same pattern; the Book's discovery state never gates the solution.
 - [ ] In the Stalls, standing on the live groove and striking carries the player toward the upper walkway.
@@ -104,6 +106,7 @@ Runtime errors are written to `.godot/deadwax-play.log`.
 - [ ] Jumping into a nearby foe and striking rebounds upward; pressing jump and strike together also works. Enemy reach remains 120 px, and every enemy rebound registers a hit.
 - [ ] Live grooves still launch from the ground or air and take priority when an enemy is nearby. Whistlers' directed launches and groove echoes retain their timing.
 - [ ] A fresh press during the last 90 ms of the 200 ms cooldown produces one follow-up when ready. Earlier presses and holding J/X do not create repeated attacks.
+- [ ] The combo's input line shows RECOVERING, J / X · PRESS, and QUEUED independently of LINK TIME. Press too early to see EARLY · WAIT, then tap during PRESS: QUEUED becomes the next executed beat. Pause freezes feedback; Reduced motion keeps it truthful and lets the early notice expire. Check both window sizes and keyboard/controller X.
 - [ ] Queue a follow-up, then raise Hood, Set, take a hit, open pause/Book/shop, recover, or change rooms: no stale strike fires afterward.
 - [ ] HUSH and the muted practice dummy give no enemy rebound from raw hits. Three correctly timed parries still win; the actual strike must fall within the unchanged 100 ms window.
 - [ ] The immediate circular strike impression reads clearly on both sides of the wax at normal game size. Fainter groove/air echoes do not imply a larger enemy-hit radius or hide enemy tells; there is no animation delay or hitstop.

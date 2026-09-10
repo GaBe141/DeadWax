@@ -26,7 +26,7 @@ On the Dead Wax Wyse, the lightweight project commands are:
 .\deadwax.cmd play    play the campaign with a local runtime log
 .\deadwax.cmd dev     open the original mechanics rooms and planned-world tools
 .\deadwax.cmd editor  open the project in Godot
-.\deadwax.cmd check   import resources; run all twenty-four native test suites
+.\deadwax.cmd check   import resources; run all twenty-six native test suites
 .\deadwax.cmd vibe    start Mistral Vibe in this repository
 ```
 
@@ -214,7 +214,16 @@ Fresh presses chain **Tap → Sweep → Accent**. Execute the next strike within
 pose, ink impression, and sound pitch. Accent uses the existing stronger hit
 against vulnerable foes without increasing reach, launch speed, or the parry
 window. Its strength does not stack with an on-beat groove strike. The three
-marks at the top right show the current stroke and remaining link time.
+marks at the top right show the current stroke and remaining **LINK TIME**.
+The input line shows **RECOVERING**, **J / X · PRESS**, or **QUEUED** separately
+from that chain timer. An early press briefly shows **EARLY · WAIT**; a queued
+press executes once when recovery ends.
+
+High Street's **Looper** guards while counting three ticks, then swings on four.
+Strikes cannot damage or rebound from its guard. Step outside its reach, or
+parry as the swing lands, then use the one-second **OPEN** window to land a
+combo. Its first unguarded hit starts the count. The upper route still passes
+without fighting, and recovery resets an unfinished encounter.
 
 Choose **Move practice** on the title screen for a wide, empty floor to try
 movement, jumping, Hood, Set, and combos. It uses the starting move set and

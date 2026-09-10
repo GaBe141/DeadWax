@@ -3,7 +3,7 @@ extends "res://scripts/room_base.gd"
 ## Geometry and encounters are authored here; every surface comes from Press.
 
 const DoorScript := preload("res://scripts/refrain_door.gd")
-const DummyScript := preload("res://scripts/test_pressing.gd")
+const StreetLooperScript := preload("res://scripts/street_looper.gd")
 const AuditionerScript := preload("res://scripts/auditioner.gd")
 const ResidentScript := preload("res://scripts/resident.gd")
 const HoundScript := preload("res://scripts/hound.gd")
@@ -54,7 +54,7 @@ func configure(id: StringName) -> void:
 		&"high_street":
 			band_name = "The High Street"
 			band_desc = "A street that keeps its own time."
-			objective_label = "Pass the Looper. Practice lies beyond the street."
+			objective_label = "Let the Looper swing. Answer while its guard is open."
 			cam_limits.size.x = 2000.0
 			register_entry(&"from_horn_plaza", Vector2(180, 574))
 			register_entry(&"from_practice_room", Vector2(1780, 574))
@@ -171,10 +171,12 @@ func _build_high_street() -> void:
 		_impression(&"facade", Vector2(330 + index * 430, 315), Vector2(340, 460))
 	_exit(Vector2(85, 574), &"horn_plaza", "THE PLAZA")
 	_exit(Vector2(1880, 574), &"practice_room", "PRACTICE")
-	sign_label(Vector2(290, 395), "THE LOOPER\nThree ticks. It swings on four.\nJ / X as it lands: ring it back.")
-	var looper := DummyScript.new()
+	sign_label(Vector2(290, 355), "THE LOOPER\nThree ticks guarded. It swings on four.\nStep clear, or J / X as it lands.\nThen strike while it is OPEN.")
+	var looper := StreetLooperScript.new()
 	looper.name = "StreetLooper"
 	looper.position = Vector2(940, 557)
+	looper.ink = ink
+	looper.stock = bg_color
 	_persistent(looper, &"street_looper")
 	add_child(looper)
 	# A quiet upper walk gives the encounter room to breathe and a way around.
@@ -388,7 +390,7 @@ func apply_side(next_side: int) -> void:
 		add_child(next_picture)
 		_scenery[index] = next_picture
 	for child in get_children():
-		if (child.is_in_group("world_resident") or child.is_in_group("map_pickup") or child.name in [&"LoftVoice", &"YardVoice", &"YardMemory"]) and child.has_method("reink"):
+		if (child.is_in_group("world_resident") or child.is_in_group("map_pickup") or child.name in [&"LoftVoice", &"YardVoice", &"YardMemory", &"StreetLooper"]) and child.has_method("reink"):
 			child.call("reink", _solid_color(), _stock_color())
 
 func set_scenery_motion(reduced: bool) -> void:
@@ -398,6 +400,13 @@ func set_scenery_motion(reduced: bool) -> void:
 			child.call("set_reduced_motion", reduced)
 
 func _process(delta: float) -> void:
+	if room_id == &"high_street":
+		var looper := get_node_or_null("StreetLooper")
+		if (looper != null and looper.state == StreetLooperScript.S.DOWN) or String(session_outcomes.get("high_street/street_looper", "")) == "shattered":
+			objective_label = "The street is quiet. Practice lies ahead."
+		else:
+			objective_label = "Let the Looper swing. Answer while its guard is open."
+		return
 	if room_id == &"the_stalls":
 		_refresh_stalls_objective()
 		return

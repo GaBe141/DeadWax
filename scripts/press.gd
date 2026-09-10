@@ -132,6 +132,9 @@ static func draw_skip(canvas: CanvasItem, pose: Dictionary, palette: Dictionary)
 static func draw_strike_wave(canvas: CanvasItem, pose: Dictionary, ink: Color, stock: Color) -> void:
 	preload("res://scripts/press_strike.gd").draw(canvas, pose, ink, stock)
 
+static func draw_looper_cue(canvas: Node2D, pose: Dictionary, ink: Color, stock: Color) -> void:
+	preload("res://scripts/press_looper.gd").draw(canvas, pose, ink, stock, BodyBold, SIZE_SMALL)
+
 static func draw_campaign_map(canvas: CanvasItem, size: Vector2, pose: Dictionary, ink: Color, stock: Color) -> void:
 	preload("res://scripts/press_map.gd").draw_chart(canvas, size, pose, ink, stock, BodyFont, DisplayFont)
 
