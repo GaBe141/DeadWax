@@ -15,6 +15,11 @@ on the title screen replays it without replacing your save. Continue goes
 straight to your saved entry. Reduced motion presents still illustrations;
 the captions and original synthesized score tell the same story.
 
+A new journey begins with **movement and jumping only**. Recover Strike and
+Set in the Headshell, then explore for the Hood, Groove Riding, the
+Three-Strike Chain, and Pogo. Each part changes what Skip can do. Earlier
+saves keep their existing moves; choose New Game to play this progression.
+
 Everything is built from code at runtime, so an empty editor viewport is
 expected. The Label, Overture, and first stretch of the Unplayed are authored;
 the remainder of the planned 53-room world is still development scaffolding.
@@ -26,7 +31,7 @@ On the Dead Wax Wyse, the lightweight project commands are:
 .\deadwax.cmd play    play the campaign with a local runtime log
 .\deadwax.cmd dev     open the original mechanics rooms and planned-world tools
 .\deadwax.cmd editor  open the project in Godot
-.\deadwax.cmd check   import resources; run all thirty-three native test suites
+.\deadwax.cmd check   import resources; run all thirty-seven native test suites
 .\deadwax.cmd vibe    start Mistral Vibe in this repository
 ```
 
@@ -42,10 +47,16 @@ HEADSHELL <-> HORN PLAZA <-> STALLS <-> YARD <-> DESCENT GATE <-> OVERTURE STAIR
 ```
 
 The plaza is the junction: west leads to the Looper and Tick's Count-In
-lesson; east leads through the market to the way down. Practice also returns
-directly to the plaza. Doors respond to four even strikes whether or not
-the Book has recorded the technique. The street has room to slip past its
-encounter, and the Yard's voices can be heard or shattered.
+lesson; east leads to the market's first movement gate. Practice also returns
+directly to the plaza. Find Strike, then open Tick's listening door with four
+even strikes and recover **Groove Riding** beyond it. Return to the Stalls
+and strike its live groove to reach the eastern bank. A missed launch has a
+low western route back to the takeoff; ordinary jumps cannot cross the tall
+eastern step. Count-In works before the Book has recorded its name.
+
+High Street's upper walk holds the **Hood** and avoids its Looper. The
+**Three-Strike Chain** waits on the Yard's western approach. Its voices can
+be heard or shattered with the moves you have recovered.
 
 The first Yard voice carries a half-remembered name. Stand near it with
 **Hood** raised for its two notes, then lower Hood and begin holding **Set**
@@ -83,7 +94,9 @@ holding Set offers another answer. Both outcomes persist, and the final
 listening point asks for E/Y after the encounter is resolved. The Headshell
 has different words and scenery when you return.
 
-The first descent uses grooves, wind, and ordinary jumps. After either Tonearm
+The first descent uses earned Groove Riding, wind, and ordinary jumps.
+The Well's lower resting shelf holds **Pogo**, which adds airborne rebounds
+from vulnerable foes. After either Tonearm
 outcome, a **Gather** pressing appears beside the open seal. Pick it up, jump,
 then Strike near the crest to climb on one held breath. Landing refills it;
 ordinary grounded attacks keep their footing. The nearby shelf offers a safe
@@ -205,7 +218,8 @@ Three optional **Echo Trials** offer repeatable equipment hunts:
 | Overture | Eastern Worn Gallery, beyond the Arm's service door | Test Pressing recordings. |
 | Unplayed | Deep Gallery's lower floor | A mixture of Looper and Auditioner recordings. |
 
-Stand beside a trial press and use **E / Y** to begin. Clear three waves,
+After recovering Strike, stand beside a trial press and use **E / Y** to
+begin. The Label trial also accepts a Set-only player. Clear three waves,
 containing one, one, and two echoes, then return to the press and use a fresh
 **E / Y** to collect the result. The echoes use familiar combat rules. They
 are recordings and never restore a resolved neighbour. Trial rewards grant
@@ -245,10 +259,10 @@ the claim available and restores the same roll for a retry.
 
 ## Saving and settings
 
-The chapter saves at passages, opened locks, resolved encounters, polishing,
+The chapter saves at ability discoveries, passages, opened locks, resolved encounters, polishing,
 discoveries, claimed trial rewards, equipment changes, the Book, pause, title,
 and quit. Continue starts at the entry used
-for the saved room, carrying learned techniques, Shine, opened doors, encounter
+for the saved room, carrying recovered abilities, learned techniques, Shine, opened doors, encounter
 outcomes, carried discoveries, equipment, Offcuts, bestiary notes, trial records,
 and chapter completion. Resolved voices never
 return to combat; polished wax cannot pay out twice.
@@ -258,6 +272,12 @@ reinterpreted as an unfinished extended journey; room, entry, Shine, knowledge,
 and encounter choices are retained. Completion now also requires a resolved
 Tonearm encounter. An unfinished HUSH or Tonearm attempt resets on recovery;
 a resolved encounter stays resolved.
+
+The optional version-one `abilities` object records the exact moves found.
+If it is absent in an older save, Continue retains all six moves from the
+previous build. New Game explicitly saves an empty list; finding a part
+updates it only after a successful write. Recovery and Continue keep a
+partial moveset without inventing missing abilities or replaying pickups.
 
 The version-one checkpoint accepts an optional `discoveries` object containing
 the spool's stage and the survey slip. Older saves start with both uncollected
@@ -283,18 +303,21 @@ Continue also starts there at full health.
 
 ## Controls
 
+Movement, jumping, interaction, and menus work from the start. Strike, Hood,
+Set, and the attack refinements below work after their discoveries.
+
 - **A/D** move · **SPACE** jump (stubby on purpose — the strike does the flying)
 - **J** (or X) — **STRIKE**: hit nearby foes while keeping your footing.
-  Jumping and striking a vulnerable foe gives an upward rebound; live grooves
-  launch you from the ground or air and take priority over enemy rebounds.
-  Thick air supplies directional jets; after finding **GATHER**, one air-strike
-  breath follows you into dry rooms.
+  Strike can also parry. With **POGO**, jumping and striking a vulnerable foe
+  gives an upward rebound. **GROOVE RIDING** enables live-groove launches and
+  thick-air directional jets; live grooves take priority over foe rebounds.
+  After finding **GATHER**, one air-strike breath follows you into dry rooms.
 - **K hold** (or C) — **HOOD UP**: silence. Slower, softer, your crackle
   drains fast, the world goes lowpass-muffled, and things stop hearing you.
   Hold it beside dull grey wax to **polish** (mints shine).
 - **L hold** — **SET / KNEEL**: listen to an Auditioner instead of breaking it.
 - **W/S** (or arrows) — aim directional strikes while airborne.
-- **E** (or gamepad Y) — enter a nearby passage, listen, use a discovery fixture,
+- **E** (or gamepad Y) — recover a nearby ability, enter a passage, listen, use a discovery fixture,
   or start and claim a nearby Echo Trial.
 - **B** (or D-pad Up) — browse the Bootlegger's stall while standing nearby.
 - **I** (or gamepad Start) — open **The Book**, the full-screen inventory.
@@ -316,7 +339,8 @@ cooldown queues one follow-up; holding the button does not repeat attacks.
 Ground recovery lasts 100 ms and keeps 80% movement acceleration. Hood, Set,
 damage, menus, recovery, and passages cancel a queued strike and its combo.
 
-Fresh presses chain **Tap → Sweep → Accent**. Execute the next strike within
+Before finding the chain, every attack is a single Tap. After recovering
+**Three-Strike Chain**, fresh presses link **Tap → Sweep → Accent**. Execute the next strike within
 650 ms to keep the chain; a fourth begins another Tap. Each stroke has its own
 pose, ink impression, and sound pitch. Accent uses the existing stronger hit
 against vulnerable foes without increasing reach, launch speed, or the parry
@@ -333,13 +357,13 @@ combo. Its first unguarded hit starts the count. The upper route still passes
 without fighting, and recovery resets an unfinished encounter.
 
 Choose **Move practice** on the title screen for a wide, empty floor to try
-movement, jumping, Hood, Set, and combos. It uses the starting move set and
+movement, jumping, Hood, Set, and combos. It supplies all six moves and
 has no enemies, pickups, or exits. **R** resets Skip and the chain; **Esc / Back**
 opens pause, where **Return to title** takes you back to the sleeve. Practice
 uses temporary models and never writes your campaign checkpoint, unlocks
 progression, spends Shine, or records map visits. Continue resumes your journey.
-Carried discoveries and collections use disposable practice state, leaving
-the campaign's spool, slip, equipment, materials, trial records, and bestiary
+Abilities, carried discoveries, and collections use disposable practice state, leaving
+the campaign's recovered moves, spool, slip, equipment, materials, trial records, and bestiary
 untouched. Equipment effects return to stock for the empty practice floor.
 
 The immediate circular impression shows the 120 px enemy-hit reach; fainter
@@ -368,24 +392,36 @@ Opening the map pauses play; closing it returns you to the same position.
 
 ## Character progression
 
-Dead Wax uses a hybrid metroidvania progression instead of a conventional
-skill tree:
+Explore to recover six moves. Stand on the ground beside each lost part and
+use a fresh **E / Y**; arrival or walking past never collects it automatically.
+The Book names each missing ability and keeps a lead to its location.
 
-- **Strike, Hood, and Set** are core verbs available from the start.
+| Ability | Discovery | What changes |
+| --- | --- | --- |
+| Strike | Headshell's lower floor | Basic Tap attacks and parries. |
+| Set | Headshell, toward the eastern passage | Kneeling and peaceful responses. |
+| Hood | High Street's upper walk | Quiet movement, listening calls, and polishing wax. |
+| Groove Riding | Beyond Tick's Count-In door in Practice | Live-groove launches and thick-air jets; opens the Stalls crossing. |
+| Three-Strike Chain | Groove Yard's western approach | Links Tap, Sweep, and the stronger Accent. |
+| Pogo | Overture Well's lower resting shelf | Airborne rebounds from vulnerable foes. |
+
+Recovering abilities never changes ordinary running speed or jump height.
+Equipment modifies handling but never substitutes for an unearned move.
+Knowledge and Refrains remain separate:
+
 - **Count-In** and **Step-Turn** are knowledge techniques. Discovering one
-  records it in the Book and save data, but never gates the input or
-  solution itself. Count-In is recorded when you prove it at a groove-lock.
-- **Gather, Rest, and Jump-Cut** are earned Refrains. In the development
-  circuit, **Gather** waits at the end of The Unplayed. It preserves one breath in
-  dry wax; rooms that already grant more keep their original capacity.
-  **Jump-Cut** turns the pressing over (see The B-side); it is chalked in The
-  Mispress Core, deep in the Undersong.
+  records it in the Book and save data. Once Strike is found, Count-In can be
+  performed before its name is recorded; four even strikes prove it at a lock.
+- **Gather** waits beyond either Tonearm resolution. It preserves one airborne
+  Strike breath in dry wax; rooms that already grant more keep their capacity.
+- **Rest** and **Jump-Cut** remain later planned Refrains. Rest has no gameplay
+  effect yet. Jump-Cut's working B-side mechanic is available in development
+  rooms, with its planned pickup in the Mispress Core.
 
-The opening records Count-In; the Refrain pickups and thick-air mechanics
-remain available in the development rooms. Campaign progression is saved to
-disk. Development-room progression lasts for that session and does not write
-the campaign save. Rest is represented in progression state but does not have
-a gameplay effect yet.
+Campaign discoveries persist on disk. Development rooms start with all six
+moves and retain their separate Refrain pickups and session-only progression;
+they never write the campaign checkpoint. Title-screen Move practice also
+supplies all six moves without changing what the campaign has earned.
 
 ## The B-side
 
@@ -413,11 +449,14 @@ announced before it is found. The Bootlegger has an opinion about this:
 ## The Book
 
 The Book pauses the room and has **Journey**, **Equipment**, and **Bestiary**
-pages. Journey records the three always-owned core verbs, discovered knowledge
-techniques, carried Refrains, current Shine, permanent purchases, and discoveries. The
+pages. Journey records found and missing moves, discovered knowledge,
+carried Refrains, current Shine, permanent purchases, and discoveries. The
 Echo Spool and Surveyor's Slip have separate item buttons; they do not add to
-the eight groove slots for verbs, techniques, and Refrains. Their entries retain
-the next lead and the survey clue. Inside the game, unknown techniques and Refrains
+the eight groove slots for core moves, techniques, and Refrains. A separate
+refinement shelf holds the chain, Groove Riding, and Pogo; the ability counter
+tracks all six moves. New Game starts with none filled. Missing abilities
+show names and leads; found-item entries retain the next lead and survey clue.
+Inside the game, unknown techniques and Refrains
 remain unnamed until the session records them. Equipment lists all 12 pieces,
 their sources, exact trade-offs and chances, your fittings, Offcuts, and regional
 mastery. Its buttons explicitly fit, remove, or bind equipment; merely opening
@@ -542,7 +581,7 @@ own animation while gameplay and the HUD remain paused underneath.
 
 ## Development checks
 
-Run `.\deadwax.cmd check` before committing. It imports resources and runs 33
+Run `.\deadwax.cmd check` before committing. It imports resources and runs 37
 dependency-free native suites, including smoke, save-store, campaign, Tonearm, Overture,
 sprite-animation, residents, economy-state, economy integration, scenery,
 lighting, attack-feel, GUI-animation, and map-item suites. These cover the original combat and
@@ -569,7 +608,10 @@ Collection-state, collection integration, collection-Book, and Echo-Trial suites
 cover strict save validation, deterministic rewards and pity, duplicate salvage,
 binding, equipment trade-offs, failed-write rollback, historical bestiary notes,
 temporary echo combat, wave ownership, repeated claims, menu navigation, and
-practice isolation. Native playtests still check the readability and pace of
+practice isolation. Four ability suites cover strict move snapshots, empty
+New Game and legacy migration, earned-input behavior, fixed pickups and
+failed writes, the Stalls gate and safe western return, and Book/readout
+permission cues. Native playtests still check the readability and pace of
 repeated hunts and equipment handling.
 GitHub runs the checks on pushes and pull requests. Gameplay feel, real audio,
 rendering, and controller behavior still require `PLAYTEST.md`.

@@ -275,6 +275,8 @@ func _begin_call(voice: Node2D) -> void:
 
 func _prepare_yard() -> Node2D:
 	_release_inputs()
+	# This fixture jumps to earned-move mechanics; opening acquisition has its own suite.
+	_main.abilities.restore_snapshot(_main.AbilitiesScript.legacy_snapshot())
 	_main._load_world_room(&"groove_yard", &"from_the_stalls")
 	await _physics(3)
 	var voice := _persistent(&"yard_first_voice") as Node2D

@@ -359,7 +359,7 @@ func _build_settings() -> void:
 
 
 func _build_controls() -> void:
-	_page.add_child(_label("YOUR HANDS ALREADY KNOW", PressScript.SIZE_SMALL, FADED))
+	_page.add_child(_label("BEGIN WITH MOVEMENT", PressScript.SIZE_SMALL, FADED))
 	_page.add_child(_label("HOW TO PLAY", PressScript.SIZE_MENU_TITLE, INK, true))
 	var controls := GridContainer.new()
 	controls.columns = 3
@@ -383,7 +383,7 @@ func _build_controls() -> void:
 	]:
 		for cell in row:
 			controls.add_child(_label(String(cell), PressScript.SIZE_SMALL, INK))
-	_page.add_child(_paragraph("Press Strike three times: Tap, Sweep, Accent.\nKeep the rhythm to land a stronger final hit.\nA timely strike can answer an incoming blow.\nTry your moves on the title screen's blank side."))
+	_page.add_child(_paragraph("Begin with movement and jumps.\nFind each ability; the Book keeps your leads.\nEarn the chain to link Tap, Sweep, Accent.\nMove practice offers the complete moveset."))
 	_button("Back", _show_screen.bind(_return_screen), true)
 
 

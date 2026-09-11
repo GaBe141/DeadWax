@@ -1,10 +1,10 @@
 extends RefCounted
 ## Session-owned character progression.
 ##
-## Core verbs (Strike, Hood, Set) are always available and intentionally do
-## not live here. Techniques are player knowledge: discovery affects feedback
-## and saves, never whether the input works. Refrains are earned permissions
-## that can change traversal or world interactions.
+## Earned moves (Strike, Hood, Set and their refinements) live separately in
+## abilities_state.gd. Techniques here are player knowledge: discovery affects
+## feedback and saves, never whether a solution works once its moves are owned.
+## Refrains are earned permissions that can change traversal or interactions.
 
 signal refrain_unlocked(refrain: int)
 signal technique_discovered(technique: int)

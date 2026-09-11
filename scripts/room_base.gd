@@ -7,11 +7,14 @@ const PatchScript := preload("res://scripts/polish_patch.gd")
 const PressingScript := preload("res://scripts/pressing_state.gd")
 const PressScript := preload("res://scripts/press.gd")
 const RefrainPickupScript := preload("res://scripts/refrain_pickup.gd")
+const AbilityPickupScript := preload("res://scripts/ability_pickup.gd")
+const AbilitiesScript := preload("res://scripts/abilities_state.gd")
 const RoomExitScript := preload("res://scripts/room_exit.gd")
 const AtmosphereScript := preload("res://scripts/room_atmosphere.gd")
 const LightingScript := preload("res://scripts/room_lighting.gd")
 
 signal refrain_collected(refrain: int)
+signal ability_requested(ability: StringName, source: Node2D)
 signal route_requested(target_room: StringName, target_entry: StringName)
 signal route_blocked(message: String)
 
@@ -31,6 +34,7 @@ var groove_mult := 1.0
 var air_strikes_max := 0
 var muted := false                 # HUSH rules: resonance systems off
 var progression: RefCounted
+var abilities: RefCounted
 
 var bg_color := Color(0.85, 0.83, 0.78)
 var ink := Color(0.14, 0.13, 0.12)
@@ -148,6 +152,8 @@ func apply_side(next_side: int) -> void:
 		if is_instance_valid(hot):
 			hot.call("set_current_side", next_side)
 	for child in get_children():
+		if child.is_in_group("ability_pickup"):
+			child.call("reink", solid, stock)
 		if child.is_in_group("hears_strikes") and "muted" in child:
 			child.set("muted", muted and next_side == PressingScript.Side.A)
 
@@ -174,6 +180,25 @@ func refrain_pickup(pos: Vector2, refrain: int) -> void:
 
 func _on_refrain_pickup_collected(refrain: int) -> void:
 	refrain_collected.emit(refrain)
+
+func ability_pickup(pos: Vector2, id: StringName) -> void:
+	var pickup := AbilityPickupScript.new()
+	pickup.name = "Ability" + String(id).capitalize()
+	pickup.position = pos
+	pickup.abilities = abilities
+	pickup.ability = id
+	pickup.ink = _solid_color()
+	pickup.stock = _stock_color()
+	pickup.definition = AbilitiesScript.ability(id)
+	if "session_outcomes" in self:
+		pickup.session_outcomes = get("session_outcomes")
+	pickup.requested.connect(ability_requested.emit)
+	add_child(pickup)
+
+func refresh_abilities() -> void:
+	for child in get_children():
+		if child.is_in_group("ability_pickup"):
+			child.call("refresh_abilities")
 
 func register_entry(entry_id: StringName, pos: Vector2) -> void:
 	entry_points[entry_id] = pos

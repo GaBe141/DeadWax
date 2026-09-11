@@ -25,6 +25,8 @@ func _run() -> void:
 	root.add_child(_main)
 	await _frames(3)
 	_main._new_game(false)
+	# This fixture jumps to earned-move mechanics; opening acquisition has its own suite.
+	_main.abilities.restore_snapshot(_main.AbilitiesScript.legacy_snapshot())
 	await _physics(5)
 	_main.player.struck.connect(_on_struck)
 	for child in _main.player.get_children():

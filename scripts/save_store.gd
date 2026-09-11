@@ -3,7 +3,9 @@ extends RefCounted
 ## JSON numbers are checked before conversion, and every read is validated.
 ## The last valid checkpoint remains in .bak when a new checkpoint is installed.
 ## Required v1 fields: version, room_id, entry_id, progression.snapshot(), shine.
-## Optional fields: purchases, map, discoveries, collection, completed, encounters, settings.
+## Optional fields: abilities, purchases, map, discoveries, collection, completed, encounters, settings.
+## Absent abilities retain the legacy six-move set; new journeys save an
+## explicit empty or partially earned snapshot instead of invoking migration.
 ## Main must also check that saved location IDs belong to the active campaign.
 
 const SAVE_VERSION := 1
@@ -11,13 +13,14 @@ const MAX_FILE_BYTES := 65536
 const MAX_SHINE := 2147483647
 const MAX_ENCOUNTERS := 256
 const ProgressionScript := preload("res://scripts/progression_state.gd")
+const AbilitiesScript := preload("res://scripts/abilities_state.gd")
 const EconomyScript := preload("res://scripts/economy_state.gd")
 const MapStateScript := preload("res://scripts/map_state.gd")
 const DiscoveriesScript := preload("res://scripts/discoveries_state.gd")
 const CollectionScript := preload("res://scripts/collection_state.gd")
 const ENCOUNTER_STATES := ["opened", "freed", "shattered", "polished", "won"]
 const DEFAULT_SETTINGS := {"volume": 1.0, "reduced_motion": false, "fullscreen": false}
-const ROOT_KEYS := ["version", "room_id", "entry_id", "progression", "shine", "purchases", "map", "discoveries", "collection", "completed", "encounters", "settings"]
+const ROOT_KEYS := ["version", "room_id", "entry_id", "progression", "abilities", "shine", "purchases", "map", "discoveries", "collection", "completed", "encounters", "settings"]
 
 var last_error := ""
 var _path: String
@@ -119,6 +122,12 @@ func _normalise(data: Dictionary) -> Dictionary:
 		return _invalid("The checkpoint location is invalid.")
 	if not _whole_number(data.get("shine"), 0, MAX_SHINE):
 		return _invalid("The checkpoint Shine amount is invalid.")
+	# Older journeys already had these moves. Only a new game starts empty.
+	var abilities: Variant = data.get("abilities", AbilitiesScript.legacy_snapshot())
+	if not AbilitiesScript.valid_snapshot(abilities):
+		return _invalid("The checkpoint abilities are invalid.")
+	var abilities_model := AbilitiesScript.new()
+	abilities_model.restore_snapshot(abilities)
 	var purchases: Variant = data.get("purchases", [])
 	if not EconomyScript.valid_purchases(purchases):
 		return _invalid("The checkpoint purchases are invalid.")
@@ -170,6 +179,7 @@ func _normalise(data: Dictionary) -> Dictionary:
 			"techniques": progression.techniques.duplicate(),
 		},
 		"shine": int(data.shine),
+		"abilities": abilities_model.snapshot(),
 		"purchases": purchases.duplicate(),
 		"map": map.duplicate(true),
 		"discoveries": discoveries.duplicate(),

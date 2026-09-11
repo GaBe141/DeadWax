@@ -125,6 +125,7 @@ func _ready() -> void:
 	platform(Vector2(-25, 470), Vector2(50, 1300))
 	platform(Vector2(cam_limits.size.x + 25, 470), Vector2(50, 1300))
 	setup_atmosphere(session_outcomes)
+	refresh_abilities()
 	for child in get_children():
 		if child.is_in_group("room_exit"):
 			child.call("reink", _solid_color(), _stock_color())
@@ -136,14 +137,18 @@ func _build_headshell() -> void:
 	var arm_outcome := String(session_outcomes.get("the_arm/tonearm", ""))
 	if arm_outcome == "freed":
 		_impression(&"resting_arm", Vector2(355, 300), Vector2(350, 280))
-		sign_label(Vector2(125, 380), "THE ARM CAME HOME\nThe grip is open. It can let go.")
+		sign_label(Vector2(125, 300), "THE ARM CAME HOME\nThe grip is open. It can let go.")
 		objective_label = "Home sounds different when something has come back."
 	elif arm_outcome == "shattered":
-		sign_label(Vector2(125, 380), "THE GRIP IS EMPTY\nNothing is holding it open.")
+		sign_label(Vector2(125, 300), "THE GRIP IS EMPTY\nNothing is holding it open.")
 		objective_label = "The cradle stays empty. The street is still here."
 	else:
-		sign_label(Vector2(125, 380), "THE GRIP IS OPEN\nSomething let go of you.")
+		sign_label(Vector2(125, 300), "THE GRIP IS OPEN\nSomething let go of you.")
 	sign_label(Vector2(535, 330), "A / D or left stick — move\nSPACE / A — jump")
+	ability_pickup(Vector2(365, 554), &"strike")
+	ability_pickup(Vector2(890, 554), &"set")
+	if not _has_ability(&"strike") or not _has_ability(&"set"):
+		sign_label(Vector2(90, 180), "LEFT IN THE CRADLE\nYour needle. Your listening weight.\n[E / Y] beside a lost part.")
 	var folded_map := MapPickupScript.new()
 	folded_map.name = "FoldedMap"
 	folded_map.position = Vector2(500, 554)
@@ -166,7 +171,10 @@ func _build_horn_plaza() -> void:
 	_exit(Vector2(1190, 574), &"practice_room", "PRACTICE")
 	_exit(Vector2(1680, 574), &"the_stalls", "THE STALLS")
 	sign_label(Vector2(600, 242), "THE VOICE\nRuntime: all of it.")
-	sign_label(Vector2(680, 424), "HOLD K / C / B — HOOD\nStand quietly beneath the horn.")
+	if _has_ability(&"hood"):
+		sign_label(Vector2(680, 424), "HOLD K / C / B — HOOD\nStand quietly beneath the horn.")
+	else:
+		sign_label(Vector2(680, 424), "THE HORN KEEPS QUIET\nA Hood was left on the High Street.\nLook along the upper walk.")
 	_polish(Vector2(790, 574), &"horn_wax")
 	if String(session_outcomes.get("the_stalls/loft_voice", "")) == "freed":
 		sign_label(Vector2(1280, 260), "THE RETURNING NOTE\nA small song crosses the market.\nThe great horn carries it home.")
@@ -200,7 +208,8 @@ func _build_high_street() -> void:
 	platform(Vector2(850, 440), Vector2(190, 30))
 	platform(Vector2(1100, 400), Vector2(250, 30))
 	platform(Vector2(1350, 475), Vector2(180, 30))
-	sign_label(Vector2(1310, 287), "NO NEED TO WAKE EVERYTHING\nYour Hood softens your footsteps.")
+	ability_pickup(Vector2(1100, 359), &"hood")
+	sign_label(Vector2(1310, 287), "NO NEED TO WAKE EVERYTHING\nThe Hood on the upper walk\ncan soften your footsteps.")
 	_polish(Vector2(1540, 574), &"street_wax")
 
 func _build_practice_room() -> void:
@@ -220,7 +229,8 @@ func _build_practice_room() -> void:
 	add_child(tick)
 	sign_label(Vector2(720, 335), "THE COUNT-IN\nJ / X — four even strikes.\nAny tempo. Leave a little space.")
 	_listening_door(Vector2(1190, 525), &"practice_count_in")
-	sign_label(Vector2(1305, 340), "YOU KNEW\nThe plaza is just outside.")
+	ability_pickup(Vector2(1320, 574), &"groove")
+	sign_label(Vector2(1305, 250), "A GROOVE KEPT FOR YOU\nCount the door in. Take the sleeve.\nCarry its lift back to the Stalls.")
 	_polish(Vector2(520, 574), &"practice_wax")
 
 func _build_stalls() -> void:
@@ -232,9 +242,14 @@ func _build_stalls() -> void:
 	_exit(Vector2(85, 574), &"horn_plaza", "THE PLAZA")
 	_exit(Vector2(2070, 454), &"groove_yard", "THE YARD")
 	groove(Vector2(590, 572))
-	platform(Vector2(900, 435), Vector2(260, 36))
+	# The solid groove is itself a 56px step. Leave a 147px rise above its
+	# top, beyond a running/coyote jump as well as the bare bank approach.
+	platform(Vector2(900, 415), Vector2(260, 36))
 	platform(Vector2(1200, 410), Vector2(220, 36))
-	sign_label(Vector2(310, 310), "STILL HOT\nStand on the groove. STRIKE [J / X].\nSteer right as it carries you.")
+	if _has_ability(&"groove"):
+		sign_label(Vector2(310, 310), "STILL HOT\nStand on the groove. STRIKE [J / X].\nSteer right as it carries you.")
+	else:
+		sign_label(Vector2(310, 310), "A MISSING LIFT\nThe market span is out of reach.\nTick keeps a Groove in Practice.")
 	sign_label(Vector2(1430, 215), "THE UPPER ROOM\nSomeone kept a song\nabove the shutters.")
 	# This shelf is too high for the legs beneath it, and too far from the
 	# live groove and middle walk. A held breath gives the return its lift.
@@ -263,13 +278,16 @@ func _build_stalls() -> void:
 	loft_passage.route_requested.connect(_on_exit_route_requested)
 	loft_passage.route_blocked.connect(_on_exit_route_blocked)
 	add_child(loft_passage)
-	# A missed launch lands in the service lane. Short steps return to either
-	# bank, so trying the first groove does not cost a room restart.
+	# A missed launch lands in the service lane. Its western steps return to
+	# the groove; the eastern bank rises 210px above the remaining tread.
+	# That missing maintenance stair makes this the first earned movement
+	# gate. Neither faster equipment nor the 124px ordinary jump can skip it.
 	platform(Vector2(1010, 800), Vector2(1420, 60))
-	platform(Vector2(490, 700), Vector2(190, 30))
+	# Keep the return tread outside the bank's overhang: beneath that bank
+	# only 25px of headroom remained, less than Skip's 52px-tall body.
+	platform(Vector2(810, 700), Vector2(190, 30))
 	platform(Vector2(1470, 705), Vector2(180, 30))
-	platform(Vector2(1570, 600), Vector2(180, 30))
-	sign_label(Vector2(700, 655), "BACK UP\nThe steps lead to the warm wax.")
+	sign_label(Vector2(940, 600), "BACK WEST\nThe low steps return to warm wax.\nRecover the lift in Tick's Practice.")
 	_polish(Vector2(1850, 454), &"market_wax")
 
 func _build_groove_yard() -> void:
@@ -279,6 +297,7 @@ func _build_groove_yard() -> void:
 	_exit(Vector2(85, 574), &"the_stalls", "THE STALLS")
 	_exit(Vector2(1980, 574), &"label_descent", "THE DESCENT")
 	sign_label(Vector2(285, 310), "WORN NAMES\nSomeone kept writing them\nafter the sound had gone.")
+	ability_pickup(Vector2(610, 574), &"combo")
 	_update_yard_note(String(session_outcomes.get("groove_yard/yard_first_voice", "")))
 	var memory := YardMemoryScript.new()
 	memory.name = "YardMemory"
@@ -420,8 +439,13 @@ func _process(delta: float) -> void:
 		var looper := get_node_or_null("StreetLooper")
 		if (looper != null and looper.state == StreetLooperScript.S.DOWN) or String(session_outcomes.get("high_street/street_looper", "")) == "shattered":
 			objective_label = "The street is quiet. Practice lies ahead."
-		else:
+		elif _has_ability(&"hood"):
 			objective_label = "Let the Looper swing. Answer while its guard is open."
+		else:
+			objective_label = "Recover the Hood on the upper walk. The Looper can wait."
+		return
+	if room_id in [&"headshell", &"practice_room"]:
+		_refresh_ability_objective()
 		return
 	if room_id == &"the_stalls":
 		_refresh_stalls_objective()
@@ -449,8 +473,33 @@ func _refresh_stalls_objective() -> void:
 		objective_label = "A small song knows the way home. The gallery passage is open."
 	elif progression != null and progression.has_refrain(ProgressionScript.Refrain.GATHER):
 		objective_label = "The upper room is closer than it was."
+	elif not _has_ability(&"groove"):
+		objective_label = "The market needs a lift. Recover the Groove in Tick's Practice Room."
 	else:
 		objective_label = "Let the live groove carry you across the market."
+
+func _has_ability(id: StringName) -> bool:
+	return abilities == null or bool(abilities.call("has_ability", id))
+
+func refresh_abilities() -> void:
+	super.refresh_abilities()
+	_refresh_ability_objective()
+
+func _refresh_ability_objective() -> void:
+	match room_id:
+		&"headshell":
+			if not _has_ability(&"strike"):
+				objective_label = "Recover your needle near the cradle. [E / Y] beside it."
+			elif not _has_ability(&"set"):
+				objective_label = "Recover your listening weight by the eastern arch."
+			elif String(session_outcomes.get("the_arm/tonearm", "")) not in ["freed", "shattered"]:
+				objective_label = "Follow the light into the Label."
+		&"practice_room":
+			if not _has_ability(&"groove"):
+				objective_label = "Give the door four even strikes, then recover the Groove in its sleeve."
+			elif abilities != null:
+				objective_label = "Carry the recovered Groove east. The Stalls span can be crossed."
+		&"the_stalls": _refresh_stalls_objective()
 
 ## Main keeps the outcomes. Recreating a room only applies its own stable
 ## entries; this method neither records completion nor unlocks knowledge.

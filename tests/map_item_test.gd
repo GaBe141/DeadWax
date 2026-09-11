@@ -248,7 +248,7 @@ func _check_inputs() -> void:
 		_check(not _main.map_menu.is_open and not paused, "focused map Close works with " + ("A" if use_pad else "Space"))
 		_check(_main.player.is_on_floor() and _main.player.position.is_equal_approx(origin) and _main.player._buffer <= 0, "closing map cannot leak a held confirm into a jump")
 	_main.inventory.open_inventory()
-	_check(not _main.inventory._map_button.disabled and _main.inventory.slot_count() == 8 and _main.inventory.filled_slot_count() == 3, "owned map is separate from the Book's eight progression grooves")
+	_check(not _main.inventory._map_button.disabled and _main.inventory.slot_count() == 8 and _main.inventory.filled_slot_count() == 0, "owned map leaves all eight unearned progression grooves empty")
 	await _frames(2)
 	var selected_before := root.gui_get_focus_owner()
 	await _tap_pad(JOY_BUTTON_DPAD_DOWN)

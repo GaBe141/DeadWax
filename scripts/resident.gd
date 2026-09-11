@@ -89,13 +89,15 @@ func _refresh_story() -> void:
 		if key == "opened":
 			lines = [
 				"The door heard you.\nI keep coming back to three.",
-				"Take the space with you.\nAnother door may be listening.",
+				"Your Groove is in the sleeve.\nTake its lift back to the Stalls.",
+				"Another door may be listening.\nIt can learn the same count.",
 			]
 		else:
 			lines = [
 				"One. Two. Three.\nThen it gets away from me.",
 				"That door needs four even strikes.\nYou can give it the missing beat.",
 				"Pick your own pace.\nLeave a little room between them.",
+				"The sleeve keeps a missing Groove.\nThe market span needs its lift.",
 			]
 	else:
 		heading = "THE BOOTLEGGER"

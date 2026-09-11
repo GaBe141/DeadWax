@@ -13,7 +13,7 @@ const BASELINE := {
 	&"horn_plaza": [3, 3, 0, 1, 4, 1],
 	&"high_street": [7, 7, 0, 1, 2, 2],
 	&"practice_room": [5, 5, 0, 1, 2, 2],
-	&"the_stalls": [12, 12, 1, 1, 3, 2],
+	&"the_stalls": [11, 11, 1, 1, 3, 2],
 	&"groove_yard": [3, 3, 0, 0, 2, 2],
 	&"label_descent": [5, 5, 0, 0, 2, 1],
 	&"overture_stair": [9, 9, 0, 0, 2, 0],

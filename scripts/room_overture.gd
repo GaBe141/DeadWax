@@ -204,9 +204,10 @@ func _build_well() -> void:
 	_exit(Vector2(1240, 1334), &"worn_gallery", "THE GALLERY")
 	groove(Vector2(575, 522))
 	groove(Vector2(575, 1062))
+	ability_pickup(Vector2(785, 794), &"pogo")
 	sign_label(Vector2(205, 98), "DOWN THE WELL\nThe ledges remember\nthe way back.")
 	sign_label(Vector2(895, 500), "WAX IN THE WALL\nA strike climbs faster.\nA jump is enough.")
-	sign_label(Vector2(80, 960), "WELL ECHO\nEvery note comes back\na little thinner.")
+	sign_label(Vector2(80, 960), "A RETURNING EDGE\nA Pogo rests on the middle ledges.\nStrike a foe in the air to rebound.")
 	_listening_post(Vector2(340, 1334), "THE WELL ANSWERS", [
 		"Someone played up there.\nSomeone down here answered.",
 		"The echo is not another voice.\nIt was the same one, returning.",

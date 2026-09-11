@@ -60,6 +60,7 @@ var fall_cap_mult := 1.0
 var groove_mult := 1.0
 var air_strikes_max := 0           # room-provided baseline; progression derives capacity
 var progression: RefCounted
+var abilities: RefCounted
 var economy: RefCounted
 var hood_speed_mult := HOOD_SPEED_MULT
 var warm_thread := false
@@ -157,7 +158,9 @@ func combo_snapshot() -> Dictionary:
 	if combo_step > 0:
 		label = ["TAP", "SWEEP", "ACCENT"][combo_step - 1]
 	var input_state := "ready"
-	if hooded or setting or _stagger > 0.0:
+	if not has_ability(&"strike"):
+		input_state = "locked"
+	elif hooded or setting or _stagger > 0.0:
 		input_state = "blocked"
 	elif _strike_buffer > 0.0:
 		input_state = "queued"
@@ -166,6 +169,7 @@ func combo_snapshot() -> Dictionary:
 	elif _strike_cd > 0.0:
 		input_state = "buffer"
 	return {"step": combo_step, "remaining": combo_remaining, "window": COMBO_WINDOW, "label": label,
+		"strike_unlocked": has_ability(&"strike"), "chain_unlocked": has_ability(&"combo"),
 		"input_state": input_state, "queued": input_state == "queued",
 		"cooldown_remaining": clampf(_strike_cd, 0.0, STRIKE_COOLDOWN), "cooldown_duration": STRIKE_COOLDOWN}
 
@@ -189,7 +193,7 @@ func apply_equipment(profile: Dictionary) -> void:
 	equipment_noise_decay = float(profile.get("noise_decay", 1.0))
 
 func air_strike_capacity() -> int:
-	var capacity := air_strikes_max
+	var capacity := air_strikes_max if has_ability(&"groove") else 0
 	if _has_gather():
 		capacity = maxi(capacity, GATHER_AIR_STRIKES)
 	return capacity
@@ -198,7 +202,12 @@ func refill_air_strikes() -> void:
 	air_strikes_left = air_strike_capacity()
 
 func can_air_strike() -> bool:
-	return air_density > 0.0 or _has_gather()
+	return has_ability(&"strike") and ((air_density > 0.0 and has_ability(&"groove")) or _has_gather())
+
+## Standalone mechanics fixtures retain their complete moveset. The campaign
+## always supplies Main's earned-ability model before play begins.
+func has_ability(id: StringName) -> bool:
+	return abilities == null or bool(abilities.call("has_ability", id))
 
 func _has_gather() -> bool:
 	return (
@@ -208,8 +217,8 @@ func _has_gather() -> bool:
 
 func _physics_process(delta: float) -> void:
 	var grounded_before := is_on_floor()
-	hooded = Input.is_action_pressed("lift")
-	setting = Input.is_action_pressed("set") and is_on_floor() and not hooded
+	hooded = has_ability(&"hood") and Input.is_action_pressed("lift")
+	setting = has_ability(&"set") and Input.is_action_pressed("set") and is_on_floor() and not hooded
 	_stagger = maxf(_stagger - delta, 0.0)
 
 	var dir := Input.get_axis("move_left", "move_right")
@@ -240,7 +249,7 @@ func _physics_process(delta: float) -> void:
 	if _strike_cd > 0.0:
 		_strike_buffer = maxf(_strike_buffer - delta, 0.0)
 	combo_remaining = maxf(combo_remaining - delta, 0.0)
-	if combo_remaining <= 0.0:
+	if combo_remaining <= 0.0 and (has_ability(&"combo") or _strike_cd <= 0.0):
 		combo_step = 0
 	_recover = maxf(_recover - delta, 0.0)
 	noise = maxf(noise - delta * (NOISE_DECAY_HOODED if hooded else NOISE_DECAY) * equipment_noise_decay, 0.0)
@@ -258,7 +267,7 @@ func _physics_process(delta: float) -> void:
 
 	# One fresh tap can wait briefly for cooldown. Silence, Set and damage
 	# discard it; holding the button never starts a string of automatic hits.
-	if hooded or _stagger > 0.0 or setting:
+	if not has_ability(&"strike") or hooded or _stagger > 0.0 or setting:
 		cancel_pending_strike()
 	else:
 		if Input.is_action_just_pressed("strike"):
@@ -277,11 +286,14 @@ func _physics_process(delta: float) -> void:
 		_land_strength = clampf(landing_speed / 950.0, 0.25, 1.0)
 
 func _strike() -> void:
+	if not has_ability(&"strike"):
+		cancel_pending_strike()
+		return
 	# Consume only this input edge. Public cancellation also clears the chain,
 	# but an executed strike must carry its place into the next fresh press.
 	_strike_buffer = 0.0
-	combo_step = combo_step % COMBO_LENGTH + 1
-	combo_remaining = COMBO_WINDOW
+	combo_step = combo_step % COMBO_LENGTH + 1 if has_ability(&"combo") else 1
+	combo_remaining = COMBO_WINDOW if has_ability(&"combo") else 0.0
 	_strike_combo = combo_step
 	_strike_cd = STRIKE_COOLDOWN
 	_recover = STRIKE_RECOVER
@@ -289,6 +301,7 @@ func _strike() -> void:
 	last_strike_ms = Time.get_ticks_msec()
 	var launched := false
 	var big := false
+	var thick_air := air_density > 0.0 and has_ability(&"groove")
 
 	var best: Node2D = null
 	var best_d := 999999.0
@@ -309,7 +322,7 @@ func _strike() -> void:
 			foe_d = fd
 			foe = f
 
-	if best != null:
+	if best != null and has_ability(&"groove"):
 		var away: Vector2 = (global_position - best.global_position).normalized()
 		if away.length_squared() < 0.01:
 			away = Vector2.UP
@@ -322,10 +335,10 @@ func _strike() -> void:
 		best.ping()
 		refill_air_strikes()                   # a launch refuels your breaths (flow)
 		launched = true
-	elif foe != null:
+	elif foe != null and (has_ability(&"pogo") or (is_on_floor() and velocity.y >= 0.0)):
 		# A grounded hit keeps the player's footing. Jumping into the same
 		# strike still rebounds: floor contact updates after move_and_slide.
-		if not is_on_floor() or velocity.y < 0.0:
+		if has_ability(&"pogo") and (not is_on_floor() or velocity.y < 0.0):
 			var pw: Vector2 = (global_position - foe.global_position).normalized()
 			if pw.length_squared() < 0.01:
 				pw = Vector2.UP
@@ -333,14 +346,14 @@ func _strike() -> void:
 			velocity = velocity * POGO_KEEP + pdir * POGO_IMPULSE
 			refill_air_strikes()
 			launched = true
-	elif can_air_strike() and air_strikes_left > 0 and (air_density > 0.0 or not is_on_floor() or velocity.y < 0.0):
+	elif can_air_strike() and air_strikes_left > 0 and (thick_air or not is_on_floor() or velocity.y < 0.0):
 		# Gather follows a jump into dry air; it never turns a grounded jab
 		# into a launch. The room's own thick air still lifts from the floor.
 		air_strikes_left -= 1
 		# The carried breath lifts even while steering across a gap. Only
 		# the room's pooled thick air uses directional jet aiming.
 		var aim := Vector2.UP
-		if air_density > 0.0:
+		if thick_air:
 			aim = Vector2(
 				Input.get_axis("move_left", "move_right"),
 				Input.get_axis("move_up", "move_down")

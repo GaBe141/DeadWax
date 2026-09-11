@@ -84,6 +84,7 @@ class EchoLooper extends "res://scripts/street_looper.gd":
 		PrintPress.draw_looper_cue(self, encounter_snapshot(), ink, stock)
 
 var hunt_id: StringName = &"label"
+var abilities: RefCounted
 var ink := Color("ddc3a5")
 var stock := Color("2b2638")
 var _state: StringName = &"idle"
@@ -131,7 +132,10 @@ func trial_bounds() -> Rect2:
 	return PROFILES.get(hunt_id, {}).get("bounds", Rect2())
 
 func can_start() -> bool:
-	return is_inside_tree() and not get_tree().paused and PROFILES.has(hunt_id) and _state == &"idle" and _player_is_near()
+	return is_inside_tree() and not get_tree().paused and PROFILES.has(hunt_id) and _state == &"idle" and _player_is_near() and _has_trial_move()
+
+func _has_trial_move() -> bool:
+	return abilities == null or bool(abilities.call("has_ability", &"strike")) or (hunt_id == &"label" and bool(abilities.call("has_ability", &"set")))
 
 func can_claim() -> bool:
 	return is_inside_tree() and not get_tree().paused and _state == &"claim" and _player_is_near()
@@ -285,6 +289,8 @@ func _prompt() -> String:
 	if _state == &"active":
 		if _warning > 0.0: return "WAVE %d / 3  —  GET READY\nThe next impression is forming." % _wave
 		return "WAVE %d / 3  —  %d REMAIN\nClear every copy. Leaving ends the trial." % [_wave, _copies.size()]
+	if not _has_trial_move():
+		return "Recover your needle in the Headshell.\nThese recordings need an answer before they can play."
 	var receipt := ""
 	if not _receipt.is_empty():
 		receipt = String(_receipt.get("message", "Pressing collected. Check your Book.")) + "\n"

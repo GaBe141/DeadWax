@@ -1239,7 +1239,11 @@ func _check_project_boot() -> void:
 	_expect(_action_has_key(&"inventory", KEY_I), "I opens the inventory")
 	_expect(_action_has_button(&"inventory", JOY_BUTTON_START), "gamepad Start opens the inventory")
 	_expect(not _action_has_button(&"inventory", JOY_BUTTON_B), "gamepad B does not open the inventory during play")
-	var expected_inventory_slots := 3 + ProgressionScript.TECHNIQUE_ORDER.size() + ProgressionScript.REFRAIN_ORDER.size()
+	var expected_inventory_entries: Array[String] = ["strike", "hood", "set", "combo", "groove", "pogo"]
+	for technique in ProgressionScript.TECHNIQUE_ORDER:
+		expected_inventory_entries.append(String(ProgressionScript.TECHNIQUE_KEYS[technique]))
+	for refrain in ProgressionScript.REFRAIN_ORDER:
+		expected_inventory_entries.append(String(ProgressionScript.REFRAIN_KEYS[refrain]))
 	for action in REQUIRED_INPUT_ACTIONS:
 		if StringName(action) != &"inventory":
 			_expect(
@@ -1277,16 +1281,21 @@ func _check_project_boot() -> void:
 	for direction in [
 		JOY_BUTTON_DPAD_RIGHT,
 		JOY_BUTTON_DPAD_DOWN,
+		JOY_BUTTON_DPAD_LEFT,
+		JOY_BUTTON_DPAD_LEFT,
+		JOY_BUTTON_DPAD_DOWN,
+		JOY_BUTTON_DPAD_RIGHT,
 		JOY_BUTTON_DPAD_DOWN,
 		JOY_BUTTON_DPAD_LEFT,
 		JOY_BUTTON_DPAD_LEFT,
-		JOY_BUTTON_DPAD_UP,
 	]:
 		_send_joy_button(direction, true)
 		await process_frame
 		_send_joy_button(direction, false)
 		visited_inventory_slots[String(inventory.call("selected_slot"))] = true
-	_expect(visited_inventory_slots.size() == expected_inventory_slots, "D-pad/stick focus can reach all inventory entries")
+	for slot in expected_inventory_entries:
+		_expect(visited_inventory_slots.has(slot), "D-pad/stick focus reaches inventory entry '%s'" % slot)
+	_expect(visited_inventory_slots.size() == expected_inventory_entries.size(), "D-pad/stick focus can reach all inventory entries")
 	_send_joy_button(JOY_BUTTON_START, true)
 	await process_frame
 	_send_joy_button(JOY_BUTTON_START, false)

@@ -71,6 +71,8 @@ func _check_earning() -> void:
 	await _physics(4)
 	_check(_main.economy.snapshot() == {"shine": 0, "purchases": []} and _main.player.shine == 0, "new game starts with an empty shared wallet")
 	_check(_main._health == 3 and _main.economy.max_health() == 3, "new game retains the original three-hit capacity")
+	# Income is measured after finding the Hood; a fresh wallet still starts empty.
+	_main.abilities.unlock_ability(&"hood")
 	_main._load_world_room(&"horn_plaza", &"from_headshell")
 	await _physics(4)
 	var patch := _persistent(&"horn_wax")
@@ -231,6 +233,8 @@ func _check_continue_and_effects() -> void:
 	_check(disk.get("shine") == 0 and disk.get("purchases", ["unexpected"]).is_empty(), "the new pressing saves the reset economy")
 
 func _check_walk_speed(multiplier: float, label: String) -> void:
+	# Compare purchased Hood handling after its separate world discovery.
+	_main.abilities.unlock_ability(&"hood")
 	_main._load_world_room(&"practice_room", &"from_high_street")
 	await _physics(3)
 	await _stand(Vector2(700, 574))

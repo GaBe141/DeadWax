@@ -134,8 +134,14 @@ func _check_geometry(room: Node2D, points: Array[Vector2]) -> void:
 				reachable = reachable or reached.has(index)
 		_check(supported, "%s arrival/passage %s has floor beneath the player" % [room.room_id, point])
 		var optional_loft: bool = room.room_id == &"the_stalls" and point.y == room.entry_points[&"from_worn_gallery"].y
+		var groove_bank: bool = room.room_id == &"the_stalls" and point.y == room.entry_points[&"from_groove_yard"].y
 		if optional_loft:
 			_check(not reachable, "Stalls loft is an optional earned return, above the ordinary jump route")
+		elif groove_bank:
+			# The six lost moves now include Groove Riding. Its first route is
+			# physically earned; ability_world_test crosses and returns through
+			# these surfaces with real player collision and no teleportation.
+			_check(not reachable, "Stalls eastern bank requires the recovered Groove above the ordinary jump route")
 		else:
 			_check(reachable, "%s arrival/passage %s has a route over jump-sized steps" % [room.room_id, point])
 
@@ -169,6 +175,7 @@ func _check_title_and_new_game() -> void:
 	_check(_main._has_session and not paused and not _main.game_menu.is_open, "New game starts a live session")
 	_check(_main.world_room_id == &"headshell" and _main.room_entry_id == &"default", "New game starts in the Headshell")
 	_check(_main.save_store.has_save(), "New game writes a recoverable checkpoint")
+	_check(_main.abilities.snapshot().unlocked.is_empty(), "New Game begins with movement alone")
 	start = _main.player.position
 	_input_key(KEY_D, true)
 	await _physics_frames(6)
@@ -256,6 +263,8 @@ func _check_passage() -> void:
 	_check(_main.player.position == _main.room.entry_position(&"from_headshell"), "respawn keeps the active passage entry")
 
 func _check_encounters() -> void:
+	# This fixture jumps to earned-move mechanics; opening acquisition has its own suite.
+	_main.abilities.restore_snapshot(_main.AbilitiesScript.legacy_snapshot())
 	_main._load_world_room(&"practice_room", &"from_high_street")
 	await _frames(3)
 	var door := _persistent(&"practice_count_in")
@@ -342,6 +351,7 @@ func _check_new_game_reset() -> void:
 	_check(_main.world_room_id == ChapterScript.START_ROOM and _main.encounters.is_empty() and _main.player.shine == 0, "New game clears prior room, encounters and Shine")
 	_check(_main.progression.unlocked_refrains().is_empty() and _main.progression.discovered_techniques().is_empty() and not _main.chapter_complete, "New game clears earned progression and completion")
 	_check(_main.game_menu.settings.reduced_motion, "New game preserves player settings")
+	_check(_main.abilities.snapshot().unlocked.is_empty(), "New Game clears all earned moves")
 	var snapshot: Dictionary = _main.save_store.load_game()
 	_check(snapshot.room_id == "headshell" and snapshot.encounters.is_empty() and snapshot.shine == 0, "New game replaces the active checkpoint")
 	_write_raw(_save_path, "{interrupted checkpoint")

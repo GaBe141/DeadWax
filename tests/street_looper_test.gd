@@ -28,6 +28,8 @@ func _run() -> void:
 	root.add_child(_main)
 	await _frames(3)
 	_main._new_game(false)
+	# This fixture jumps to earned-move mechanics; opening acquisition has its own suite.
+	_main.abilities.restore_snapshot(_main.AbilitiesScript.legacy_snapshot())
 	await _physics(3)
 	_main.player.struck.connect(func(_pos: Vector2, _big: bool, launched: bool) -> void: _strikes.append(launched))
 	_count_and_opening()

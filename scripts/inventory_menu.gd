@@ -9,6 +9,7 @@ signal equip_requested(item_id: String)
 signal unequip_requested(slot: String)
 signal craft_requested(item_id: String)
 
+const AbilitiesScript := preload("res://scripts/abilities_state.gd")
 const ProgressionScript := preload("res://scripts/progression_state.gd")
 const PressScript := preload("res://scripts/press.gd")
 const EconomyScript := preload("res://scripts/economy_state.gd")
@@ -20,6 +21,7 @@ const WorldBackdrop := preload("res://scripts/ui_world_backdrop.gd")
 const DISPLAY_AT := 24
 
 const CORE_SLOTS := [&"strike", &"hood", &"set"]
+const REFINEMENT_SLOTS := [&"combo", &"groove", &"pogo"]
 
 const PAPER := Color("f2e1bc")
 const PAPER_DARK := Color("c2ae87")
@@ -28,6 +30,7 @@ const PINK := Color("d6a968")
 const VIOLET := Color("52716d")
 const FADED := Color("78928d")
 
+var abilities: RefCounted
 var progression: RefCounted
 var shine_source: Node
 var economy: RefCounted
@@ -64,6 +67,8 @@ var _page_stack: VBoxContainer
 var _header: HBoxContainer
 var _subtitle: Label
 var _journey_detail: PanelContainer
+var _journey_notes: ScrollContainer
+var _refinement_label: Label
 
 func _ready() -> void:
 	layer = 100
@@ -86,6 +91,11 @@ func _exit_tree() -> void:
 func _input(event: InputEvent) -> void:
 	if event is InputEventKey and event.echo:
 		return
+	if _open and _current_page == "journey" and event is InputEventKey and event.pressed:
+		if event.keycode == KEY_PAGEDOWN or event.keycode == KEY_PAGEUP:
+			_journey_notes.scroll_vertical += 120 if event.keycode == KEY_PAGEDOWN else -120
+			get_viewport().set_input_as_handled()
+			return
 	if _open and event.is_pressed():
 		var step := 0
 		if event is InputEventKey and (event.keycode == KEY_TAB or event.physical_keycode == KEY_TAB):
@@ -115,6 +125,14 @@ func _input(event: InputEvent) -> void:
 	):
 		close_inventory()
 		get_viewport().set_input_as_handled()
+
+func _process(delta: float) -> void:
+	if not _open or _current_page != "journey" or _journey_notes == null:
+		return
+	for device in Input.get_connected_joypads():
+		var amount := Input.get_joy_axis(device, JOY_AXIS_RIGHT_Y)
+		if absf(amount) > 0.25:
+			_journey_notes.scroll_vertical += roundi(amount * 520.0 * delta)
 
 func is_open() -> bool:
 	return _open
@@ -180,6 +198,19 @@ func select_page(page_id: String, focus_content := false) -> void:
 func refresh_collection(notice := "") -> void:
 	if _collection_pages != null:
 		_collection_pages.refresh(collection, notice)
+
+func refresh_abilities() -> void:
+	_refresh()
+
+func ability_count() -> int:
+	return CORE_SLOTS.size() + REFINEMENT_SLOTS.size()
+
+func found_ability_count() -> int:
+	var count := 0
+	for slot in CORE_SLOTS + REFINEMENT_SLOTS:
+		if _slot_is_filled(StringName(slot)):
+			count += 1
+	return count
 
 func slot_count() -> int:
 	return CORE_SLOTS.size() + ProgressionScript.TECHNIQUE_ORDER.size() + ProgressionScript.REFRAIN_ORDER.size()
@@ -361,13 +392,21 @@ func _build_menu() -> void:
 	content.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	journey_page.add_child(content)
 
+	var shelf_scroll := ScrollContainer.new()
+	shelf_scroll.name = "JourneyShelves"
+	shelf_scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
+	shelf_scroll.follow_focus = true
+	shelf_scroll.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	shelf_scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	content.add_child(shelf_scroll)
 	var shelves := VBoxContainer.new()
 	shelves.add_theme_constant_override("separation", 8)
 	shelves.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	shelves.size_flags_vertical = Control.SIZE_EXPAND_FILL
-	content.add_child(shelves)
+	shelf_scroll.add_child(shelves)
 	_entrance_parts.append(shelves)
-	_add_shelf(shelves, "CORE VERBS — ALWAYS YOURS", CORE_SLOTS)
+	_add_shelf(shelves, "ABILITIES — FOUND IN THE WORLD", CORE_SLOTS)
+	_refinement_label = _add_shelf(shelves, "REFINEMENTS", REFINEMENT_SLOTS)
 	_add_shelf(shelves, "KNOWLEDGE — NAMED, NEVER GRANTED", _technique_slots())
 	_add_shelf(shelves, "REFRAINS — CARRIED", _refrain_slots())
 
@@ -385,9 +424,15 @@ func _build_menu() -> void:
 	detail_margin.add_theme_constant_override("margin_bottom", 24)
 	detail_panel.add_child(detail_margin)
 
+	_journey_notes = ScrollContainer.new()
+	_journey_notes.name = "JourneyNotes"
+	_journey_notes.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
+	_journey_notes.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	detail_margin.add_child(_journey_notes)
 	_detail_stack = VBoxContainer.new()
+	_detail_stack.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	_detail_stack.add_theme_constant_override("separation", 12)
-	detail_margin.add_child(_detail_stack)
+	_journey_notes.add_child(_detail_stack)
 	_entrance_parts.append(_detail_stack)
 	_detail_kind = _make_label("", 13, PINK)
 	_detail_stack.add_child(_detail_kind)
@@ -422,12 +467,13 @@ func _build_menu() -> void:
 	_resize_page()
 	overlay.hide()
 
-func _add_shelf(parent: VBoxContainer, title: String, slots: Array) -> void:
+func _add_shelf(parent: VBoxContainer, title: String, slots: Array) -> Label:
 	var shelf := VBoxContainer.new()
 	shelf.add_theme_constant_override("separation", 4)
 	shelf.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	parent.add_child(shelf)
-	shelf.add_child(_make_label(title, 13, PAPER_DARK))
+	var heading := _make_label(title, 13, PAPER_DARK)
+	shelf.add_child(heading)
 	var row := HBoxContainer.new()
 	row.add_theme_constant_override("separation", 10)
 	row.size_flags_vertical = Control.SIZE_EXPAND_FILL
@@ -451,12 +497,18 @@ func _add_shelf(parent: VBoxContainer, title: String, slots: Array) -> void:
 		row.add_child(button)
 		_slot_buttons[slot] = button
 		_motion.bind_button(button, PINK)
+	return heading
 
 func _refresh() -> void:
 	if _progress_label == null:
 		return
 	_progress_label.text = "%d / %d GROOVES FILLED" % [filled_slot_count(), slot_count()]
 	_shine_label.text = "SHINE %03d" % _shine_count()
+	var refinement_count := 0
+	for slot in REFINEMENT_SLOTS:
+		if _slot_is_filled(StringName(slot)):
+			refinement_count += 1
+	_refinement_label.text = "REFINEMENTS — %d / %d FOUND" % [refinement_count, REFINEMENT_SLOTS.size()]
 	var carried: Array[String] = []
 	if economy != null:
 		for item in EconomyScript.catalog():
@@ -471,7 +523,7 @@ func _refresh() -> void:
 	if _selected_slot in _discovery_buttons and not _slot_is_filled(_selected_slot):
 		_selected_slot = &"strike"
 	_refresh_map()
-	for slot in _all_slots():
+	for slot in _display_slots():
 		var button := _slot_buttons.get(slot) as Button
 		if button == null:
 			continue
@@ -501,10 +553,12 @@ func _select_slot(slot: StringName, animate := true) -> void:
 		return
 	var filled := _slot_is_filled(slot)
 	_detail_kind.text = _slot_kind(slot)
-	_detail_title.text = _slot_name(slot) if filled else "EMPTY GROOVE"
+	_detail_title.text = _slot_name(slot) if filled or _is_ability_slot(slot) else "EMPTY GROOVE"
 	_detail_state.text = _slot_state(slot, filled)
 	_detail_state.modulate = PINK if filled else FADED
 	_detail_description.text = _slot_description(slot) if filled else _locked_description(slot)
+	if changed and _journey_notes != null:
+		_journey_notes.scroll_vertical = 0
 	if animate and changed and _open:
 		_motion.reveal(_detail_stack, 0.0, 0.16)
 
@@ -513,14 +567,14 @@ func _resize_page() -> void:
 	if _page_margin == null or _header == null or _subtitle == null:
 		return
 	var compact := overlay.size.y < 620
-	_page_margin.add_theme_constant_override("margin_top", 16 if compact else 30)
-	_page_margin.add_theme_constant_override("margin_bottom", 14 if compact else 24)
+	_page_margin.add_theme_constant_override("margin_top", 24 if compact else 30)
+	_page_margin.add_theme_constant_override("margin_bottom", 26 if compact else 24)
 	_page_stack.add_theme_constant_override("separation", 8 if compact else 12)
 	_header.custom_minimum_size.y = 43 if compact else 62
 	_subtitle.visible = not compact
 	if _journey_detail != null:
 		_journey_detail.custom_minimum_size.x = 280 if overlay.size.x < 1000 else 350
-	for slot in _all_slots():
+	for slot in _display_slots():
 		var button := _slot_buttons.get(slot) as Button
 		if button != null:
 			button.custom_minimum_size.x = 120 if overlay.size.x < 1000 else 150
@@ -540,8 +594,8 @@ func _focus_selected() -> void:
 		button.grab_focus()
 
 func _slot_is_filled(slot: StringName) -> bool:
-	if slot in CORE_SLOTS:
-		return true
+	if _is_ability_slot(slot):
+		return abilities == null or bool(abilities.call("has_ability", String(slot)))
 	if slot == &"echo_spool":
 		return discoveries != null and discoveries.snapshot().echo_spool != "missing"
 	if slot == &"survey_slip":
@@ -557,9 +611,16 @@ func _slot_is_filled(slot: StringName) -> bool:
 	return false
 
 func _slot_card_text(slot: StringName, filled: bool) -> String:
+	if not filled and _is_ability_slot(slot):
+		return "%s\nNOT FOUND" % _slot_card_name(slot)
 	if not filled:
 		return "— — —\n%s · %s" % [_slot_kind(slot), "UNLEARNED" if _is_technique_slot(slot) else "UNHEARD"]
-	return "%s\n%s · %s" % [_slot_name(slot), _slot_kind(slot), _slot_state(slot, true)]
+	if slot in REFINEMENT_SLOTS:
+		return "%s\nFOUND" % _slot_card_name(slot)
+	return "%s\n%s · %s" % [_slot_card_name(slot), _slot_kind(slot), _slot_state(slot, true)]
+
+func _slot_card_name(slot: StringName) -> String:
+	return "STRIKE CHAIN" if slot == &"combo" else _slot_name(slot)
 
 func _slot_state(slot: StringName, filled: bool) -> String:
 	if slot == &"echo_spool" and filled:
@@ -569,24 +630,20 @@ func _slot_state(slot: StringName, filled: bool) -> String:
 			"restored": return "RESTORED · THE WARREN SINGS"
 	if slot == &"survey_slip":
 		return "A NOTE FOR THE WAY HOME"
+	if _is_ability_slot(slot):
+		return "FOUND" if filled else "NOT FOUND · FOLLOW THE LEAD"
 	if not filled:
 		return "UNLEARNED" if _is_technique_slot(slot) else "UNHEARD"
-	if slot in CORE_SLOTS:
-		return "ALWAYS YOURS"
 	if _is_technique_slot(slot):
 		return "RECORDED"
 	return "HELD"
 
 func _slot_name(slot: StringName) -> String:
+	if _is_ability_slot(slot):
+		return String(_ability_definition(slot).get("name", String(slot))).to_upper()
 	match slot:
 		&"echo_spool": return "ECHO SPOOL"
 		&"survey_slip": return "SURVEYOR'S SLIP"
-		&"strike":
-			return "STRIKE"
-		&"hood":
-			return "HOOD"
-		&"set":
-			return "SET"
 	var technique := _progression_id_for_slot(ProgressionScript.TECHNIQUE_KEYS, slot)
 	if technique >= 0 and progression != null:
 		return String(progression.call("technique_label", technique))
@@ -599,12 +656,25 @@ func _slot_kind(slot: StringName) -> String:
 	if slot in [&"echo_spool", &"survey_slip"]:
 		return "FOUND IN THE GROOVES"
 	if slot in CORE_SLOTS:
-		return "CORE VERB"
+		return "ABILITY"
+	if slot in REFINEMENT_SLOTS:
+		return "REFINEMENT"
 	if _is_technique_slot(slot):
 		return "TECHNIQUE"
 	return "REFRAIN"
 
 func _slot_description(slot: StringName) -> String:
+	if slot == &"strike":
+		var text := "J / X · Strike nearby foes with a single Tap. Time your strike to parry an incoming blow."
+		if _slot_is_filled(&"combo"):
+			text += " Three fresh presses now chain Tap, Sweep, Accent; the last hit lands harder."
+		if _slot_is_filled(&"groove"):
+			text += " Strike live grooves to ride their launch."
+		if _slot_is_filled(&"pogo"):
+			text += " Airborne hits rebound from vulnerable foes."
+		return text
+	if _is_ability_slot(slot):
+		return String(_ability_definition(slot).get("description", "A move recovered from the record."))
 	match slot:
 		&"echo_spool":
 			match String(discoveries.snapshot().echo_spool):
@@ -613,12 +683,6 @@ func _slot_description(slot: StringName) -> String:
 				"restored": return "The shutter is open. Three answering discs remember the phrase together. Return to the North Warren's western terrace and press E / Y to hear it again. The spool stays with you."
 		&"survey_slip":
 			return "A surveyor's sketch, tucked above the Landing. A balcony is circled over the Stalls' right bank: 'Jump. Gather at the crest. A voice waits above the shutters.' Its answer may shorten the road home."
-		&"strike":
-			return "Three fresh strikes chain Tap, Sweep, Accent. The last hit lands harder. Ring live wax, launch from grooves, or catch an incoming blow on the beat."
-		&"hood":
-			return "Raise the Hood to quiet your crackle. You move more slowly, but fewer things hear you."
-		&"set":
-			return "Kneel without striking. Stay close and defenseless long enough to hear what is reaching for you."
 		&"count-in":
 			return "Four even strikes. Any tempo. The pattern worked before the Book learned its name."
 		&"step-turn":
@@ -632,9 +696,26 @@ func _slot_description(slot: StringName) -> String:
 	return "The groove has no readable note."
 
 func _locked_description(slot: StringName) -> String:
+	if _is_ability_slot(slot):
+		return String(_ability_definition(slot).get("lead", "Explore the record to recover this move."))
 	if _is_technique_slot(slot):
 		return "An unnamed lesson waits here. Your hands may know it before the Book names it."
 	return "An empty carrying groove. Somewhere in the record, a Refrain has not yet answered you."
+
+func _is_ability_slot(slot: StringName) -> bool:
+	return slot in CORE_SLOTS or slot in REFINEMENT_SLOTS
+
+func _ability_definition(slot: StringName) -> Dictionary:
+	for definition in AbilitiesScript.catalog():
+		if StringName(definition.id) == slot:
+			return definition
+	return {}
+
+func _display_slots() -> Array[StringName]:
+	var slots := _all_slots()
+	for slot in REFINEMENT_SLOTS:
+		slots.append(StringName(slot))
+	return slots
 
 func _all_slots() -> Array[StringName]:
 	var slots: Array[StringName] = []

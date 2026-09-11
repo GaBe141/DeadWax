@@ -5,6 +5,7 @@ const SkipScript := preload("res://scripts/skip.gd")
 const WaveScript := preload("res://scripts/strike_wave.gd")
 const AudioScript := preload("res://scripts/audio_bank.gd")
 const ProgressionScript := preload("res://scripts/progression_state.gd")
+const AbilitiesScript := preload("res://scripts/abilities_state.gd")
 const InventoryMenuScript := preload("res://scripts/inventory_menu.gd")
 const ROOM_SCRIPTS := [
 	preload("res://scripts/room_label.gd"),
@@ -44,6 +45,7 @@ var room: Node2D
 var room_idx := 0
 var room_entry_id: StringName = &"default"
 var progression: RefCounted
+var abilities: RefCounted
 var inventory: CanvasLayer
 var economy: RefCounted
 var shop: CanvasLayer
@@ -117,6 +119,9 @@ func _ready() -> void:
 		DisplayServer.window_set_title("Dead Wax — Side One")
 	_setup_input()
 	progression = ProgressionScript.new()
+	abilities = AbilitiesScript.new()
+	if development_mode:
+		abilities.restore_snapshot(AbilitiesScript.legacy_snapshot())
 	economy = EconomyScript.new()
 	map_state = MapStateScript.new()
 	discoveries = DiscoveriesScript.new()
@@ -137,6 +142,7 @@ func _ready() -> void:
 
 	player = SkipScript.new()
 	player.progression = progression
+	player.abilities = abilities
 	player.economy = economy
 	player.struck.connect(_on_struck)
 	player.strike_input_rejected.connect(_on_strike_input_rejected)
@@ -154,6 +160,7 @@ func _ready() -> void:
 	_build_hud()
 	inventory = InventoryMenuScript.new()
 	inventory.progression = progression
+	inventory.abilities = abilities
 	inventory.shine_source = player
 	inventory.economy = economy
 	inventory.map_state = map_state
@@ -334,6 +341,7 @@ func _swap_room(next_room: Node2D, entry_id: StringName) -> void:
 		room.queue_free()
 	room = next_room
 	room.progression = progression
+	room.abilities = abilities
 	if "session_outcomes" in room:
 		room.set("session_outcomes", encounters)
 	if "map_state" in room:
@@ -350,6 +358,7 @@ func _swap_room(next_room: Node2D, entry_id: StringName) -> void:
 	if not development_mode and not practice_mode and room.room_id == &"the_arm":
 		encounters["the_arm/gallery_shortcut"] = "opened"
 	room.refrain_collected.connect(_on_refrain_collected)
+	room.ability_requested.connect(_on_ability_requested)
 	room.route_requested.connect(_on_route_requested)
 	room.route_blocked.connect(_on_route_blocked)
 	add_child(room)
@@ -460,6 +469,8 @@ func _remember_encounter(key: String, outcome: String) -> void:
 	if practice_mode:
 		return
 	encounters[key] = outcome
+	if room != null:
+		room.call("refresh_abilities")
 	if not development_mode:
 		collection.backfill(encounters)
 	if key == "groove_yard/yard_first_voice" and outcome == "freed":
@@ -492,6 +503,7 @@ func _persist_session() -> bool:
 	var data := {
 		"version": 1, "room_id": String(world_room_id), "entry_id": String(room_entry_id),
 		"progression": progression.call("snapshot"), "shine": player.shine,
+		"abilities": abilities.snapshot(),
 		"completed": chapter_complete, "encounters": encounters.duplicate(true),
 		"settings": _settings.duplicate(true),
 		"purchases": economy.call("snapshot").purchases,
@@ -526,6 +538,7 @@ func _new_game(play_opening: bool = true) -> void:
 	encounters.clear()
 	chapter_complete = false
 	progression.call("reset")
+	abilities.reset()
 	pressing.call("reset")
 	economy.call("reset")
 	map_state.reset()
@@ -565,6 +578,7 @@ func _continue_game() -> void:
 	encounters = data.get("encounters", {}).duplicate(true)
 	chapter_complete = ChapterScript.saved_completion(data)
 	progression.call("restore_snapshot", data.progression)
+	abilities.restore_snapshot(data.get("abilities", AbilitiesScript.legacy_snapshot()))
 	pressing.call("reset")
 	economy.call("restore", data.shine, data.get("purchases", []))
 	map_state.restore_snapshot(data.get("map", {"owned": false, "visited": []}))
@@ -707,6 +721,7 @@ func _start_practice() -> void:
 		return
 	_practice_campaign = {
 		"progression": progression, "economy": economy, "map": map_state,
+		"abilities": abilities,
 		"discoveries": discoveries,
 		"collection": collection,
 		"pressing": pressing, "encounters": encounters, "completed": chapter_complete,
@@ -719,6 +734,8 @@ func _start_practice() -> void:
 		room.queue_free()
 		room = null
 	progression = ProgressionScript.new()
+	abilities = AbilitiesScript.new()
+	abilities.restore_snapshot(AbilitiesScript.legacy_snapshot())
 	economy = EconomyScript.new()
 	map_state = MapStateScript.new()
 	discoveries = DiscoveriesScript.new()
@@ -758,6 +775,7 @@ func _leave_practice() -> void:
 		room.queue_free()
 		room = null
 	progression = _practice_campaign.progression
+	abilities = _practice_campaign.abilities
 	economy = _practice_campaign.economy
 	map_state = _practice_campaign.map
 	discoveries = _practice_campaign.discoveries
@@ -781,8 +799,10 @@ func _leave_practice() -> void:
 
 func _bind_session_models() -> void:
 	player.progression = progression
+	player.abilities = abilities
 	player.economy = economy
 	inventory.progression = progression
+	inventory.abilities = abilities
 	inventory.economy = economy
 	inventory.map_state = map_state
 	inventory.discoveries = discoveries
@@ -1216,6 +1236,39 @@ func _recover_needle() -> void:
 func _on_refrain_collected(refrain: int) -> void:
 	progression.call("unlock_refrain", refrain)
 
+# -- the moves left behind --------------------------------------------------
+
+func _on_ability_requested(id: StringName, source: Node2D) -> void:
+	if development_mode or practice_mode or not _has_session or get_tree().paused or _respawn_pending:
+		return
+	if not _can_open_inventory() or inventory.is_open() or room == null or not is_instance_valid(source):
+		return
+	if source.get_parent() != room or not source.is_in_group("ability_pickup") or source.get("ability") != id:
+		return
+	var definition := AbilitiesScript.ability(id)
+	if definition.is_empty() or definition.room_id != world_room_id or source.position != definition.position:
+		return
+	if not player.is_on_floor() or player.global_position.distance_to(source.global_position) > 76.0:
+		return
+	var required := String(definition.outcome_key)
+	if not required.is_empty() and String(encounters.get(required, "")) != "opened":
+		return
+	if not source.call("can_request") or abilities.has_ability(id):
+		return
+	var before: Dictionary = abilities.snapshot()
+	abilities.unlock_ability(id)
+	if not _persist_session():
+		abilities.restore_snapshot(before)
+		_flash("Could not save. E / Y to try this discovery again.")
+		return
+	player.cancel_pending_strike()
+	player.refill_air_strikes()
+	room.call("refresh_abilities")
+	combo_readout.set_snapshot(player.combo_snapshot())
+	audio.play("freed", -9.0, 0.9)
+	_flash("%s — RECOVERED" % String(definition.name))
+	_fb_t = 3.0
+
 # -- carried discoveries ----------------------------------------------------
 
 func _on_discovery_requested(action: StringName, source: Node2D) -> void:
@@ -1272,6 +1325,7 @@ func _install_echo_trial() -> void:
 		var trial := TrialScript.new()
 		trial.name = "EchoTrial"
 		trial.hunt_id = StringName(definition.id)
+		trial.abilities = abilities
 		trial.position = definition.position
 		trial.start_requested.connect(_on_trial_start)
 		trial.completed.connect(_on_trial_claim)

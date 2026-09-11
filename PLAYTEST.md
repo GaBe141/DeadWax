@@ -3,6 +3,8 @@
 Run `.\deadwax.cmd play` for the authored opening. Start with the chapter
 checklist, then use `.\deadwax.cmd dev` for focused mechanics regressions.
 Runtime errors are written to `.godot/deadwax-play.log`.
+Run `.\deadwax.cmd check` before handoff; the complete run contains 37 native
+suites, including four dedicated ability model, integration, world, and Book suites.
 
 ## Session
 
@@ -12,6 +14,90 @@ Runtime errors are written to `.godot/deadwax-play.log`.
 - Input device:
 - Overall frame pacing: smooth / occasional hitch / frequent hitch
 - Audio clarity and latency:
+
+## Ability progression review — 2026-09-11
+
+Native Godot 4.7.2 / GL Compatibility, with private checkpoints and injected
+keyboard events. Reviewed the opening and ability cards at 1280×720 and
+960×540; the Book's missing-move leads remain visible at both sizes.
+
+- Full `deadwax.cmd check` passed: 37 suites, 9,757 checks, exit 0, no
+  script/runtime errors. Log: `.godot/abilities-full-check.log`. Existing
+  audio teardown ObjectDB warnings remain non-fatal.
+- 39 native input checks passed: movement and jump from the Headshell start,
+  Strike and Set collection, map pickup, passages to the plaza and High Street,
+  the ordinary-jump Hood climb, raised Hood, four basic Count-In strikes,
+  separate Groove collection, and the earned Stalls crossing. Health stayed
+  at 3/3; all four collected abilities were verified on disk.
+- Practice and Stalls segments began with direct room loads at their real
+  arrivals. Other reviewed travel used passages. This is a focused opening
+  pass, not a complete campaign playthrough or a human controller feel review.
+- Route testing exposed two problems and verified their fixes: the western
+  return tread needed to move out from under the bank, and the first upper
+  platform needed 147 px clearance above the solid groove to prevent running
+  and coyote jumps from bypassing Groove Riding. The 99-check world suite
+  covers these approaches with stock and maximum movement equipment.
+- Screenshots and the native input report are under the ignored
+  `.godot/ability-input-review/`; final Book captures use
+  `.godot/ability-book-960.png` and `.godot/ability-book-1280.png`.
+
+## Recovering the moves
+
+Use New Game for this pass. A save from before ability progression deliberately
+retains the complete old moveset, so Continue cannot stand in for a fresh start.
+Use isolated checkpoints for partial-save and write-failure checks.
+
+- [ ] After the opening, walking, ordinary jumping, E/Y interactions, and menus
+  work. J/X, Hood, and Set do nothing until their respective discoveries.
+  The readout does not invite an unavailable strike or show a working chain.
+- [ ] Find Strike on the Headshell floor at (365,554), then Set toward the east
+  at (890,554). A fresh grounded E/Y within 76 px recovers each part once.
+  Passing nearby, arriving, or holding E/Y from a different interaction never
+  collects it. The artwork remains at the fixed interaction origin.
+- [ ] Strike initially gives single Tap attacks and the existing parry. Four
+  evenly spaced Taps can solve Count-In without the chain; repeated presses
+  never produce Sweep or Accent until that refinement is found. Cooldown,
+  buffering, reach, and the 100 ms parry window remain readable and unchanged.
+- [ ] Find the Hood on High Street's upper walk at (1100,359), safely above the
+  Looper. Return to the plaza: quiet company, call-listening, and wax polishing
+  now work. Set alone does not polish wax. Both encounter approaches remain
+  available after finding the required moves.
+- [ ] Visit the Stalls before finding Groove Riding. Ordinary jumps and any
+  faster equipment cannot climb its eastern 210 px step; the quiet groove
+  does not launch an untrained strike. Also try running and coyote jumps from the solid groove block: the first upper platform is 147 px higher and stays out of reach. A fall lands in the service lane.
+  Use the western tread at (810,700) to jump back to the takeoff without R,
+  an ability grant, a ceiling trap, or losing the entry checkpoint.
+- [ ] Open Tick's Practice Count-In door, then take Groove Riding at (1320,574).
+  The pickup remains unavailable until the door's saved opened outcome.
+  Return to the Stalls: strike the live wax, steer onto the eastern bank,
+  and reach the Yard. Miss deliberately and repeat the safe western return.
+- [ ] Take Three-Strike Chain on the Yard approach at (610,574). Fresh presses
+  now link Tap, Sweep, Accent; the readout reveals all three marks and link
+  time. The stronger third hit changes no jump, launch, reach, or parry timing.
+- [ ] Before Pogo, airborne hits damage vulnerable foes without rebounding.
+  Find Pogo on the Well's lower resting shelf at (785,794), then repeat: the
+  same confirmed airborne hit rebounds. Jump+strike in one tick also works.
+  Guarded and muted targets remain ineligible, and grounded hits stay planted.
+- [ ] Earned Groove Riding activates environmental thick-air jets. Later,
+  either Tonearm outcome still offers Gather; collecting it gives one dry
+  airborne Strike lift, without silently granting any missing ability.
+- [ ] At each stage, inspect Journey at 1280×720 and 960×540. It names all six
+  missing moves with leads, marks only found ones, and keeps chain/Groove/Pogo
+  separate from the eight core/knowledge/Refrain grooves. Keyboard, D-pad,
+  mouse, and right-stick scrolling keep selected details reachable.
+- [ ] Recover, change rooms, pause, and Continue with a partial moveset. Only
+  found parts remain usable, and owned pickups retire without reward cues.
+  A failed pickup write grants nothing and leaves E/Y available for a retry.
+- [ ] Continue an actual save with no `abilities` field: all six old moves
+  remain available, with existing room, entry, balance, equipment, choices,
+  and Refrains unchanged. Explicit empty/partial snapshots never get this
+  migration grant. New Game clears the moves again.
+- [ ] Enter title-screen Move practice or the development rooms. All six moves
+  work there; the campaign's partial moveset and checkpoint remain unchanged
+  on exit. Practice keeps stock equipment handling and its empty floor.
+- [ ] Reduced motion holds pickup decoration still while fresh-input prompts
+  work; pause freezes it. A/B reinking in an isolated fixture restores the
+  same origins and readable cards without adding collision or granting moves.
 
 ## Equipment, echo trials, and the bestiary
 
@@ -26,6 +112,8 @@ fixture as a measurement of completionist playtime.
 - [ ] Start with a fresh grounded E / Y while close. A held input, an airborne
   approach, or a nearby passage cannot create overlapping trials. The warning
   precedes each wave; new copies appear clear of Skip.
+- [ ] A movement-only player cannot begin an unresolvable trial. Strike allows
+  all three sources; Set alone also allows the Label's peaceful recordings.
 - [ ] Clear waves of one, one, then two recordings at each source. Label
   Auditioners accept ordinary sustained Set as well as strikes. Overture
   pressings retain their three-tick count and fourth-beat swing; the Deep
@@ -118,7 +206,7 @@ without Gather, Book layouts at both window sizes, and A→B→A/reduced motion.
 The northern return climb was verified with resolved encounter fixtures after
 active enemies interrupted the automated jumps. Controller Y has automated
 coverage; human controller feel and listening to the final mix remain manual.
-The final `deadwax.cmd check` run passed all 29 suites and 7,813 checks.
+At that review, `deadwax.cmd check` passed its then-current 29 suites and 7,813 checks.
 
 - [ ] Take the spool beside Deep Gallery's empty seats with grounded E/Y.
   Its origin stays fixed; walking near it or arriving in the room collects nothing.
@@ -147,7 +235,7 @@ The final `deadwax.cmd check` run passed all 29 suites and 7,813 checks.
 
 - [ ] Boot reaches the title screen; New Game plays the four-scene opening and hands control to Skip in the Headshell after about 23 seconds. Continue is available only with a readable campaign checkpoint and restores the saved entry without the film.
 - [ ] Watch opening replays from the title and returns there. An existing save, wallet, map, Refrains, and encounter choices survive the replay unchanged.
-- [ ] Holding the title's confirm key or controller A does not immediately advance the first scene. Fresh Space/A or Next advances once; Escape/controller B or Skip ends it after the short fade. Holding movement, jump, strike, Hood, Set, or passage during the film does not act on the first gameplay frame; fresh controls work after handoff.
+- [ ] Holding the title's confirm key or controller A does not immediately advance the first scene. Fresh Space/A or Next advances once; Escape/controller B or Skip ends it after the short fade. Holding movement, jump, strike, Hood, Set, or passage during the film does not act on the first gameplay frame; fresh movement and interaction work after handoff, while combat moves still await discovery.
 - [ ] The town in the record, the worn street, Skip's first feet, and the lit way down read clearly at 1280×720 and 960×540. Captions, title, and Next/Skip remain readable with no overlap; resizing leaves the current shot intact.
 - [ ] Four quiet synthesized cues accompany the film while world sound and simulation remain paused. Next changes the cue; Skip stops it at handoff. Master volume/mute applies. Check a replay after using Hood: the film should not inherit a muffled filter.
 - [ ] Reduced motion holds composed illustrations while the story still advances naturally. Pause, Book, map, and shop do not stack over the film. Normal and skipped endings each return control exactly once.
@@ -155,19 +243,19 @@ The final `deadwax.cmd check` run passed all 29 suites and 7,813 checks.
 - [ ] The title, menus, room signage, player silhouette, and HUD remain legible at 1280×720 and in fullscreen.
 - [ ] Headshell's movement/jump prompt and the first E/Y passage are understandable without external instructions.
 - [ ] Horn Plaza clearly offers the west practice loop and the east market route.
-- [ ] Holding Hood still beneath the horn for about 1.4 seconds produces its quiet answer. Polishing there grants one Shine.
+- [ ] After finding Hood on High Street, return beneath the horn and hold it still for about 1.4 seconds to hear its quiet answer. Polishing there grants one Shine.
 - [ ] High Street's Looper gives three ticks and swings on four; the upper route lets the player pass without fighting.
-- [ ] After an opening hit, repeated Tap/Sweep/Accent strikes meet the Looper's visible guard without damage, rebound, or an interrupted count. Step out of range, let it swing, then return during OPEN for a full combo. Parrying instead grants the same opening and existing resonance response.
+- [ ] Return after finding the chain: after an opening hit, repeated Tap/Sweep/Accent strikes meet the Looper's visible guard without damage, rebound, or an interrupted count. Step out of range, let it swing, then return during OPEN for a full combo. Parrying instead grants the same opening and existing resonance response.
 - [ ] GUARD, the three ticks, the swing, and OPEN agree with contact and vulnerability at 1280×720 and 960×540. The OPEN bar remains truthful with Reduced motion. Recovery resets an unfinished Looper; a defeated one stays defeated on recovery, return, and Continue without extra Shine.
 - [ ] Four evenly spaced J/X strikes open Practice's physical lock and record Count-In once. Returning through the plaza is clear.
-- [ ] A player who skips Practice can still open the Descent Gate with the same pattern; the Book's discovery state never gates the solution.
-- [ ] In the Stalls, standing on the live groove and striking carries the player toward the upper walkway.
-- [ ] A missed launch lands safely in the service lane; the steps return to either bank without a Refrain or restart.
+- [ ] After earning Strike, the same four-hit Count-In pattern opens the Descent Gate; the Book's technique record itself never gates the solution.
+- [ ] Return to the Stalls after recovering Groove Riding in Practice. Standing on the live groove and striking carries the player toward the eastern walkway.
+- [ ] A missed launch lands safely in the service lane; the western steps return to the takeoff without a Refrain or restart. The eastern bank still requires the earned launch.
 - [ ] In the Yard, approach the first voice quietly and raise Hood while standing near it. Hear two notes and notice the empty reply mark. Lower Hood and begin holding Set during the silence: one answer frees it. Try keyboard and controller. A fresh player should understand the exchange from its cues.
 - [ ] Holding Set before hearing the call does not free the first voice. Releasing Hood early, starting Set too early, releasing Set before its response finishes, or missing the silence lets it try again. There is no immediate contact hit during the call, answer, or retry rest. Walking away and returning starts a fresh attempt.
 - [ ] The completed engraving appears at the first voice's original place even if it moved. After a quiet wait nearby its gentle finished phrase returns. Shattering leaves a broken engraving and silence instead. Return, recover, and Continue: the same choice remains with no repeated reward, flash, or resolution sound.
 - [ ] Pause freezes the first voice and its phrase. Reduced motion steadies decorative movement but preserves note/answer cues; muting still leaves a solvable exchange. Review the card, reply marks, both engraving outcomes, and nearby signs at 1280×720 and 960×540.
-- [ ] Ordinary strikes, parries, and airborne rebounds still work on the first voice; striking cancels its unfinished conversation. The second voice still accepts ordinary sustained Set, and both choices grant no Shine or progression.
+- [ ] Ordinary strikes and parries work on the first voice; airborne rebounds work after returning with Pogo. Striking cancels its unfinished conversation. The second voice still accepts earned Set, and both choices grant no Shine or progression.
 - [ ] Neither combat nor mercy is required to leave the Yard; both choices remain readable.
 - [ ] The Descent Gate blocks passage until its four-strike pattern is performed; the exit beyond it enters Overture Stair.
 - [ ] Every stair can be climbed on the return trip with a normal jump.
@@ -248,7 +336,7 @@ The final `deadwax.cmd check` run passed all 29 suites and 7,813 checks.
 - [ ] Press J/X three times within the link window. Tap, Sweep, and Accent have distinct poses, directional ink, and sound; the readout marks each execution. A fourth starts Tap. Holding Strike never repeats; waiting longer than 650 ms starts a fresh chain.
 - [ ] Try the chain facing both ways, running, jumping, and near the ends of the practice floor. R returns to the start and clears the chain. Hood/Set, Book, and pause cancel the chain; the next strike is Tap. Reduced motion settles the readout while its timing remains truthful.
 - [ ] Pause practice and choose Return to title, then Continue. The campaign entry, Shine, purchases, map, progression, and choices are unchanged. Starting practice without a campaign save does not create Continue. Settings remain usable during practice.
-- [ ] In campaign combat, Accent lands harder on a vulnerable foe with the same 120 px reach. A hot-groove Accent gets the normal on-beat launch, and airborne foe/Gather rebounds do not become stronger on hit three. Muted targets retain their parry-only rules.
+- [ ] With the corresponding abilities found, campaign Accent lands harder on a vulnerable foe with the same 120 px reach. A hot-groove Accent gets the normal on-beat launch, and airborne foe/Gather rebounds do not become stronger on hit three. Muted targets retain their parry-only rules.
 - [ ] Standing beside a vulnerable foe, J/X lands a hit without launching Skip. Starting or reversing a run during the short recovery stays responsive.
 - [ ] Jumping into a nearby foe and striking rebounds upward; pressing jump and strike together also works. Enemy reach remains 120 px, and every enemy rebound registers a hit.
 - [ ] Live grooves still launch from the ground or air and take priority when an enemy is nearby. Whistlers' directed launches and groove echoes retain their timing.
