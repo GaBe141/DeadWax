@@ -16,6 +16,7 @@ const PressScript := preload("res://scripts/press.gd")
 const RUN_SPEED := 340.0
 const RUN_ACCEL := 2600.0
 const RUN_FRICTION := 3800.0
+const SHUFFLE_STEP := 1.0         # one pixel per fresh direction press until Walk
 const AIR_CONTROL := 0.45          # M2: trimmed from 0.55 — grounded feels planted
 const JUMP_VELOCITY := -640.0
 const JUMP_CUT := 0.45
@@ -226,15 +227,22 @@ func _physics_process(delta: float) -> void:
 		dir = 0.0
 	if absf(dir) > 0.05:
 		facing = signf(dir)
-	var speed := RUN_SPEED * equipment_speed * (hood_speed_mult * equipment_hood_speed if hooded else 1.0)
-	var accel := RUN_ACCEL * equipment_accel if is_on_floor() else RUN_ACCEL * AIR_CONTROL * equipment_air_control
-	if _recover > 0.0 and is_on_floor():
-		accel *= STRIKE_RECOVER_ACCEL   # weight lives on the GROUND; the air stays free (flow)
-	if absf(dir) > 0.01:
-		velocity.x = move_toward(velocity.x, dir * speed, accel * delta)
-	else:
-		var fric := RUN_FRICTION * equipment_friction * (1.0 if is_on_floor() else 0.2)
-		velocity.x = move_toward(velocity.x, 0.0, fric * delta)
+	if has_ability(&"walk"):
+		var speed := RUN_SPEED * equipment_speed * (hood_speed_mult * equipment_hood_speed if hooded else 1.0)
+		var accel := RUN_ACCEL * equipment_accel if is_on_floor() else RUN_ACCEL * AIR_CONTROL * equipment_air_control
+		if _recover > 0.0 and is_on_floor():
+			accel *= STRIKE_RECOVER_ACCEL   # weight lives on the ground; the air stays free
+		if absf(dir) > 0.01:
+			velocity.x = move_toward(velocity.x, dir * speed, accel * delta)
+		else:
+			var fric := RUN_FRICTION * equipment_friction * (1.0 if is_on_floor() else 0.2)
+			velocity.x = move_toward(velocity.x, 0.0, fric * delta)
+	elif _stagger <= 0.0:
+		# A held key/stick and key-repeat create no further travel, even in air.
+		# Use the physics body's collision solver, with a fixed distance per tap
+		# independent of frame rate or equipment. Damage retains its knockback.
+		var edge := float(Input.is_action_just_pressed("move_right")) - float(Input.is_action_just_pressed("move_left"))
+		velocity.x = signf(dir) * SHUFFLE_STEP / delta if delta > 0.0 and absf(dir) > 0.01 and edge * dir > 0.0 else 0.0
 
 	var g := GRAVITY * gravity_mult
 	if velocity.y > 0.0:

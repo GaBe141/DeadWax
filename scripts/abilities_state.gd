@@ -1,11 +1,15 @@
 extends RefCounted
 ## Main owns earned move permissions separately from knowledge and Refrains.
-## New journeys start with movement alone. Missing legacy save data explicitly
-## restores the complete old moveset; the model never chooses that migration.
+## New journeys start without sustained walking. Version-one move snapshots
+## retain their existing Walk and listed moves; absent legacy save data uses
+## the complete moveset supplied by Main/SaveStore through legacy_snapshot().
 
-const SAVE_VERSION := 1
-const IDS: Array[StringName] = [&"strike", &"set", &"hood", &"combo", &"groove", &"pogo"]
+const SAVE_VERSION := 2
+const VERSION_ONE_IDS: Array[StringName] = [&"strike", &"set", &"hood", &"combo", &"groove", &"pogo"]
+const IDS: Array[StringName] = [&"walk", &"strike", &"set", &"hood", &"combo", &"groove", &"pogo"]
 const CATALOG: Array[Dictionary] = [
+	{"id": &"walk", "name": "WALK", "description": "Hold A / D or the left stick to walk. Your feet finally agree to keep going.",
+		"lead": "Find the soles behind the Headshell cradle.", "room_id": &"headshell", "position": Vector2(60, 554), "outcome_key": ""},
 	{"id": &"strike", "name": "STRIKE", "description": "Press J / X to strike or parry. Each strike recovers in 0.2 seconds; meet an incoming attack within the first 0.1 seconds to parry. Your first strike is a single Tap.",
 		"lead": "A needle waits on the Headshell's lower floor.", "room_id": &"headshell", "position": Vector2(365, 554), "outcome_key": ""},
 	{"id": &"set", "name": "SET", "description": "Hold L / LB to kneel and Set. Answer a listening voice in its silence and resolve encounters through patient responses.",
@@ -66,14 +70,15 @@ static func valid_snapshot(value: Variant) -> bool:
 		if not key is String or key not in ["version", "unlocked"]:
 			return false
 	var version: Variant = value.get("version")
-	if not (version is int or version is float) or not is_finite(float(version)) or version != SAVE_VERSION:
+	if not (version is int or version is float) or not is_finite(float(version)) or (version != 1 and version != SAVE_VERSION):
 		return false
+	var allowed: Array[StringName] = VERSION_ONE_IDS if version == 1 else IDS
 	var unlocked: Variant = value.get("unlocked")
-	if not unlocked is Array or unlocked.size() > IDS.size():
+	if not unlocked is Array or unlocked.size() > allowed.size():
 		return false
 	var unique: Array[String] = []
 	for id in unlocked:
-		if not id is String or StringName(id) not in IDS or id in unique:
+		if not id is String or StringName(id) not in allowed or id in unique:
 			return false
 		unique.append(id)
 	return true
@@ -83,7 +88,7 @@ func restore_snapshot(value: Variant) -> bool:
 		return false
 	var restored: Array[StringName] = []
 	for id in IDS:
-		if String(id) in value.unlocked:
+		if String(id) in value.unlocked or (value.version == 1 and id == &"walk"):
 			restored.append(id)
 	_unlocked = restored
 	return true

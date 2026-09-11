@@ -359,7 +359,7 @@ func _build_settings() -> void:
 
 
 func _build_controls() -> void:
-	_page.add_child(_label("BEGIN WITH MOVEMENT", PressScript.SIZE_SMALL, FADED))
+	_page.add_child(_label("TINY STEPS FIRST", PressScript.SIZE_SMALL, FADED))
 	_page.add_child(_label("HOW TO PLAY", PressScript.SIZE_MENU_TITLE, INK, true))
 	var controls := GridContainer.new()
 	controls.columns = 3
@@ -369,7 +369,7 @@ func _build_controls() -> void:
 	for heading in ["ACTION", "KEYBOARD", "CONTROLLER"]:
 		controls.add_child(_label(heading, PressScript.SIZE_TINY, FADED))
 	for row in [
-		["Move", "A / D or ← / →", "Left stick"],
+		["Step / Walk", "A / D or ← / →", "Left stick"],
 		["Jump", "Space", "A"],
 		["Strike", "J / X", "X"],
 		["Raise Hood", "Hold K / C", "Hold B"],
@@ -383,7 +383,7 @@ func _build_controls() -> void:
 	]:
 		for cell in row:
 			controls.add_child(_label(String(cell), PressScript.SIZE_SMALL, INK))
-	_page.add_child(_paragraph("Begin with movement and jumps.\nFind each ability; the Book keeps your leads.\nEarn the chain to link Tap, Sweep, Accent.\nMove practice offers the complete moveset."))
+	_page.add_child(_paragraph("Begin with tiny taps; holding does not move.\nFind Walk behind the cradle. Book tracks leads.\nEarn the chain to link Tap, Sweep, Accent.\nMove practice offers the complete moveset."))
 	_button("Back", _show_screen.bind(_return_screen), true)
 
 

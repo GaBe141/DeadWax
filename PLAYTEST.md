@@ -3,8 +3,8 @@
 Run `.\deadwax.cmd play` for the authored opening. Start with the chapter
 checklist, then use `.\deadwax.cmd dev` for focused mechanics regressions.
 Runtime errors are written to `.godot/deadwax-play.log`.
-Run `.\deadwax.cmd check` before handoff; the complete run contains 37 native
-suites, including four dedicated ability model, integration, world, and Book suites.
+Run `.\deadwax.cmd check` before handoff; the complete run contains 38 native
+suites, including ability model, integration, world, Book, and Walk suites.
 
 ## Session
 
@@ -15,7 +15,28 @@ suites, including four dedicated ability model, integration, world, and Book sui
 - Overall frame pacing: smooth / occasional hitch / frequent hitch
 - Audio clarity and latency:
 
-## Ability progression review — 2026-09-11
+## Walk opening review — 2026-09-11
+
+Native Godot 4.7.2 with injected keyboard events and a private checkpoint:
+
+- Full `deadwax.cmd check` passed: 38 suites, 10,239 checks, exit 0, no
+  script/runtime errors. Log: `.godot/walk-full-check.log`; existing non-fatal
+  Godot teardown warnings remain.
+- 15 checks passed. New Game starts at (180,554) with an empty version-two
+  moveset; holding left gives one pixel, and 45 fresh presses reach the soles.
+  Fresh E saves only Walk, updates the objective and movement card, and restores
+  sustained movement. Continue retains walking without granting later moves.
+- Reviewed the opening at 1280×720 and 960×540. The walking card stays inside
+  the left edge, and only the nearest sleeve shows a prompt. Other pickup
+  origins and the Stalls progression route are unchanged.
+- Captures and results are in `.godot/walk-input-review/`; the native log is
+  `.godot/walk-input-review-final.log`. The opening film was bypassed using the
+  explicit fixture entry. This is an automated keyboard pass; controller feel
+  and audio remain manual checks.
+
+## Earlier ability progression review — 2026-09-11
+
+This review predates the Walk pickup and records the six-move build below.
 
 Native Godot 4.7.2 / GL Compatibility, with private checkpoints and injected
 keyboard events. Reviewed the opening and ability cards at 1280×720 and
@@ -47,9 +68,17 @@ Use New Game for this pass. A save from before ability progression deliberately
 retains the complete old moveset, so Continue cannot stand in for a fresh start.
 Use isolated checkpoints for partial-save and write-failure checks.
 
-- [ ] After the opening, walking, ordinary jumping, E/Y interactions, and menus
-  work. J/X, Hood, and Set do nothing until their respective discoveries.
+- [ ] After the opening, ordinary jumping, E/Y interactions, and menus work.
+  Horizontal movement is one pixel per fresh A/D or left/right press or stick
+  flick. Holding, keyboard repeat, or changing frame rate cannot repeat it.
+  J/X, Hood, and Set do nothing until their respective discoveries.
   The readout does not invite an unavailable strike or show a working chain.
+- [ ] From the unchanged Headshell spawn (180,554), make 45 fresh left taps
+  to reach x135 and the walking soles at (60,554). The first E/Y recovers Walk
+  only when grounded within 76 px; 44 taps remain outside. The card stays on
+  screen at 1280×720 and 960×540 without overlapping the needle prompt.
+  The objective and movement card then update immediately. Held movement
+  regains the original speed and handling, and Continue preserves it.
 - [ ] Find Strike on the Headshell floor at (365,554), then Set toward the east
   at (890,554). A fresh grounded E/Y within 76 px recovers each part once.
   Passing nearby, arriving, or holding E/Y from a different interaction never
@@ -64,9 +93,12 @@ Use isolated checkpoints for partial-save and write-failure checks.
   available after finding the required moves.
 - [ ] Visit the Stalls before finding Groove Riding. Ordinary jumps and any
   faster equipment cannot climb its eastern 210 px step; the quiet groove
-  does not launch an untrained strike. Also try running and coyote jumps from the solid groove block: the first upper platform is 147 px higher and stays out of reach. A fall lands in the service lane.
+  does not launch an untrained strike. A fall lands in the service lane.
   Use the western tread at (810,700) to jump back to the takeoff without R,
   an ability grant, a ceiling trap, or losing the entry checkpoint.
+  Try running and coyote jumps from the solid groove block: the first upper
+  platform at (900,415), top 397, must remain 147 px above that foothold and out
+  of ordinary jump reach.
 - [ ] Open Tick's Practice Count-In door, then take Groove Riding at (1320,574).
   The pickup remains unavailable until the door's saved opened outcome.
   Return to the Stalls: strike the live wax, steer onto the eastern bank,
@@ -81,18 +113,20 @@ Use isolated checkpoints for partial-save and write-failure checks.
 - [ ] Earned Groove Riding activates environmental thick-air jets. Later,
   either Tonearm outcome still offers Gather; collecting it gives one dry
   airborne Strike lift, without silently granting any missing ability.
-- [ ] At each stage, inspect Journey at 1280×720 and 960×540. It names all six
+- [ ] At each stage, inspect Journey at 1280×720 and 960×540. It names all seven
   missing moves with leads, marks only found ones, and keeps chain/Groove/Pogo
-  separate from the eight core/knowledge/Refrain grooves. Keyboard, D-pad,
+  separate from the eight core/knowledge/Refrain grooves. Walk has its own
+  Movement shelf and is initially selected. Keyboard, D-pad,
   mouse, and right-stick scrolling keep selected details reachable.
 - [ ] Recover, change rooms, pause, and Continue with a partial moveset. Only
   found parts remain usable, and owned pickups retire without reward cues.
   A failed pickup write grants nothing and leaves E/Y available for a retry.
-- [ ] Continue an actual save with no `abilities` field: all six old moves
-  remain available, with existing room, entry, balance, equipment, choices,
-  and Refrains unchanged. Explicit empty/partial snapshots never get this
-  migration grant. New Game clears the moves again.
-- [ ] Enter title-screen Move practice or the development rooms. All six moves
+- [ ] Continue an actual save with no `abilities` field: the complete legacy
+  moveset remains available, with existing room, entry, balance, equipment,
+  choices, and Refrains unchanged. A version-one ability snapshot adds Walk
+  while preserving exactly its listed old moves. An explicit empty/partial
+  version-two snapshot receives no migration grant. New Game clears all seven.
+- [ ] Enter title-screen Move practice or the development rooms. All seven moves
   work there; the campaign's partial moveset and checkpoint remain unchanged
   on exit. Practice keeps stock equipment handling and its empty floor.
 - [ ] Reduced motion holds pickup decoration still while fresh-input prompts
@@ -112,7 +146,7 @@ fixture as a measurement of completionist playtime.
 - [ ] Start with a fresh grounded E / Y while close. A held input, an airborne
   approach, or a nearby passage cannot create overlapping trials. The warning
   precedes each wave; new copies appear clear of Skip.
-- [ ] A movement-only player cannot begin an unresolvable trial. Strike allows
+- [ ] A player without the required combat moves cannot begin an unresolvable trial. Strike allows
   all three sources; Set alone also allows the Label's peaceful recordings.
 - [ ] Clear waves of one, one, then two recordings at each source. Label
   Auditioners accept ordinary sustained Set as well as strikes. Overture
@@ -235,13 +269,13 @@ At that review, `deadwax.cmd check` passed its then-current 29 suites and 7,813 
 
 - [ ] Boot reaches the title screen; New Game plays the four-scene opening and hands control to Skip in the Headshell after about 23 seconds. Continue is available only with a readable campaign checkpoint and restores the saved entry without the film.
 - [ ] Watch opening replays from the title and returns there. An existing save, wallet, map, Refrains, and encounter choices survive the replay unchanged.
-- [ ] Holding the title's confirm key or controller A does not immediately advance the first scene. Fresh Space/A or Next advances once; Escape/controller B or Skip ends it after the short fade. Holding movement, jump, strike, Hood, Set, or passage during the film does not act on the first gameplay frame; fresh movement and interaction work after handoff, while combat moves still await discovery.
+- [ ] Holding the title's confirm key or controller A does not immediately advance the first scene. Fresh Space/A or Next advances once; Escape/controller B or Skip ends it after the short fade. Holding movement, jump, strike, Hood, Set, or passage during the film does not act on the first gameplay frame; fresh direction taps shuffle one pixel and interactions work after handoff; sustained walking and combat moves still await discovery.
 - [ ] The town in the record, the worn street, Skip's first feet, and the lit way down read clearly at 1280×720 and 960×540. Captions, title, and Next/Skip remain readable with no overlap; resizing leaves the current shot intact.
 - [ ] Four quiet synthesized cues accompany the film while world sound and simulation remain paused. Next changes the cue; Skip stops it at handoff. Master volume/mute applies. Check a replay after using Hood: the film should not inherit a muffled filter.
 - [ ] Reduced motion holds composed illustrations while the story still advances naturally. Pause, Book, map, and shop do not stack over the film. Normal and skipped endings each return control exactly once.
 - [ ] Starting a new game over an existing one asks the player to confirm the replacement.
 - [ ] The title, menus, room signage, player silhouette, and HUD remain legible at 1280×720 and in fullscreen.
-- [ ] Headshell's movement/jump prompt and the first E/Y passage are understandable without external instructions.
+- [ ] Headshell's shuffle/Walk/jump prompt and the first E/Y passage are understandable without external instructions.
 - [ ] Horn Plaza clearly offers the west practice loop and the east market route.
 - [ ] After finding Hood on High Street, return beneath the horn and hold it still for about 1.4 seconds to hear its quiet answer. Polishing there grants one Shine.
 - [ ] High Street's Looper gives three ticks and swings on four; the upper route lets the player pass without fighting.
@@ -311,7 +345,7 @@ At that review, `deadwax.cmd check` passed its then-current 29 suites and 7,813 
 
 ## Folded map
 
-- [ ] New Game begins without the map. Walk right in the Headshell: the folded page is visible before the first raised block, clear of both arrival positions, and collects once on approach.
+- [ ] New Game begins without the map. Recover Walk, then walk right in the Headshell: the folded page is visible before the first raised block, clear of both arrival positions, and collects once on approach.
 - [ ] Collection announces the map without opening a panel or changing Shine, health, Refrains, or knowledge. M / D-pad Down opens the map from play, and the Book gains an Open map button.
 - [ ] The map marks the current room, names explored rooms, and leaves unvisited names hidden. Its 24 passage pairs match the 21 playable rooms; dashed shortcuts do not claim to unlock a passage.
 - [ ] Label, Overture, and Unplayed tabs select distinct sheets. Mouse clicks, keyboard Left/Right, and D-pad Left/Right all turn pages; controller A on a focused tab selects it without closing the guide. The selected tab and focus remain clear at both supported window sizes.

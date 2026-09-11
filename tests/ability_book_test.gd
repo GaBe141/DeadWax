@@ -33,9 +33,11 @@ func _run() -> void:
 	await _frames(3)
 	_check(paused and _book.current_page() == "journey", "new Book opens and pauses on Journey")
 	_check(_book.slot_count() == 8 and _book.filled_slot_count() == 0,
-		"movement-only opening carries none of the original eight grooves")
-	_check(_book.ability_count() == 6 and _book.found_ability_count() == 0,
-		"six earnable moves are tracked separately from knowledge and Refrains")
+		"tiny-step opening carries none of the original eight grooves")
+	_check(_book.ability_count() == 7 and _book.found_ability_count() == 0,
+		"seven earnable moves are tracked separately from knowledge and Refrains")
+	_check(_abilities.snapshot().version == 2 and _book.selected_slot() == &"walk",
+		"new version-two Book begins on the missing Walk lead")
 	var original: Dictionary = _abilities.snapshot()
 	for definition in Abilities.catalog():
 		var id := StringName(definition.id)
@@ -46,11 +48,19 @@ func _run() -> void:
 		_check(not _book._detail_description.text.contains("ALWAYS YOURS"), "locked %s never promises a starting verb" % id)
 	_check(_abilities.snapshot() == original, "viewing all leads cannot grant moves")
 	_book.close_inventory()
+	_abilities.unlock_ability(&"walk")
+	_book.open_inventory()
+	_book._select_slot(&"walk")
+	_check(_book.found_ability_count() == 1 and _book.filled_slot_count() == 0,
+		"finding Walk fills its own movement card without inflating groove slots")
+	_check(_book.slot_text(&"walk").contains("FOUND") and not _book.slot_text(&"walk").contains("NOT FOUND"),
+		"earned Walk no longer appears missing")
+	_book.close_inventory()
 	_abilities.unlock_ability(&"strike")
 	_book.open_inventory()
 	_book._select_slot(&"strike")
 	await _frames(2)
-	_check(_book.filled_slot_count() == 1 and _book.found_ability_count() == 1,
+	_check(_book.filled_slot_count() == 1 and _book.found_ability_count() == 2,
 		"silent acquisition refreshes the exact counts on reopen")
 	_check(_book.slot_text(&"strike").contains("FOUND") and not _book.slot_text(&"strike").contains("NOT FOUND"),
 		"earned Strike visibly becomes available")
@@ -62,12 +72,12 @@ func _run() -> void:
 	_book.refresh_abilities()
 	_check(_book._detail_description.text.contains("Accent") and not _book._detail_description.text.contains("launch"),
 		"new chain extends the Strike description without implying other refinements")
-	_check(_book.filled_slot_count() == 1 and _book.found_ability_count() == 2,
+	_check(_book.filled_slot_count() == 1 and _book.found_ability_count() == 3,
 		"refinement ownership does not inflate the eight groove slots")
 	_check(_book._refinement_label.text.contains("1 / 3"), "refinement shelf has its own completion count")
 	_abilities.restore_snapshot(Abilities.legacy_snapshot())
 	_book.refresh_abilities()
-	_check(_book.filled_slot_count() == 3 and _book.found_ability_count() == 6,
+	_check(_book.filled_slot_count() == 3 and _book.found_ability_count() == 7,
 		"legacy full moveset remains visibly available")
 	_check(_book._detail_description.text.contains("launch") and _book._detail_description.text.contains("rebound"),
 		"fully restored Strike describes the earned traversal options")
@@ -77,8 +87,18 @@ func _run() -> void:
 		root.size = dimensions
 		root.content_scale_size = dimensions
 		await _frames(4)
+		_abilities.restore_snapshot(Abilities.default_snapshot())
+		_book.refresh_abilities()
+		_book._select_slot(&"walk")
+		_book._focus_selected()
+		await _frames(4)
+		_check(_book._detail_description.text == Abilities.ability(&"walk").lead
+			and _book._detail_description.get_global_rect().end.y <= _book._journey_notes.get_global_rect().end.y + 1,
+			"the first Walk location lead is entirely visible without scrolling")
+		_abilities.restore_snapshot(original)
+		_book.refresh_abilities()
 		_book._select_slot(&"hood")
-		for id in [&"strike", &"combo", &"groove", &"pogo", &"jump-cut"]:
+		for id in [&"walk", &"strike", &"combo", &"groove", &"pogo", &"jump-cut"]:
 			_book._select_slot(id)
 			_book._focus_selected()
 			await _frames(4)
@@ -103,9 +123,18 @@ func _run() -> void:
 	_check(_abilities.snapshot() == original, "selection, scrolling and reduced motion never mutate permissions")
 	_book.close_inventory()
 	_check(not paused, "closing the Book restores play")
+	_abilities.restore_snapshot({"version": 1, "unlocked": []})
+	_book.refresh_abilities()
+	_check(_book.found_ability_count() == 1 and _book.filled_slot_count() == 0
+		and not _book.slot_text(&"walk").contains("NOT FOUND"),
+		"a version-one empty moveset retains its already-available Walk")
+	_abilities.restore_snapshot({"version": 2, "unlocked": []})
+	_book.refresh_abilities()
+	_check(_book.found_ability_count() == 0 and _book.slot_text(&"walk").contains("NOT FOUND"),
+		"explicit version-two empty permissions retain the tiny-step opening")
 	_book.abilities = null
 	_book.refresh_abilities()
-	_check(_book.filled_slot_count() == 3 and _book.found_ability_count() == 6,
+	_check(_book.filled_slot_count() == 3 and _book.found_ability_count() == 7,
 		"standalone legacy Book fixtures retain the complete moveset")
 	_readout_permissions()
 	_book.queue_free()

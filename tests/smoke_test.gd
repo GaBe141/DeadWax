@@ -1239,7 +1239,7 @@ func _check_project_boot() -> void:
 	_expect(_action_has_key(&"inventory", KEY_I), "I opens the inventory")
 	_expect(_action_has_button(&"inventory", JOY_BUTTON_START), "gamepad Start opens the inventory")
 	_expect(not _action_has_button(&"inventory", JOY_BUTTON_B), "gamepad B does not open the inventory during play")
-	var expected_inventory_entries: Array[String] = ["strike", "hood", "set", "combo", "groove", "pogo"]
+	var expected_inventory_entries: Array[String] = ["walk", "strike", "hood", "set", "combo", "groove", "pogo"]
 	for technique in ProgressionScript.TECHNIQUE_ORDER:
 		expected_inventory_entries.append(String(ProgressionScript.TECHNIQUE_KEYS[technique]))
 	for refrain in ProgressionScript.REFRAIN_ORDER:
@@ -1278,6 +1278,13 @@ func _check_project_boot() -> void:
 	)
 	_expect(String(inventory.call("detail_title")) == "HOOD", "inventory focus refreshes the detail pane")
 	visited_inventory_slots[String(inventory.call("selected_slot"))] = true
+	# The single movement card sits above all three core verbs. Visit it and
+	# return to the center core card before walking the remaining shelves.
+	for direction in [JOY_BUTTON_DPAD_UP, JOY_BUTTON_DPAD_DOWN]:
+		_send_joy_button(direction, true)
+		await process_frame
+		_send_joy_button(direction, false)
+		visited_inventory_slots[String(inventory.call("selected_slot"))] = true
 	for direction in [
 		JOY_BUTTON_DPAD_RIGHT,
 		JOY_BUTTON_DPAD_DOWN,

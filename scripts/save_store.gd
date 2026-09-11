@@ -4,8 +4,9 @@ extends RefCounted
 ## The last valid checkpoint remains in .bak when a new checkpoint is installed.
 ## Required v1 fields: version, room_id, entry_id, progression.snapshot(), shine.
 ## Optional fields: abilities, purchases, map, discoveries, collection, completed, encounters, settings.
-## Absent abilities retain the legacy six-move set; new journeys save an
-## explicit empty or partially earned snapshot instead of invoking migration.
+## Absent abilities retain all seven moves. Internal abilities v1 retains Walk
+## plus its listed older moves; v2 keeps an exact empty or earned snapshot.
+## The root checkpoint remains v1; normalized abilities always use internal v2.
 ## Main must also check that saved location IDs belong to the active campaign.
 
 const SAVE_VERSION := 1
@@ -122,7 +123,8 @@ func _normalise(data: Dictionary) -> Dictionary:
 		return _invalid("The checkpoint location is invalid.")
 	if not _whole_number(data.get("shine"), 0, MAX_SHINE):
 		return _invalid("The checkpoint Shine amount is invalid.")
-	# Older journeys already had these moves. Only a new game starts empty.
+	# Missing state keeps the complete old moveset. The model also upgrades
+	# explicit internal v1 with Walk, which those older journeys already had.
 	var abilities: Variant = data.get("abilities", AbilitiesScript.legacy_snapshot())
 	if not AbilitiesScript.valid_snapshot(abilities):
 		return _invalid("The checkpoint abilities are invalid.")

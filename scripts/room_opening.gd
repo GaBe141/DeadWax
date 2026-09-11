@@ -27,6 +27,9 @@ var _horn_time := 0.0
 var _horn_heard := false
 var _yard_note: Control
 var _yard_note_outcome := "unprinted"
+var _headshell_move_note: Control
+var _headshell_recovery_note: Control
+var _headshell_note_state := ""
 
 func configure(id: StringName) -> void:
 	room_id = id
@@ -144,11 +147,9 @@ func _build_headshell() -> void:
 		objective_label = "The cradle stays empty. The street is still here."
 	else:
 		sign_label(Vector2(125, 300), "THE GRIP IS OPEN\nSomething let go of you.")
-	sign_label(Vector2(535, 330), "A / D or left stick — move\nSPACE / A — jump")
+	ability_pickup(Vector2(60, 554), &"walk")
 	ability_pickup(Vector2(365, 554), &"strike")
 	ability_pickup(Vector2(890, 554), &"set")
-	if not _has_ability(&"strike") or not _has_ability(&"set"):
-		sign_label(Vector2(90, 180), "LEFT IN THE CRADLE\nYour needle. Your listening weight.\n[E / Y] beside a lost part.")
 	var folded_map := MapPickupScript.new()
 	folded_map.name = "FoldedMap"
 	folded_map.position = Vector2(500, 554)
@@ -488,7 +489,10 @@ func refresh_abilities() -> void:
 func _refresh_ability_objective() -> void:
 	match room_id:
 		&"headshell":
-			if not _has_ability(&"strike"):
+			_refresh_headshell_guidance()
+			if not _has_ability(&"walk"):
+				objective_label = "Tap A / D or flick the stick to inch left. Recover your feet."
+			elif not _has_ability(&"strike"):
 				objective_label = "Recover your needle near the cradle. [E / Y] beside it."
 			elif not _has_ability(&"set"):
 				objective_label = "Recover your listening weight by the eastern arch."
@@ -500,6 +504,31 @@ func _refresh_ability_objective() -> void:
 			elif abilities != null:
 				objective_label = "Carry the recovered Groove east. The Stalls span can be crossed."
 		&"the_stalls": _refresh_stalls_objective()
+
+func _refresh_headshell_guidance() -> void:
+	var state := "%s/%s/%s" % [_has_ability(&"walk"), _has_ability(&"strike"), _has_ability(&"set")]
+	if state == _headshell_note_state:
+		return
+	_headshell_note_state = state
+	for previous in [_headshell_move_note, _headshell_recovery_note]:
+		if is_instance_valid(previous):
+			_notes.erase(previous)
+			remove_child(previous)
+			previous.queue_free()
+	_headshell_move_note = null
+	_headshell_recovery_note = null
+	var movement_text := "A / D or left stick — walk\nSPACE / A — jump"
+	if not _has_ability(&"walk"):
+		movement_text = "TAP A / D / flick stick — inch\nSPACE / A — jump\nRecover your feet to walk."
+	sign_label(Vector2(535, 330), movement_text)
+	_headshell_move_note = _notes.back()
+	if not _has_ability(&"walk"):
+		sign_label(Vector2(90, 180), "LEFT BY THE CRADLE\nYour feet are to the left.\nTap A / D. [E / Y] to recover them.")
+	elif not _has_ability(&"strike") or not _has_ability(&"set"):
+		sign_label(Vector2(90, 180), "LEFT IN THE CRADLE\nYour needle. Your listening weight.\n[E / Y] beside a lost part.")
+	else:
+		return
+	_headshell_recovery_note = _notes.back()
 
 ## Main keeps the outcomes. Recreating a room only applies its own stable
 ## entries; this method neither records completion nor unlocks knowledge.

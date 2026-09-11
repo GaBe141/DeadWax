@@ -233,7 +233,8 @@ func _check_continue_and_effects() -> void:
 	_check(disk.get("shine") == 0 and disk.get("purchases", ["unexpected"]).is_empty(), "the new pressing saves the reset economy")
 
 func _check_walk_speed(multiplier: float, label: String) -> void:
-	# Compare purchased Hood handling after its separate world discovery.
+	# Compare purchased Hood handling after finding both feet and Hood.
+	_main.abilities.unlock_ability(&"walk")
 	_main.abilities.unlock_ability(&"hood")
 	_main._load_world_room(&"practice_room", &"from_high_street")
 	await _physics(3)

@@ -32,7 +32,7 @@ func _physics_process(delta: float) -> void:
 	if _is_owned():
 		refresh_abilities()
 		return
-	_near = _player_distance() <= NOTICE_RADIUS
+	_near = _nearest_prompt()
 	if not _reduced_motion:
 		_clock += delta
 	_refresh_card()
@@ -77,11 +77,26 @@ func _player_distance() -> float:
 	var player := get_tree().get_first_node_in_group("player") as Node2D
 	return player.global_position.distance_to(global_position) if player != null else INF
 
+func _nearest_prompt() -> bool:
+	var distance := _player_distance()
+	if distance > NOTICE_RADIUS:
+		return false
+	# The first two sleeves share the cradle. Show one readable prompt rather
+	# than stacking their cards; their independent interaction origins remain.
+	for candidate in get_tree().get_nodes_in_group("ability_pickup"):
+		if candidate == self or candidate.get_parent() != get_parent():
+			continue
+		var other_distance: float = candidate.call("_player_distance")
+		if other_distance < distance - 0.01 or (is_equal_approx(other_distance, distance) and candidate.get_instance_id() < get_instance_id()):
+			return false
+	return true
+
 func _prompt() -> String:
 	if not is_available():
 		return "Four even strikes open the sleeve.\nThe listening door keeps the count."
 	var hint := "A missing part, waiting for you."
 	match ability:
+		&"walk": hint = "Hold A / D or the stick to walk again."
 		&"strike": hint = "J / X — strike and parry."
 		&"set": hint = "Hold L / LB — kneel and listen."
 		&"hood": hint = "Hold K / C / B — move quietly."
@@ -105,6 +120,13 @@ func _refresh_card() -> void:
 		_card.material = Press.unshaded_material()
 		_card.z_index = 22
 		add_child(_card)
+	# The walking soles sit near the left edge of the first page. Keep their
+	# type on screen even when the camera, window size, or paper face changes.
+	var canvas_transform := get_global_transform_with_canvas()
+	var canvas_scale := maxf(absf(canvas_transform.get_scale().x), 0.001)
+	var min_x := (12.0 - canvas_transform.origin.x) / canvas_scale
+	var max_x := (get_viewport_rect().size.x - 12.0 - canvas_transform.origin.x) / canvas_scale - _card.size.x
+	_card.position.x = clampf(-_card.size.x * 0.5, min_x, maxf(min_x, max_x))
 	_card.visible = _near
 
 func set_reduced_motion(enabled: bool) -> void:

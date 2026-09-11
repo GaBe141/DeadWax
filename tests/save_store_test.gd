@@ -19,6 +19,7 @@ func _run() -> void:
 	_path = _test_directory + "/checkpoint.json"
 	_check(DirAccess.make_dir_absolute(_test_directory) == OK, "create isolated test directory")
 	_check_roundtrip()
+	_check_ability_migrations()
 	_check_invalid_data()
 	_check_recovery()
 	_check_failed_writes()
@@ -80,6 +81,48 @@ func _check_roundtrip() -> void:
 	_check(defaults.abilities == AbilitiesScript.legacy_snapshot(), "old checkpoints retain their existing full moveset")
 	_check(defaults.settings == SaveStoreScript.DEFAULT_SETTINGS, "optional settings default")
 
+func _check_ability_migrations() -> void:
+	var store := SaveStoreScript.new(_path)
+	var old_ids := ["strike", "set", "hood", "combo", "groove", "pogo"]
+	var cases := [
+		{"input": null, "expected": AbilitiesScript.legacy_snapshot()},
+		{"input": {"version": 1, "unlocked": []}, "expected": {"version": 2, "unlocked": ["walk"]}},
+		{"input": {"version": 1, "unlocked": ["pogo", "strike"]}, "expected": {"version": 2, "unlocked": ["walk", "strike", "pogo"]}},
+		{"input": {"version": 1, "unlocked": old_ids}, "expected": AbilitiesScript.legacy_snapshot()},
+		{"input": {"version": 2, "unlocked": []}, "expected": {"version": 2, "unlocked": []}},
+		{"input": {"version": 2, "unlocked": ["strike"]}, "expected": {"version": 2, "unlocked": ["strike"]}},
+		{"input": {"version": 2, "unlocked": ["strike", "walk"]}, "expected": {"version": 2, "unlocked": ["walk", "strike"]}},
+	]
+	for index in cases.size():
+		store.delete_save()
+		var prior := _sample()
+		if cases[index].input == null:
+			prior.erase("abilities")
+		else:
+			prior.abilities = cases[index].input.duplicate(true)
+		# Raw bytes ensure the read path, not a preceding normalized save,
+		# encounters the actual older schema and missing field.
+		var encoded := JSON.stringify(prior)
+		_write_raw(_path, encoded)
+		var restored: Dictionary = store.load_game()
+		var expected := prior.duplicate(true)
+		expected.abilities = cases[index].expected
+		_check(restored == expected, "disk ability migration preserves every other checkpoint field: " + str(index))
+		_check(restored.version == 1 and restored.abilities.version == 2, "root v1 retains canonical internal abilities v2: " + str(index))
+		_check(FileAccess.get_file_as_string(_path) == encoded, "reading old abilities never rewrites the checkpoint: " + str(index))
+		_check(store.save_game(restored) and store.load_game() == expected, "normalized abilities persist without another grant: " + str(index))
+		var saved: Variant = JSON.parse_string(FileAccess.get_file_as_string(_path))
+		_check(saved.abilities.version == 2 and saved.abilities.unlocked == cases[index].expected.unlocked, "stored bytes contain canonical v2 permissions: " + str(index))
+	# Recovering an actual v1 backup follows the same minimum migration.
+	store.delete_save()
+	var backup := _sample()
+	backup.abilities = {"version": 1, "unlocked": ["hood"]}
+	_write_raw(_path + ".bak", JSON.stringify(backup))
+	_write_raw(_path, "{truncated")
+	var recovered := store.load_game()
+	_check(recovered.abilities == {"version": 2, "unlocked": ["walk", "hood"]}, "raw legacy backup keeps Walk without inventing other abilities")
+	_check(recovered.shine == backup.shine and recovered.encounters == backup.encounters, "backup ability migration preserves balance and choices")
+
 func _check_invalid_data() -> void:
 	var store := SaveStoreScript.new(_path)
 	_check(store.save_game(_sample()), "establish known checkpoint before malformed requests")
@@ -95,6 +138,13 @@ func _check_invalid_data() -> void:
 	for progression in [{"version": 9, "refrains": [], "techniques": []}, {"version": 1, "refrains": ["unknown"], "techniques": []}, {"version": 1, "refrains": ["gather", "gather"], "techniques": []}, {"version": 1, "refrains": [], "techniques": [1]}, {"version": 1, "refrains": "gather", "techniques": []}]:
 		var bad := _sample()
 		bad.progression = progression
+		variants.append(bad)
+	for abilities in [null, {}, [], true, {"version": 1, "unlocked": ["walk"]}, {"version": 1, "unlocked": ["strike", "strike"]},
+		{"version": 2, "unlocked": ["invented"]}, {"version": 2, "unlocked": ["walk", "walk"]},
+		{"version": 2, "unlocked": [], "extra": true}, {"version": 2, "unlocked": [true]},
+		{"version": 3, "unlocked": []}, {"version": 2.5, "unlocked": []}, {"version": true, "unlocked": []}]:
+		var bad := _sample()
+		bad.abilities = abilities
 		variants.append(bad)
 	for index in variants.size():
 		_check(not store.save_game(variants[index]) and not store.last_error.is_empty(), "reject malformed incoming checkpoint %d" % index)

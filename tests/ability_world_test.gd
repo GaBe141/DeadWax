@@ -26,6 +26,7 @@ func _run() -> void:
 	_check(Campaign.room_ids().size() == 21 and Chart.LINKS.size() == 24, "the authored passage graph keeps its 21 rooms and 24 pairs")
 	for record in Abilities.catalog():
 		await _placement(record)
+	await _opening_prompts()
 	await _interaction()
 	await _counted_sleeve()
 	await _market_gate()
@@ -81,6 +82,9 @@ func _placement(record: Dictionary) -> void:
 
 func _interaction() -> void:
 	await _fixture(&"headshell")
+	_abilities.unlock_ability(&"walk")
+	_room.refresh_abilities()
+	await process_frame
 	var pickup := _pickup(&"strike")
 	await _reset_at(Vector2(265, 554))
 	Input.action_press("enter_passage")
@@ -129,6 +133,30 @@ func _interaction() -> void:
 	_check(not present and _requests == 2, "silent room restoration does not replay acquisition")
 	restored.free()
 
+func _opening_prompts() -> void:
+	await _fixture(&"headshell")
+	await _reset_at(Vector2(180, 554))
+	var soles := _pickup(&"walk")
+	var needle := _pickup(&"strike")
+	_check(_abilities.snapshot() == {"version": 2, "unlocked": []}, "the first page keeps the explicit empty version-two shuffle state")
+	_check(_room.objective_label.contains("inch left") and _room.objective_label.contains("feet"), "the initial objective points left to recover walking")
+	_check(soles._card.visible and not needle._card.visible, "the nearest walking-soles prompt does not overlap the needle prompt")
+	var card_origin: Vector2 = soles._card.get_global_transform_with_canvas().origin
+	_check(card_origin.x >= 11.9 and card_origin.x + soles._card.size.x <= soles.get_viewport_rect().size.x - 11.9, "the left-edge walking prompt stays inside the visible page; origin%s size%s viewport%s" % [card_origin, soles._card.size, soles.get_viewport_rect().size])
+	var initial_text := _card_text(_room._headshell_move_note)
+	_check(initial_text.contains("TAP") and initial_text.contains("inch") and initial_text.contains("jump"), "the initial movement card distinguishes shuffling from the available jump")
+	_abilities.unlock_ability(&"walk")
+	_room.refresh_abilities()
+	await _physics(2)
+	_check(_room.objective_label.contains("needle") and _pickup(&"walk") == null, "confirmed Walk collection retires its sleeve and advances the needle lead")
+	_check(_card_text(_room._headshell_move_note).contains("walk") and not _card_text(_room._headshell_move_note).contains("inch"), "the same room replaces its shuffle instruction once walking is recovered")
+
+func _card_text(card: Control) -> String:
+	var result := ""
+	for child in card.get_children():
+		if child is Label: result += child.text + "\n"
+	return result
+
 func _counted_sleeve() -> void:
 	await _fixture(&"practice_room")
 	var pickup := _pickup(&"groove")
@@ -147,6 +175,7 @@ func _counted_sleeve() -> void:
 
 func _market_gate() -> void:
 	await _fixture(&"the_stalls")
+	_abilities.unlock_ability(&"walk")
 	_check(_room.objective_label.contains("Tick"), "the blocked span points back to the recoverable Groove")
 	_player.equipment_speed = 1.4
 	_player.equipment_accel = 1.4

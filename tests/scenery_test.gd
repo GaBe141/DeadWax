@@ -138,6 +138,8 @@ func _check_foreground(atmosphere: Node2D, solids: Array[Rect2], label: String) 
 	_check(_descendants(atmosphere).size() == 4 + 2 * bands.size(), label + " bounds scenery node count by its existing platform count")
 
 func _check_camera_and_pause() -> void:
+	# This scenery fixture measures camera travel after the separate Walk discovery.
+	_main.abilities.unlock_ability(&"walk")
 	_main._load_world_room(&"bootlegger", &"from_overture_stair")
 	await _physics(3)
 	_main._settings.reduced_motion = false

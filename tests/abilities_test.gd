@@ -54,7 +54,7 @@ func _opening() -> void:
 	_key(KEY_D, true)
 	await _physics(10)
 	_key(KEY_D, false)
-	_check(_main.player.position.x > origin.x + 15, "movement works before any pickup")
+	_check(absf(_main.player.position.x - origin.x - _main.player.SHUFFLE_STEP) < 0.001, "before Walk, holding a direction gives only one tiny step")
 	await _stand(Vector2(260, 554))
 	await _tap(KEY_SPACE)
 	_check(_main.player.position.y < 545 and not _main.player.is_on_floor(), "ordinary jump works before any pickup")
@@ -145,6 +145,7 @@ func _acquisition_context() -> void:
 		"finding Strike grants neither Hood nor Set")
 
 func _remaining_moves() -> void:
+	await _collect(&"walk")
 	await _collect(&"set", true)
 	_key(KEY_L, true)
 	await _physics(2)
@@ -175,7 +176,7 @@ func _remaining_moves() -> void:
 	await _collect(&"groove")
 	await _collect(&"combo")
 	await _collect(&"pogo")
-	_check(_main.abilities.snapshot() == Abilities.legacy_snapshot(), "six distinct grounded discoveries complete the ordinary moveset")
+	_check(_main.abilities.snapshot() == Abilities.legacy_snapshot(), "seven distinct grounded discoveries complete the ordinary moveset")
 	_check(_main.progression.snapshot().refrains.is_empty() and _main.player.shine == 0, "move pickups grant no Refrains or money")
 
 func _collect(id: StringName, controller: bool = false) -> void:
@@ -202,7 +203,7 @@ func _permissions() -> void:
 	var owned: Dictionary = _main.abilities.snapshot()
 	_main._load_world_room(&"headshell")
 	await _physics(3)
-	_main.abilities.restore_snapshot({"version": 1, "unlocked": ["strike"]})
+	_main.abilities.restore_snapshot({"version": 2, "unlocked": ["walk", "strike"]})
 	await _stand(Vector2(300, 554))
 	var foe := Dummy.new()
 	foe.position = Vector2(390, 554)
@@ -248,7 +249,7 @@ func _permissions() -> void:
 		"earned Pogo rebounds from a confirmed hit and refills earned breaths")
 	foe.queue_free()
 	await _physics(2)
-	_main.abilities.restore_snapshot({"version": 1, "unlocked": ["strike"]})
+	_main.abilities.restore_snapshot({"version": 2, "unlocked": ["walk", "strike"]})
 	_main.progression.unlock_refrain(Progression.Refrain.GATHER)
 	await _stand(Vector2(300, 554))
 	_main.player.air_density = 1.0
@@ -272,7 +273,7 @@ func _permissions() -> void:
 	await _physics(3)
 
 func _persistence() -> void:
-	_main.abilities.restore_snapshot({"version": 1, "unlocked": ["strike", "set"]})
+	_main.abilities.restore_snapshot({"version": 2, "unlocked": ["walk", "strike", "set"]})
 	_check(_main._persist_session(), "save a deliberately partial journey")
 	var partial: Dictionary = _main.abilities.snapshot()
 	_main.abilities.reset()

@@ -115,6 +115,8 @@ func _check_occluders(lighting: Node2D, label: String) -> void:
 	_check(clear_origins, label + " keeps every light source outside solid shadow polygons")
 
 func _check_motion_and_pause() -> void:
+	# This lighting fixture measures sustained camera travel after finding Walk.
+	_main.abilities.unlock_ability(&"walk")
 	_main._load_world_room(&"bootlegger", &"from_overture_stair")
 	await _physics(4)
 	_main._settings.reduced_motion = false

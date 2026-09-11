@@ -15,10 +15,13 @@ on the title screen replays it without replacing your save. Continue goes
 straight to your saved entry. Reduced motion presents still illustrations;
 the captions and original synthesized score tell the same story.
 
-A new journey begins with **movement and jumping only**. Recover Strike and
-Set in the Headshell, then explore for the Hood, Groove Riding, the
-Three-Strike Chain, and Pogo. Each part changes what Skip can do. Earlier
-saves keep their existing moves; choose New Game to play this progression.
+A new journey begins with **a one-pixel shuffle per fresh direction press**.
+Tap A / D or flick the left stick to inch left toward the walking soles behind
+the cradle. Holding a direction does not keep moving. Recover **Walk** with
+E / Y to restore ordinary movement; jumping and interaction stay available
+throughout. Then recover Strike and Set in the Headshell, followed by the Hood,
+Groove Riding, Three-Strike Chain, and Pogo. Earlier saves keep their existing
+walking and moves; choose New Game to play this progression.
 
 Everything is built from code at runtime, so an empty editor viewport is
 expected. The Label, Overture, and first stretch of the Unplayed are authored;
@@ -31,7 +34,7 @@ On the Dead Wax Wyse, the lightweight project commands are:
 .\deadwax.cmd play    play the campaign with a local runtime log
 .\deadwax.cmd dev     open the original mechanics rooms and planned-world tools
 .\deadwax.cmd editor  open the project in Godot
-.\deadwax.cmd check   import resources; run all thirty-seven native test suites
+.\deadwax.cmd check   import resources; run all thirty-eight native test suites
 .\deadwax.cmd vibe    start Mistral Vibe in this repository
 ```
 
@@ -273,11 +276,14 @@ and encounter choices are retained. Completion now also requires a resolved
 Tonearm encounter. An unfinished HUSH or Tonearm attempt resets on recovery;
 a resolved encounter stays resolved.
 
-The optional version-one `abilities` object records the exact moves found.
-If it is absent in an older save, Continue retains all six moves from the
-previous build. New Game explicitly saves an empty list; finding a part
-updates it only after a successful write. Recovery and Continue keep a
-partial moveset without inventing missing abilities or replaying pickups.
+The optional `abilities` object now uses internal **version 2** and records
+the exact seven moves found. If it is absent in an older save, Continue retains
+the complete legacy moveset. A version-one ability snapshot gains **Walk**
+while keeping exactly its six previously listed move permissions; a partial
+old journey never loses walking or gains other missing moves. New Game
+explicitly saves an empty version-two list. Finding a part updates it only
+after a successful write; explicit version-two partial lists restore exactly
+without replaying pickups. The enclosing checkpoint remains version 1.
 
 The version-one checkpoint accepts an optional `discoveries` object containing
 the spool's stage and the survey slip. Older saves start with both uncollected
@@ -303,10 +309,12 @@ Continue also starts there at full health.
 
 ## Controls
 
-Movement, jumping, interaction, and menus work from the start. Strike, Hood,
-Set, and the attack refinements below work after their discoveries.
+Jumping, interaction, and menus work from the start. Each fresh direction
+press shuffles one pixel until Walk is recovered. Strike, Hood, Set, and the
+attack refinements below also wait for their discoveries.
 
-- **A/D** move · **SPACE** jump (stubby on purpose — the strike does the flying)
+- **A/D** or left stick: fresh taps/flicks shuffle; holding walks after **Walk**.
+- **SPACE** jumps (stubby on purpose — the strike does the flying).
 - **J** (or X) — **STRIKE**: hit nearby foes while keeping your footing.
   Strike can also parry. With **POGO**, jumping and striking a vulnerable foe
   gives an upward rebound. **GROOVE RIDING** enables live-groove launches and
@@ -357,7 +365,7 @@ combo. Its first unguarded hit starts the count. The upper route still passes
 without fighting, and recovery resets an unfinished encounter.
 
 Choose **Move practice** on the title screen for a wide, empty floor to try
-movement, jumping, Hood, Set, and combos. It supplies all six moves and
+movement, jumping, Hood, Set, and combos. It supplies all seven moves and
 has no enemies, pickups, or exits. **R** resets Skip and the chain; **Esc / Back**
 opens pause, where **Return to title** takes you back to the sleeve. Practice
 uses temporary models and never writes your campaign checkpoint, unlocks
@@ -392,12 +400,13 @@ Opening the map pauses play; closing it returns you to the same position.
 
 ## Character progression
 
-Explore to recover six moves. Stand on the ground beside each lost part and
+Explore to recover seven moves. Stand on the ground beside each lost part and
 use a fresh **E / Y**; arrival or walking past never collects it automatically.
 The Book names each missing ability and keeps a lead to its location.
 
 | Ability | Discovery | What changes |
 | --- | --- | --- |
+| Walk | Behind the Headshell cradle, at (60,554) | Restores sustained walking after the initial one-pixel shuffle. |
 | Strike | Headshell's lower floor | Basic Tap attacks and parries. |
 | Set | Headshell, toward the eastern passage | Kneeling and peaceful responses. |
 | Hood | High Street's upper walk | Quiet movement, listening calls, and polishing wax. |
@@ -405,8 +414,11 @@ The Book names each missing ability and keeps a lead to its location.
 | Three-Strike Chain | Groove Yard's western approach | Links Tap, Sweep, and the stronger Accent. |
 | Pogo | Overture Well's lower resting shelf | Airborne rebounds from vulnerable foes. |
 
-Recovering abilities never changes ordinary running speed or jump height.
-Equipment modifies handling but never substitutes for an unearned move.
+Walk restores the existing running speed, acceleration, braking, and air
+steering. Before it is found, every fresh direction press moves one pixel;
+held input, keyboard repeat, or faster equipment cannot create continuous
+travel. Jump height stays unchanged. The remaining abilities preserve their
+existing tuning, and equipment never substitutes for an unearned move.
 Knowledge and Refrains remain separate:
 
 - **Count-In** and **Step-Turn** are knowledge techniques. Discovering one
@@ -418,10 +430,10 @@ Knowledge and Refrains remain separate:
   effect yet. Jump-Cut's working B-side mechanic is available in development
   rooms, with its planned pickup in the Mispress Core.
 
-Campaign discoveries persist on disk. Development rooms start with all six
+Campaign discoveries persist on disk. Development rooms start with all seven
 moves and retain their separate Refrain pickups and session-only progression;
 they never write the campaign checkpoint. Title-screen Move practice also
-supplies all six moves without changing what the campaign has earned.
+supplies all seven moves without changing what the campaign has earned.
 
 ## The B-side
 
@@ -453,8 +465,9 @@ pages. Journey records found and missing moves, discovered knowledge,
 carried Refrains, current Shine, permanent purchases, and discoveries. The
 Echo Spool and Surveyor's Slip have separate item buttons; they do not add to
 the eight groove slots for core moves, techniques, and Refrains. A separate
-refinement shelf holds the chain, Groove Riding, and Pogo; the ability counter
-tracks all six moves. New Game starts with none filled. Missing abilities
+Movement shelf holds Walk; the refinement shelf holds the chain, Groove Riding,
+and Pogo. The ability counter tracks all seven moves, with Walk initially
+selected for a new journey. New Game starts with none filled. Missing abilities
 show names and leads; found-item entries retain the next lead and survey clue.
 Inside the game, unknown techniques and Refrains
 remain unnamed until the session records them. Equipment lists all 12 pieces,
@@ -581,7 +594,7 @@ own animation while gameplay and the HUD remain paused underneath.
 
 ## Development checks
 
-Run `.\deadwax.cmd check` before committing. It imports resources and runs 37
+Run `.\deadwax.cmd check` before committing. It imports resources and runs 38
 dependency-free native suites, including smoke, save-store, campaign, Tonearm, Overture,
 sprite-animation, residents, economy-state, economy integration, scenery,
 lighting, attack-feel, GUI-animation, and map-item suites. These cover the original combat and
@@ -608,8 +621,9 @@ Collection-state, collection integration, collection-Book, and Echo-Trial suites
 cover strict save validation, deterministic rewards and pity, duplicate salvage,
 binding, equipment trade-offs, failed-write rollback, historical bestiary notes,
 temporary echo combat, wave ownership, repeated claims, menu navigation, and
-practice isolation. Four ability suites cover strict move snapshots, empty
-New Game and legacy migration, earned-input behavior, fixed pickups and
+practice isolation. Five ability suites cover strict move snapshots, the one-pixel opening,
+held/repeated input suppression, frame-rate independence, empty New Game,
+legacy migration, earned-input behavior, fixed pickups and
 failed writes, the Stalls gate and safe western return, and Book/readout
 permission cues. Native playtests still check the readability and pace of
 repeated hunts and equipment handling.

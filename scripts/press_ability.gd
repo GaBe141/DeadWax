@@ -21,6 +21,16 @@ static func draw(canvas: CanvasItem, state: Dictionary, ink: Color, stock: Color
 	canvas.draw_line(Vector2(-20, 20), Vector2(20, 20), Color(ink, 0.45), 1.0, true)
 	var kind := StringName(state.get("ability", &"strike"))
 	match kind:
+		&"walk":
+			for index in 2:
+				var offset := Vector2(-12 + index * 18, -5 + index * 6)
+				canvas.draw_colored_polygon(PackedVector2Array([
+					offset + Vector2(-4, -12), offset + Vector2(4, -12),
+					offset + Vector2(6, 6), offset + Vector2(10, 9),
+					offset + Vector2(10, 13), offset + Vector2(-5, 13)]), accent)
+				canvas.draw_line(offset + Vector2(-5, 13), offset + Vector2(10, 13), ink, 2.0, true)
+				for tread in 3:
+					canvas.draw_line(offset + Vector2(-2, -6 + tread * 5), offset + Vector2(4, -6 + tread * 5), Color(stock, 0.75), 1.0, true)
 		&"strike":
 			canvas.draw_colored_polygon(PackedVector2Array([Vector2(-7, -16), Vector2(9, -13), Vector2(2, 15), Vector2(-3, 17)]), accent)
 			canvas.draw_line(Vector2(-7, -16), Vector2(-3, 17), ink, 1.5, true)

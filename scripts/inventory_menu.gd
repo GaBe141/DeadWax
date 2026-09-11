@@ -20,6 +20,7 @@ const WorldBackdrop := preload("res://scripts/ui_world_backdrop.gd")
 ## Above this size The Book is shouting, and shouting is set in wood type.
 const DISPLAY_AT := 24
 
+const MOVEMENT_SLOTS := [&"walk"]
 const CORE_SLOTS := [&"strike", &"hood", &"set"]
 const REFINEMENT_SLOTS := [&"combo", &"groove", &"pogo"]
 
@@ -78,6 +79,8 @@ func _ready() -> void:
 	_motion.name = "UiMotion"
 	add_child(_motion)
 	_motion.reduced_motion = _reduced_motion
+	if abilities != null and not bool(abilities.call("has_ability", &"walk")):
+		_selected_slot = &"walk"
 	_build_menu()
 	if progression != null:
 		progression.connect("refrain_unlocked", _on_progression_changed)
@@ -203,11 +206,11 @@ func refresh_abilities() -> void:
 	_refresh()
 
 func ability_count() -> int:
-	return CORE_SLOTS.size() + REFINEMENT_SLOTS.size()
+	return MOVEMENT_SLOTS.size() + CORE_SLOTS.size() + REFINEMENT_SLOTS.size()
 
 func found_ability_count() -> int:
 	var count := 0
-	for slot in CORE_SLOTS + REFINEMENT_SLOTS:
+	for slot in MOVEMENT_SLOTS + CORE_SLOTS + REFINEMENT_SLOTS:
 		if _slot_is_filled(StringName(slot)):
 			count += 1
 	return count
@@ -405,6 +408,7 @@ func _build_menu() -> void:
 	shelves.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	shelf_scroll.add_child(shelves)
 	_entrance_parts.append(shelves)
+	_add_shelf(shelves, "MOVEMENT — THE FIRST STEPS", MOVEMENT_SLOTS)
 	_add_shelf(shelves, "ABILITIES — FOUND IN THE WORLD", CORE_SLOTS)
 	_refinement_label = _add_shelf(shelves, "REFINEMENTS", REFINEMENT_SLOTS)
 	_add_shelf(shelves, "KNOWLEDGE — NAMED, NEVER GRANTED", _technique_slots())
@@ -655,6 +659,8 @@ func _slot_name(slot: StringName) -> String:
 func _slot_kind(slot: StringName) -> String:
 	if slot in [&"echo_spool", &"survey_slip"]:
 		return "FOUND IN THE GROOVES"
+	if slot in MOVEMENT_SLOTS:
+		return "MOVEMENT"
 	if slot in CORE_SLOTS:
 		return "ABILITY"
 	if slot in REFINEMENT_SLOTS:
@@ -703,7 +709,7 @@ func _locked_description(slot: StringName) -> String:
 	return "An empty carrying groove. Somewhere in the record, a Refrain has not yet answered you."
 
 func _is_ability_slot(slot: StringName) -> bool:
-	return slot in CORE_SLOTS or slot in REFINEMENT_SLOTS
+	return slot in MOVEMENT_SLOTS or slot in CORE_SLOTS or slot in REFINEMENT_SLOTS
 
 func _ability_definition(slot: StringName) -> Dictionary:
 	for definition in AbilitiesScript.catalog():
@@ -713,7 +719,7 @@ func _ability_definition(slot: StringName) -> Dictionary:
 
 func _display_slots() -> Array[StringName]:
 	var slots := _all_slots()
-	for slot in REFINEMENT_SLOTS:
+	for slot in MOVEMENT_SLOTS + REFINEMENT_SLOTS:
 		slots.append(StringName(slot))
 	return slots
 
