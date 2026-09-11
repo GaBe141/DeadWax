@@ -26,6 +26,9 @@ const ShopScript := preload("res://scripts/shop_menu.gd")
 const HudMotionScript := preload("res://scripts/hud_motion.gd")
 const MapStateScript := preload("res://scripts/map_state.gd")
 const DiscoveriesScript := preload("res://scripts/discoveries_state.gd")
+const CollectionScript := preload("res://scripts/collection_state.gd")
+const CollectionCatalog := preload("res://scripts/collection_catalog.gd")
+const TrialScript := preload("res://scripts/echo_trial.gd")
 const MapMenuScript := preload("res://scripts/map_menu.gd")
 const OpeningScript := preload("res://scripts/opening_cutscene.gd")
 const PracticeScript := preload("res://scripts/room_move_practice.gd")
@@ -48,6 +51,9 @@ var _purchasing := false
 var _shop_closing := false
 var map_state: RefCounted
 var discoveries: RefCounted
+var collection: RefCounted
+var _collection_busy := false
+var _observation_clock := 0.0
 var map_menu: CanvasLayer
 var _map_closing := false
 var world: RefCounted
@@ -114,6 +120,7 @@ func _ready() -> void:
 	economy = EconomyScript.new()
 	map_state = MapStateScript.new()
 	discoveries = DiscoveriesScript.new()
+	collection = CollectionScript.new()
 	progression.connect("refrain_unlocked", _on_refrain_unlocked)
 	progression.connect("technique_discovered", _on_technique_discovered)
 
@@ -151,10 +158,14 @@ func _ready() -> void:
 	inventory.economy = economy
 	inventory.map_state = map_state
 	inventory.discoveries = discoveries
+	inventory.collection = collection
 	inventory.can_open = _can_open_inventory
 	add_child(inventory)
 	inventory.opened.connect(_on_inventory_opened)
 	inventory.map_requested.connect(_open_map_from_book)
+	inventory.equip_requested.connect(_equip_collection_item)
+	inventory.unequip_requested.connect(_unequip_collection_slot)
+	inventory.craft_requested.connect(_craft_collection_item)
 	shop = ShopScript.new()
 	add_child(shop)
 	shop.purchase_requested.connect(_purchase_item)
@@ -210,6 +221,10 @@ func _unhandled_input(event: InputEvent) -> void:
 			get_viewport().set_input_as_handled()
 
 func _process(delta: float) -> void:
+	_observation_clock -= delta
+	if _observation_clock <= 0.0:
+		_observation_clock = 0.25
+		_observe_collection()
 	if room == null:
 		return
 	if development_mode and OS.is_debug_build() and not _transition_pending:
@@ -342,6 +357,7 @@ func _swap_room(next_room: Node2D, entry_id: StringName) -> void:
 		room_entry_id = &"default"
 	if not development_mode and not practice_mode:
 		_restore_encounters()
+		_install_echo_trial()
 		if chapter_complete:
 			for child in room.get_children():
 				if child.is_in_group("chapter_endpoint"):
@@ -397,6 +413,8 @@ func _wire_room() -> void:
 	for n in get_tree().get_nodes_in_group("hears_strikes"):
 		if not room.is_ancestor_of(n):
 			continue
+		if n.is_in_group("echo_trial_actor"):
+			continue
 		if n is Node and n.has_signal("parried") and not n.parried.is_connected(_on_parried):
 			n.parried.connect(_on_parried)
 			n.shattered.connect(_on_shattered)
@@ -442,6 +460,8 @@ func _remember_encounter(key: String, outcome: String) -> void:
 	if practice_mode:
 		return
 	encounters[key] = outcome
+	if not development_mode:
+		collection.backfill(encounters)
 	if key == "groove_yard/yard_first_voice" and outcome == "freed":
 		_flash("A NAME REMEMBERED — the Yard keeps its last note.")
 	if key == "the_stalls/loft_voice" and outcome == "freed":
@@ -477,6 +497,7 @@ func _persist_session() -> bool:
 		"purchases": economy.call("snapshot").purchases,
 		"map": map_state.snapshot(),
 		"discoveries": discoveries.snapshot(),
+		"collection": collection.snapshot(),
 	}
 	var saved := bool(save_store.call("save_game", data))
 	if saved and _save_failed and game_menu != null:
@@ -509,6 +530,7 @@ func _new_game(play_opening: bool = true) -> void:
 	economy.call("reset")
 	map_state.reset()
 	discoveries.reset()
+	collection.reset()
 	_apply_purchases()
 	_reset_player()
 	_load_world_room(ChapterScript.START_ROOM)
@@ -547,6 +569,8 @@ func _continue_game() -> void:
 	economy.call("restore", data.shine, data.get("purchases", []))
 	map_state.restore_snapshot(data.get("map", {"owned": false, "visited": []}))
 	discoveries.restore_snapshot(data.get("discoveries", DiscoveriesScript.EMPTY))
+	collection.restore_snapshot(data.get("collection", CollectionScript.default_snapshot()))
+	collection.backfill(encounters)
 	_apply_purchases()
 	_last_saved_shine = player.shine
 	_reset_player()
@@ -684,6 +708,7 @@ func _start_practice() -> void:
 	_practice_campaign = {
 		"progression": progression, "economy": economy, "map": map_state,
 		"discoveries": discoveries,
+		"collection": collection,
 		"pressing": pressing, "encounters": encounters, "completed": chapter_complete,
 		"room_id": world_room_id, "entry_id": room_entry_id, "room_idx": room_idx,
 	}
@@ -697,6 +722,7 @@ func _start_practice() -> void:
 	economy = EconomyScript.new()
 	map_state = MapStateScript.new()
 	discoveries = DiscoveriesScript.new()
+	collection = CollectionScript.new()
 	pressing = PressingScript.new()
 	encounters = {}
 	chapter_complete = false
@@ -735,6 +761,7 @@ func _leave_practice() -> void:
 	economy = _practice_campaign.economy
 	map_state = _practice_campaign.map
 	discoveries = _practice_campaign.discoveries
+	collection = _practice_campaign.collection
 	pressing = _practice_campaign.pressing
 	encounters = _practice_campaign.encounters
 	chapter_complete = bool(_practice_campaign.completed)
@@ -759,6 +786,7 @@ func _bind_session_models() -> void:
 	inventory.economy = economy
 	inventory.map_state = map_state
 	inventory.discoveries = discoveries
+	inventory.collection = collection
 	if not progression.is_connected("refrain_unlocked", _on_refrain_unlocked):
 		progression.connect("refrain_unlocked", _on_refrain_unlocked)
 		progression.connect("technique_discovered", _on_technique_discovered)
@@ -849,11 +877,13 @@ func _finish_map_close() -> void:
 # -- Shine and the Bootlegger -------------------------------------------------
 
 func _max_health() -> int:
-	return int(economy.call("max_health")) if economy != null else NEEDLE_HEALTH
+	var base := int(economy.call("max_health")) if economy != null else NEEDLE_HEALTH
+	return clampi(base + (int(collection.modifiers().get("health", 0)) if collection != null else 0), 1, 5)
 
 func _apply_purchases() -> void:
 	player.hood_speed_mult = float(economy.call("hood_speed_multiplier"))
 	player.warm_thread = bool(economy.call("has_item", &"warm_thread"))
+	player.apply_equipment(collection.modifiers() if collection != null else {})
 	player.queue_redraw()
 
 func _shop_snapshot() -> Dictionary:
@@ -1082,6 +1112,7 @@ func _respawn() -> void:
 		return
 	_cancel_discovery_attempts()
 	_health = _max_health()
+	_cancel_echo_trials(true)
 	_respawn_pending = false
 	player.global_position = room.entry_position(room_entry_id)
 	player.velocity = Vector2.ZERO
@@ -1223,6 +1254,7 @@ func _on_discovery_cue(cue: StringName) -> void:
 		audio.play(String(cue), -7.0)
 
 func _cancel_discovery_attempts() -> void:
+	_cancel_echo_trials()
 	if audio != null and audio.has_method("stop_echo_cues"):
 		audio.stop_echo_cues()
 	if room == null:
@@ -1230,6 +1262,135 @@ func _cancel_discovery_attempts() -> void:
 	for station in get_tree().get_nodes_in_group("echo_discovery"):
 		if room.is_ancestor_of(station):
 			station.call("reset_attempt")
+
+# -- echoes, equipment, and the field ledger --------------------------------
+
+func _install_echo_trial() -> void:
+	for definition in CollectionCatalog.hunts():
+		if String(definition.room_id) != String(world_room_id):
+			continue
+		var trial := TrialScript.new()
+		trial.name = "EchoTrial"
+		trial.hunt_id = StringName(definition.id)
+		trial.position = definition.position
+		trial.start_requested.connect(_on_trial_start)
+		trial.completed.connect(_on_trial_claim)
+		room.add_child(trial)
+		break
+
+func _trial_context(source: Node) -> bool:
+	if development_mode or practice_mode or not _has_session or get_tree().paused or _respawn_pending or _health <= 0:
+		return false
+	if not _can_open_inventory() or inventory.is_open() or room == null or not is_instance_valid(source):
+		return false
+	if source != room.get_node_or_null("EchoTrial") or not source.is_in_group("echo_trial"):
+		return false
+	var definition := CollectionCatalog.hunt(String(source.hunt_id))
+	return not definition.is_empty() and String(definition.room_id) == String(world_room_id) and source.position == definition.position
+
+func _on_trial_start(source: Node) -> void:
+	if _collection_busy or not _trial_context(source) or not bool(source.call("can_start")):
+		return
+	var before: Dictionary = collection.snapshot()
+	collection.discover_hunt(String(source.hunt_id))
+	if not _persist_session():
+		collection.restore_snapshot(before)
+		_flash("Could not save. Try the echo press again.")
+		return
+	player.cancel_pending_strike()
+	source.call("begin_trial")
+
+func _on_trial_claim(source: Node) -> void:
+	if _collection_busy or not _trial_context(source) or not bool(source.call("can_claim")):
+		return
+	_collection_busy = true
+	var before: Dictionary = collection.snapshot()
+	var receipt: Dictionary = collection.finish_hunt(String(source.hunt_id))
+	if receipt.is_empty() or not _persist_session():
+		collection.restore_snapshot(before)
+		source.call("reward_failed")
+		_flash("Your take is waiting. Could not save; E / Y to retry.")
+		_collection_busy = false
+		return
+	var found := String(receipt.get("item_id", ""))
+	if found.is_empty():
+		receipt["message"] = "+%d offcut. Dry streak: %d / 20." % [int(receipt.offcuts), int(receipt.dry)]
+		_flash("+%d OFFCUT — TAKE KEPT" % int(receipt.offcuts))
+	elif bool(receipt.get("duplicate", false)):
+		receipt["message"] = "+%d offcuts from a duplicate. Bind a missing piece in the Book." % int(receipt.offcuts)
+		_flash("+%d OFFCUTS — DUPLICATE RECLAIMED" % int(receipt.offcuts))
+	else:
+		receipt["message"] = "%s found. Equip it in the Book." % String(CollectionCatalog.item(found).name)
+		_flash("%s — FOUND" % String(CollectionCatalog.item(found).name).to_upper())
+	source.call("accept_reward", receipt)
+	_fb_t = 3.2
+	audio.play("polish", -9.0, 0.85 if found.is_empty() else 1.1)
+	_collection_busy = false
+
+func _cancel_echo_trials(discard_claim: bool = false) -> void:
+	if room == null:
+		return
+	var trial := room.get_node_or_null("EchoTrial")
+	if trial != null:
+		trial.call("cancel_trial", discard_claim)
+
+func _equip_collection_item(item_id: String) -> void:
+	_change_collection("equip", item_id)
+
+func _unequip_collection_slot(slot: String) -> void:
+	_change_collection("unequip", slot)
+
+func _craft_collection_item(item_id: String) -> void:
+	_change_collection("craft", item_id)
+
+func _change_collection(action: String, id: String) -> bool:
+	if _collection_busy or development_mode or practice_mode or not _has_session or not inventory.is_open() or not _can_open_inventory():
+		return false
+	if action not in ["equip", "unequip", "craft"]:
+		return false
+	_collection_busy = true
+	var before: Dictionary = collection.snapshot()
+	if not bool(collection.call(action, id)):
+		inventory.refresh_collection("That change is unavailable. Check ownership, source, and offcuts.")
+		_collection_busy = false
+		return false
+	if not _persist_session():
+		collection.restore_snapshot(before)
+		inventory.refresh_collection("Could not save. Your equipment and offcuts are unchanged. Try again.")
+		_collection_busy = false
+		return false
+	_apply_purchases()
+	# Changing linings cannot heal by repeatedly adding and removing capacity.
+	_health = mini(_health, _max_health())
+	player.cancel_pending_strike()
+	inventory.refresh_collection("Piece pressed. Select it to equip." if action == "craft" else "Equipment saved. Extra needle capacity fills on recovery.")
+	audio.play("tick", -15.0, 0.9)
+	_collection_busy = false
+	return true
+
+func _observe_collection() -> void:
+	if development_mode or practice_mode or not _has_session or room == null or get_tree().paused or _transition_pending:
+		return
+	var changed := false
+	for actor in room.get_children():
+		if not actor is Node2D or actor.is_queued_for_deletion() or actor.global_position.distance_to(player.global_position) > 440.0:
+			continue
+		var species := ""
+		if actor.has_meta("chapter_state_id"):
+			species = CollectionCatalog.species_for_encounter("%s/%s" % [world_room_id, actor.get_meta("chapter_state_id")])
+		else:
+			var script: Script = actor.get_script()
+			if script != null:
+				match script.resource_path.get_file():
+					"hound.gd": species = "hound"
+					"resident.gd": species = "resident"
+		if not species.is_empty():
+			changed = bool(collection.record_species(species)) or changed
+	var trial := room.get_node_or_null("EchoTrial")
+	if trial != null and player.global_position.distance_to(trial.global_position) <= 320.0:
+		changed = bool(collection.discover_hunt(String(trial.hunt_id))) or changed
+	if changed:
+		_queue_save()
 
 func _on_route_requested(target_room: StringName, target_entry: StringName) -> void:
 	if practice_mode or _opening_active() or _transition_pending or (game_menu != null and game_menu.is_open) or bool(inventory.call("is_open")) or shop.is_open or _shop_closing or map_menu.is_open or _map_closing:

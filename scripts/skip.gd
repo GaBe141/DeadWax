@@ -63,6 +63,14 @@ var progression: RefCounted
 var economy: RefCounted
 var hood_speed_mult := HOOD_SPEED_MULT
 var warm_thread := false
+## Optional equipment affects handling, never strike/parry clocks or jump height.
+## Main installs the complete derived profile only after a saved transaction.
+var equipment_speed := 1.0
+var equipment_accel := 1.0
+var equipment_friction := 1.0
+var equipment_air_control := 1.0
+var equipment_hood_speed := 1.0
+var equipment_noise_decay := 1.0
 
 # -- state --------------------------------------------------------------------
 var air_strikes_left := 0
@@ -172,6 +180,14 @@ func add_shine(amount: int) -> bool:
 	shine_earned.emit(amount)
 	return true
 
+func apply_equipment(profile: Dictionary) -> void:
+	equipment_speed = float(profile.get("speed", 1.0))
+	equipment_accel = float(profile.get("accel", 1.0))
+	equipment_friction = float(profile.get("friction", 1.0))
+	equipment_air_control = float(profile.get("air_control", 1.0))
+	equipment_hood_speed = float(profile.get("hood_speed", 1.0))
+	equipment_noise_decay = float(profile.get("noise_decay", 1.0))
+
 func air_strike_capacity() -> int:
 	var capacity := air_strikes_max
 	if _has_gather():
@@ -201,14 +217,14 @@ func _physics_process(delta: float) -> void:
 		dir = 0.0
 	if absf(dir) > 0.05:
 		facing = signf(dir)
-	var speed := RUN_SPEED * (hood_speed_mult if hooded else 1.0)
-	var accel := RUN_ACCEL if is_on_floor() else RUN_ACCEL * AIR_CONTROL
+	var speed := RUN_SPEED * equipment_speed * (hood_speed_mult * equipment_hood_speed if hooded else 1.0)
+	var accel := RUN_ACCEL * equipment_accel if is_on_floor() else RUN_ACCEL * AIR_CONTROL * equipment_air_control
 	if _recover > 0.0 and is_on_floor():
 		accel *= STRIKE_RECOVER_ACCEL   # weight lives on the GROUND; the air stays free (flow)
 	if absf(dir) > 0.01:
 		velocity.x = move_toward(velocity.x, dir * speed, accel * delta)
 	else:
-		var fric := RUN_FRICTION if is_on_floor() else RUN_FRICTION * 0.2
+		var fric := RUN_FRICTION * equipment_friction * (1.0 if is_on_floor() else 0.2)
 		velocity.x = move_toward(velocity.x, 0.0, fric * delta)
 
 	var g := GRAVITY * gravity_mult
@@ -227,7 +243,7 @@ func _physics_process(delta: float) -> void:
 	if combo_remaining <= 0.0:
 		combo_step = 0
 	_recover = maxf(_recover - delta, 0.0)
-	noise = maxf(noise - delta * (NOISE_DECAY_HOODED if hooded else NOISE_DECAY), 0.0)
+	noise = maxf(noise - delta * (NOISE_DECAY_HOODED if hooded else NOISE_DECAY) * equipment_noise_decay, 0.0)
 
 	if is_on_floor():
 		refill_air_strikes()

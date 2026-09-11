@@ -44,6 +44,9 @@ static func draw_painted_distance(canvas: CanvasItem, room_id: StringName, area:
 static func draw_echo_station(canvas: CanvasItem, kind: StringName, state: Dictionary, time: float, reduced: bool, ink: Color, stock: Color) -> void:
 	preload("res://scripts/press_echo.gd").draw(canvas, kind, state, time, reduced, ink, stock)
 
+static func draw_echo_trial(canvas: CanvasItem, state: Dictionary, ink: Color, stock: Color) -> void:
+	preload("res://scripts/press_trial.gd").draw(canvas, state, ink, stock)
+
 # -- plate defaults -----------------------------------------------------------
 const PLATE_BITE := 2.4
 const PLATE_TOOTH := 0.16

@@ -406,7 +406,7 @@ func apply_side(next_side: int) -> void:
 		add_child(next_picture)
 		_scenery[index] = next_picture
 	for child in get_children():
-		if (child.is_in_group("world_resident") or child.is_in_group("map_pickup") or child.is_in_group("room_exit") or child.name in [&"LoftVoice", &"YardVoice", &"YardMemory", &"StreetLooper"]) and child.has_method("reink"):
+		if (child.is_in_group("world_resident") or child.is_in_group("map_pickup") or child.is_in_group("room_exit") or child.is_in_group("echo_trial") or child.name in [&"LoftVoice", &"YardVoice", &"YardMemory", &"StreetLooper"]) and child.has_method("reink"):
 			child.call("reink", _solid_color(), _stock_color())
 
 func set_scenery_motion(reduced: bool) -> void:

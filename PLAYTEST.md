@@ -13,6 +13,85 @@ Runtime errors are written to `.godot/deadwax-play.log`.
 - Overall frame pacing: smooth / occasional hitch / frequent hitch
 - Audio clarity and latency:
 
+## Equipment, echo trials, and the bestiary
+
+Use an isolated checkpoint when seeding equipment, dry streaks, or save failures.
+Run the three trial sources naturally as well; do not treat an accelerated
+fixture as a measurement of completionist playtime.
+
+- [ ] Find the trial presses beyond Tick in Tick's Practice, in the eastern
+  Worn Gallery beyond the Arm's service door, and on the Deep Gallery's lower
+  floor. They are clear of arrivals, do not block walking, and remain readable
+  at 1280×720 and 960×540.
+- [ ] Start with a fresh grounded E / Y while close. A held input, an airborne
+  approach, or a nearby passage cannot create overlapping trials. The warning
+  precedes each wave; new copies appear clear of Skip.
+- [ ] Clear waves of one, one, then two recordings at each source. Label
+  Auditioners accept ordinary sustained Set as well as strikes. Overture
+  pressings retain their three-tick count and fourth-beat swing; the Deep
+  Gallery includes guarded Loopers and Auditioners. Check simultaneous tells,
+  parries, damage, and airborne rebounds without changing the normal timings.
+- [ ] Open the Book, map, or pause during an unfinished wave. Resume: its
+  copies are gone, the press offers another attempt, and no clear, material,
+  equipment, or random roll was awarded. Leaving the bounds, R, and death also
+  cancel an unfinished attempt.
+- [ ] Finish all four recordings. Return to the press and use a fresh E / Y to
+  collect once. Opening a menu before collection keeps this completed claim.
+  **Collect before recovering or leaving the room:** those discard an unclaimed
+  result. Holding E must not claim twice or start the next trial automatically.
+- [ ] Repeat a trial after collecting. Each successful claim adds one clear
+  and one Offcut; the regional mastery ledger counts up toward 100 separately
+  from equipment completion. Extra clears in one region do not fill another.
+- [ ] With an isolated seeded fixture, verify the 4% / 3% / 2% / 1% regional
+  drops, 10% total chance, and a guaranteed drop by the twentieth dry clear.
+  Missing regional items take priority for that guarantee. Duplicate equipment
+  adds five extra Offcuts instead of another inventory copy.
+- [ ] In the Book's Equipment page, select an unowned piece. It shows a real
+  source, exact odds and trade-off. Before clearing that source, binding is
+  unavailable even with enough material. After one clear, 40 Offcuts binds a
+  chosen missing piece; it does not automatically equip or alter future rolls.
+  Already-owned pieces and insufficient balances cannot charge again.
+- [ ] Fit and replace a Needle, Lining, and Charm. Test faster running with
+  weaker braking, quieter noise with slower Hood movement, and stronger air
+  steering with reduced health. Each drawback is present along with its
+  benefit; removing equipment restores stock behavior. Combined handling is
+  bounded at 65–140%, and equipment adds at most one maximum health slot.
+- [ ] Add health capacity while injured: the new slot remains empty until
+  recovery. Removing and refitting it cannot heal. Glass Needle reduces the
+  maximum immediately. Spare Groove still combines correctly, and Continue
+  restores the fitted loadout with full derived health. Strike/parry clocks,
+  jump height, reach, Gather, and route permissions remain unchanged.
+- [ ] In an isolated failed-write fixture, claiming keeps the earned result
+  available, with no change to equipment, Offcuts, clear count, dry streak, or
+  random state. Restore saving and retry: exactly that roll commits once.
+  Failed fitting or binding applies no movement/health change and spends no
+  material. Feedback makes the retry clear.
+- [ ] Open Journey, Equipment, and Bestiary by clicking and by Tab / Shift+Tab
+  or LB / RB. Arrows, D-pad, and left stick select entries. Mouse wheel,
+  PgUp / PgDn, and right stick scroll long notes. All action buttons and text
+  remain reachable at both window sizes; rapid navigation and Reduced motion
+  leave truthful focus and no stale transaction feedback.
+- [ ] Approach the Hound, Tick or Bootlegger, a voice, and a keeper. Their
+  bestiary notes appear without requiring harm. Unseen names and habits stay
+  hidden, and reading a note changes no world state. The initial catalog has
+  ten entries, with further content safe to add later.
+- [ ] Load an old save containing freed/shattered actors: their species and
+  historic counts appear even if those actors are gone. Repeat Continue and
+  revisit rooms: no count repeats. HUSH's won bout records his name without a
+  false freed/shattered count. Trial copies never count as restored neighbours.
+- [ ] After trials, binding, and fitting, save and Continue. Owned pieces,
+  fittings, Offcuts, dry streaks, regional clear counts, and bestiary notes
+  survive. The nine polish patches still pay one Shine once, and the original
+  shop prices, permanent encounters, and 21-room/24-pair route graph are intact.
+- [ ] Enter title-screen Move practice after fitting gear. It remains empty
+  with stock handling and a disposable collection. Returning to title and
+  Continue restores the campaign collection; practice cannot alter its save.
+  New Game clears all gear, fittings, materials, mastery, and bestiary notes.
+- [ ] Time several natural clears at each source with different loadouts.
+  Record average clear time, travel time, whether two-copy waves stay readable,
+  and whether repetition remains enjoyable. Judge collection and 100-clear
+  mastery pacing from these observations rather than a promised hour count.
+
 ## Painted world review
 
 - [ ] Review all 21 rooms at 1280×720 and 960×540: cream faces and upper
@@ -94,7 +173,7 @@ The final `deadwax.cmd check` run passed all 29 suites and 7,813 checks.
 - [ ] Every stair can be climbed on the return trip with a normal jump.
 - [ ] Overture Stair's lower passage enters the Bootlegger's stall; the return lands on its lower platform.
 - [ ] No passage leads into an unfinished graybox.
-- [ ] TAB and G do nothing during normal chapter play. M gives a Headshell hint before finding the map and opens it after collection.
+- [ ] TAB and G do not activate development tools during normal chapter exploration. Tab changes pages only while the Book is open. M gives a Headshell hint before finding the map and opens it after collection.
 
 ## The Overture
 

@@ -5,11 +5,15 @@ extends CanvasLayer
 signal opened
 signal closed
 signal map_requested
+signal equip_requested(item_id: String)
+signal unequip_requested(slot: String)
+signal craft_requested(item_id: String)
 
 const ProgressionScript := preload("res://scripts/progression_state.gd")
 const PressScript := preload("res://scripts/press.gd")
 const EconomyScript := preload("res://scripts/economy_state.gd")
 const UiMotionScript := preload("res://scripts/ui_motion.gd")
+const CollectionPages := preload("res://scripts/collection_book_pages.gd")
 const WorldBackdrop := preload("res://scripts/ui_world_backdrop.gd")
 
 ## Above this size The Book is shouting, and shouting is set in wood type.
@@ -29,6 +33,7 @@ var shine_source: Node
 var economy: RefCounted
 var map_state: RefCounted
 var discoveries: RefCounted
+var collection: RefCounted
 var can_open: Callable
 
 var overlay: Control
@@ -50,6 +55,15 @@ var _detail_stack: VBoxContainer
 var _map_button: Button
 var _map_note: Label
 var _discovery_buttons: Dictionary = {}
+var _journey: ScrollContainer
+var _collection_pages: Control
+var _page_buttons: Dictionary = {}
+var _current_page := "journey"
+var _page_margin: MarginContainer
+var _page_stack: VBoxContainer
+var _header: HBoxContainer
+var _subtitle: Label
+var _journey_detail: PanelContainer
 
 func _ready() -> void:
 	layer = 100
@@ -72,6 +86,20 @@ func _exit_tree() -> void:
 func _input(event: InputEvent) -> void:
 	if event is InputEventKey and event.echo:
 		return
+	if _open and event.is_pressed():
+		var step := 0
+		if event is InputEventKey and (event.keycode == KEY_TAB or event.physical_keycode == KEY_TAB):
+			step = -1 if event.shift_pressed else 1
+		elif event is InputEventJoypadButton:
+			if event.button_index == JOY_BUTTON_LEFT_SHOULDER:
+				step = -1
+			elif event.button_index == JOY_BUTTON_RIGHT_SHOULDER:
+				step = 1
+		if step != 0:
+			var order := ["journey", "equipment", "bestiary"]
+			select_page(order[posmod(order.find(_current_page) + step, order.size())], true)
+			get_viewport().set_input_as_handled()
+			return
 	if _open and event is InputEventKey and event.is_action_pressed("map") and map_state != null and bool(map_state.get("owned")):
 		_request_map()
 		get_viewport().set_input_as_handled()
@@ -131,6 +159,28 @@ func toggle_inventory() -> void:
 	else:
 		open_inventory()
 
+func current_page() -> String:
+	return _current_page
+
+func select_page(page_id: String, focus_content := false) -> void:
+	if page_id not in _page_buttons:
+		return
+	_settle_motion()
+	_current_page = page_id
+	_journey.visible = page_id == "journey"
+	_collection_pages.visible = page_id != "journey"
+	_collection_pages.show_page(page_id)
+	for id in _page_buttons:
+		var button: Button = _page_buttons[id]
+		button.button_pressed = id == page_id
+		_apply_card_style(button, id == page_id)
+	if focus_content:
+		_focus_selected()
+
+func refresh_collection(notice := "") -> void:
+	if _collection_pages != null:
+		_collection_pages.refresh(collection, notice)
+
 func slot_count() -> int:
 	return CORE_SLOTS.size() + ProgressionScript.TECHNIQUE_ORDER.size() + ProgressionScript.REFRAIN_ORDER.size()
 
@@ -170,7 +220,7 @@ func _build_menu() -> void:
 	overlay.mouse_filter = Control.MOUSE_FILTER_STOP
 	add_child(overlay)
 	overlay.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
-	overlay.resized.connect(_settle_motion)
+	overlay.resized.connect(_resize_page)
 
 	var background := ColorRect.new()
 	background.color = DEEP
@@ -190,6 +240,7 @@ func _build_menu() -> void:
 	overlay.add_child(edge)
 
 	var margin := MarginContainer.new()
+	_page_margin = margin
 	margin.add_theme_constant_override("margin_left", 42)
 	margin.add_theme_constant_override("margin_top", 30)
 	margin.add_theme_constant_override("margin_right", 42)
@@ -198,10 +249,12 @@ func _build_menu() -> void:
 	margin.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 
 	var page := VBoxContainer.new()
+	_page_stack = page
 	page.add_theme_constant_override("separation", 12)
 	margin.add_child(page)
 
 	var header := HBoxContainer.new()
+	_header = header
 	header.custom_minimum_size.y = 62.0
 	page.add_child(header)
 	_entrance_parts.append(header)
@@ -211,7 +264,8 @@ func _build_menu() -> void:
 	title_stack.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	header.add_child(title_stack)
 	title_stack.add_child(_make_label("INVENTORY — THE BOOK", 30, PAPER))
-	title_stack.add_child(_make_label("what you carry between grooves", 15, PAPER_DARK))
+	_subtitle = _make_label("what you carry between grooves", 15, PAPER_DARK)
+	title_stack.add_child(_subtitle)
 
 	var count_stack := VBoxContainer.new()
 	count_stack.alignment = BoxContainer.ALIGNMENT_CENTER
@@ -227,9 +281,39 @@ func _build_menu() -> void:
 	rule.color = VIOLET
 	rule.custom_minimum_size.y = 2.0
 	page.add_child(rule)
+	var tabs := HBoxContainer.new()
+	tabs.add_theme_constant_override("separation", 10)
+	page.add_child(tabs)
+	for page_id in ["journey", "equipment", "bestiary"]:
+		var button := Button.new()
+		button.name = page_id.to_pascal_case() + "Tab"
+		button.text = page_id.to_upper()
+		button.toggle_mode = true
+		button.custom_minimum_size = Vector2(140, 36)
+		button.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		button.add_theme_font_override("font", PressScript.BodyFont)
+		button.add_theme_font_size_override("font_size", PressScript.SIZE_SMALL)
+		button.add_theme_color_override("font_color", PAPER)
+		button.add_theme_color_override("font_hover_color", PAPER)
+		button.add_theme_color_override("font_pressed_color", PINK)
+		button.pressed.connect(select_page.bind(page_id, false))
+		tabs.add_child(button)
+		_page_buttons[page_id] = button
+		_motion.bind_button(button, PINK)
+	_journey = ScrollContainer.new()
+	_journey.name = "Journey"
+	_journey.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
+	_journey.follow_focus = true
+	_journey.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	page.add_child(_journey)
+	var journey_page := VBoxContainer.new()
+	journey_page.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	journey_page.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	journey_page.add_theme_constant_override("separation", 12)
+	_journey.add_child(journey_page)
 	var carried_row := HBoxContainer.new()
 	carried_row.add_theme_constant_override("separation", 12)
-	page.add_child(carried_row)
+	journey_page.add_child(carried_row)
 	_wares_label = _make_label("", 14, PAPER_DARK)
 	_wares_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	_wares_label.size_flags_horizontal = Control.SIZE_EXPAND_FILL
@@ -250,7 +334,7 @@ func _build_menu() -> void:
 		_motion.bind_button(button, PINK)
 	var map_row := HBoxContainer.new()
 	map_row.add_theme_constant_override("separation", 18)
-	page.add_child(map_row)
+	journey_page.add_child(map_row)
 	_entrance_parts.append(map_row)
 	var map_copy := VBoxContainer.new()
 	map_copy.add_theme_constant_override("separation", 0)
@@ -275,7 +359,7 @@ func _build_menu() -> void:
 	var content := HBoxContainer.new()
 	content.add_theme_constant_override("separation", 18)
 	content.size_flags_vertical = Control.SIZE_EXPAND_FILL
-	page.add_child(content)
+	journey_page.add_child(content)
 
 	var shelves := VBoxContainer.new()
 	shelves.add_theme_constant_override("separation", 8)
@@ -288,6 +372,7 @@ func _build_menu() -> void:
 	_add_shelf(shelves, "REFRAINS — CARRIED", _refrain_slots())
 
 	var detail_panel := PanelContainer.new()
+	_journey_detail = detail_panel
 	detail_panel.custom_minimum_size.x = 350.0
 	detail_panel.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	detail_panel.add_theme_stylebox_override("panel", _panel_style())
@@ -320,10 +405,21 @@ func _build_menu() -> void:
 	_detail_description.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	_detail_stack.add_child(_detail_description)
 
-	var footer := _make_label("[I / START] toggle     [ESC] close     [ARROWS / STICK] select", 14, PAPER_DARK)
+	_collection_pages = CollectionPages.new()
+	_collection_pages.name = "CollectionPages"
+	_collection_pages.book = self
+	_collection_pages.motion = _motion
+	_collection_pages.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	page.add_child(_collection_pages)
+	_collection_pages.equip_requested.connect(func(id: String) -> void: equip_requested.emit(id))
+	_collection_pages.unequip_requested.connect(func(slot: String) -> void: unequip_requested.emit(slot))
+	_collection_pages.craft_requested.connect(func(id: String) -> void: craft_requested.emit(id))
+	select_page("journey")
+	var footer := _make_label("[I / START] close   [TAB / LB RB] pages   [ARROWS] select   [ENTER / A] act", PressScript.SIZE_SMALL, PAPER_DARK)
 	footer.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	page.add_child(footer)
 	_entrance_parts.append(footer)
+	_resize_page()
 	overlay.hide()
 
 func _add_shelf(parent: VBoxContainer, title: String, slots: Array) -> void:
@@ -383,6 +479,7 @@ func _refresh() -> void:
 		button.text = _slot_card_text(slot, filled)
 		_apply_card_style(button, filled)
 	_select_slot(_selected_slot, false)
+	refresh_collection()
 
 func _refresh_map() -> void:
 	var owned := map_state != null and bool(map_state.get("owned"))
@@ -411,12 +508,32 @@ func _select_slot(slot: StringName, animate := true) -> void:
 	if animate and changed and _open:
 		_motion.reveal(_detail_stack, 0.0, 0.16)
 
+func _resize_page() -> void:
+	_settle_motion()
+	if _page_margin == null or _header == null or _subtitle == null:
+		return
+	var compact := overlay.size.y < 620
+	_page_margin.add_theme_constant_override("margin_top", 16 if compact else 30)
+	_page_margin.add_theme_constant_override("margin_bottom", 14 if compact else 24)
+	_page_stack.add_theme_constant_override("separation", 8 if compact else 12)
+	_header.custom_minimum_size.y = 43 if compact else 62
+	_subtitle.visible = not compact
+	if _journey_detail != null:
+		_journey_detail.custom_minimum_size.x = 280 if overlay.size.x < 1000 else 350
+	for slot in _all_slots():
+		var button := _slot_buttons.get(slot) as Button
+		if button != null:
+			button.custom_minimum_size.x = 120 if overlay.size.x < 1000 else 150
+
 func _settle_motion() -> void:
 	if _motion != null:
 		_motion.settle()
 
 func _focus_selected() -> void:
 	if not _open:
+		return
+	if _current_page != "journey":
+		_collection_pages.focus_selected()
 		return
 	var button := _slot_buttons.get(_selected_slot) as Button
 	if button != null:

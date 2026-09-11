@@ -26,7 +26,7 @@ On the Dead Wax Wyse, the lightweight project commands are:
 .\deadwax.cmd play    play the campaign with a local runtime log
 .\deadwax.cmd dev     open the original mechanics rooms and planned-world tools
 .\deadwax.cmd editor  open the project in Godot
-.\deadwax.cmd check   import resources; run all twenty-nine native test suites
+.\deadwax.cmd check   import resources; run all thirty-three native test suites
 .\deadwax.cmd vibe    start Mistral Vibe in this repository
 ```
 
@@ -195,12 +195,62 @@ Recovery preserves your Shine and items. A failed purchase save refunds its
 debit and applies no effect; old saves begin with the same Shine and an empty
 purchase list.
 
+## Rare pressings and echo trials
+
+Three optional **Echo Trials** offer repeatable equipment hunts:
+
+| Source | Where to find it | What answers |
+| --- | --- | --- |
+| Label | Tick's Practice, beyond Tick | Auditioner recordings; listening or striking both count. |
+| Overture | Eastern Worn Gallery, beyond the Arm's service door | Test Pressing recordings. |
+| Unplayed | Deep Gallery's lower floor | A mixture of Looper and Auditioner recordings. |
+
+Stand beside a trial press and use **E / Y** to begin. Clear three waves,
+containing one, one, and two echoes, then return to the press and use a fresh
+**E / Y** to collect the result. The echoes use familiar combat rules. They
+are recordings and never restore a resolved neighbour. Trial rewards grant
+equipment and Offcuts; they do not grant story choices, Refrains, routes, or
+Shine. Ordinary nearby wax and Count-In interactions still work during play.
+
+There are **12 pieces of equipment**, four in each regional pool, fitted into
+three slots: **Needle**, **Lining**, and **Charm**. Every piece has a benefit
+and a cost. Quicksilver Tip runs faster but brakes more slowly; Felt Cuff
+quiets lingering noise faster but slows Hood movement; Glass Needle improves
+air steering at the cost of one maximum needle-health slot. Select a piece in
+the Book to read its exact trade-off and source, then fit or remove it.
+
+A claimed clear has a **10% chance of equipment**: the four regional pieces
+have individual **4%, 3%, 2%, and 1%** chances. If 19 clears give no equipment,
+the **twentieth clear guarantees a drop**, with missing pieces preferred.
+Every clear also gives **1 Offcut**. Duplicate equipment becomes **5 additional
+Offcuts**. After clearing a source once, the Book can **bind a chosen missing
+piece for 40 Offcuts**, giving you a way to finish a collection without relying
+entirely on chance. Offcuts are separate from the Bootlegger's Shine.
+
+Equipment changes movement speed, ground acceleration, braking, air steering,
+Hood speed, noise fading, or health capacity. Combined handling values stay
+between 65% and 140% of their stock value; equipment's total health adjustment
+stays between -1 and +1. Strike and parry timing, jump height, hit reach, and
+Refrain permissions stay the same. Fitting extra health capacity does not heal
+Skip; recovery fills it. Benefits apply only after the change has been saved.
+
+Each source also has an optional **100-clear mastery ledger**, tracked
+separately from finding all 12 pieces. These are completion goals, with actual
+playtime depending on route, combat approach, and pace.
+
+Opening a menu, leaving the trial bounds, or recovering ends an unfinished
+attempt without spending a roll. A completed claim waits through menus, but
+**collect it before recovering or leaving the room**. A failed claim save keeps
+the claim available and restores the same roll for a retry.
+
 ## Saving and settings
 
 The chapter saves at passages, opened locks, resolved encounters, polishing,
-discoveries, the Book, pause, title, and quit. Continue starts at the entry used
+discoveries, claimed trial rewards, equipment changes, the Book, pause, title,
+and quit. Continue starts at the entry used
 for the saved room, carrying learned techniques, Shine, opened doors, encounter
-outcomes, carried discoveries, and chapter completion. Resolved voices never
+outcomes, carried discoveries, equipment, Offcuts, bestiary notes, trial records,
+and chapter completion. Resolved voices never
 return to combat; polished wax cannot pay out twice.
 
 Earlier demo saves remain valid. Their old Overture-Stair completion flag is
@@ -214,14 +264,21 @@ the spool's stage and the survey slip. Older saves start with both uncollected
 and retain their existing progress and balance. A failed discovery save leaves
 the previous stage intact so the interaction can be tried again.
 
+Its optional `collection` object keeps equipment ownership and fittings,
+Offcuts, each trial's clear count and dry streak, the saved random stream, and
+the bestiary. Older saves start with no equipment or materials; their existing
+encounter choices fill the corresponding bestiary notes once. A failed equip,
+binding, or reward save leaves the previous collection and effects intact.
+
 The checkpoint is `user://deadwax-save.json`. Writes are validated and keep a
 `.bak` recovery copy of the previous valid checkpoint. Volume, fullscreen,
 and reduced camera motion are saved separately in
 `user://deadwax-settings.cfg`. Reduced camera motion removes camera smoothing
 and shake, and freezes decorative ambient motion, parallax, and slow lamp
 modulation. Escape/gamepad Back opens pause; gamepad Start keeps its role as
-the Book. The needle can take three hits, or four with Spare Groove, before
-recovering at the active room entry with full health and preserved progress.
+the Book. The needle has three health slots, or four with Spare Groove;
+fitted equipment can adjust that capacity by one in either direction. Losing
+them recovers Skip at the active room entry with full health and preserved progress.
 Continue also starts there at full health.
 
 ## Controls
@@ -237,7 +294,8 @@ Continue also starts there at full health.
   Hold it beside dull grey wax to **polish** (mints shine).
 - **L hold** — **SET / KNEEL**: listen to an Auditioner instead of breaking it.
 - **W/S** (or arrows) — aim directional strikes while airborne.
-- **E** (or gamepad Y) — enter a nearby passage, listen, or use a discovery fixture.
+- **E** (or gamepad Y) — enter a nearby passage, listen, use a discovery fixture,
+  or start and claim a nearby Echo Trial.
 - **B** (or D-pad Up) — browse the Bootlegger's stall while standing nearby.
 - **I** (or gamepad Start) — open **The Book**, the full-screen inventory.
 - **Escape** (or gamepad Back) — pause; Escape inside the Book closes it first.
@@ -248,8 +306,10 @@ Continue also starts there at full health.
 After collecting the folded map, **M / D-pad Down** opens it while exploring.
 The Book also has an **Open map** button. In the Book, keyboard M opens the map;
 the controller D-pad retains its usual selection controls.
-TAB and G are available only in the opt-in development rooms below; there M
-continues to switch development atlases.
+Inside the Book, **Tab / Shift+Tab** or **LB / RB** changes pages. **PgUp /
+PgDn**, the mouse wheel, or the right stick scrolls equipment and bestiary notes.
+During exploration, Tab's room cycling and G remain exclusive to the opt-in
+development rooms below; there M continues to switch development atlases.
 
 A ready strike answers immediately. A press in the last 90 ms of the 200 ms
 cooldown queues one follow-up; holding the button does not repeat attacks.
@@ -278,8 +338,9 @@ has no enemies, pickups, or exits. **R** resets Skip and the chain; **Esc / Back
 opens pause, where **Return to title** takes you back to the sleeve. Practice
 uses temporary models and never writes your campaign checkpoint, unlocks
 progression, spends Shine, or records map visits. Continue resumes your journey.
-Carried discoveries use the same disposable practice state and leave the
-campaign's spool and slip untouched.
+Carried discoveries and collections use disposable practice state, leaving
+the campaign's spool, slip, equipment, materials, trial records, and bestiary
+untouched. Equipment effects return to stock for the empty practice floor.
 
 The immediate circular impression shows the 120 px enemy-hit reach; fainter
 echoes show groove and air responses. Muted HUSH does not give a rebound from
@@ -351,15 +412,27 @@ announced before it is found. The Bootlegger has an opinion about this:
 
 ## The Book
 
-The Book is a full-screen, read-only inventory. It pauses the room and records
-the three always-owned core verbs, discovered knowledge techniques, carried
-Refrains, current Shine, permanent purchases, and carried discoveries. The
+The Book pauses the room and has **Journey**, **Equipment**, and **Bestiary**
+pages. Journey records the three always-owned core verbs, discovered knowledge
+techniques, carried Refrains, current Shine, permanent purchases, and discoveries. The
 Echo Spool and Surveyor's Slip have separate item buttons; they do not add to
 the eight groove slots for verbs, techniques, and Refrains. Their entries retain
 the next lead and the survey clue. Inside the game, unknown techniques and Refrains
-remain unnamed until the session records them; opening the Book never unlocks
-or equips anything. Use arrows, D-pad, or the left stick to select an entry, and press
-I/Start again or Escape to close it.
+remain unnamed until the session records them. Equipment lists all 12 pieces,
+their sources, exact trade-offs and chances, your fittings, Offcuts, and regional
+mastery. Its buttons explicitly fit, remove, or bind equipment; merely opening
+the Book or reading a description changes nothing.
+
+The Bestiary has **10 entries** for the campaign's voices, keepers, and harmless
+residents. Approaching someone records their name, habitat, and a practical
+listening note; unseen entries remain unnamed. Saved freed and shattered
+outcomes fill their counters without repeating them. A won HUSH bout records
+his entry without calling it a shattering, and trial copies never add story
+counts. The catalog can gain further entries while older saves keep working.
+
+Use arrows, D-pad, or the left stick to select an entry. Change pages with
+Tab / Shift+Tab or LB / RB; scroll long notes with the mouse wheel, PgUp / PgDn,
+or right stick. Press I/Start again or Escape to close the Book.
 
 ## Development rooms
 
@@ -469,7 +542,7 @@ own animation while gameplay and the HUD remain paused underneath.
 
 ## Development checks
 
-Run `.\deadwax.cmd check` before committing. It imports resources and runs 29
+Run `.\deadwax.cmd check` before committing. It imports resources and runs 33
 dependency-free native suites, including smoke, save-store, campaign, Tonearm, Overture,
 sprite-animation, residents, economy-state, economy integration, scenery,
 lighting, attack-feel, GUI-animation, and map-item suites. These cover the original combat and
@@ -492,6 +565,12 @@ Discovery checks cover ordered spool use, fixed interaction reach, cancellation,
 save validation and rollback, silent restoration, the optional Gather keepsake,
 and practice isolation. Echo audio checks cover lazy finite synthesis, matching
 record/playback notes, pause behavior, and cancellation without stopping other sounds.
+Collection-state, collection integration, collection-Book, and Echo-Trial suites
+cover strict save validation, deterministic rewards and pity, duplicate salvage,
+binding, equipment trade-offs, failed-write rollback, historical bestiary notes,
+temporary echo combat, wave ownership, repeated claims, menu navigation, and
+practice isolation. Native playtests still check the readability and pace of
+repeated hunts and equipment handling.
 GitHub runs the checks on pushes and pull requests. Gameplay feel, real audio,
 rendering, and controller behavior still require `PLAYTEST.md`.
 

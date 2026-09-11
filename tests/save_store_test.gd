@@ -3,6 +3,7 @@ extends SceneTree
 
 const SaveStoreScript := preload("res://scripts/save_store.gd")
 const ProgressionScript := preload("res://scripts/progression_state.gd")
+const CollectionScript := preload("res://scripts/collection_state.gd")
 
 var _checks := 0
 var _failures: Array[String] = []
@@ -45,6 +46,7 @@ func _sample() -> Dictionary:
 		"purchases": [],
 		"map": {"owned": false, "visited": []},
 		"discoveries": {"echo_spool": "recorded", "survey_slip": true},
+		"collection": CollectionScript.default_snapshot(),
 		"completed": true,
 		"encounters": {"practice/dummy": "won", "verse/auditioner-1": "freed"},
 		"settings": {"volume": 0.35, "reduced_motion": true, "fullscreen": true},
@@ -65,13 +67,14 @@ func _check_roundtrip() -> void:
 	_check(progression.knows_technique(ProgressionScript.Technique.COUNT_IN), "discovered technique survives disk save")
 	_check(store.has_save() and store.last_error.is_empty(), "Continue validates a good checkpoint")
 	var minimal := original.duplicate(true)
-	for key in ["purchases", "map", "discoveries", "completed", "encounters", "settings"]:
+	for key in ["purchases", "map", "discoveries", "collection", "completed", "encounters", "settings"]:
 		minimal.erase(key)
 	_check(store.save_game(minimal), "optional fields may be absent")
 	var defaults := store.load_game()
 	_check(defaults.completed == false and defaults.encounters == {} and defaults.purchases == [], "optional campaign state defaults")
 	_check(defaults.map == {"owned": false, "visited": []}, "old checkpoints default to an unowned map with no invented history")
 	_check(defaults.discoveries == {"echo_spool": "missing", "survey_slip": false}, "old checkpoints invent no carried discoveries")
+	_check(defaults.collection == CollectionScript.default_snapshot(), "old checkpoints invent no equipment, offcuts, or trial wins")
 	_check(defaults.settings == SaveStoreScript.DEFAULT_SETTINGS, "optional settings default")
 
 func _check_invalid_data() -> void:
