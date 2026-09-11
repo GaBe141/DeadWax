@@ -27,6 +27,9 @@ const ShopScript := preload("res://scripts/shop_menu.gd")
 const HudMotionScript := preload("res://scripts/hud_motion.gd")
 const MapStateScript := preload("res://scripts/map_state.gd")
 const DiscoveriesScript := preload("res://scripts/discoveries_state.gd")
+const ExplorationScript := preload("res://scripts/exploration_state.gd")
+const ExplorationCatalog := preload("res://scripts/exploration_catalog.gd")
+const ExplorationFixture := preload("res://scripts/exploration_fixture.gd")
 const CollectionScript := preload("res://scripts/collection_state.gd")
 const CollectionCatalog := preload("res://scripts/collection_catalog.gd")
 const TrialScript := preload("res://scripts/echo_trial.gd")
@@ -53,6 +56,7 @@ var _purchasing := false
 var _shop_closing := false
 var map_state: RefCounted
 var discoveries: RefCounted
+var exploration: RefCounted
 var collection: RefCounted
 var _collection_busy := false
 var _observation_clock := 0.0
@@ -125,6 +129,7 @@ func _ready() -> void:
 	economy = EconomyScript.new()
 	map_state = MapStateScript.new()
 	discoveries = DiscoveriesScript.new()
+	exploration = ExplorationScript.new()
 	collection = CollectionScript.new()
 	progression.connect("refrain_unlocked", _on_refrain_unlocked)
 	progression.connect("technique_discovered", _on_technique_discovered)
@@ -165,6 +170,7 @@ func _ready() -> void:
 	inventory.economy = economy
 	inventory.map_state = map_state
 	inventory.discoveries = discoveries
+	inventory.exploration = exploration
 	inventory.collection = collection
 	inventory.can_open = _can_open_inventory
 	add_child(inventory)
@@ -178,6 +184,7 @@ func _ready() -> void:
 	shop.purchase_requested.connect(_purchase_item)
 	shop.close_requested.connect(_close_shop)
 	map_menu = MapMenuScript.new()
+	map_menu.exploration = exploration
 	add_child(map_menu)
 	map_menu.close_requested.connect(_close_map)
 	if development_mode:
@@ -348,6 +355,8 @@ func _swap_room(next_room: Node2D, entry_id: StringName) -> void:
 		room.set("map_state", map_state)
 	if "discoveries" in room:
 		room.set("discoveries", discoveries)
+	if "exploration" in room:
+		room.set("exploration", exploration)
 	if room.has_signal("discovery_requested"):
 		room.connect("discovery_requested", _on_discovery_requested)
 		room.connect("discovery_cue", _on_discovery_cue)
@@ -367,6 +376,7 @@ func _swap_room(next_room: Node2D, entry_id: StringName) -> void:
 	if not development_mode and not practice_mode:
 		_restore_encounters()
 		_install_echo_trial()
+		_install_exploration()
 		if chapter_complete:
 			for child in room.get_children():
 				if child.is_in_group("chapter_endpoint"):
@@ -509,6 +519,7 @@ func _persist_session() -> bool:
 		"purchases": economy.call("snapshot").purchases,
 		"map": map_state.snapshot(),
 		"discoveries": discoveries.snapshot(),
+		"exploration": exploration.snapshot(),
 		"collection": collection.snapshot(),
 	}
 	var saved := bool(save_store.call("save_game", data))
@@ -543,6 +554,7 @@ func _new_game(play_opening: bool = true) -> void:
 	economy.call("reset")
 	map_state.reset()
 	discoveries.reset()
+	exploration.reset()
 	collection.reset()
 	_apply_purchases()
 	_reset_player()
@@ -583,6 +595,7 @@ func _continue_game() -> void:
 	economy.call("restore", data.shine, data.get("purchases", []))
 	map_state.restore_snapshot(data.get("map", {"owned": false, "visited": []}))
 	discoveries.restore_snapshot(data.get("discoveries", DiscoveriesScript.EMPTY))
+	exploration.restore_snapshot(data.get("exploration", ExplorationScript.default_snapshot()))
 	collection.restore_snapshot(data.get("collection", CollectionScript.default_snapshot()))
 	collection.backfill(encounters)
 	_apply_purchases()
@@ -723,6 +736,7 @@ func _start_practice() -> void:
 		"progression": progression, "economy": economy, "map": map_state,
 		"abilities": abilities,
 		"discoveries": discoveries,
+		"exploration": exploration,
 		"collection": collection,
 		"pressing": pressing, "encounters": encounters, "completed": chapter_complete,
 		"room_id": world_room_id, "entry_id": room_entry_id, "room_idx": room_idx,
@@ -739,6 +753,7 @@ func _start_practice() -> void:
 	economy = EconomyScript.new()
 	map_state = MapStateScript.new()
 	discoveries = DiscoveriesScript.new()
+	exploration = ExplorationScript.new()
 	collection = CollectionScript.new()
 	pressing = PressingScript.new()
 	encounters = {}
@@ -779,6 +794,7 @@ func _leave_practice() -> void:
 	economy = _practice_campaign.economy
 	map_state = _practice_campaign.map
 	discoveries = _practice_campaign.discoveries
+	exploration = _practice_campaign.exploration
 	collection = _practice_campaign.collection
 	pressing = _practice_campaign.pressing
 	encounters = _practice_campaign.encounters
@@ -798,6 +814,7 @@ func _leave_practice() -> void:
 	audio.set_home_song(false)
 
 func _bind_session_models() -> void:
+	map_menu.exploration = exploration
 	player.progression = progression
 	player.abilities = abilities
 	player.economy = economy
@@ -806,6 +823,7 @@ func _bind_session_models() -> void:
 	inventory.economy = economy
 	inventory.map_state = map_state
 	inventory.discoveries = discoveries
+	inventory.exploration = exploration
 	inventory.collection = collection
 	if not progression.is_connected("refrain_unlocked", _on_refrain_unlocked):
 		progression.connect("refrain_unlocked", _on_refrain_unlocked)
@@ -1269,6 +1287,89 @@ func _on_ability_requested(id: StringName, source: Node2D) -> void:
 	_flash("%s — RECOVERED" % String(definition.name))
 	_fb_t = 3.0
 
+# -- the returns pressed into the other face --------------------------------
+
+func _install_exploration() -> void:
+	if development_mode or practice_mode or room == null:
+		return
+	var definitions: Array[Dictionary] = ExplorationCatalog.endpoints_for(world_room_id)
+	if ExplorationCatalog.reward().room_id == world_room_id:
+		definitions.append(ExplorationCatalog.reward())
+	for definition in definitions:
+		var fixture := ExplorationFixture.new()
+		fixture.name = "JumpCutRefrain" if definition.id == &"jump_cut" else "Return_" + String(definition.id)
+		fixture.definition = definition
+		fixture.position = definition.position
+		fixture.progression = progression
+		fixture.discoveries = discoveries
+		fixture.exploration = exploration
+		fixture.pressing = pressing
+		fixture.target_room = definition.get("target_room", &"")
+		fixture.target_entry = definition.get("target_entry", &"default")
+		fixture.ink = room.ink
+		fixture.stock = room.bg_color
+		fixture.requested.connect(_on_exploration_requested)
+		room.add_child(fixture)
+
+func _refresh_exploration() -> void:
+	if room == null: return
+	if room.has_method("refresh_discoveries"):
+		room.call("refresh_discoveries")
+	for child in room.get_children():
+		if child.is_in_group("exploration_fixture"):
+			child.refresh()
+
+func _on_exploration_requested(action: StringName, source: Node2D) -> void:
+	if development_mode or practice_mode or not _has_session or get_tree().paused or _respawn_pending:
+		return
+	if not _can_open_inventory() or inventory.is_open() or room == null or not is_instance_valid(source):
+		return
+	if source.get_parent() != room or source.get_script() != ExplorationFixture or not source.is_in_group("exploration_fixture"):
+		return
+	var id := StringName(source.definition.get("id", ""))
+	var definition := ExplorationCatalog.definition(world_room_id, id)
+	var expected_name := "JumpCutRefrain" if id == &"jump_cut" else "Return_" + String(id)
+	if definition.is_empty() or source.definition != definition or source.position != definition.position or room.get_node_or_null(expected_name) != source:
+		return
+	if not player.is_on_floor() or player.global_position.distance_to(source.global_position) > ExplorationFixture.INTERACT_RADIUS:
+		return
+	if not source.is_available() or action != source.intent():
+		return
+	match action:
+		&"claim_jump_cut":
+			if id != &"jump_cut" or discoveries.snapshot().echo_spool != "restored" or progression.has_refrain(ProgressionScript.Refrain.JUMP_CUT):
+				return
+			# Stage silently. Neither UI signals nor world permissions are
+			# presented as earned until the complete checkpoint is on disk.
+			var before: Dictionary = progression.snapshot()
+			var earned := before.duplicate(true)
+			earned.refrains.append(ProgressionScript.REFRAIN_KEYS[ProgressionScript.Refrain.JUMP_CUT])
+			progression.restore_snapshot(earned)
+			if not _persist_session():
+				progression.restore_snapshot(before)
+				_flash("Could not save. E / Y to try the Refrain again.")
+				return
+			progression.emit_signal("refrain_unlocked", ProgressionScript.Refrain.JUMP_CUT)
+			player.cancel_pending_strike()
+			_flash("JUMP-CUT — F / RB turns the wax.")
+			_fb_t = 3.0
+		&"open_shortcut":
+			if not bool(definition.get("far_end", false)) or not pressing.on_b_side() or not progression.has_refrain(ProgressionScript.Refrain.JUMP_CUT):
+				return
+			var before: Dictionary = exploration.snapshot()
+			if not exploration.open_shortcut(id): return
+			if not _persist_session():
+				exploration.restore_snapshot(before)
+				_flash("Could not save this return. E / Y to try again.")
+				return
+			audio.play("door", -9.0)
+			_flash("RETURN OPEN — %s" % String(definition.destination).to_upper())
+			_fb_t = 4.0
+		&"enter_shortcut":
+			if not exploration.is_open(id): return
+			_on_route_requested(definition.target_room, definition.target_entry)
+	_refresh_exploration()
+
 # -- carried discoveries ----------------------------------------------------
 
 func _on_discovery_requested(action: StringName, source: Node2D) -> void:
@@ -1290,11 +1391,11 @@ func _on_discovery_requested(action: StringName, source: Node2D) -> void:
 		discoveries.restore_snapshot(before)
 		_flash("Could not save this discovery. Stay nearby and try again.")
 		return
-	room.call("refresh_discoveries")
+	_refresh_exploration()
 	match action:
 		&"collect_spool": _flash("ECHO SPOOL — yours to carry.")
 		&"record_phrase": _flash("PHRASE HELD — three notes kept.")
-		&"restore_warren": _flash("AN ANSWER AT LAST.")
+		&"restore_warren": _flash("A REFRAIN BELOW THE RECEIVER.")
 		&"collect_survey": _flash("SURVEYOR'S SLIP — a way home.")
 	_fb_t = 2.4
 

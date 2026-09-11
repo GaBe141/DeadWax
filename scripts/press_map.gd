@@ -32,25 +32,36 @@ static func draw_chart(canvas: CanvasItem, size: Vector2, pose: Dictionary, ink:
 	canvas.draw_set_transform((size - Chart.EXTENT * scale) * 0.5, 0.0, Vector2.ONE * scale)
 	var current := StringName(pose.get("current_room", ""))
 	var region := StringName(pose.get("region", Chart.region_for_room(current)))
-	var page := Chart.page_snapshot(region, pose.get("visited", []), current)
-	# The shortcut is always dashed: this guide does not claim a gate is open.
+	var page := Chart.page_snapshot(region, pose.get("visited", []), current, pose.get("opened_returns", []))
+	# Ordinary shortcuts remain dashed; the two earned wax returns report
+	# explicit supplied state. The drawing never infers or opens a route.
 	for link in page.links:
 		var from: Vector2 = link.from
 		var to: Vector2 = link.to
 		var walked := bool(link.walked)
 		var color := Color(PINK if walked else ink, 0.82 if walked else 0.20)
-		if bool(link.shortcut):
+		if not String(link.route_id).is_empty():
+			color = Color(PINK, 0.95 if bool(link.open) else 0.48)
+			if bool(link.open):
+				canvas.draw_line(from, to, color, 3.0, true)
+			else:
+				canvas.draw_dashed_line(from, to, color, 2.0, 5.0, true, true)
+		elif bool(link.shortcut):
 			canvas.draw_dashed_line(from, to, color, 2.0, 7.0, true, true)
 		else:
 			canvas.draw_line(from, to, color, 3.0 if walked else 2.0, true)
 	# Border stubs name printed regions, never unreached rooms or a claimed unlock.
 	for boundary in page.boundaries:
 		var center: Vector2 = boundary.position
-		var marker := Rect2(center - Vector2(99, 15), Vector2(198, 30))
+		var is_return := not String(boundary.route_id).is_empty()
+		var marker := Rect2(center - Vector2(99, 20 if is_return else 15), Vector2(198, 40 if is_return else 30))
 		canvas.draw_rect(marker, stock)
 		canvas.draw_line(marker.position + Vector2(10, 2), Vector2(marker.end.x - 10, marker.position.y + 2), Color(PINK, 0.35), 1.0, true)
-		canvas.draw_string(display, center + Vector2(-99, 9), String(boundary.title),
-			HORIZONTAL_ALIGNMENT_CENTER, 198, 24, Color(ink, 0.75 if boundary.visited else 0.45))
+		canvas.draw_string(display, center + Vector2(-99, -1 if is_return else 9), String(boundary.title),
+			HORIZONTAL_ALIGNMENT_CENTER, 198, 20 if is_return else 24, Color(ink, 0.85 if is_return else (0.75 if boundary.visited else 0.45)))
+		if is_return:
+			canvas.draw_string(font, center + Vector2(-99, 14), "OPEN" if boundary.open else "SEALED",
+				HORIZONTAL_ALIGNMENT_CENTER, 198, 13, PINK)
 	for room in page.rooms:
 		var center: Vector2 = room.position
 		var box := Rect2(center - Chart.ROOM_SIZE * 0.5, Chart.ROOM_SIZE)

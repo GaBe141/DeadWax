@@ -5,6 +5,7 @@ extends Node2D
 signal requested(action: StringName, source: Node2D)
 signal cue_requested(cue: StringName)
 
+const Progression := preload("res://scripts/progression_state.gd")
 const Press := preload("res://scripts/press.gd")
 const INTERACT_RADIUS := preload("res://scripts/discoveries_state.gd").INTERACT_RADIUS
 const AudioBank := preload("res://scripts/audio_bank.gd")
@@ -13,6 +14,7 @@ const NOTE_TIME := SEQUENCE_TIME / 3.0
 
 var action: StringName = &"collect_spool"
 var discoveries: RefCounted
+var progression: RefCounted
 var ink := Color("ddc3a5")
 var stock := Color("2b2638")
 var _stage: StringName = &"idle"
@@ -165,6 +167,8 @@ func _prompt() -> String:
 			if held == "recorded":
 				return "The horn has kept three empty bars.\n[E / Y]  Play the recorded phrase"
 			if held == "restored":
+				if progression != null and not progression.has_refrain(Progression.Refrain.JUMP_CUT):
+					return "A Refrain waits below this receiver.\n[E / Y]  Hear the room answer again"
 				return "A little audience, at last.\n[E / Y]  Hear the room answer"
 			if held == "empty":
 				return "This horn knows an empty spool.\nBring it the southern room's phrase."

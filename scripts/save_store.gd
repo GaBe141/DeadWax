@@ -3,7 +3,8 @@ extends RefCounted
 ## JSON numbers are checked before conversion, and every read is validated.
 ## The last valid checkpoint remains in .bak when a new checkpoint is installed.
 ## Required v1 fields: version, room_id, entry_id, progression.snapshot(), shine.
-## Optional fields: abilities, purchases, map, discoveries, collection, completed, encounters, settings.
+## Optional fields: abilities, purchases, map, discoveries, collection, exploration,
+## completed, encounters, settings. Missing exploration leaves shortcuts closed.
 ## Absent abilities retain all seven moves. Internal abilities v1 retains Walk
 ## plus its listed older moves; v2 keeps an exact empty or earned snapshot.
 ## The root checkpoint remains v1; normalized abilities always use internal v2.
@@ -19,9 +20,10 @@ const EconomyScript := preload("res://scripts/economy_state.gd")
 const MapStateScript := preload("res://scripts/map_state.gd")
 const DiscoveriesScript := preload("res://scripts/discoveries_state.gd")
 const CollectionScript := preload("res://scripts/collection_state.gd")
+const ExplorationScript := preload("res://scripts/exploration_state.gd")
 const ENCOUNTER_STATES := ["opened", "freed", "shattered", "polished", "won"]
 const DEFAULT_SETTINGS := {"volume": 1.0, "reduced_motion": false, "fullscreen": false}
-const ROOT_KEYS := ["version", "room_id", "entry_id", "progression", "abilities", "shine", "purchases", "map", "discoveries", "collection", "completed", "encounters", "settings"]
+const ROOT_KEYS := ["version", "room_id", "entry_id", "progression", "abilities", "shine", "purchases", "map", "discoveries", "collection", "exploration", "completed", "encounters", "settings"]
 
 var last_error := ""
 var _path: String
@@ -144,6 +146,11 @@ func _normalise(data: Dictionary) -> Dictionary:
 		return _invalid("The checkpoint collection is invalid.")
 	var collection_model := CollectionScript.new()
 	collection_model.restore_snapshot(collection)
+	var exploration: Variant = data.get("exploration", ExplorationScript.default_snapshot())
+	if not ExplorationScript.valid_snapshot(exploration):
+		return _invalid("The checkpoint exploration is invalid.")
+	var exploration_model := ExplorationScript.new()
+	exploration_model.restore_snapshot(exploration)
 	var progression: Variant = data.get("progression")
 	if not (progression is Dictionary) or not _known_keys(progression, ["version", "refrains", "techniques"]):
 		return _invalid("The checkpoint progression is invalid.")
@@ -186,6 +193,7 @@ func _normalise(data: Dictionary) -> Dictionary:
 		"map": map.duplicate(true),
 		"discoveries": discoveries.duplicate(),
 		"collection": collection_model.snapshot(),
+		"exploration": exploration_model.snapshot(),
 		"completed": completed,
 		"encounters": encounters.duplicate(),
 		"settings": {

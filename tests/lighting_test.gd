@@ -245,7 +245,8 @@ func _hud_palette() -> Array:
 	return [_main.status.get_theme_color("font_color"), _main.title.get_theme_color("font_color"), _main.masthead.color, _main.footer_stock.color]
 
 func _gameplay_snapshot() -> Dictionary:
-	return {"economy": _main.economy.snapshot(), "progression": _main.progression.snapshot(), "encounters": _main.encounters.duplicate(true)}
+	return {"economy": _main.economy.snapshot(), "progression": _main.progression.snapshot(),
+		"exploration": _main.exploration.snapshot(), "encounters": _main.encounters.duplicate(true)}
 
 func _canvas_layer(node: Node) -> CanvasLayer:
 	var parent := node.get_parent()

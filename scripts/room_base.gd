@@ -152,7 +152,7 @@ func apply_side(next_side: int) -> void:
 		if is_instance_valid(hot):
 			hot.call("set_current_side", next_side)
 	for child in get_children():
-		if child.is_in_group("ability_pickup"):
+		if child.is_in_group("ability_pickup") or child.is_in_group("exploration_fixture"):
 			child.call("reink", solid, stock)
 		if child.is_in_group("hears_strikes") and "muted" in child:
 			child.set("muted", muted and next_side == PressingScript.Side.A)

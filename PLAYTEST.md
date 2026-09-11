@@ -3,7 +3,7 @@
 Run `.\deadwax.cmd play` for the authored opening. Start with the chapter
 checklist, then use `.\deadwax.cmd dev` for focused mechanics regressions.
 Runtime errors are written to `.godot/deadwax-play.log`.
-Run `.\deadwax.cmd check` before handoff; the complete run contains 38 native
+Run `.\deadwax.cmd check` before handoff; the complete run contains 42 native
 suites, including ability model, integration, world, Book, and Walk suites.
 
 ## Session
@@ -15,7 +15,24 @@ suites, including ability model, integration, world, Book, and Walk suites.
 - Overall frame pacing: smooth / occasional hitch / frequent hitch
 - Audio clarity and latency:
 
-## Walk opening review — 2026-09-11
+## Reverse-side exploration review — 2026-09-11
+
+- Full `deadwax.cmd check` passed: **42 suites, 10,760 checks, exit 0**, with
+  no script/runtime errors. Log: `.godot/exploration-full-check.log`.
+  Existing non-fatal Godot audio teardown warnings remain.
+- Native Godot 4.7.2 / GL Compatibility with a private checkpoint and injected
+  keyboard events passed the separate Jump-Cut pickup, both B-side openings,
+  separate-press passage use, named arrivals, and Continue on A with both
+  returns retained. The real campaign checkpoint was never used.
+- Reviewed reward, sealed/open return cards, all affected return arrivals,
+  and map/Book guidance at 1280×720 and 960×540. Three static signs were moved
+  to clear interaction cards; notification text now fits. No geometry changed.
+- Captures: `.godot/exploration-review/` and
+  `.godot/exploration-layout-review/`. Native log:
+  `.godot/exploration-review.log`. All preview processes exited and private
+  saves were cleaned. Controller feel and audio listening remain manual.
+
+## Earlier Walk opening review — 2026-09-11
 
 Native Godot 4.7.2 with injected keyboard events and a private checkpoint:
 
@@ -204,7 +221,7 @@ fixture as a measurement of completionist playtime.
 - [ ] After trials, binding, and fitting, save and Continue. Owned pieces,
   fittings, Offcuts, dry streaks, regional clear counts, and bestiary notes
   survive. The nine polish patches still pay one Shine once, and the original
-  shop prices, permanent encounters, and 21-room/24-pair route graph are intact.
+  shop prices, permanent encounters, and 21-room/26-pair route graph are intact.
 - [ ] Enter title-screen Move practice after fitting gear. It remains empty
   with stock handling and a disposable collection. Returning to title and
   Continue restores the campaign collection; practice cannot alter its save.
@@ -341,13 +358,13 @@ At that review, `deadwax.cmd check` passed its then-current 29 suites and 7,813 
 - [ ] Use the loft→Gallery passage and return. Both arrivals have safe standing room; the ordinary market and Gallery routes still work.
 - [ ] Return to the plaza and Headshell: the discovered phrase plays with rests and responds to Hood. Leaving fades it out; pause, Book, map, and shop suspend it. Continue restores it without restarting a reward; New Game clears it.
 - [ ] An old completed save without Gather can revisit the Arm and collect it. Recovery and Continue preserve Gather, the resolved voice, its shortcut, and the same Shine balance.
-- [ ] Check pickup, practice signage, loft voice cues, both nearby passage cards, and the 24-route map at 1280×720 and 960×540.
+- [ ] Check pickup, practice signage, loft voice cues, both nearby passage cards, and the 26-route map at 1280×720 and 960×540.
 
 ## Folded map
 
 - [ ] New Game begins without the map. Recover Walk, then walk right in the Headshell: the folded page is visible before the first raised block, clear of both arrival positions, and collects once on approach.
 - [ ] Collection announces the map without opening a panel or changing Shine, health, Refrains, or knowledge. M / D-pad Down opens the map from play, and the Book gains an Open map button.
-- [ ] The map marks the current room, names explored rooms, and leaves unvisited names hidden. Its 24 passage pairs match the 21 playable rooms; dashed shortcuts do not claim to unlock a passage.
+- [ ] The map marks the current room, names explored rooms, and leaves unvisited names hidden. Its 26 passage pairs match the 21 playable rooms; dashed shortcuts do not claim to unlock a passage.
 - [ ] Label, Overture, and Unplayed tabs select distinct sheets. Mouse clicks, keyboard Left/Right, and D-pad Left/Right all turn pages; controller A on a focused tab selects it without closing the guide. The selected tab and focus remain clear at both supported window sizes.
 - [ ] Opening or reopening selects the player's current region. Boundary markers show the region reached by each real passage without naming an unvisited room. Paging changes no map visits, position, health, Shine, purchases, or progression.
 - [ ] Closing with M, D-pad Down, Escape/Back, or the Close button returns to the same position without a jump, attack, or passage input leaking through. The map, Book, stall, and pause menu cannot overlap.
@@ -577,3 +594,13 @@ Scaffolding, not design — check shape and traversal, not feel.
 - Frequency: once / intermittent / every time
 - Screenshot/video/log timestamp:
 - Severity: blocks play / major mechanic / feel-polish / cosmetic
+
+## Reverse-side exploration
+
+- [ ] Finish the Echo Spool route and follow the restored receiver's clue to the floor below. Jump-Cut requires its own grounded E/Y pickup. Returning on an old restored-phrase save also reveals it; replaying the phrase grants nothing twice.
+- [ ] Turn the wax with F/RB, reach the North Warren's eastern terrace seam, and use E/Y to unseal it. The same press must not travel. Release and press again to emerge on High Street's quiet western floor.
+- [ ] Return on the A-side; the opened connection works both ways permanently. The High Street end stays sealed before opening from the Warren, including on the B-side.
+- [ ] Unseal the Deep Gallery's central floor seam on the B-side. Travel to the Headshell, land safely on its existing raised block, and return; no automatic map or ability pickup fires at arrival.
+- [ ] Inspect reward/sealed/open cards, both room palettes, and all map pages at 1280×720 and 960×540. Sealed returns reveal no unseen room names. Opening a return changes the map's status and the Book's guidance.
+- [ ] Pause, recover, reopen the Book/map, and Continue. Opened returns persist; fresh New Game closes both and removes Jump-Cut. Move practice cannot carry or save the campaign's returns.
+- [ ] Check keyboard and controller feel and audio separately; automated scripted input does not assess those subjective qualities.

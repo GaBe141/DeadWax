@@ -103,7 +103,7 @@ from vulnerable foes. After either Tonearm
 outcome, a **Gather** pressing appears beside the open seal. Pick it up, jump,
 then Strike near the crest to climb on one held breath. Landing refills it;
 ordinary grounded attacks keep their footing. The nearby shelf offers a safe
-place to try it. Jump-Cut remains a later discovery.
+place to try it. Jump-Cut waits in the restored North Warren.
 
 ## Beneath the seal
 
@@ -127,7 +127,7 @@ Listen at the fixed posts with grounded **E / Y**. Voices retain their familiar
 Set and strike choices, and the pressing can be fought or passed on the upper
 walk. Resolved encounters stay resolved on return, recovery, and Continue.
 The nine polish patches still fund the three optional shop purchases; these
-rooms add no Shine or Refrain rewards.
+rooms add no Shine. Restoring the lost phrase reveals a separate Refrain pickup.
 
 An **Echo Spool** waits on the Deep Gallery floor. Stand beside it and press
 **E / Y** to take it, then find the three-note pipe on the **South Warren's
@@ -136,6 +136,22 @@ recording to the receiver on the **North Warren's western terrace** and play
 it there. The shutter opens onto a little listening alcove, and three answering
 discs wake together. Return and press E/Y to hear it again. The spool stays
 with you, and either encounter choice leaves the whole discovery available.
+
+The restored receiver reveals **Jump-Cut** on the floor directly below it.
+Take it with a separate **E / Y** press, then use **F / RB** to turn the record
+over for up to twelve seconds. On the far face, two sealed returns can be
+opened from deep within the world:
+
+| Unseal from | Returns to |
+| --- | --- |
+| North Warren, upper eastern terrace | High Street, western floor |
+| Deep Gallery, central lower floor | The Headshell |
+
+Stand at the seam on the B-side and press **E / Y** to unseal it. A second
+fresh press enters. Once opened, either end works on either side permanently.
+Existing saves with the phrase already restored can return for Jump-Cut;
+listening again is unnecessary. The map shows sealed/open returns once both
+ends have been visited or the return is opened, and the Book keeps their leads.
 
 The Landing's raised overlook holds a **Surveyor's Slip**. Reach it with
 Gather, then press E/Y to keep its sketch of the Stalls balcony. The Book
@@ -385,7 +401,7 @@ point and before the first raised block. Walk close to pick it up. The map marks
 your current room and remembers the rooms you explore; unvisited places stay
 unnamed. Three pages cover **The Label**, **The Overture**, and **The Unplayed**,
 including the Drop on the Unplayed sheet. The guide contains all 21 rooms and
-24 real passage pairs; both Gallery shortcuts remain dashed. Passages may still
+26 real passage pairs, including the two permanent wax returns. Passages may still
 need to be opened in the world.
 
 Opening the guide selects your current region. Click a region tab or use
@@ -426,9 +442,10 @@ Knowledge and Refrains remain separate:
   performed before its name is recorded; four even strikes prove it at a lock.
 - **Gather** waits beyond either Tonearm resolution. It preserves one airborne
   Strike breath in dry wax; rooms that already grant more keep their capacity.
-- **Rest** and **Jump-Cut** remain later planned Refrains. Rest has no gameplay
-  effect yet. Jump-Cut's working B-side mechanic is available in development
-  rooms, with its planned pickup in the Mispress Core.
+- **Jump-Cut** is earned below the North Warren receiver after restoring its
+  lost phrase. It flips the wax and lets you unseal two permanent return routes.
+- **Rest** remains planned and has no gameplay effect yet. The development
+  atlas retains its separate Jump-Cut pickup in the Mispress Core.
 
 Campaign discoveries persist on disk. Development rooms start with all seven
 moves and retain their separate Refrain pickups and session-only progression;
@@ -594,7 +611,7 @@ own animation while gameplay and the HUD remain paused underneath.
 
 ## Development checks
 
-Run `.\deadwax.cmd check` before committing. It imports resources and runs 38
+Run `.\deadwax.cmd check` before committing. It imports resources and runs 42
 dependency-free native suites, including smoke, save-store, campaign, Tonearm, Overture,
 sprite-animation, residents, economy-state, economy integration, scenery,
 lighting, attack-feel, GUI-animation, and map-item suites. These cover the original combat and
@@ -612,7 +629,7 @@ also cover fresh-input chains, expiry and cancellation, finisher strength,
 unchanged launch/parry rules, and isolation of the title's empty practice floor.
 The Unplayed suite covers the six-room extension, both Tonearm entry outcomes,
 reversible routes without Gather, encounter persistence, and save continuity.
-Map checks cover all 21 places and 24 passage pairs across the three region pages.
+Map checks cover all 21 places and 26 passage pairs across the three region pages.
 Discovery checks cover ordered spool use, fixed interaction reach, cancellation,
 save validation and rollback, silent restoration, the optional Gather keepsake,
 and practice isolation. Echo audio checks cover lazy finite synthesis, matching
@@ -632,3 +649,7 @@ rendering, and controller behavior still require `PLAYTEST.md`.
 
 There is no `export_presets.cfg` yet; this checkout runs through Godot rather
 than a configured distributable build.
+
+The exploration suites cover strict optional shortcut saves, old restored-phrase
+checkpoints, grounded fresh-input rewards, far-end B-side opening, permanent
+return travel, safe arrivals, failed-write rollback, and practice isolation.

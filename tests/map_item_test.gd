@@ -8,6 +8,7 @@ const CampaignScript := preload("res://scripts/campaign.gd")
 const PickupScript := preload("res://scripts/map_pickup.gd")
 const SaveScript := preload("res://scripts/save_store.gd")
 const ProgressionScript := preload("res://scripts/progression_state.gd")
+const ExplorationCatalog := preload("res://scripts/exploration_catalog.gd")
 var _main: Node2D
 var _directory: String
 var _checks := 0
@@ -102,16 +103,29 @@ func _check_chart() -> void:
 			if pair not in real_pairs: real_pairs.append(pair)
 		room.queue_free()
 		await _frames(1)
+	var factory_pairs := real_pairs.duplicate()
+	factory_pairs.sort()
+	_check(factory_pairs.size() == 24, "the original twenty-four factory passage pairs remain unchanged")
+	var return_pairs: Array[String] = []
+	for endpoint in ExplorationCatalog.endpoints():
+		var pair := _pair(endpoint.room_id, endpoint.target_room)
+		_check(endpoint.room_id in actual_ids and endpoint.target_room in actual_ids and pair not in factory_pairs,
+			"Main's added return endpoint connects distinct authored rooms outside the existing passage pairs")
+		if pair not in return_pairs:
+			return_pairs.append(pair)
+			real_pairs.append(pair)
+	_check(return_pairs.size() == 2, "Main's exploration catalog adds exactly two return pairs")
 	var chart_pairs: Array[String] = []
 	for link in ChartScript.links():
 		var pair := _pair(link.a, link.b)
 		_check(pair not in chart_pairs and link.a in actual_ids and link.b in actual_ids, "chart passage is unique and connects authored rooms: " + pair)
 		chart_pairs.append(pair)
 		if link.shortcut:
-			_check(pair in [_pair(&"worn_gallery", &"the_arm"), _pair(&"the_stalls", &"worn_gallery")], "only earned Gallery returns are marked as shortcuts")
+			_check(pair in [_pair(&"worn_gallery", &"the_arm"), _pair(&"the_stalls", &"worn_gallery")] or pair in return_pairs,
+				"only authored Gallery and wax returns are marked as shortcuts")
 	real_pairs.sort()
 	chart_pairs.sort()
-	_check(chart_pairs == real_pairs and chart_pairs.size() == 24, "chart routes exactly match physical campaign passages, including the Unplayed loop and both return shortcuts")
+	_check(chart_pairs == real_pairs and chart_pairs.size() == 26, "chart routes match the factory passages and Main-installed wax returns")
 	var rooms := ChartScript.rooms()
 	var original := ChartScript.rooms()
 	rooms[0].label = "changed fixture"
@@ -134,7 +148,14 @@ func _check_chart() -> void:
 			if pair not in page_pairs: page_pairs.append(pair)
 	page_ids.sort()
 	page_pairs.sort()
-	_check(page_ids == actual_ids and page_pairs == real_pairs, "region pages preserve every room and real passage across their boundary markers")
+	_check(page_ids == actual_ids and page_pairs == factory_pairs, "partially explored pages preserve the original passages while concealing undiscovered wax returns")
+	var revealed_pairs: Array[String] = []
+	for region in ChartScript.REGIONS:
+		for link in ChartScript.page_snapshot(region.id, actual_ids, &"headshell").links:
+			var pair := _pair(link.a, link.b)
+			if pair not in revealed_pairs: revealed_pairs.append(pair)
+	revealed_pairs.sort()
+	_check(revealed_pairs == real_pairs, "visiting both endpoints reveals every real return without opening it")
 
 func _check_pickup() -> void:
 	_check(not _main.map_state.owned and _main.map_state.visited == ["headshell"], "New game records its actual start without granting the map")
@@ -377,6 +398,7 @@ func _gameplay_snapshot() -> Dictionary:
 func _complete_snapshot() -> Dictionary:
 	var result := _gameplay_snapshot()
 	result["map"] = _main.map_state.snapshot()
+	result["exploration"] = _main.exploration.snapshot()
 	return result
 
 func _physical_snapshot() -> Dictionary:

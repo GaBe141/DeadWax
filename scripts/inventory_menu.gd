@@ -38,6 +38,7 @@ var economy: RefCounted
 var map_state: RefCounted
 var discoveries: RefCounted
 var collection: RefCounted
+var exploration: RefCounted
 var can_open: Callable
 
 var overlay: Control
@@ -686,7 +687,10 @@ func _slot_description(slot: StringName) -> String:
 			match String(discoveries.snapshot().echo_spool):
 				"empty": return "A little reel from the Deep Gallery, still waiting for a voice. Find the three-note pipe on the South Warren's upper walk. Stand beside it and press E / Y to record the whole phrase."
 				"recorded": return "Three notes, safely held. Carry them to the shuttered receiver on the North Warren's western terrace. Press E / Y and stay beside it while the phrase plays."
-				"restored": return "The shutter is open. Three answering discs remember the phrase together. Return to the North Warren's western terrace and press E / Y to hear it again. The spool stays with you."
+				"restored":
+					if not _slot_is_filled(&"jump-cut"):
+						return "A Refrain waits below the northern receiver. On the North Warren floor, press E / Y to claim it. The spool stays with you; its answering discs can still replay the phrase."
+					return "The shutter is open and the Refrain is yours. Turn the wax over to uncover the northern return and the Deep Gallery return. " + _return_leads()
 		&"survey_slip":
 			return "A surveyor's sketch, tucked above the Landing. A balcony is circled over the Stalls' right bank: 'Jump. Gather at the crest. A voice waits above the shutters.' Its answer may shorten the road home."
 		&"count-in":
@@ -698,8 +702,15 @@ func _slot_description(slot: StringName) -> String:
 		&"rest":
 			return "A remembered Refrain. Its effect is quiet here; another groove may answer it."
 		&"jump-cut":
-			return "Turn the pressing over with F or the right shoulder. Ink and air invert for twelve seconds; the A-side rewinds the time you spend."
+			return "Press F / RB to turn the pressing over. You have twelve seconds on the B-side; time on A replenishes it. Seek the sealed returns in the North Warren and Deep Gallery. Turn over there, then press E / Y at the seal to open a permanent way home. " + _return_leads()
 	return "The groove has no readable note."
+
+func _return_leads() -> String:
+	var north_open := exploration != null and bool(exploration.call("is_open", &"warren_return"))
+	var gallery_open := exploration != null and bool(exploration.call("is_open", &"gallery_return"))
+	var north := "North Warren: open to High Street." if north_open else "North Warren: turn over on the upper eastern walk."
+	var gallery := "Deep Gallery: open to the Headshell." if gallery_open else "Deep Gallery: turn over on the lower floor."
+	return north + " " + gallery
 
 func _locked_description(slot: StringName) -> String:
 	if _is_ability_slot(slot):

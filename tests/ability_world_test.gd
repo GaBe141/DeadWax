@@ -23,7 +23,7 @@ func _init() -> void:
 func _run() -> void:
 	for action in ACTIONS:
 		if not InputMap.has_action(action): InputMap.add_action(action)
-	_check(Campaign.room_ids().size() == 21 and Chart.LINKS.size() == 24, "the authored passage graph keeps its 21 rooms and 24 pairs")
+	_check(Campaign.room_ids().size() == 21 and Chart.LINKS.size() == 26, "the authored passage graph has 21 rooms and 26 pairs including the earned returns")
 	for record in Abilities.catalog():
 		await _placement(record)
 	await _opening_prompts()

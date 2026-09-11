@@ -42,6 +42,10 @@ const BOUNDARIES := [
 	{"region": &"overture", "id": &"the_stalls", "position": Vector2(605, 355)},
 	{"region": &"overture", "id": &"the_drop", "position": Vector2(165, 355)},
 	{"region": &"unplayed", "id": &"the_arm", "position": Vector2(165, 290)},
+	{"region": &"label", "id": &"verse_warren_n", "position": Vector2(145, 75), "route_id": "warren_return"},
+	{"region": &"label", "id": &"deep_gallery", "position": Vector2(145, 350), "route_id": "gallery_return"},
+	{"region": &"unplayed", "id": &"high_street", "position": Vector2(825, 25), "route_id": "warren_return"},
+	{"region": &"unplayed", "id": &"headshell", "position": Vector2(825, 405), "route_id": "gallery_return"},
 ]
 const LINKS := [
 	{"a": &"headshell", "b": &"horn_plaza", "shortcut": false},
@@ -68,6 +72,8 @@ const LINKS := [
 	{"a": &"verse_warren_n", "b": &"deep_gallery", "shortcut": false},
 	{"a": &"deep_gallery", "b": &"verse_warren_s", "shortcut": false},
 	{"a": &"verse_warren_s", "b": &"verse_warren_n", "shortcut": false},
+	{"a": &"verse_warren_n", "b": &"high_street", "shortcut": true, "route_id": "warren_return"},
+	{"a": &"deep_gallery", "b": &"headshell", "shortcut": true, "route_id": "gallery_return"},
 ]
 
 static func region_for_room(id: StringName) -> StringName:
@@ -82,11 +88,16 @@ static func region_title(id: StringName) -> String:
 			return region.title
 	return ""
 
-static func page_snapshot(region: StringName, visited: Array, current: StringName) -> Dictionary:
+static func page_snapshot(region: StringName, visited: Array, current: StringName, opened: Array = []) -> Dictionary:
 	var known: Dictionary = {}
 	for id in visited:
 		known[StringName(id)] = true
 	known[current] = true
+	var visible_returns: Dictionary = {}
+	for link in LINKS:
+		var route_id := String(link.get("route_id", ""))
+		if not route_id.is_empty() and (route_id in opened or (known.has(link.a) and known.has(link.b))):
+			visible_returns[route_id] = true
 	var page := {"rooms": [], "links": [], "boundaries": []}
 	var centers: Dictionary = {}
 	var local_ids: Array[StringName] = []
@@ -101,15 +112,32 @@ static func page_snapshot(region: StringName, visited: Array, current: StringNam
 	for boundary in BOUNDARIES:
 		if boundary.region != region:
 			continue
+		var route_id := String(boundary.get("route_id", ""))
+		if not route_id.is_empty() and not visible_returns.has(route_id):
+			continue
+		var is_open := route_id in opened
+		var title := "TO " + region_title(region_for_room(boundary.id))
+		if not route_id.is_empty():
+			title = "RETURN TO " + region_title(region_for_room(boundary.id)) if is_open else "BACK OF THE WAX"
 		centers[boundary.id] = boundary.position
 		page.boundaries.append({"id": boundary.id, "position": boundary.position,
-			"title": "TO " + region_title(region_for_room(boundary.id)),
-			"visited": known.has(boundary.id)})
+			"title": title, "visited": known.has(boundary.id), "route_id": route_id, "open": is_open})
 	for link in LINKS:
+		var route_id := String(link.get("route_id", ""))
+		if not route_id.is_empty() and not visible_returns.has(route_id):
+			continue
 		if (link.a in local_ids or link.b in local_ids) and centers.has(link.a) and centers.has(link.b):
 			page.links.append({"a": link.a, "b": link.b, "from": centers[link.a], "to": centers[link.b],
-				"shortcut": link.shortcut, "walked": known.has(link.a) and known.has(link.b)})
+				"shortcut": link.shortcut, "walked": known.has(link.a) and known.has(link.b),
+				"route_id": route_id, "open": route_id in opened})
 	return page
+
+static func return_ids() -> Array[String]:
+	var result: Array[String] = []
+	for link in LINKS:
+		if link.has("route_id"):
+			result.append(String(link.route_id))
+	return result
 
 static func room_ids() -> Array[StringName]:
 	var ids: Array[StringName] = []

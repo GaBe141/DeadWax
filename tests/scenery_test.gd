@@ -8,6 +8,8 @@ const PatchScript := preload("res://scripts/polish_patch.gd")
 const GrayboxScript := preload("res://scripts/room_graybox.gd")
 const PressingScript := preload("res://scripts/pressing_state.gd")
 const PaintedWorld := preload("res://scripts/press_painted_world.gd")
+const ExplorationCatalog := preload("res://scripts/exploration_catalog.gd")
+const ExplorationFixture := preload("res://scripts/exploration_fixture.gd")
 const BASELINE := {
 	&"headshell": [4, 4, 0, 0, 1, 0],
 	&"horn_plaza": [3, 3, 0, 1, 4, 1],
@@ -83,7 +85,12 @@ func _check_authored_rooms() -> void:
 			_check(previous.get_ref() == null, "room change releases the preceding atmosphere")
 		var atmosphere := _atmosphere()
 		_check(atmosphere != null, String(id) + " creates its atmosphere")
-		_check(_inventory(_main.room) == BASELINE[id], String(id) + " keeps its original solids, colliders, grooves, wax, passages and outcomes")
+		# Main appends exactly the catalog's return endpoints. Their only
+		# structural contribution is one passage each; geometry stays locked.
+		var expected: Array = BASELINE[id].duplicate()
+		expected[4] += ExplorationCatalog.endpoints_for(id).size()
+		_check(_inventory(_main.room) == expected, String(id) + " keeps authored geometry, grooves, wax and outcomes with only its catalog return passages added")
+		_check_exploration_endpoints(id)
 		if atmosphere == null:
 			continue
 		previous = weakref(atmosphere)
@@ -115,6 +122,36 @@ func _check_authored_rooms() -> void:
 			and _main.room.ink == authored_ink and _main.room.bg_color == authored_stock, String(id) + " restores the exact A-side palette without mutating authored colors")
 		atmosphere._process(0.05)
 		_check(_solid_transforms(_main.room) == transforms and _gameplay_snapshot() == gameplay, String(id) + " visual updates leave platforms, purchases, knowledge and outcomes unchanged")
+
+func _check_exploration_endpoints(id: StringName) -> void:
+	var definitions := ExplorationCatalog.endpoints_for(id)
+	var count := 0
+	for child in _main.room.get_children():
+		if child.is_in_group("reverse_passage"):
+			count += 1
+	_check(count == definitions.size(), String(id) + " installs exactly its declared return endpoint count")
+	for definition in definitions:
+		var source: Node2D = _main.room.get_node_or_null("Return_" + String(definition.id))
+		_check(source != null and source.get_script() == ExplorationFixture, String(id) + " owns its actual catalog return fixture")
+		if source == null: continue
+		_check(source.definition == definition and source.position == definition.position
+			and source.target_room == definition.target_room and source.target_entry == definition.target_entry
+			and source.is_in_group("room_exit") and source.is_in_group("reverse_passage"),
+			String(id) + " return matches the catalog identity, fixed origin, destination and arrival")
+		_check(not source is CollisionObject2D and not source.has_meta("chapter_state_id")
+			and _inventory(source) == [0, 0, 0, 0, 0, 0], String(id) + " return presentation adds no solid, collider, groove, wax, nested passage or outcome")
+		var incoming: StringName = &""
+		for other in ExplorationCatalog.endpoints():
+			if other.id == definition.id and other.target_room == id:
+				incoming = other.target_entry
+		_check(not incoming.is_empty() and _main.room.entry_points.has(incoming), String(id) + " registers the paired catalog return arrival")
+		if incoming.is_empty() or not _main.room.entry_points.has(incoming): continue
+		var arrival: Vector2 = _main.room.entry_position(incoming)
+		var supported := false
+		for solid in _solid_rectangles(_main.room):
+			supported = supported or (absf(arrival.y + 26.0 - solid.position.y) < 1.0
+				and arrival.x >= solid.position.x + 17.0 and arrival.x <= solid.end.x - 17.0)
+		_check(supported, String(id) + " return arrival stands on unchanged full-width player support")
 
 func _check_foreground(atmosphere: Node2D, solids: Array[Rect2], label: String) -> void:
 	var bands: Array = atmosphere.visual_snapshot().foreground_bands
@@ -337,7 +374,8 @@ func _palette_matches(atmosphere: Node2D, ink: Color, stock: Color) -> bool:
 	return true
 
 func _gameplay_snapshot() -> Dictionary:
-	return {"economy": _main.economy.snapshot(), "progression": _main.progression.snapshot(), "encounters": _main.encounters.duplicate(true)}
+	return {"economy": _main.economy.snapshot(), "progression": _main.progression.snapshot(),
+		"exploration": _main.exploration.snapshot(), "encounters": _main.encounters.duplicate(true)}
 
 func _descendants(node: Node) -> Array[Node]:
 	var result: Array[Node] = []

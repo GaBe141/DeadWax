@@ -48,6 +48,9 @@ func configure(id: StringName) -> void:
 			cam_limits = Rect2(0, 0, 1280, 720)
 			spawn_pos = Vector2(180, 554)
 			register_entry(&"from_horn_plaza", Vector2(1080, 554))
+			# The Gallery return settles on the cradle's existing low block,
+			# clear of the map and both nearby recovered-move sleeves.
+			register_entry(&"from_deep_gallery", Vector2(760, 494))
 		&"horn_plaza":
 			bg_color = Color("254b4e")
 			ink = Color("e3cfaa")
@@ -65,6 +68,7 @@ func configure(id: StringName) -> void:
 			cam_limits.size.x = 2000.0
 			register_entry(&"from_horn_plaza", Vector2(180, 574))
 			register_entry(&"from_practice_room", Vector2(1780, 574))
+			register_entry(&"from_verse_warren_n", Vector2(470, 574))
 		&"practice_room":
 			bg_color = Color("383746")
 			ink = Color("ddc7a1")
@@ -196,7 +200,7 @@ func _build_high_street() -> void:
 		_impression(&"facade", Vector2(330 + index * 430, 315), Vector2(340, 460))
 	_exit(Vector2(85, 574), &"horn_plaza", "THE PLAZA")
 	_exit(Vector2(1880, 574), &"practice_room", "PRACTICE")
-	sign_label(Vector2(290, 355), "THE LOOPER\nThree ticks guarded. It swings on four.\nStep clear, or J / X as it lands.\nThen strike while it is OPEN.")
+	sign_label(Vector2(290, 245), "THE LOOPER\nThree ticks guarded. It swings on four.\nStep clear, or J / X as it lands.\nThen strike while it is OPEN.")
 	var looper := StreetLooperScript.new()
 	looper.name = "StreetLooper"
 	looper.position = Vector2(940, 557)
@@ -520,7 +524,7 @@ func _refresh_headshell_guidance() -> void:
 	var movement_text := "A / D or left stick — walk\nSPACE / A — jump"
 	if not _has_ability(&"walk"):
 		movement_text = "TAP A / D / flick stick — inch\nSPACE / A — jump\nRecover your feet to walk."
-	sign_label(Vector2(535, 330), movement_text)
+	sign_label(Vector2(535, 250), movement_text)
 	_headshell_move_note = _notes.back()
 	if not _has_ability(&"walk"):
 		sign_label(Vector2(90, 180), "LEFT BY THE CRADLE\nYour feet are to the left.\nTap A / D. [E / Y] to recover them.")

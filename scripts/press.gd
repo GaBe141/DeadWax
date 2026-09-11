@@ -47,6 +47,9 @@ static func draw_echo_station(canvas: CanvasItem, kind: StringName, state: Dicti
 static func draw_echo_trial(canvas: CanvasItem, state: Dictionary, ink: Color, stock: Color) -> void:
 	preload("res://scripts/press_trial.gd").draw(canvas, state, ink, stock)
 
+static func draw_exploration(canvas: CanvasItem, state: Dictionary, ink: Color, stock: Color) -> void:
+	preload("res://scripts/press_exploration.gd").draw(canvas, state, ink, stock)
+
 static func draw_ability_pickup(canvas: CanvasItem, state: Dictionary, ink: Color, stock: Color) -> void:
 	preload("res://scripts/press_ability.gd").draw(canvas, state, ink, stock)
 

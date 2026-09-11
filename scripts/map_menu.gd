@@ -12,6 +12,7 @@ const INK := Color("f1dfb8")
 const FADED := Color("c0b28b")
 const WorldBackdrop := preload("res://scripts/ui_world_backdrop.gd")
 
+var exploration: RefCounted
 var is_open := false
 var overlay: Control
 var _snapshot: Dictionary = {}
@@ -29,10 +30,13 @@ var _margin: MarginContainer
 var _reduced_motion := false
 var _opening_gate := false
 var _close_pending := false
+var _returns: Label
+var _legend: Label
 
 class ChartArt extends Control:
 	var visited: Array[String] = []
 	var current_room := ""
+	var opened_returns: Array[String] = []
 	var region: StringName = &"label"
 	var clock := 0.0
 	var reduced_motion := false
@@ -50,7 +54,7 @@ class ChartArt extends Control:
 			queue_redraw()
 	func _draw() -> void:
 		Press.draw_campaign_map(self, size, {"visited": visited, "current_room": current_room,
-			"region": region, "clock": clock, "reduced_motion": reduced_motion}, INK, PAPER)
+			"region": region, "clock": clock, "reduced_motion": reduced_motion, "opened_returns": opened_returns}, INK, PAPER)
 
 func _ready() -> void:
 	layer = 115
@@ -120,6 +124,11 @@ func show_map(snapshot: Dictionary) -> void:
 	_chart.visited = visited
 	_chart.current_room = current
 	_chart.clock = 0.0
+	_chart.opened_returns.clear()
+	if exploration != null:
+		for id in Chart.return_ids():
+			if bool(exploration.call("is_open", StringName(id))):
+				_chart.opened_returns.append(id)
 	_select_region(Chart.region_for_room(StringName(current)))
 	_current.text = Chart.room_label(StringName(current))
 	_count.text = "%02d / %02d PLACES VISITED" % [visited.size(), ids.size()]
@@ -170,10 +179,32 @@ func _select_region(region: StringName) -> void:
 	_region = region
 	_chart.region = region
 	_chart.queue_redraw()
+	_refresh_returns()
 	for index in _tabs.size():
 		var selected: bool = Chart.REGIONS[index].id == region
 		_tabs[index].set_pressed_no_signal(selected)
 		_tabs[index].add_theme_stylebox_override("normal", Press.menu_button_style(INK, PAPER, selected))
+
+func return_status_text() -> String:
+	return _returns.text if _returns != null else ""
+
+func _refresh_returns() -> void:
+	if _returns == null:
+		return
+	var page := Chart.page_snapshot(_region, _chart.visited, StringName(_chart.current_room), _chart.opened_returns)
+	var statuses: Array[String] = []
+	for link in page.links:
+		if String(link.route_id).is_empty():
+			continue
+		var local_id := StringName(link.a) if Chart.region_for_room(StringName(link.a)) == _region else StringName(link.b)
+		var label := Chart.room_label(local_id)
+		if String(local_id) not in _chart.visited:
+			label = "Unvisited return"
+		var status := "SEALED · BACK OF THE WAX" if local_id == StringName(link.a) else "SEALED FROM THE FAR SIDE"
+		statuses.append("%s: %s" % [label, "OPEN" if link.open else status])
+	_returns.text = "   /   ".join(statuses)
+	_returns.visible = not statuses.is_empty()
+	_legend.text = "INK visited · FAINT unknown · DASH shortcut · WAX: sealed / open" if not statuses.is_empty() else "INK visited · FAINT unknown · DASH shortcut (may need opening)"
 
 func _turn_page(direction: int) -> void:
 	var index := 0
@@ -258,7 +289,12 @@ func _build() -> void:
 	var legend := VBoxContainer.new()
 	legend.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	_footer.add_child(legend)
-	legend.add_child(_label("INK  visited     FAINT  unvisited     DASH  shortcut (may need opening)", Press.SIZE_SMALL, FADED))
+	_returns = _label("", Press.SIZE_SMALL, INK)
+	_returns.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	legend.add_child(_returns)
+	_legend = _label("INK visited · FAINT unknown · DASH shortcut (may need opening)", Press.SIZE_SMALL, FADED)
+	_legend.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	legend.add_child(_legend)
 	legend.add_child(_label("Left / Right: turn page    M / D-pad Down or ESC / B: close", Press.SIZE_SMALL, INK))
 	_close = Button.new()
 	_close.name = "CloseMap"

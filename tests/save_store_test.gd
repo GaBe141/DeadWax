@@ -5,6 +5,7 @@ const SaveStoreScript := preload("res://scripts/save_store.gd")
 const ProgressionScript := preload("res://scripts/progression_state.gd")
 const AbilitiesScript := preload("res://scripts/abilities_state.gd")
 const CollectionScript := preload("res://scripts/collection_state.gd")
+const ExplorationScript := preload("res://scripts/exploration_state.gd")
 
 var _checks := 0
 var _failures: Array[String] = []
@@ -20,6 +21,7 @@ func _run() -> void:
 	_check(DirAccess.make_dir_absolute(_test_directory) == OK, "create isolated test directory")
 	_check_roundtrip()
 	_check_ability_migrations()
+	_check_exploration()
 	_check_invalid_data()
 	_check_recovery()
 	_check_failed_writes()
@@ -50,6 +52,7 @@ func _sample() -> Dictionary:
 		"map": {"owned": false, "visited": []},
 		"discoveries": {"echo_spool": "recorded", "survey_slip": true},
 		"collection": CollectionScript.default_snapshot(),
+		"exploration": {"version": 1, "opened": ["warren_return"]},
 		"completed": true,
 		"encounters": {"practice/dummy": "won", "verse/auditioner-1": "freed"},
 		"settings": {"volume": 0.35, "reduced_motion": true, "fullscreen": true},
@@ -70,7 +73,7 @@ func _check_roundtrip() -> void:
 	_check(progression.knows_technique(ProgressionScript.Technique.COUNT_IN), "discovered technique survives disk save")
 	_check(store.has_save() and store.last_error.is_empty(), "Continue validates a good checkpoint")
 	var minimal := original.duplicate(true)
-	for key in ["abilities", "purchases", "map", "discoveries", "collection", "completed", "encounters", "settings"]:
+	for key in ["abilities", "purchases", "map", "discoveries", "collection", "exploration", "completed", "encounters", "settings"]:
 		minimal.erase(key)
 	_check(store.save_game(minimal), "optional fields may be absent")
 	var defaults := store.load_game()
@@ -78,6 +81,7 @@ func _check_roundtrip() -> void:
 	_check(defaults.map == {"owned": false, "visited": []}, "old checkpoints default to an unowned map with no invented history")
 	_check(defaults.discoveries == {"echo_spool": "missing", "survey_slip": false}, "old checkpoints invent no carried discoveries")
 	_check(defaults.collection == CollectionScript.default_snapshot(), "old checkpoints invent no equipment, offcuts, or trial wins")
+	_check(defaults.exploration == ExplorationScript.default_snapshot(), "old checkpoints invent no opened return passages")
 	_check(defaults.abilities == AbilitiesScript.legacy_snapshot(), "old checkpoints retain their existing full moveset")
 	_check(defaults.settings == SaveStoreScript.DEFAULT_SETTINGS, "optional settings default")
 
@@ -122,6 +126,46 @@ func _check_ability_migrations() -> void:
 	var recovered := store.load_game()
 	_check(recovered.abilities == {"version": 2, "unlocked": ["walk", "hood"]}, "raw legacy backup keeps Walk without inventing other abilities")
 	_check(recovered.shine == backup.shine and recovered.encounters == backup.encounters, "backup ability migration preserves balance and choices")
+
+func _check_exploration() -> void:
+	var store := SaveStoreScript.new(_path)
+	store.delete_save()
+	var old := _sample()
+	old.erase("exploration")
+	var encoded := JSON.stringify(old)
+	_write_raw(_path, encoded)
+	var restored := store.load_game()
+	var expected := old.duplicate(true)
+	expected.exploration = ExplorationScript.default_snapshot()
+	_check(restored == expected, "reading a raw pre-shortcut save adds only empty exploration")
+	_check(FileAccess.get_file_as_string(_path) == encoded, "reading legacy exploration leaves the original bytes intact")
+	for opened in [[], ["warren_return"], ["gallery_return"], ["gallery_return", "warren_return"]]:
+		var sample := _sample()
+		sample.exploration = {"version": 1, "opened": opened}
+		var model := ExplorationScript.new()
+		model.restore_snapshot(sample.exploration)
+		var canonical := sample.duplicate(true)
+		canonical.exploration = model.snapshot()
+		_check(store.save_game(sample) and store.load_game() == canonical, "opened shortcut subsets round trip without altering other fields: " + str(opened))
+		var bytes: Variant = JSON.parse_string(FileAccess.get_file_as_string(_path))
+		_check(bytes.exploration.version == 1 and bytes.exploration.opened == canonical.exploration.opened, "disk stores the canonical shortcut order")
+	var saved := store.load_game()
+	for malformed in [null, {}, [], true, {"version": 1, "opened": ["invented"]}, {"version": 1, "opened": ["warren_return", "warren_return"]},
+		{"version": 2, "opened": []}, {"version": 1.5, "opened": []}, {"version": true, "opened": []},
+		{"version": 1, "opened": [] , "extra": true}, {"version": 1, "opened": [true]}]:
+		var sample := _sample()
+		sample.exploration = malformed
+		_check(not store.save_game(sample) and store.load_game() == saved, "malformed exploration cannot replace the saved route state")
+	store.delete_save()
+	for malformed in [null, {"version": 1, "opened": ["invented"]}, {"version": 1, "opened": ["gallery_return", "gallery_return"]}]:
+		var sample := _sample()
+		sample.exploration = malformed
+		_write_raw(_path, JSON.stringify(sample))
+		_check(not store.has_save(), "malformed raw shortcut data cannot enable Continue or fall back to empty")
+	store.delete_save()
+	_write_raw(_path + ".bak", JSON.stringify(old))
+	_write_raw(_path, "{truncated")
+	_check(store.load_game() == expected, "a raw legacy backup restores with both new shortcuts closed")
 
 func _check_invalid_data() -> void:
 	var store := SaveStoreScript.new(_path)

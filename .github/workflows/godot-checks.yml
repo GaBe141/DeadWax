@@ -89,3 +89,10 @@ jobs:
           godot --headless --path . --script res://tests/ability_world_test.gd
           godot --headless --path . --script res://tests/ability_book_test.gd
           godot --headless --path . --script res://tests/walk_test.gd
+
+      - name: Validate reverse-side exploration and permanent returns
+        run: |
+          godot --headless --path . --script res://tests/exploration_state_test.gd
+          godot --headless --path . --script res://tests/exploration_test.gd
+          godot --headless --path . --script res://tests/exploration_world_test.gd
+          godot --headless --path . --script res://tests/exploration_map_test.gd

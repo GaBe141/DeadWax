@@ -168,11 +168,17 @@ func _native_guard_and_recovery() -> void:
 		"physical R resets an unfinished count and damage through Main")
 	_check(not _main.encounters.has(KEY), "recovering an unfinished Looper stores no outcome")
 	var exits := 0
+	var returns := 0
 	for child in _main.room.get_children():
 		if child.is_in_group("room_exit"):
+			if child.is_in_group("reverse_passage"):
+				returns += 1
+				_check(child.target_room == &"verse_warren_n" and child.is_locked(),
+					"the new Warren return stays independently sealed during Looper recovery")
+				continue
 			exits += 1
 			_check(child.required_refrain == -1, "High Street passage remains free of encounter permissions")
-	_check(exits == 2 and not (foe is PhysicsBody2D), "both routes remain and the Looper adds no collision barrier")
+	_check(exits == 2 and returns == 1 and not (foe is PhysicsBody2D), "both original routes remain beside the new return and the Looper adds no collision barrier")
 	_main._on_route_requested(&"practice_room", &"from_high_street")
 	await _physics(4)
 	_check(_main.world_room_id == &"practice_room" and not _main.encounters.has(KEY), "leaving High Street does not require defeating the Looper")

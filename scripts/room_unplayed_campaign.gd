@@ -6,6 +6,7 @@ const AuditionerScript := preload("res://scripts/auditioner.gd")
 const TestPressingScript := preload("res://scripts/test_pressing.gd")
 const ListeningPostScript := preload("res://scripts/listening_post.gd")
 const EchoStationScript := preload("res://scripts/echo_station.gd")
+const ProgressionScript := preload("res://scripts/progression_state.gd")
 const OVERLOOK_POSITION := Vector2(980, 384)
 const OVERLOOK_LEDGE_POSITION := Vector2(980, 426)
 const OVERLOOK_LEDGE_SIZE := Vector2(270, 32)
@@ -83,6 +84,7 @@ class CampaignPressing extends TestPressingScript:
 		queue_redraw()
 
 var discoveries: RefCounted
+var exploration: RefCounted
 var session_outcomes: Dictionary = {}
 var objective_label := "Follow the rooms beneath the seal."
 
@@ -137,6 +139,7 @@ func configure(id: StringName) -> void:
 			register_entry(&"from_verse_hall", spawn_pos)
 			register_entry(&"from_deep_gallery", Vector2(200, 454))
 			register_entry(&"from_verse_warren_s", Vector2(1480, 834))
+			register_entry(&"from_high_street", Vector2(1390, 454))
 		&"verse_warren_s":
 			band_name = "Auditioner Warren — South"
 			band_desc = "Two old bars, still keeping time."
@@ -159,6 +162,7 @@ func configure(id: StringName) -> void:
 			spawn_pos = Vector2(1680, 454)
 			register_entry(&"from_verse_warren_n", spawn_pos)
 			register_entry(&"from_verse_warren_s", Vector2(1680, 834))
+			register_entry(&"from_headshell", Vector2(1020, 834))
 
 func _ready() -> void:
 	match room_id:
@@ -237,7 +241,7 @@ func _build_north() -> void:
 	_auditioner(Vector2(1280, 847), &"lower_voice", "LowerVoice")
 	_echo_station(RECEIVER_POSITION, &"restore_warren", "WarrenReceiver")
 	sign_label(Vector2(1220, 160), "TWO WAYS THROUGH\nThe Gallery lies across the upper walk.\nThe lower door joins the southern road.")
-	sign_label(Vector2(60, 585), "ROOM ENOUGH\nA patient voice waits below.\nYou can listen, or leave it its space.")
+	sign_label(Vector2(60, 540), "ROOM ENOUGH\nA patient voice waits below.\nYou can listen, or leave it its space.")
 
 func _build_south() -> void:
 	_floor(1850, 760)
@@ -329,6 +333,7 @@ func _echo_station(pos: Vector2, action: StringName, station_name: String) -> vo
 	station.position = pos
 	station.action = action
 	station.discoveries = discoveries
+	station.progression = progression
 	station.ink = ink
 	station.stock = bg_color
 	station.requested.connect(_on_discovery_requested)
@@ -368,9 +373,17 @@ func refresh_discoveries() -> void:
 			if held == "recorded":
 				objective_label = "The horn on the western terrace has been waiting for your phrase."
 			elif held == "restored":
-				objective_label = "The Warren has its answer. The little audience will sing it again."
+				objective_label = "A Refrain waits on the floor below the western receiver."
+				if progression != null and progression.has_refrain(ProgressionScript.Refrain.JUMP_CUT):
+					objective_label = "Turn the wax on the upper eastern walk. A return is pressed into its back."
+				if exploration != null and exploration.is_open(&"warren_return"):
+					objective_label = "The upper eastern return leads to High Street. It stays open on both sides."
 		&"the_landing":
 			if slip:
 				objective_label = "The surveyor marked a voice above the Stalls. Carry your borrowed breath home."
 	if held == "restored" and room_id in [&"deep_gallery", &"verse_warren_s"]:
-		objective_label = "The Warren has its answer. Visit the northern alcove, or follow the road home."
+		objective_label = "A Refrain waits below the northern receiver. Follow the answered phrase."
+		if progression != null and progression.has_refrain(ProgressionScript.Refrain.JUMP_CUT):
+			objective_label = "Turn the wax on the Deep Gallery's lower floor. A second return waits there."
+		if exploration != null and exploration.is_open(&"gallery_return"):
+			objective_label = "The Deep Gallery's lower return leads to the Headshell. The road home is open."
