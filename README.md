@@ -1,5 +1,7 @@
 # DEAD WAX — The Label, Overture & Unplayed
 
+[![Godot checks](https://github.com/GaBe141/DeadWax/actions/workflows/godot-checks.yml/badge.svg)](https://github.com/GaBe141/DeadWax/actions/workflows/godot-checks.yml)
+
 A playable journey through 21 authored rooms about a stylus, a street of worn records,
 and the song still playing underneath it. Start at the Headshell, count in
 the Descent Gate, then follow the Overture through wind-played grooves,
@@ -27,14 +29,14 @@ Everything is built from code at runtime, so an empty editor viewport is
 expected. The Label, Overture, and first stretch of the Unplayed are authored;
 the remainder of the planned 53-room world is still development scaffolding.
 
-On the Dead Wax Wyse, the lightweight project commands are:
+The lightweight project commands are:
 
 ```text
 .\deadwax.cmd doctor  check the local toolchain and repository
 .\deadwax.cmd play    play the campaign with a local runtime log
 .\deadwax.cmd dev     open the original mechanics rooms and planned-world tools
 .\deadwax.cmd editor  open the project in Godot
-.\deadwax.cmd check   import resources; run all thirty-eight native test suites
+.\deadwax.cmd check   import resources; run all forty-two native test suites
 .\deadwax.cmd vibe    start Mistral Vibe in this repository
 ```
 
