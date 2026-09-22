@@ -40,6 +40,11 @@ The lightweight project commands are:
 .\deadwax.cmd vibe    start Mistral Vibe in this repository
 ```
 
+On Linux, `bash tools/install-godot.sh` installs Godot 4.7.1, and
+`bash tools/deadwax.sh doctor`, `check`, or `test` runs the matching
+toolchain and suite commands. Cursor cloud agents install that engine from
+`.cursor/environment.json`.
+
 See `PLAYTEST.md` for campaign and mechanics playtests, and `ROUTING.md`
 for the authored route and development atlases.
 
