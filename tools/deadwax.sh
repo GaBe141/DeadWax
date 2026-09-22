@@ -86,11 +86,14 @@ show_help() {
 Dead Wax developer commands (Linux)
 
   bash tools/deadwax.sh doctor  Check Godot, Git, and repository state.
+  bash tools/deadwax.sh play    Run the campaign.
+  bash tools/deadwax.sh dev     Open the mechanics rooms and planned-world tools.
+  bash tools/deadwax.sh editor  Open the project in the Godot editor.
   bash tools/deadwax.sh check   Import resources, then run all native test suites.
   bash tools/deadwax.sh test    Run all native test suites without importing.
 
-Windows play, editor, dev, and vibe commands stay on deadwax.cmd.
-The DEADWAX_GODOT environment variable can override Godot discovery.
+Mistral Vibe stays on deadwax.cmd. The DEADWAX_GODOT environment variable
+can override Godot discovery.
 EOF
 }
 
@@ -124,6 +127,24 @@ case "$ACTION" in
 		for suite in "${SUITES[@]}"; do
 			run_godot "$godot" --headless --path "$ROOT" --script "res://tests/${suite}.gd"
 		done
+		;;
+	play)
+		godot="$(resolve_godot)"
+		version="$(require_godot_series "$godot")"
+		echo "Starting Dead Wax with Godot $version"
+		exec "$godot" --path "$ROOT"
+		;;
+	dev)
+		godot="$(resolve_godot)"
+		version="$(require_godot_series "$godot")"
+		echo "Opening the development rooms with Godot $version"
+		exec "$godot" --path "$ROOT" -- --dev-rooms
+		;;
+	editor)
+		godot="$(resolve_godot)"
+		version="$(require_godot_series "$godot")"
+		echo "Opening Dead Wax in Godot $version"
+		exec "$godot" --editor --path "$ROOT"
 		;;
 	*)
 		echo "Unknown action '$ACTION'. Run: bash tools/deadwax.sh help" >&2

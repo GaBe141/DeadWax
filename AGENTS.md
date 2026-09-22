@@ -80,7 +80,7 @@
 ## Cursor Cloud specific instructions
 
 - The build install command is `bash tools/install-godot.sh`. It puts Godot 4.7.1 at `/usr/local/bin/godot`. Headless import and the native suites do not need a display.
-- Use `bash tools/deadwax.sh check` before handing off. `deadwax.cmd` remains the Windows play, editor, and dev entry point.
+- Use `bash tools/deadwax.sh check` before handing off. `bash tools/deadwax.sh play`, `dev`, and `editor` open the campaign, the mechanics rooms, and the Godot editor. `deadwax.cmd` remains the Windows entry point, including Vibe.
 - `.godot/` is generated import cache and stays untracked.
 
 ## Handoff caveats
