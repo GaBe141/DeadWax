@@ -43,6 +43,29 @@ var ink := Color(0.14, 0.13, 0.12)
 ## their A-side and never their B-side: turning over is a presentation of the
 ## same room, so nothing here is duplicated per side.
 var side := PressingScript.Side.A
+var cinematic_mode := false
+
+## Main opts authored campaign rooms into the quiet presentation. Development
+## rooms keep their full guidance. Later earned fixtures inherit the same mode.
+func set_cinematic_mode(enabled: bool) -> void:
+	cinematic_mode = enabled
+	if not child_entered_tree.is_connected(_on_presentation_child):
+		child_entered_tree.connect(_on_presentation_child)
+	for note in _notes:
+		if is_instance_valid(note): note.visible = not enabled
+	for child in get_children():
+		if child.has_method("set_cinematic_mode"):
+			child.call("set_cinematic_mode", enabled)
+
+func _on_presentation_child(child: Node) -> void:
+	call_deferred("_settle_presentation_child", child)
+
+func _settle_presentation_child(child: Variant) -> void:
+	if not is_instance_valid(child) or child.get_parent() != self: return
+	if child.has_method("set_cinematic_mode"):
+		child.call("set_cinematic_mode", cinematic_mode)
+	if child is Control and child in _notes:
+		child.visible = not cinematic_mode
 
 var _skins: Array[ColorRect] = []
 var _notes: Array[Control] = []
@@ -253,5 +276,6 @@ func sign_label(pos: Vector2, text: String) -> void:
 		body, _solid_color(), _stock_color(), PressScript.PINK, PressScript.SIZE_BODY, heading
 	)
 	note.position = pos
+	note.visible = not cinematic_mode
 	_notes.append(note)
 	add_child(note)

@@ -13,6 +13,7 @@ var progression: RefCounted
 var refrain := ProgressionScript.Refrain.GATHER
 var ink := Color("302631")
 var stock := Color("e8d4c3")
+var cinematic_mode := false
 var _collected := false
 var _float_t := 0.0
 var _near := false
@@ -27,6 +28,7 @@ func _ready() -> void:
 		return
 	_label = Press.card(ProgressionScript.refrain_label(refrain).to_upper(), ink, stock, Press.PINK, Press.SIZE_HEADING, "REFRAIN")
 	_label.position = Vector2(-_label.size.x * 0.5, -118)
+	_label.visible = not cinematic_mode
 	add_child(_label)
 
 func _process(delta: float) -> void:
@@ -57,6 +59,16 @@ func collect() -> void:
 func set_reduced_motion(enabled: bool) -> void:
 	_reduced_motion = enabled
 	queue_redraw()
+
+func set_cinematic_mode(enabled: bool) -> void:
+	cinematic_mode = enabled
+	if _label != null:
+		_label.visible = not cinematic_mode
+
+func cinematic_snapshot() -> Dictionary:
+	if _collected or _is_unlocked():
+		return {}
+	return {"text": ProgressionScript.refrain_label(refrain), "radius": COLLECT_RADIUS, "priority": 20, "grounded": false}
 
 func reink(next_ink: Color, next_stock: Color) -> void:
 	ink = next_ink

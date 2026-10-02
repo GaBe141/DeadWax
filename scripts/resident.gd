@@ -63,6 +63,13 @@ func try_listen() -> bool:
 	queue_redraw()
 	return true
 
+func cinematic_snapshot() -> Dictionary:
+	var snapshot := super.cinematic_snapshot()
+	snapshot.text = "E / Y · Talk"
+	if kind == &"bootlegger":
+		snapshot.text = "E / Y · Talk    B / D-pad Up · Browse"
+	return snapshot
+
 func on_player_strike(pos: Vector2, _big: bool) -> void:
 	if get_tree().paused or global_position.distance_to(pos) > STARTLE_RANGE:
 		return
@@ -84,6 +91,7 @@ func _refresh_story() -> void:
 		return
 	_story_key = key
 	_line = -1
+	_dialogue_remaining = 0.0
 	if kind == &"tick":
 		heading = "TICK"
 		if key == "opened":

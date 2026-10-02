@@ -1,4 +1,4 @@
-# DEAD WAX — Lost Pressings
+# DEAD WAX — Quiet Wax
 
 [![Godot checks](https://github.com/GaBe141/DeadWax/actions/workflows/godot-checks.yml/badge.svg)](https://github.com/GaBe141/DeadWax/actions/workflows/godot-checks.yml)
 
@@ -8,7 +8,15 @@ the Descent Gate, then follow the Overture through wind-played grooves,
 Addie's doorway, HUSH's duel, and the Tonearm. How you answer the Tonearm
 changes what waits at home and opens the way into the six rooms beneath its seal.
 
-The **Lost Pressings** update adds three guaranteed equipment finds to the
+The campaign now leaves more room for the world: ambient tutorial and sign
+plates are kept in **Book → Journey → This Place**. Room names appear for
+3.6 seconds on arrival, then fade. Small health diamonds, a quiet noise line,
+and the B-side's remaining-time ring replace the permanent status paragraphs.
+One nearby action cue appears at a time; deliberate E / Y conversations use
+brief subtitles. The Book and pause menu keep the full guidance, while Move
+practice and development rooms retain their detailed readouts.
+
+The **Lost Pressings** equipment finds add three guaranteed rewards to the
 return journey: a cabinet beyond the Stalls' groove, a high balcony in Horn
 Plaza, and a sleeve on Addie's reverse face. Existing saves can collect them.
 The Book carries their leads, and the folded map counts finds by region.
@@ -41,7 +49,7 @@ The lightweight project commands are:
 .\deadwax.cmd play    play the campaign with a local runtime log
 .\deadwax.cmd dev     open the original mechanics rooms and planned-world tools
 .\deadwax.cmd editor  open the project in Godot
-.\deadwax.cmd check   import resources; run all forty-five native test suites
+.\deadwax.cmd check   import resources; run all forty-nine native test suites
 .\deadwax.cmd vibe    start Mistral Vibe in this repository
 ```
 
@@ -72,7 +80,7 @@ The first Yard voice carries a half-remembered name. Stand near it with
 **Hood** raised for its two notes, then lower Hood and begin holding **Set**
 in the silence. One answer is enough. The voice gives you time and will try
 again; holding Set before the phrase does not answer it. Visible note marks
-and a changing card carry the cues with sound off or Reduced motion on.
+and a short nearby cue carry the exchange with sound off or Reduced motion on.
 
 Hearing it completes a warm engraving where it stood. Stay nearby and its
 finished phrase returns quietly; shattering leaves a fractured impression.
@@ -177,7 +185,7 @@ an ordinary jump. Return with Gather, jump beside its left edge, and spend
 your breath to land above the shutters. A small voice is waiting there.
 
 Stand beside it and hold Hood to hear three notes. In the silence, lower Hood
-and press and hold Set. Answer twice; visible note marks and a changing card
+and press and hold Set. Answer twice; visible note marks and a short nearby cue
 carry the same cues as the sound. The voice opens a passage between the loft
 and the Worn Gallery, and its melody joins the Horn Plaza and Headshell when
 you return. The folded map includes this second dashed shortcut.
@@ -213,8 +221,8 @@ shattered Addie stays gone. Existing saves carry these choices forward.
 ## Shine and the stall
 
 Hold the Hood beside worn wax to polish it and earn **1 Shine**. Each of the
-campaign's nine patches pays once, with a small `+1 SHINE` impression when
-collected. Your balance appears in the HUD, the Book, and the stall.
+campaign's nine patches pays once, with a short `+1 Shine` receipt when
+collected. Your full balance appears in the Book and the stall.
 
 Stand beside the Bootlegger and press **B / D-pad Up** to browse. E/Y still
 talks to him. Choose a piece, then use its Buy button; browsing pauses the
@@ -376,10 +384,12 @@ attack refinements below also wait for their discoveries.
 - **R** respawn at the current room entry.
 
 After collecting the folded map, **M / D-pad Down** opens it while exploring.
-The Book also has an **Open map** button. In the Book, keyboard M opens the map;
+The Book also has an **Open map** button. **Journey → This Place** holds the
+current room's objective and printed notes; reading it grants no moves or items.
+In the Book, keyboard M opens the map;
 the controller D-pad retains its usual selection controls.
 Inside the Book, **Tab / Shift+Tab** or **LB / RB** changes pages. **PgUp /
-PgDn**, the mouse wheel, or the right stick scrolls equipment and bestiary notes.
+PgDn**, the mouse wheel, or the right stick scrolls Journey, equipment, and bestiary notes.
 During exploration, Tab's room cycling and G remain exclusive to the opt-in
 development rooms below; there M continues to switch development atlases.
 
@@ -393,8 +403,9 @@ Before finding the chain, every attack is a single Tap. After recovering
 650 ms to keep the chain; a fourth begins another Tap. Each stroke has its own
 pose, ink impression, and sound pitch. Accent uses the existing stronger hit
 against vulnerable foes without increasing reach, launch speed, or the parry
-window. Its strength does not stack with an on-beat groove strike. The three
-marks at the top right show the current stroke and remaining **LINK TIME**.
+window. Its strength does not stack with an on-beat groove strike. In **Move
+practice** and development rooms, the three marks at the top right show the
+current stroke and remaining **LINK TIME**.
 The input line shows **RECOVERING**, **J / X · PRESS**, or **QUEUED** separately
 from that chain timer. An early press briefly shows **EARLY · WAIT**; a queued
 press executes once when recovery ends.
@@ -629,15 +640,16 @@ Godot GL Compatibility; the paintings introduce no runtime dependencies.
 
 Menus now reveal their type in short impressions, with moving ink accents for
 mouse and controller focus. The sleeve's record turns gently while its label
-stays upright. The Book and stall respond to selections and purchase results;
-room headings, feedback, and Shine receipts animate on the HUD. Text and
-balances update immediately, and closing a panel never waits for animation.
+stays upright. The Book and stall respond to selections and purchase results.
+Campaign room names fade on arrival, and short receipts acknowledge discoveries
+and Shine. Detailed HUD impressions remain available in practice and development.
+Text and balances update immediately, and closing a panel never waits for animation.
 Reduced motion settles interface effects immediately. Open menus keep their
 own animation while gameplay and the HUD remain paused underneath.
 
 ## Development checks
 
-Run `.\deadwax.cmd check` before committing. It imports resources and runs 45
+Run `.\deadwax.cmd check` before committing. It imports resources and runs 49
 dependency-free native suites, including smoke, save-store, campaign, Tonearm, Overture,
 sprite-animation, residents, economy-state, economy integration, scenery,
 lighting, attack-feel, GUI-animation, and map-item suites. These cover the original combat and
@@ -682,3 +694,7 @@ return travel, safe arrivals, failed-write rollback, and practice isolation.
 The Lost Pressings suites cover deliberate one-time equipment claims, saved
 ownership and fitting, rollback, unchanged trial pools, physically earned
 balcony access, separate interaction reaches, and Book/map readability.
+The cinematic suites cover presentation-only snapshots, one nearby cue,
+deliberate subtitles, hidden world plates, live earned fixtures, room-note
+refresh, compact-window focus and scrolling, pause and Reduced motion,
+save-error visibility, and preserved practice/development guidance.

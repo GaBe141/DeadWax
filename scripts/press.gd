@@ -56,6 +56,9 @@ static func draw_lost_pressing(canvas: CanvasItem, state: Dictionary, ink: Color
 static func draw_ability_pickup(canvas: CanvasItem, state: Dictionary, ink: Color, stock: Color) -> void:
 	preload("res://scripts/press_ability.gd").draw(canvas, state, ink, stock)
 
+static func draw_cinematic(canvas: CanvasItem, extent: Vector2, state: Dictionary, ink: Color, accent: Color) -> void:
+	preload("res://scripts/press_cinematic.gd").draw(canvas, extent, state, ink, accent)
+
 # -- plate defaults -----------------------------------------------------------
 const PLATE_BITE := 2.4
 const PLATE_TOOTH := 0.16
@@ -351,6 +354,8 @@ static func card(
 ) -> Control:
 	var root := Control.new()
 	root.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	root.set_meta("card_heading", heading)
+	root.set_meta("card_body", text)
 
 	var body := Label.new()
 	body.text = text

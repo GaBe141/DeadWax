@@ -14,6 +14,7 @@ var session_outcomes: Dictionary = {}
 var definition: Dictionary = {}
 var ink := Color("e6c58c")
 var stock := Color("1b353b")
+var cinematic_mode := false
 var _clock := 0.0
 var _near := false
 var _reduced_motion := false
@@ -127,7 +128,18 @@ func _refresh_card() -> void:
 	var min_x := (12.0 - canvas_transform.origin.x) / canvas_scale
 	var max_x := (get_viewport_rect().size.x - 12.0 - canvas_transform.origin.x) / canvas_scale - _card.size.x
 	_card.position.x = clampf(-_card.size.x * 0.5, min_x, maxf(min_x, max_x))
-	_card.visible = _near
+	_card.visible = _near and not cinematic_mode
+
+func set_cinematic_mode(enabled: bool) -> void:
+	cinematic_mode = enabled
+	if _card != null:
+		_card.visible = _near and not cinematic_mode
+
+func cinematic_snapshot() -> Dictionary:
+	if _retired or _is_owned():
+		return {}
+	return {"text": "E / Y · Recover %s" % String(definition.get("name", ability)) if is_available() else "Sealed sleeve",
+		"radius": INTERACT_RADIUS, "priority": 20}
 
 func set_reduced_motion(enabled: bool) -> void:
 	_reduced_motion = enabled

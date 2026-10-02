@@ -87,6 +87,7 @@ var hunt_id: StringName = &"label"
 var abilities: RefCounted
 var ink := Color("ddc3a5")
 var stock := Color("2b2638")
+var cinematic_mode := false
 var _state: StringName = &"idle"
 var _wave := 0
 var _warning := 0.0
@@ -309,7 +310,29 @@ func _refresh_card() -> void:
 		_card.material = Press.unshaded_material()
 		_card.z_index = 22
 		add_child(_card)
-	_card.visible = _near or _state == &"active"
+	_card.visible = (_near or _state == &"active") and not cinematic_mode
+
+func set_cinematic_mode(enabled: bool) -> void:
+	cinematic_mode = enabled
+	if _card != null:
+		_card.visible = (_near or _state == &"active") and not cinematic_mode
+
+func cinematic_snapshot() -> Dictionary:
+	if not PROFILES.has(hunt_id):
+		return {}
+	var text := ""
+	var priority := 20
+	if _state == &"active":
+		text = "Wave %d / 3 · Forming" % _wave if _warning > 0.0 else "Wave %d / 3 · %d remain" % [_wave, _copies.size()]
+		return {"text": text, "radius": INTERACT_RADIUS, "priority": 40,
+			"presentation_bounds": trial_bounds(), "grounded": false}
+	elif _state == &"claim":
+		text = "E / Y · Retry claim" if _save_failed else "E / Y · Collect pressing"
+	elif _has_trial_move():
+		text = "E / Y · Begin Echo Trial"
+	else:
+		text = "A needle is needed"
+	return {"text": text, "radius": INTERACT_RADIUS, "priority": priority}
 
 func snapshot() -> Dictionary:
 	return {"hunt": hunt_id, "state": _state, "wave": _wave, "remaining": _copies.size(), "warning": _warning,

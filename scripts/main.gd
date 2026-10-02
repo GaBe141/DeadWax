@@ -39,6 +39,7 @@ const MapMenuScript := preload("res://scripts/map_menu.gd")
 const OpeningScript := preload("res://scripts/opening_cutscene.gd")
 const PracticeScript := preload("res://scripts/room_move_practice.gd")
 const ComboReadoutScript := preload("res://scripts/combo_readout.gd")
+const CinematicHudScript := preload("res://scripts/cinematic_hud.gd")
 
 const MARGIN := 22.0
 const NEEDLE_HEALTH := 3
@@ -107,6 +108,7 @@ var paper: ColorRect
 var crackle_bar: ColorRect
 var hud_motion: Node
 var combo_readout: Control
+var cinematic_hud: Control
 var _fb_t := 0.0
 var _shake := 0.0
 var _hits_taken := 0
@@ -122,7 +124,7 @@ func _ready() -> void:
 	randomize()
 	development_mode = development_mode or (OS.is_debug_build() and "--dev-rooms" in OS.get_cmdline_user_args())
 	if not development_mode and DisplayServer.get_name() != "headless":
-		DisplayServer.window_set_title("Dead Wax — Lost Pressings")
+		DisplayServer.window_set_title("Dead Wax — Quiet Wax")
 	_setup_input()
 	progression = ProgressionScript.new()
 	abilities = AbilitiesScript.new()
@@ -292,6 +294,58 @@ func _process(delta: float) -> void:
 		controls_note.text = _save_message if _save_message_time > 0 else _controls_text()
 		if player.shine != _last_saved_shine:
 			_queue_save()
+	_update_cinematic_presentation()
+
+func _cinematic_campaign() -> bool:
+	return not development_mode and not practice_mode
+
+func _update_place_notes() -> void:
+	if inventory == null or room == null: return
+	inventory.place_name = String(room.band_name)
+	inventory.place_objective = String(room.get("objective_label")) if "objective_label" in room else ""
+	var notes: Array[Dictionary] = []
+	for note in room._notes:
+		if not is_instance_valid(note): continue
+		notes.append({"heading": String(note.get_meta("card_heading", "")), "body": String(note.get_meta("card_body", ""))})
+	inventory.place_notes = notes
+
+func _cinematic_focus() -> Dictionary:
+	var selected: Dictionary = {}
+	var best_priority := -1
+	var best_distance := INF
+	for source in room.get_children():
+		if not source is Node2D or not source.visible or source.is_queued_for_deletion() or not source.has_method("cinematic_snapshot"):
+			continue
+		var snapshot: Dictionary = source.call("cinematic_snapshot")
+		if snapshot.is_empty() or (String(snapshot.get("text", "")).is_empty() and String(snapshot.get("dialogue", "")).is_empty()): continue
+		if bool(snapshot.get("grounded", true)) and not player.is_on_floor(): continue
+		var distance: float = player.global_position.distance_to(source.global_position)
+		var in_reach := distance <= float(snapshot.get("radius", 0))
+		if source.get_script() == TrialScript and snapshot.get("presentation_bounds") is Rect2:
+			in_reach = snapshot.presentation_bounds.has_point(player.global_position)
+		if not in_reach: continue
+		var priority := int(snapshot.get("priority", 20))
+		if priority > best_priority or (priority == best_priority and distance < best_distance):
+			selected = snapshot
+			best_priority = priority
+			best_distance = distance
+	# The deliberately stripped opening still needs a usable first lead. This
+	# quiet line disappears as soon as the nearby Walk sleeve becomes reachable.
+	if selected.is_empty() and world_room_id == &"headshell" and not abilities.has_ability(&"walk"):
+		return {"text": "Tap left toward the cradle. Your feet are waiting."}
+	return selected
+
+func _update_cinematic_presentation() -> void:
+	var cinematic := _cinematic_campaign()
+	for control in [masthead, title, title_rule, subtitle, footer_stock, status, controls_note, crackle_bar, feedback, hud_motion.shine_notice]:
+		control.visible = not cinematic
+	combo_readout.visible = not cinematic
+	cinematic_hud.visible = cinematic and _has_session
+	_update_place_notes()
+	if not cinematic or not _has_session: return
+	cinematic_hud.set_status({"health": _health, "max_health": _max_health(), "noise": player.noise,
+		"b_side": pressing.on_b_side(), "runtime": pressing.runtime_ratio()})
+	cinematic_hud.set_focus(_cinematic_focus())
 
 func _controls_text() -> String:
 	if practice_mode:
@@ -391,6 +445,7 @@ func _swap_room(next_room: Node2D, entry_id: StringName) -> void:
 	room.call("lay_backdrop", room.cam_limits)
 	room.call("apply_side", pressing.side)
 	room.call("set_scenery_motion", bool(_settings.reduced_motion))
+	room.call("set_cinematic_mode", _cinematic_campaign())
 	_apply_room_air()
 	_sync_home_song()
 
@@ -429,6 +484,8 @@ func _swap_room(next_room: Node2D, entry_id: StringName) -> void:
 		_queue_save()
 	PressScript.folio_panel(masthead, title.get_theme_color("font_color"), Color(masthead.color, 1.0))
 	hud_motion.present_room()
+	_update_cinematic_presentation()
+	if _cinematic_campaign(): cinematic_hud.present_area(String(room.band_name))
 
 func _wire_room() -> void:
 	if room == null:
@@ -527,12 +584,16 @@ func _persist_session() -> bool:
 		"collection": collection.snapshot(),
 	}
 	var saved := bool(save_store.call("save_game", data))
+	if saved and _save_failed and cinematic_hud != null:
+		cinematic_hud.clear_save_error()
 	if saved and _save_failed and game_menu != null:
 		game_menu.call("set_notice", "")
 	_save_failed = not saved
 	_last_saved_shine = player.shine
 	_save_message = "PRESSING SAVED" if saved else "COULD NOT SAVE · try again from the pause menu"
 	_save_message_time = 2.0 if saved else 8.0
+	if not saved and _cinematic_campaign() and cinematic_hud != null:
+		cinematic_hud.present_notice("Could not save. Try again from the pause menu.", 8.0)
 	if not saved and game_menu != null and game_menu.is_open:
 		game_menu.call("set_notice", "Could not save your pressing. Resume and try again before leaving.")
 	return saved
@@ -813,6 +874,7 @@ func _leave_practice() -> void:
 	_apply_purchases()
 	_reset_player()
 	hud_motion.reset_transients()
+	cinematic_hud.reset_transients()
 	combo_readout.practice_mode = false
 	combo_readout.set_snapshot(player.combo_snapshot())
 	audio.set_home_song(false)
@@ -866,6 +928,8 @@ func _show_chapter_ending() -> void:
 	_persist_session()
 
 func _on_inventory_opened() -> void:
+	_update_place_notes()
+	inventory.call("_refresh")
 	_cancel_discovery_attempts()
 	audio.set_crackle(0.0)
 	_queue_save()
@@ -997,6 +1061,7 @@ func _purchase_item(item_id: StringName) -> bool:
 
 func _on_shine_earned(amount: int) -> void:
 	hud_motion.show_shine(amount)
+	if _cinematic_campaign(): cinematic_hud.present_notice("+%d Shine" % amount, 2.0)
 	_queue_save()
 
 func _load_settings() -> void:
@@ -1027,7 +1092,7 @@ func _apply_settings() -> void:
 	AudioServer.set_bus_volume_db(0, linear_to_db(maxf(0.001, float(_settings.volume))))
 	AudioServer.set_bus_mute(0, float(_settings.volume) <= 0.0)
 	camera.position_smoothing_enabled = not bool(_settings.reduced_motion)
-	for interface in [game_menu, inventory, shop, map_menu, hud_motion, opening, combo_readout]:
+	for interface in [game_menu, inventory, shop, map_menu, hud_motion, opening, combo_readout, cinematic_hud]:
 		if interface != null:
 			interface.call("set_reduced_motion", bool(_settings.reduced_motion))
 	if room != null:
@@ -1085,6 +1150,7 @@ func _apply_hud_palette(stock: Color) -> void:
 	PressScript.folio_panel(masthead, text, panel_stock)
 	PressScript.folio_panel(footer_stock, text, panel_stock)
 	combo_readout.set_palette(text, stock)
+	if cinematic_hud != null: cinematic_hud.set_palette(PressScript.CREAM, PressScript.BRASS)
 	feedback.add_theme_color_override(
 		"font_outline_color", Color(stock.r, stock.g, stock.b, 0.9)
 	)
@@ -1164,6 +1230,10 @@ func _respawn() -> void:
 	if practice_mode:
 		player.set("_strike_cd", 0.0)
 	hud_motion.reset_transients()
+	cinematic_hud.reset_transients()
+	for source in room.get_children():
+		if source.has_method("cancel_dialogue"):
+			source.call("cancel_dialogue")
 	if not development_mode:
 		player.set("_stagger", 0.0)
 		player.set("_buffer", 0.0)
@@ -1658,6 +1728,7 @@ func _on_technique_discovered(technique: int) -> void:
 	_queue_save()
 
 func _word_splatter(pos: Vector2) -> void:
+	if _cinematic_campaign(): return
 	var words := ["BRIGHT", "LY", "OH", "!!"]
 	for i in words.size():
 		var l := Label.new()
@@ -1677,6 +1748,8 @@ func _flash(text: String) -> void:
 	feedback.modulate.a = 1.0
 	_fb_t = 1.4
 	hud_motion.present_feedback()
+	if _cinematic_campaign() and text not in ["ON BEAT !!", "RUNG BACK !!"]:
+		cinematic_hud.present_notice(text)
 
 # -- hud ----------------------------------------------------------------------
 
@@ -1780,6 +1853,10 @@ func _build_hud() -> void:
 	hud_motion.status = status
 	hud_motion.shine_notice = shine_notice
 	layer.add_child(hud_motion)
+	cinematic_hud = CinematicHudScript.new()
+	cinematic_hud.name = "CinematicHud"
+	layer.add_child(cinematic_hud)
+	cinematic_hud.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 
 # -- input --------------------------------------------------------------------
 

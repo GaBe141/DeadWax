@@ -39,6 +39,11 @@ var map_state: RefCounted
 var discoveries: RefCounted
 var collection: RefCounted
 var exploration: RefCounted
+## Main supplies the current room's printed notes when The Book opens.
+## These are presentation snapshots, never persistent discoveries or permissions.
+var place_name := ""
+var place_objective := ""
+var place_notes: Array[Dictionary] = []
 var can_open: Callable
 
 var overlay: Control
@@ -58,6 +63,7 @@ var _reduced_motion := false
 var _entrance_parts: Array[Control] = []
 var _detail_stack: VBoxContainer
 var _map_button: Button
+var _place_button: Button
 var _map_note: Label
 var _discovery_buttons: Dictionary = {}
 var _journey: ScrollContainer
@@ -377,6 +383,7 @@ func _build_menu() -> void:
 	map_row.add_child(map_copy)
 	map_copy.add_child(_make_label("FOLDED MAP", 18, PAPER))
 	_map_note = _make_label("", 13, PAPER_DARK)
+	_map_note.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	map_copy.add_child(_map_note)
 	_map_button = Button.new()
 	_map_button.name = "OpenMap"
@@ -390,6 +397,21 @@ func _build_menu() -> void:
 	_map_button.pressed.connect(_request_map)
 	map_row.add_child(_map_button)
 	_motion.bind_button(_map_button, PINK)
+	_place_button = Button.new()
+	_place_button.name = "ThisPlace"
+	_place_button.text = "This Place"
+	_place_button.custom_minimum_size = Vector2(150, 44)
+	_place_button.focus_mode = Control.FOCUS_ALL
+	_place_button.add_theme_font_override("font", PressScript.BodyFont)
+	_place_button.add_theme_font_size_override("font_size", PressScript.SIZE_SMALL)
+	for key in ["font_color", "font_hover_color", "font_focus_color", "font_pressed_color"]:
+		_place_button.add_theme_color_override(key, PAPER)
+	_place_button.focus_entered.connect(_select_slot.bind(&"this_place"))
+	_place_button.pressed.connect(_select_slot.bind(&"this_place"))
+	map_row.add_child(_place_button)
+	_slot_buttons[&"this_place"] = _place_button
+	_apply_card_style(_place_button, true)
+	_motion.bind_button(_place_button, PINK)
 
 	var content := HBoxContainer.new()
 	content.add_theme_constant_override("separation", 18)
@@ -536,6 +558,8 @@ func _refresh() -> void:
 		button.text = _slot_card_text(slot, filled)
 		_apply_card_style(button, filled)
 	_select_slot(_selected_slot, false)
+	if _selected_slot == &"this_place":
+		_journey_notes.scroll_vertical = 0
 	refresh_collection()
 
 func _refresh_map() -> void:
@@ -599,6 +623,8 @@ func _focus_selected() -> void:
 		button.grab_focus()
 
 func _slot_is_filled(slot: StringName) -> bool:
+	if slot == &"this_place":
+		return true
 	if _is_ability_slot(slot):
 		return abilities == null or bool(abilities.call("has_ability", String(slot)))
 	if slot == &"echo_spool":
@@ -628,6 +654,8 @@ func _slot_card_name(slot: StringName) -> String:
 	return "STRIKE CHAIN" if slot == &"combo" else _slot_name(slot)
 
 func _slot_state(slot: StringName, filled: bool) -> String:
+	if slot == &"this_place":
+		return "NOTES FROM HERE"
 	if slot == &"echo_spool" and filled:
 		match String(discoveries.snapshot().echo_spool):
 			"empty": return "EMPTY · A PHRASE TO FIND"
@@ -644,6 +672,8 @@ func _slot_state(slot: StringName, filled: bool) -> String:
 	return "HELD"
 
 func _slot_name(slot: StringName) -> String:
+	if slot == &"this_place":
+		return place_name.to_upper() if not place_name.is_empty() else "THIS PLACE"
 	if _is_ability_slot(slot):
 		return String(_ability_definition(slot).get("name", String(slot))).to_upper()
 	match slot:
@@ -658,6 +688,8 @@ func _slot_name(slot: StringName) -> String:
 	return "UNKNOWN"
 
 func _slot_kind(slot: StringName) -> String:
+	if slot == &"this_place":
+		return "THIS PLACE"
 	if slot in [&"echo_spool", &"survey_slip"]:
 		return "FOUND IN THE GROOVES"
 	if slot in MOVEMENT_SLOTS:
@@ -671,6 +703,8 @@ func _slot_kind(slot: StringName) -> String:
 	return "REFRAIN"
 
 func _slot_description(slot: StringName) -> String:
+	if slot == &"this_place":
+		return _place_description()
 	if slot == &"strike":
 		var text := "J / X · Strike nearby foes with a single Tap. Time your strike to parry an incoming blow."
 		if _slot_is_filled(&"combo"):
@@ -704,6 +738,18 @@ func _slot_description(slot: StringName) -> String:
 		&"jump-cut":
 			return "Press F / RB to turn the pressing over. You have twelve seconds on the B-side; time on A replenishes it. Seek the sealed returns in the North Warren and Deep Gallery. Turn over there, then press E / Y at the seal to open a permanent way home. " + _return_leads()
 	return "The groove has no readable note."
+
+func _place_description() -> String:
+	var sections: Array[String] = []
+	if not place_objective.strip_edges().is_empty():
+		sections.append(place_objective.strip_edges())
+	for note in place_notes:
+		var heading := String(note.get("heading", "")).strip_edges()
+		var body := String(note.get("body", "")).strip_edges()
+		if heading.is_empty() and body.is_empty():
+			continue
+		sections.append(heading + "\n" + body if not heading.is_empty() and not body.is_empty() else heading + body)
+	return "\n\n".join(sections) if not sections.is_empty() else "A quiet place. Its notes will be kept here."
 
 func _return_leads() -> String:
 	var north_open := exploration != null and bool(exploration.call("is_open", &"warren_return"))

@@ -19,6 +19,7 @@ var stock := Color("e8e0cc")
 var card_offset := Vector2(0, -80)
 var stage := Stage.WAITING
 var responses := 0
+var cinematic_mode := false
 var _elapsed := 0.0
 var _note := -1
 var _answer_started := false
@@ -125,6 +126,22 @@ func set_reduced_motion(enabled: bool) -> void:
 	_reduced_motion = enabled
 	queue_redraw()
 
+func set_cinematic_mode(enabled: bool) -> void:
+	cinematic_mode = enabled
+	if _card != null:
+		_card.visible = _near and not cinematic_mode
+
+func cinematic_snapshot() -> Dictionary:
+	var text := ""
+	match stage:
+		Stage.CALLING:
+			text = "Listen · %s" % ["One", "Two", "Three"][clampi(_note, 0, 2)]
+		Stage.ANSWERING:
+			text = "L / LB · Answer"
+		Stage.RESTING:
+			text = "K / B · Listen again"
+	return {"text": text, "radius": LISTEN_RADIUS, "priority": 80}
+
 func reink(next_ink: Color, next_stock: Color) -> void:
 	ink = next_ink
 	stock = next_stock
@@ -161,7 +178,7 @@ func _refresh_card() -> void:
 		_card.position = Vector2(-_card.size.x / 2.0, -_card.size.y) + card_offset
 		_card.material = Press.unshaded_material()
 		add_child(_card)
-	_card.visible = _near
+	_card.visible = _near and not cinematic_mode
 
 func animation_pose() -> Dictionary:
 	return {"clock": 0.0 if _reduced_motion else _motion, "stage": stage,

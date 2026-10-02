@@ -17,6 +17,7 @@ var progression: RefCounted
 var pressing: RefCounted
 var ink := Color("e6c58c")
 var stock := Color("1b353b")
+var cinematic_mode := false
 var _clock := 0.0
 var _near := false
 var _reduced_motion := false
@@ -133,8 +134,24 @@ func refresh() -> void:
 	var maximum := (get_viewport_rect().size - Vector2(12, 12) - canvas_transform.origin) / canvas_scale - _card.size
 	_card.position = Vector2(clampf(-_card.size.x * 0.5, minimum.x, maxf(minimum.x, maximum.x)),
 		clampf(-_card.size.y - 84.0, minimum.y, maxf(minimum.y, maximum.y)))
-	_card.visible = _near
+	_card.visible = _near and not cinematic_mode
 	queue_redraw()
+
+func set_cinematic_mode(enabled: bool) -> void:
+	cinematic_mode = enabled
+	if _card != null:
+		_card.visible = _near and not cinematic_mode
+
+func cinematic_snapshot() -> Dictionary:
+	if collection == null or is_collected():
+		return {}
+	var item := Catalog.item(String(definition.get("id", "")))
+	var text := "Sealed sleeve"
+	if is_available():
+		text = "E / Y · Take %s" % String(item.get("name", "Lost Pressing"))
+	elif String(definition.get("requirement", "")) == "jump_cut" and progression != null and progression.has_refrain(Progression.Refrain.JUMP_CUT):
+		text = "Turn the wax"
+	return {"text": text, "radius": INTERACT_RADIUS, "priority": 20}
 
 func reink(next_ink: Color, next_stock: Color) -> void:
 	ink = next_ink

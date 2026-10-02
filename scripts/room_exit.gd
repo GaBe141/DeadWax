@@ -20,6 +20,7 @@ var required_refrain := -1
 var blocked_message := ""
 var ink := INK
 var stock := CHALK
+var cinematic_mode := false
 
 var _label: Label
 var _near := false
@@ -61,6 +62,17 @@ func is_locked() -> bool:
 		)
 	)
 
+func set_cinematic_mode(enabled: bool) -> void:
+	cinematic_mode = enabled
+	if _label != null:
+		_label.visible = not cinematic_mode
+
+func cinematic_snapshot() -> Dictionary:
+	return {
+		"text": "Sealed" if is_locked() else "E / Y · Enter %s" % display_name,
+		"radius": ACTIVATE_RADIUS, "priority": 20,
+	}
+
 func try_enter() -> bool:
 	if is_locked():
 		var message := blocked_message
@@ -77,6 +89,7 @@ func try_enter() -> bool:
 func _refresh_label() -> void:
 	if _label == null:
 		return
+	_label.visible = not cinematic_mode
 	if is_locked():
 		_label.text = "%s\n%s — SEALED" % [display_name, _required_refrain_label()]
 	elif _near:

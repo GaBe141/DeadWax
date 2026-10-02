@@ -3,8 +3,8 @@
 Run `.\deadwax.cmd play` for the authored opening. Start with the chapter
 checklist, then use `.\deadwax.cmd dev` for focused mechanics regressions.
 Runtime errors are written to `.godot/deadwax-play.log`.
-Run `.\deadwax.cmd check` before handoff; the complete run contains 45 native
-suites, including Lost Pressings claims, world traversal, and Book/map suites.
+Run `.\deadwax.cmd check` before handoff; the complete run contains 49 native
+suites, including cinematic presentation, Lost Pressings, and Book/map suites.
 
 ## Session
 
@@ -15,7 +15,63 @@ suites, including Lost Pressings claims, world traversal, and Book/map suites.
 - Overall frame pacing: smooth / occasional hitch / frequent hitch
 - Audio clarity and latency:
 
-## Lost Pressings
+## Quiet Wax campaign presentation
+
+Verified on 2026-10-02 in native Godot 4.7.2 / GL Compatibility with private
+checkpoints: clear scenery, compact action cues, deliberate subtitles, Book
+This Place and How to play at 1280×720 and 960×540. Real E/R regression input
+also checks pickups, save failure visibility, recovery beside a listening
+post, and practice isolation. Captures: `.godot/cinematic-review/`.
+Full `deadwax.cmd check`: **49 suites, 11,834 checks, exit 0**, with no script
+errors. Log: `.godot/cinematic-full-check.log`. All 103 game scripts also
+passed parse-only checks. Existing non-fatal ObjectDB teardown warnings
+remain in older suites. Audio listening and physical-controller feel remain
+manual; native captures and scripted input do not establish those qualities.
+
+- [ ] At 1280×720 and 960×540, let an arrival settle. The room name fades after
+  3.6 seconds; permanent objectives, tutorial plates, floating interaction
+  cards, and the old status/footer paragraphs stay hidden. Platform edges,
+  characters, and combat tells remain clear.
+- [ ] Health uses small diamonds. Damage empties the correct diamond; recovery
+  restores the derived capacity. Noise appears as a small line when audible.
+  Jump-Cut's remaining-time ring appears only on B and agrees with forced return.
+- [ ] Approach pickups, doors, discoveries, voices, and trial presses. One short
+  nearby cue appears at a time, uses the real interaction reach, and clears
+  when leaving. The first Headshell lead still directs fresh left taps to Walk.
+- [ ] Stand beside Tick, the Bootlegger, and a fixed listening post. No dialogue
+  appears merely for approaching. Each deliberate grounded E / Y advances one
+  subtitle; it expires or clears when leaving. Bootlegger browsing correctly
+  shows keyboard B / controller D-pad Up.
+- [ ] Talk beside Verse Hall's North Warren arrival, then recover with R. The
+  old subtitle clears even though the arrival remains within speaking range;
+  a fresh E / Y can begin another conversation.
+- [ ] Open Book → Journey → This Place in several rooms. The current room title,
+  objective, and authored notes refresh on reopening; previous-room guidance
+  never lingers. PgUp/PgDn, mouse wheel, and right stick reach long notes. The
+  button remains reachable with keyboard and controller in the compact window.
+- [ ] Reading This Place changes no abilities, Refrains, Shine, collection,
+  encounters, or completion counts. Unknown Refrain names stay hidden in their
+  carrying slots; recovered move instructions remain available in the Book.
+- [ ] Resolve an encounter that reveals a new pickup, passage, or sign. Its
+  presentation immediately follows the quiet campaign mode, including after
+  Continue; reward input and gameplay timing stay unchanged.
+- [ ] Pause, Book, map, and stall freeze room-name, subtitle, and receipt clocks
+  with gameplay. Menus remain readable and responsive while paused. Closing
+  them resumes the same remaining presentation lifetime.
+- [ ] Enable Reduced motion. Arrival names and receipts remain readable as
+  stills and expire normally during play; nearby cues and functional combat,
+  call/answer, recording, and trial-warning marks continue to work.
+- [ ] With a private checkpoint only, simulate a failed write during a passage,
+  pickup, Book opening, and a conversation. A complete save-error notice must
+  be visible with usable retry guidance, even during dialogue. A later successful
+  save clears it. Never modify the real player's checkpoint for this check.
+- [ ] Move practice and development rooms retain their full tutorial/readout
+  guidance. Exit practice and Continue: cinematic campaign presentation and
+  the original campaign models return without an extra reward or save mutation.
+
+## Earlier Lost Pressings review — 2026-10-02
+
+This review records the presentation before Quiet Wax.
 
 Verified on 2026-10-02 in native Godot 4.7.2 / GL Compatibility with private
 checkpoints: all three actual E pickups and Continue, the earned Gather ascent
@@ -29,7 +85,9 @@ Audio listening and physical-controller feel remain manual.
 Full `deadwax.cmd check`: **45 suites, 11,652 checks, exit 0**, with no script
 errors. Log: `.godot/lost-pressings-full-check.log`. Existing non-fatal
 ObjectDB teardown warnings remain in older suites. GitHub's suite list now
-matches all 45 local suites.
+matched all 45 local suites at the time of this review.
+
+## Lost Pressings checks
 
 - Continue an existing checkpoint; its gear, trial pity, Offcuts, Shine and
   story choices should remain intact. Open Book → Equipment for three new
@@ -50,7 +108,7 @@ matches all 45 local suites.
   pressing available for another fresh input.
 - On the collected map, Label has two Lost Pressings and Overture one.
   Counts refresh when reopening; room names remain hidden until visited.
-- At 960×540 and 1280×720, inspect all three cards, Book leads and map totals.
+- At 960×540 and 1280×720, inspect all three short pickup cues, Book leads and map totals.
   Tab / LB / RB pages and scroll/focus must keep every equipment item usable.
   Pause freezes the cabinets; Reduced motion keeps their prompts active.
 
@@ -131,9 +189,9 @@ Use isolated checkpoints for partial-save and write-failure checks.
   The readout does not invite an unavailable strike or show a working chain.
 - [ ] From the unchanged Headshell spawn (180,554), make 45 fresh left taps
   to reach x135 and the walking soles at (60,554). The first E/Y recovers Walk
-  only when grounded within 76 px; 44 taps remain outside. The card stays on
-  screen at 1280×720 and 960×540 without overlapping the needle prompt.
-  The objective and movement card then update immediately. Held movement
+  only when grounded within 76 px; 44 taps remain outside. The short recovery
+  cue stays on screen at 1280×720 and 960×540. The objective in This Place
+  and the Book's movement card then update immediately. Held movement
   regains the original speed and handling, and Continue preserves it.
 - [ ] Find Strike on the Headshell floor at (365,554), then Set toward the east
   at (890,554). A fresh grounded E/Y within 76 px recovers each part once.
@@ -160,8 +218,9 @@ Use isolated checkpoints for partial-save and write-failure checks.
   Return to the Stalls: strike the live wax, steer onto the eastern bank,
   and reach the Yard. Miss deliberately and repeat the safe western return.
 - [ ] Take Three-Strike Chain on the Yard approach at (610,574). Fresh presses
-  now link Tap, Sweep, Accent; the readout reveals all three marks and link
-  time. The stronger third hit changes no jump, launch, reach, or parry timing.
+  now link Tap, Sweep, Accent through their distinct poses and impressions.
+  Move practice retains all three readout marks and link time. The stronger
+  third hit changes no jump, launch, reach, or parry timing.
 - [ ] Before Pogo, airborne hits damage vulnerable foes without rebounding.
   Find Pogo on the Well's lower resting shelf at (785,794), then repeat: the
   same confirmed airborne hit rebounds. Jump+strike in one tick also works.
@@ -187,7 +246,7 @@ Use isolated checkpoints for partial-save and write-failure checks.
   on exit. Practice keeps stock equipment handling and its empty floor.
 - [ ] Reduced motion holds pickup decoration still while fresh-input prompts
   work; pause freezes it. A/B reinking in an isolated fixture restores the
-  same origins and readable cards without adding collision or granting moves.
+  same origins and readable short cues without adding collision or granting moves.
 
 ## Equipment, echo trials, and the bestiary
 
@@ -330,7 +389,7 @@ At that review, `deadwax.cmd check` passed its then-current 29 suites and 7,813 
 - [ ] Four quiet synthesized cues accompany the film while world sound and simulation remain paused. Next changes the cue; Skip stops it at handoff. Master volume/mute applies. Check a replay after using Hood: the film should not inherit a muffled filter.
 - [ ] Reduced motion holds composed illustrations while the story still advances naturally. Pause, Book, map, and shop do not stack over the film. Normal and skipped endings each return control exactly once.
 - [ ] Starting a new game over an existing one asks the player to confirm the replacement.
-- [ ] The title, menus, room signage, player silhouette, and HUD remain legible at 1280×720 and in fullscreen.
+- [ ] The title, menus, player silhouette, brief room name, and small status marks remain legible at 1280×720 and in fullscreen. Room guidance is readable in Book → Journey → This Place.
 - [ ] Headshell's shuffle/Walk/jump prompt and the first E/Y passage are understandable without external instructions.
 - [ ] Horn Plaza clearly offers the west practice loop and the east market route.
 - [ ] After finding Hood on High Street, return beneath the horn and hold it still for about 1.4 seconds to hear its quiet answer. Polishing there grants one Shine.
@@ -344,7 +403,7 @@ At that review, `deadwax.cmd check` passed its then-current 29 suites and 7,813 
 - [ ] In the Yard, approach the first voice quietly and raise Hood while standing near it. Hear two notes and notice the empty reply mark. Lower Hood and begin holding Set during the silence: one answer frees it. Try keyboard and controller. A fresh player should understand the exchange from its cues.
 - [ ] Holding Set before hearing the call does not free the first voice. Releasing Hood early, starting Set too early, releasing Set before its response finishes, or missing the silence lets it try again. There is no immediate contact hit during the call, answer, or retry rest. Walking away and returning starts a fresh attempt.
 - [ ] The completed engraving appears at the first voice's original place even if it moved. After a quiet wait nearby its gentle finished phrase returns. Shattering leaves a broken engraving and silence instead. Return, recover, and Continue: the same choice remains with no repeated reward, flash, or resolution sound.
-- [ ] Pause freezes the first voice and its phrase. Reduced motion steadies decorative movement but preserves note/answer cues; muting still leaves a solvable exchange. Review the card, reply marks, both engraving outcomes, and nearby signs at 1280×720 and 960×540.
+- [ ] Pause freezes the first voice and its phrase. Reduced motion steadies decorative movement but preserves note/answer cues; muting still leaves a solvable exchange. Review the short cue, reply marks, both engraving outcomes, and This Place notes at 1280×720 and 960×540.
 - [ ] Ordinary strikes and parries work on the first voice; airborne rebounds work after returning with Pogo. Striking cancels its unfinished conversation. The second voice still accepts earned Set, and both choices grant no Shine or progression.
 - [ ] Neither combat nor mercy is required to leave the Yard; both choices remain readable.
 - [ ] The Descent Gate blocks passage until its four-strike pattern is performed; the exit beyond it enters Overture Stair.
@@ -379,7 +438,7 @@ At that review, `deadwax.cmd check` passed its then-current 29 suites and 7,813 
 - [ ] Check every new passage with keyboard E and controller Y in both directions. Each arrival provides safe standing room, R returns to that named entry, and holding the entering button does not immediately send Skip back through the arrival door.
 - [ ] Follow the Verse Hall's upper walk past its voice, and the southern Warren's upper walk past the pressing. The northern Warren and Gallery connect upper and lower routes without forcing an encounter or an unavailable ability.
 - [ ] Hear and shatter the new voices on separate runs. Defeat the Warren pressing, leave, return, recover, and Continue: resolved encounters stay absent, unfinished attempts reset, and no encounter awards Shine or a Refrain.
-- [ ] At each fixed listening post, grounded E/Y advances one line per fresh press. Its card remains readable and does not trigger a nearby passage. Holding the input, standing too far away, and opening a menu cannot advance it repeatedly.
+- [ ] At each fixed listening post, grounded E/Y advances one subtitle per fresh press. Its cue and chosen line remain readable and do not trigger a nearby passage. Holding the input, standing too far away, and opening a menu cannot advance it repeatedly.
 - [ ] With Gather, reach the Landing's 190 px overlook using a jump and one airborne strike. Read its optional post and drop safely back to the floor. Without Gather, both ordinary passages remain reachable and the shelf grants nothing merely for entering the room.
 - [ ] Review the violet Unplayed painting, drawn seating, architecture, lamps, and passage arches at 1280×720 and 960×540. Skip, voices, pressing tells, and platform tops remain clear; decoration does not resemble a usable ledge or cover a landing edge.
 - [ ] Pause and Reduced motion settle the new scenery and lamps as in the older rooms. In an isolated visual fixture, A→B→A restores every new room's authored palette and light exposure without changing its routes or rewards.
@@ -397,7 +456,7 @@ At that review, `deadwax.cmd check` passed its then-current 29 suites and 7,813 
 - [ ] Use the loft→Gallery passage and return. Both arrivals have safe standing room; the ordinary market and Gallery routes still work.
 - [ ] Return to the plaza and Headshell: the discovered phrase plays with rests and responds to Hood. Leaving fades it out; pause, Book, map, and shop suspend it. Continue restores it without restarting a reward; New Game clears it.
 - [ ] An old completed save without Gather can revisit the Arm and collect it. Recovery and Continue preserve Gather, the resolved voice, its shortcut, and the same Shine balance.
-- [ ] Check pickup, practice signage, loft voice cues, both nearby passage cards, and the 26-route map at 1280×720 and 960×540.
+- [ ] Check pickup and loft voice cues, nearby passage cues, This Place guidance, and the 26-route map at 1280×720 and 960×540.
 
 ## Folded map
 
@@ -417,7 +476,7 @@ At that review, `deadwax.cmd check` passed its then-current 29 suites and 7,813 
 - [ ] Mouse hover and keyboard/controller focus show a moving ink accent without moving the button's hitbox. Fast navigation does not leave stale highlights or steal focus.
 - [ ] Open and immediately close each menu; reopen or switch pages before the animation ends. Actions still respond immediately, with no delayed close, purchase, or focus change.
 - [ ] Book descriptions and stall balances update immediately. Purchases animate only after a result; silently restoring a save or reopening the shop does not replay a reward.
-- [ ] Enter a room, earn Shine, or take damage: the HUD responds without hiding values. Shine receipts clear on recovery and passages. Pausing freezes the world and HUD while the active menu continues.
+- [ ] Enter a room, earn Shine, or take damage: the room name, short receipt, or health diamonds respond immediately. Shine balance remains available in the Book and stall. Receipts clear on recovery and passages. Pausing freezes the world and HUD while the active menu continues.
 - [ ] Enable Reduced motion during a transition: page motion, record movement, focus effects, and HUD transforms settle immediately. The interface stays fully usable and notifications still expire during play.
 
 ## Attack feel
@@ -468,16 +527,16 @@ At that review, `deadwax.cmd check` passed its then-current 29 suites and 7,813 
 
 - [ ] The Bootlegger sorts and inspects tapes, looks toward Skip, and gestures when spoken to. His words change after either Tonearm ending.
 - [ ] Tick's pendulum and quiet clicks mark three beats, then pause. E/Y introduces the missing beat; four even J/X strikes still open the real Count-In door.
-- [ ] Standing near either resident shows a readable conversation above them. Each fresh E/Y press advances once; holding, jumping, or pressing from far away does not advance it or take a passage.
+- [ ] Standing near either resident shows one short Talk cue. Each deliberate fresh E/Y shows and advances a readable subtitle once; holding, jumping, or pressing from far away does not advance it or take a passage. Merely approaching shows no dialogue.
 - [ ] The Hound wanders and sniffs in the plaza. A grounded, still Hood visitor draws it close; after settling, it wags. Running or noise interrupts the quiet contact, and a nearby strike briefly startles it without hurting anyone.
 - [ ] Returning after freeing voices gives the Hound more room to patrol, with its whole silhouette clear of the plaza exits.
 - [ ] Freed Addie walks a small patch by her doorway and gently pats a nearby Hood or Set visitor. If freed far from home, she walks back without teleporting. Neither visit nor further strikes replay her encounter or Shine.
 - [ ] A shattered Addie remains absent after leaving, returning, and Continue. Existing version-one saves preserve the same choices.
-- [ ] Pause and the Book freeze every resident's animation, movement, and dialogue. Characters and cards remain readable at the usual game size.
+- [ ] Pause and the Book freeze every resident's animation, movement, and subtitle lifetime. Characters and selected dialogue remain readable at the usual game size.
 
 ## Shine and purchases
 
-- [ ] Polishing a fresh patch shows `+1 SHINE` and increments the HUD and Book once. Leaving, returning, recovery, and Continue cannot pay that patch twice.
+- [ ] Polishing a fresh patch shows a short `+1 Shine` receipt and increments the Book/stall balance once. Leaving, returning, recovery, and Continue cannot pay that patch twice.
 - [ ] Grounded B/D-pad Up beside the Bootlegger opens the stall; remote or airborne input does nothing. E/Y still advances his conversation.
 - [ ] The counter clearly shows balance, prices, item effects, and owned or insufficient-funds states. Merely opening, holding the opening button, or selecting an item never buys it.
 - [ ] Buy Spare Groove for 4 Shine: balance falls by 4, the needle gains a filled fourth slot, and a fourth hit is required to recover. Soft Lining costs 3 and visibly speeds Hood walking; ordinary walking/jumping and silence stay the same. Warm Thread costs 2 and gives the Hood an amber stitched edge.
@@ -488,7 +547,7 @@ At that review, `deadwax.cmd check` passed its then-current 29 suites and 7,813 
 
 ## Recovery, saves, and settings
 
-- [ ] The HUD starts at NEEDLE 3/3. Three hits recover at the active room entry with full health and preserved progression/outcomes.
+- [ ] Stock health starts with three filled diamonds. Three hits recover at the active room entry with full health and preserved progression/outcomes. Purchases and equipment adjust the diamond count to the derived capacity.
 - [ ] R and falling out of the room also recover at that entry; reverse traversal uses the correct arrival.
 - [ ] Passage, lock, encounter, polishing, Book, pause, title, and quit save without a visible hitch or repeated reward.
 - [ ] Leave a polished patch and opened door, return, then quit and Continue: the patch stays spent, the door stays open, and Shine/Count-In match the prior session.
@@ -640,6 +699,6 @@ Scaffolding, not design — check shape and traversal, not feel.
 - [ ] Turn the wax with F/RB, reach the North Warren's eastern terrace seam, and use E/Y to unseal it. The same press must not travel. Release and press again to emerge on High Street's quiet western floor.
 - [ ] Return on the A-side; the opened connection works both ways permanently. The High Street end stays sealed before opening from the Warren, including on the B-side.
 - [ ] Unseal the Deep Gallery's central floor seam on the B-side. Travel to the Headshell, land safely on its existing raised block, and return; no automatic map or ability pickup fires at arrival.
-- [ ] Inspect reward/sealed/open cards, both room palettes, and all map pages at 1280×720 and 960×540. Sealed returns reveal no unseen room names. Opening a return changes the map's status and the Book's guidance.
+- [ ] Inspect short reward/sealed/open cues, both room palettes, and all map pages at 1280×720 and 960×540. Sealed returns reveal no unseen room names. Opening a return changes the map's status and the Book's guidance.
 - [ ] Pause, recover, reopen the Book/map, and Continue. Opened returns persist; fresh New Game closes both and removes Jump-Cut. Move practice cannot carry or save the campaign's returns.
 - [ ] Check keyboard and controller feel and audio separately; automated scripted input does not assess those subjective qualities.

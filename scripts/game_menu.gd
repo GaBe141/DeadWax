@@ -185,7 +185,7 @@ func _build_frame() -> void:
 	var imprint := _label("DW   /   AN INDEPENDENT PRESSING", PressScript.SIZE_TINY, INK)
 	imprint.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	header.add_child(imprint)
-	header.add_child(_label("LOST PRESSINGS  ·  PLAYABLE UPDATE", PressScript.SIZE_TINY, FADED))
+	header.add_child(_label("QUIET WAX  ·  PLAYABLE UPDATE", PressScript.SIZE_TINY, FADED))
 	sheet.add_child(_rule(INK))
 
 	_content = HBoxContainer.new()
@@ -383,7 +383,7 @@ func _build_controls() -> void:
 	]:
 		for cell in row:
 			controls.add_child(_label(String(cell), PressScript.SIZE_SMALL, INK))
-	_page.add_child(_paragraph("Begin with tiny taps; holding does not move.\nFind Walk behind the cradle. Book tracks leads.\nEarn the chain to link Tap, Sweep, Accent.\nMove practice offers the complete moveset."))
+	_page.add_child(_paragraph("Begin with one pixel per fresh direction tap. Tap left to find Walk behind the cradle, then press E / Y.\nBook → Journey → This Place keeps nearby notes and guidance.\nEarn the chain to link Tap, Sweep, Accent. Move practice offers the complete moveset."))
 	_button("Back", _show_screen.bind(_return_screen), true)
 
 

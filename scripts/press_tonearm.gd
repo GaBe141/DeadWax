@@ -168,10 +168,11 @@ static func draw_tonearm(canvas: CanvasItem, pose: Dictionary, ink: Color, stock
 	var label_width := display_font.get_string_size(label, HORIZONTAL_ALIGNMENT_LEFT, -1, heading_size).x
 	var prompt_width := body_font.get_string_size(prompt, HORIZONTAL_ALIGNMENT_LEFT, -1, small_size).x
 	var card_width := maxf(prompt_width + 24.0, 240.0)
-	canvas.draw_rect(Rect2(Vector2(-card_width * 0.5, -215.0), Vector2(card_width, 63.0)), stock.lerp(ink, 0.06))
-	canvas.draw_line(Vector2(-card_width * 0.5 + 12.0, -153.0), Vector2(card_width * 0.5 - 12.0, -153.0), Color(accent, 0.8), 2.0, true)
-	canvas.draw_string(display_font, Vector2(-label_width * 0.5, -192.0), label, HORIZONTAL_ALIGNMENT_LEFT, -1, heading_size, page_ink)
-	canvas.draw_string(body_font, Vector2(-prompt_width * 0.5, -164.0), prompt, HORIZONTAL_ALIGNMENT_LEFT, -1, small_size, page_ink)
+	if not bool(pose.get("cinematic", false)):
+		canvas.draw_rect(Rect2(Vector2(-card_width * 0.5, -215.0), Vector2(card_width, 63.0)), stock.lerp(ink, 0.06))
+		canvas.draw_line(Vector2(-card_width * 0.5 + 12.0, -153.0), Vector2(card_width * 0.5 - 12.0, -153.0), Color(accent, 0.8), 2.0, true)
+		canvas.draw_string(display_font, Vector2(-label_width * 0.5, -192.0), label, HORIZONTAL_ALIGNMENT_LEFT, -1, heading_size, page_ink)
+		canvas.draw_string(body_font, Vector2(-prompt_width * 0.5, -164.0), prompt, HORIZONTAL_ALIGNMENT_LEFT, -1, small_size, page_ink)
 	if pose.engaged:
 		var total: int = pose.health_total
 		var remaining := int(ceil(float(pose.health) * total))

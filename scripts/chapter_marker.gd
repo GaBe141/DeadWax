@@ -11,6 +11,7 @@ var ink := Color(0.15, 0.13, 0.12)
 var stock := Color(0.90, 0.87, 0.80)
 var heading := "THE OVERTURE"
 var prompt := "[E / Y]  Listen below"
+var cinematic_mode := false
 var used := false
 var _near := false
 var _card: Control
@@ -29,7 +30,7 @@ func _process(_delta: float) -> void:
 		and player.is_on_floor()
 		and player.global_position.distance_to(global_position) <= ACTIVATE_RADIUS
 	)
-	_card.visible = _near and not used
+	_card.visible = _near and not used and not cinematic_mode
 	if _near and not used and Input.is_action_just_pressed("enter_passage"):
 		try_activate()
 
@@ -46,3 +47,11 @@ func reink(next_ink: Color, next_stock: Color) -> void:
 	stock = next_stock
 	if _card != null:
 		PressScript.recard(_card, ink, stock)
+
+func set_cinematic_mode(enabled: bool) -> void:
+	cinematic_mode = enabled
+	if _card != null:
+		_card.visible = _near and not used and not cinematic_mode
+
+func cinematic_snapshot() -> Dictionary:
+	return {} if used else {"text": "E / Y · Listen below", "radius": ACTIVATE_RADIUS, "priority": 20}

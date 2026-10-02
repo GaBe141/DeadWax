@@ -13,6 +13,7 @@ func is_locked() -> bool:
 func _refresh_label() -> void:
 	if _label == null:
 		return
+	_label.visible = not cinematic_mode
 	if is_locked():
 		_label.text = "%s\n%s" % [display_name, gate_label]
 	elif _near:

@@ -123,3 +123,10 @@ jobs:
           godot --headless --path . --script res://tests/lost_pressings_test.gd
           godot --headless --path . --script res://tests/lost_pressings_world_test.gd
           godot --headless --path . --script res://tests/lost_pressings_book_test.gd
+
+      - name: Validate quiet campaign presentation and carried guidance
+        run: |
+          godot --headless --path . --script res://tests/cinematic_presentation_test.gd
+          godot --headless --path . --script res://tests/cinematic_fixtures_test.gd
+          godot --headless --path . --script res://tests/cinematic_actors_test.gd
+          godot --headless --path . --script res://tests/cinematic_book_test.gd

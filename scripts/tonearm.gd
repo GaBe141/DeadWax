@@ -35,6 +35,7 @@ var hp := HP_MAX
 var ink := Color(0.16, 0.13, 0.19)
 var stock := Color(0.91, 0.86, 0.77)
 var outcome := ""
+var cinematic_mode := false
 var _player: Node2D
 var _t := 0.0
 var _listening := 0.0
@@ -229,6 +230,16 @@ func reset_attempt() -> void:
 	_hit_recoil = 0.0
 	_resolution_age = RESOLUTION_SETTLE_TIME
 
+func set_cinematic_mode(enabled: bool) -> void:
+	cinematic_mode = enabled
+	queue_redraw()
+
+func cinematic_snapshot() -> Dictionary:
+	return {
+		"text": "L / LB · Answer" if outcome.is_empty() and state in [S.WAITING, S.STAGGER] else "",
+		"radius": SET_RANGE, "priority": 60,
+	}
+
 func _draw() -> void:
 	var pose := {
 		"phase": S.keys()[state].to_lower(), "time": _t, "face": _face,
@@ -241,5 +252,6 @@ func _draw() -> void:
 		"recovery": clampf(_t / (PARRY_RECOVER_TIME if state == S.STAGGER else RECOVER_TIME), 0.0, 1.0),
 		"clock": _visual_time, "hit_recoil": _hit_recoil,
 		"settle": clampf(_resolution_age / RESOLUTION_SETTLE_TIME, 0.0, 1.0),
+		"cinematic": cinematic_mode,
 	}
 	Press.draw_tonearm(self, pose, ink, stock)

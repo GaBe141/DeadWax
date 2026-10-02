@@ -18,6 +18,7 @@ enum Stage { WAITING, CALLING, ANSWERING, RESTING }
 var ink := Color("26221e")
 var stock := Color("e8e0cc")
 var stage := Stage.WAITING
+var cinematic_mode := false
 var _home_position := Vector2.ZERO
 var _elapsed := 0.0
 var _note := -1
@@ -202,6 +203,23 @@ func set_reduced_motion(enabled: bool) -> void:
 	_reduced_motion = enabled
 	queue_redraw()
 
+func set_cinematic_mode(enabled: bool) -> void:
+	cinematic_mode = enabled
+	if _card != null:
+		_card.visible = _noticed and state not in [S.FREED, S.DOWN] and not cinematic_mode
+
+func cinematic_snapshot() -> Dictionary:
+	var text := ""
+	if state not in [S.FREED, S.DOWN]:
+		match stage:
+			Stage.CALLING:
+				text = "Listen · %s" % ("One" if _note == 0 else "Two")
+			Stage.ANSWERING:
+				text = "L / LB · Answer"
+			Stage.RESTING:
+				text = "K / B · Listen again"
+	return {"text": text, "radius": LISTEN_RADIUS, "priority": 80}
+
 func reink(next_ink: Color, next_stock: Color) -> void:
 	ink = next_ink
 	stock = next_stock
@@ -229,7 +247,7 @@ func _refresh_card() -> void:
 		_card.position = Vector2(-_card.size.x / 2.0, -_card.size.y - 155.0)
 		_card.material = Press.unshaded_material()
 		add_child(_card)
-	_card.visible = _noticed and state not in [S.FREED, S.DOWN]
+	_card.visible = _noticed and state not in [S.FREED, S.DOWN] and not cinematic_mode
 
 func animation_pose() -> Dictionary:
 	return {"phase": S.keys()[state].to_lower(), "clock": 0.0 if _reduced_motion else _print_time,

@@ -18,6 +18,7 @@ var target_room: StringName = &""
 var target_entry: StringName = &"default"
 var ink := Color("e6c58c")
 var stock := Color("1b353b")
+var cinematic_mode := false
 var _clock := 0.0
 var _near := false
 var _reduced_motion := false
@@ -100,8 +101,27 @@ func refresh() -> void:
 	var min_x := (12.0 - canvas_transform.origin.x) / scale_x
 	var max_x := (get_viewport_rect().size.x - 12.0 - canvas_transform.origin.x) / scale_x - _card.size.x
 	_card.position = Vector2(clampf(-_card.size.x * 0.5, min_x, maxf(min_x, max_x)), -_card.size.y - (80.0 if is_reward() else 112.0))
-	_card.visible = _near and visible
+	_card.visible = _near and visible and not cinematic_mode
 	queue_redraw()
+
+func set_cinematic_mode(enabled: bool) -> void:
+	cinematic_mode = enabled
+	if _card != null:
+		_card.visible = _near and visible and not cinematic_mode
+
+func cinematic_snapshot() -> Dictionary:
+	if is_reward():
+		if not is_available():
+			return {}
+		return {"text": "E / Y · Take Jump-Cut", "radius": INTERACT_RADIUS, "priority": 20}
+	var text := "Sealed passage"
+	if is_open():
+		text = "E / Y · Enter"
+	elif is_available():
+		text = "E / Y · Unseal"
+	elif bool(definition.get("far_end", false)) and has_jump_cut():
+		text = "Turn the wax"
+	return {"text": text, "radius": INTERACT_RADIUS, "priority": 20}
 
 func _prompt() -> String:
 	if is_reward():

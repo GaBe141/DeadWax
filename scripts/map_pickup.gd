@@ -11,6 +11,7 @@ const NOTICE_RADIUS := 165.0
 var map_state: RefCounted
 var ink := Color("26221e")
 var stock := Color("e8e0cc")
+var cinematic_mode := false
 var _collected := false
 var _clock := 0.0
 var _near := false
@@ -56,6 +57,15 @@ func set_reduced_motion(enabled: bool) -> void:
 	_reduced_motion = enabled
 	queue_redraw()
 
+func set_cinematic_mode(enabled: bool) -> void:
+	cinematic_mode = enabled
+	queue_redraw()
+
+func cinematic_snapshot() -> Dictionary:
+	if _collected or _is_owned():
+		return {}
+	return {"text": "Folded Map", "radius": COLLECT_RADIUS, "priority": 20, "grounded": false}
+
 func reink(next_ink: Color, next_stock: Color) -> void:
 	ink = next_ink
 	stock = next_stock
@@ -63,7 +73,8 @@ func reink(next_ink: Color, next_stock: Color) -> void:
 
 func animation_pose() -> Dictionary:
 	return {"clock": 0.0 if _reduced_motion else _clock, "near": _near,
-		"owned": _collected or _is_owned(), "reduced_motion": _reduced_motion}
+		"owned": _collected or _is_owned(), "reduced_motion": _reduced_motion,
+		"cinematic_mode": cinematic_mode}
 
 func _is_owned() -> bool:
 	return map_state != null and bool(map_state.get("owned"))

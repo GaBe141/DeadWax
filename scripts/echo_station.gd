@@ -17,6 +17,7 @@ var discoveries: RefCounted
 var progression: RefCounted
 var ink := Color("ddc3a5")
 var stock := Color("2b2638")
+var cinematic_mode := false
 var _stage: StringName = &"idle"
 var _elapsed := 0.0
 var _clock := 0.0
@@ -193,7 +194,30 @@ func _refresh_card() -> void:
 		_card.material = Press.unshaded_material()
 		_card.z_index = 22
 		add_child(_card)
-	_card.visible = _near
+	_card.visible = _near and not cinematic_mode
+
+func set_cinematic_mode(enabled: bool) -> void:
+	cinematic_mode = enabled
+	if _card != null:
+		_card.visible = _near and not cinematic_mode
+
+func cinematic_snapshot() -> Dictionary:
+	if _stage != &"idle":
+		return {"text": "Recording…" if _stage == &"recording" else "Listening…",
+			"radius": INTERACT_RADIUS, "priority": 40}
+	var text := ""
+	match action:
+		&"collect_spool":
+			if can_request(): text = "E / Y · Take Echo Spool"
+		&"collect_survey":
+			if can_request(): text = "E / Y · Take Surveyor's Slip"
+		&"record_phrase":
+			if can_request(): text = "E / Y · Record"
+			elif String(_state.echo_spool) == "missing": text = "An empty spool is needed"
+		&"restore_warren":
+			if can_request() or String(_state.echo_spool) == "restored": text = "E / Y · Listen"
+			else: text = "The horn is silent"
+	return {} if text.is_empty() else {"text": text, "radius": INTERACT_RADIUS, "priority": 20}
 
 func _current_note() -> int:
 	if _stage == &"idle":
