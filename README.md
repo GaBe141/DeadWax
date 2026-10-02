@@ -604,14 +604,16 @@ unchanged for topology checks. See `ROUTING.md` for both loaders.
 
 ## How it looks
 
-Dead Wax uses a rich illustrated world: gouache-like distance, pencil contours,
-cream wax faces, petrol cloth, aged brass and warm coral notes. `scripts/press.gd`
-remains its central drawing vocabulary; rooms supply their palette and subject.
+Dead Wax uses a quiet illustrated world: broad architectural silhouettes,
+soft colour washes, cream wax faces, petrol cloth, aged brass and warm coral
+notes. `scripts/press.gd` remains its central drawing vocabulary; rooms supply
+their palette and subject.
 
-- **Painted distance.** Four original paintings in `assets/art/` cover the Label,
-  Overture halls, vertical Well, and Unplayed. Each of the 21 rooms adds its own
-  palette and drawn architecture. The far plane stays cached; selected middle
-  details move gently and camera travel gives the scenery parallax.
+- **Drawn distance.** Sparse authored roofs, chambers, vaults and shaft faces
+  replace the detailed generated panoramas. Broad colour washes leave room for
+  each area's horn, cradle, spindle or empty seats to carry its identity. The
+  21 rooms retain their palettes, cached far plane, gentle middle motion and
+  camera parallax. The original paintings remain archived in `assets/art/`.
 - **Characters.** Layered clothes, wax masks, articulated limbs and worn brass
   give Skip, the voices, residents, Hound and bosses distinct silhouettes.
   The figure refinement adds broad mask shadows, quiet angular eyes, clearer
@@ -638,7 +640,7 @@ their halftone backdrop and have no campaign atmosphere or room lighting.
 
 See [the art direction and production prompts](assets/art/ART_DIRECTION.md) for
 asset provenance, dimensions and the rendering approach. Rendering remains
-Godot GL Compatibility; the paintings introduce no runtime dependencies.
+Godot GL Compatibility, with no external runtime dependencies.
 
 Menus now reveal their type in short impressions, with moving ink accents for
 mouse and controller focus. The sleeve's record turns gently while its label

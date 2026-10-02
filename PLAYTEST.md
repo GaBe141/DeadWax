@@ -332,7 +332,7 @@ fixture as a measurement of completionist playtime.
 ## Painted world review
 
 - [ ] Review all 21 rooms at 1280×720 and 960×540: cream faces and upper
-  platform lips remain visible against the painted distance. Inspect the Well
+  platform lips remain visible against the drawn distance. Inspect the Well
   and Drop at top, middle and bottom; Whistlers' catch lane and the Stalls loft remain clear.
 - [ ] Check the Looper's guard/open states, HUSH's count/swing and the Tonearm's
   tip contact. Brass mechanisms and strike ribbons must follow the same timing.
@@ -440,7 +440,7 @@ At that review, `deadwax.cmd check` passed its then-current 29 suites and 7,813 
 - [ ] Hear and shatter the new voices on separate runs. Defeat the Warren pressing, leave, return, recover, and Continue: resolved encounters stay absent, unfinished attempts reset, and no encounter awards Shine or a Refrain.
 - [ ] At each fixed listening post, grounded E/Y advances one subtitle per fresh press. Its cue and chosen line remain readable and do not trigger a nearby passage. Holding the input, standing too far away, and opening a menu cannot advance it repeatedly.
 - [ ] With Gather, reach the Landing's 190 px overlook using a jump and one airborne strike. Read its optional post and drop safely back to the floor. Without Gather, both ordinary passages remain reachable and the shelf grants nothing merely for entering the room.
-- [ ] Review the violet Unplayed painting, drawn seating, architecture, lamps, and passage arches at 1280×720 and 960×540. Skip, voices, pressing tells, and platform tops remain clear; decoration does not resemble a usable ledge or cover a landing edge.
+- [ ] Review the quiet violet Unplayed vaults, drawn seating, architecture, lamps, and passage arches at 1280×720 and 960×540. Skip, voices, pressing tells, and platform tops remain clear; decoration does not resemble a usable ledge or cover a landing edge.
 - [ ] Pause and Reduced motion settle the new scenery and lamps as in the older rooms. In an isolated visual fixture, A→B→A restores every new room's authored palette and light exposure without changing its routes or rewards.
 - [ ] Save and Continue from each new room, including reverse arrivals. The same room entry, map visits, purchases, Shine, and prior outcomes return. An old completed Tonearm save can use the new passage without a new game; its recorded ending stays complete, and unfinished saves retain the separate Arm listening choice.
 - [ ] Opening the map in the expansion selects the Unplayed page. Browse the other sheets, close, and reopen: it returns to the current region, while unvisited room names remain hidden on every page.
@@ -728,3 +728,10 @@ Scaffolding, not design — check shape and traversal, not feel.
 - [ ] Inspect short reward/sealed/open cues, both room palettes, and all map pages at 1280×720 and 960×540. Sealed returns reveal no unseen room names. Opening a return changes the map's status and the Book's guidance.
 - [ ] Pause, recover, reopen the Book/map, and Continue. Opened returns persist; fresh New Game closes both and removes Jump-Cut. Move practice cannot carry or save the campaign's returns.
 - [ ] Check keyboard and controller feel and audio separately; automated scripted input does not assess those subjective qualities.
+
+## Quiet drawn backgrounds
+
+- [ ] Walk through the Label, Overture and Unplayed. Broad roof and vault shapes give each district a distinct silhouette; small windows, masonry and pipe collars do not fill the view. The horn, cradle, Addie's doorway, Landing spindle and Gallery chairs remain recognisable.
+- [ ] Inspect the Well and Drop at the top, middle and bottom. The central climb stays clear, with sparse continuous shaft faces and no repeated panorama bands. Verse Hall's broad recessed bay has no lit sill or apparent landing edge.
+- [ ] Compare A→B→A in a street, a boss room and the Deep Gallery. All layers reink and restore without mutating the authored room colours. Skip, enemy tells and solid upper lips remain readable on both faces.
+- [ ] Check the title, Book, stall and all four opening shots at 1280×720 and 960×540. The distance remains quiet behind the actual illustrations and controls. Pause and Reduced motion hold decoration; passage, encounter and discovery cues keep their existing behaviour.

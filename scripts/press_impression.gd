@@ -61,13 +61,14 @@ func _resting(p: Dictionary) -> void:
 	Brush.ellipse(self, Vector2(-105, 146), Vector2(45, 27), Brush.fade(p.gold, 0.52), 6, 0, PI)
 
 func _organ(p: Dictionary) -> void:
-	for i in range(9):
-		var x := -164.0 + i * 41
-		var top := -91.0 - absf(i - 4.0) * 24
-		Brush.curve(self, Vector2(x, top), Vector2(x - 5, 12), Vector2(x + 3, 184), Brush.fade(p.body, 0.24), 20)
-		Brush.curve(self, Vector2(x - 5, top + 6), Vector2(x - 10, 12), Vector2(x - 3, 173), Brush.fade(p.copper, 0.28), 4)
-		Brush.ellipse(self, Vector2(x, top), Vector2(10, 5), Brush.fade(p.gold, 0.26), 2)
-		Brush.line(self, Vector2(x - 13, 99), Vector2(x + 13, 100), Brush.fade(p.copper, 0.27), 6)
+	# Five broad pipes retain the instrument's outline without striping every
+	# hall and shaft with tiny collars and closely packed highlights.
+	for i in range(5):
+		var x := -164.0 + i * 82
+		var top := -91.0 - absf(i - 2.0) * 48
+		Brush.curve(self, Vector2(x, top), Vector2(x - 5, 12), Vector2(x + 3, 184), Brush.fade(p.body, 0.24), 24)
+		Brush.curve(self, Vector2(x - 5, top + 6), Vector2(x - 10, 12), Vector2(x - 3, 173), Brush.fade(p.copper, 0.18), 3)
+		Brush.ellipse(self, Vector2(x, top), Vector2(12, 5), Brush.fade(p.gold, 0.17), 2)
 
 func _counter(p: Dictionary) -> void:
 	Brush.wash(self, PackedVector2Array([Vector2(-186, -46), Vector2(189, -36), Vector2(173, 184), Vector2(-175, 178)]), Brush.fade(p.shadow, 0.81))

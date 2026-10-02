@@ -1,11 +1,35 @@
-# The painted world
+# The drawn world
 
-The September 2026 graphics overhaul follows the chosen direction: a rich,
-hand-drawn world with textured scenery, expressive characters, and dramatic
-colour and light. Gouache-like distance and pencil contours meet cream wax,
-deep petrol cloth, aged brass, copper, and warm coral notes.
+The current direction is a quiet illustrated world with expressive characters
+and dramatic colour and light. Broad, authored architectural shapes and soft
+colour washes meet cream wax, deep petrol cloth, aged brass, copper and warm
+coral notes. Distance has generous negative space; texture and fine outlines
+belong mainly to the nearby characters and usable surfaces.
 
-## Production paintings
+## Quiet distance
+
+The October 2026 background pass replaces the detailed generated panoramas
+with authored Canvas drawing in `scripts/press_distance.gd`. The Label has
+uneven roof groups and empty acoustic chambers; Overture has broad hall piers
+and vaults; the Well and Drop have continuous shaft faces; the Unplayed has
+low, wide chambers. Verse Hall's single recessed bay gives the long walk scale
+without a highlighted rim, sill or apparent playable edge.
+
+Each composition uses a handful of filled shapes and continuous vertex-colour
+washes. Values derive from the supplied room ink and stock, with no fixed
+raster tint. Regional helpers retain only a few room landmarks and remove
+repeated windows, masonry joints, pipe collars and small ornaments. Existing
+horns, cradles, doorways, the Landing spindle and the Gallery's empty chairs
+carry the identity of the space. The organ impressions use five broad pipes.
+
+`press_painted_world.gd` keeps its shared entry point for rooms, menus and the
+opening, delegating drawing to the new helper. Runtime distance never loads a
+painting. The far plane remains cached, with the existing middle-plane motion,
+parallax, palette restoration, pause and Reduced motion rules. The still room
+air, dim lighting and vignette continue to join the layers. There is no new
+shader, collision, background floor, gameplay state or runtime dependency.
+
+## Archived production paintings
 
 These original PNG assets were generated for Dead Wax using the built-in
 OpenAI image generation tool on 2026-09-10. No image-generation CLI, external
@@ -13,24 +37,18 @@ asset pack, or runtime service is used. The four generated originals are
 stored here at their original resolution, with Godot import settings beside
 them. Font licensing remains in `assets/fonts/`.
 
-| Asset | Resolution | Use |
+| Asset | Resolution | Original use, now archived |
 | --- | --- | --- |
 | `label-district.png` | 2172 × 724 | The Label, title and journal surroundings |
 | `overture-interior.png` | 2172 × 724 | Overture halls, stair and stall surroundings |
 | `overture-shaft.png` | 724 × 2172 | The Well and Drop's vertical distance |
 | `unplayed-district.png` | 2172 × 724 | The Landing, Verse Hall, Warrens and Deep Gallery |
 
-The runtime crops each painting to cover the room's distant plane. It never
-stretches an image independently on its axes. Each room adds its own colour
-glaze, drawn architectural details, cloth, fixtures, and clipped material
-marks. Camera parallax moves the cached far plane. These paintings describe
-distant architecture; only the crisp, outlined foreground surfaces are solid.
-
-Gameplay distance is deliberately quiet: the paintings use 52% opacity on
-dark stock, a stronger room-colour tint, and a 24% stock glaze. Light stock
-uses 24% opacity and a 32% glaze. This pushes small painted details behind the
-actors and walkable edges. Repeated background arches, windows, cables,
-record rims and motes are sparse; the main room landmarks retain their shape.
+The September implementation cropped these paintings into the distant plane,
+then reduced their opacity and added room-colour glazes. Their small details
+still dominated the game view, prompting the replacement above. The original
+files and Godot import settings remain together for provenance; the import
+checks continue to validate them as an archive.
 
 Platform faces use subdued joints and broken brush marks, with a small
 stock-coloured fade at their lower edges. Their thin walkable lips stay clear.
@@ -76,15 +94,15 @@ text or borders.
 
 ## Runtime artwork
 
-`Press` remains the public drawing vocabulary. `press_painted_world.gd`
-caches the four textures; regional depth helpers and `press_world_brush.gd`
+`Press` remains the public drawing vocabulary. `press_distance.gd` draws the
+authored far compositions; regional depth helpers and `press_world_brush.gd`
 draw the room-specific middle distance and platform faces. `figure_paint.gd`
 provides rounded limbs, coloured planes, and brush marks for the animated
 cast. The original poses and combat clocks remain authoritative.
 
 The Quiet Wax figure refinement keeps the same cast and drawn animation.
 Broader wax shadows, worn cloth planes, restrained edge light, and broken
-brass highlights join the figures to the dim painted rooms. Skip's angular
+brass highlights join the figures to the dim rooms. Skip's angular
 mask and quieter eyes sit above exposed, shaped feet; the raised Hood keeps
 a shaped face opening. Residents have clearer coat folds and grounded joints,
 the Hound has layered wax and mechanism planes, and enemy/boss materials use
@@ -136,3 +154,12 @@ jumping, Set, Hood and all three strikes at 1280 × 720 and 960 × 540,
 with separate cast sheets on light and dark stock. World captures used
 isolated checkpoints; both-direction player detail sheets used explicit
 poses. No character assets, physics, combat clocks, or save fields changed.
+
+The October quiet-distance replacement passed all 49 native suites (11,834
+checks) on 2026-10-02. Native GL captures reviewed all 21 rooms at 1280 × 720,
+the Well and Drop at three heights, and selected streets, bosses and the Gallery
+through A→B→A at 960 × 540. Title and all four opening shots were reviewed at
+both sizes; the Book and restored Addie doorway were checked at 960 × 540.
+World reviews used isolated checkpoint paths. The changes are confined to
+pure drawing helpers; geometry, lighting placement, save schema and gameplay
+timing are unchanged.

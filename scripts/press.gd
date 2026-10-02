@@ -1,7 +1,7 @@
 extends RefCounted
 ## THE PRESS — every surface, every letterform, one place.
 ##
-## Painted distance, wax faces, brass, cloth and type share one vocabulary.
+## Drawn distance, wax faces, brass, cloth and type share one vocabulary.
 ## A room says what is there and authors `ink` and `bg_color`; the press
 ## interprets those colours across every drawing layer.
 ##

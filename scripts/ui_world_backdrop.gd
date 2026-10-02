@@ -1,5 +1,5 @@
 extends Control
-## Painted surroundings and a tooled journal cover. No clock or interaction:
+## Quiet drawn surroundings and a tooled journal cover. No clock or interaction:
 ## the page's existing controls retain their own layout, focus and motion.
 const Press := preload("res://scripts/press.gd")
 const NIGHT := Color("102c35")
