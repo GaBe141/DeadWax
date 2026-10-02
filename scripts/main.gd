@@ -616,6 +616,8 @@ func _persist_session() -> bool:
 		"collection": collection.snapshot(),
 	}
 	var saved := bool(save_store.call("save_game", data))
+	if saved:
+		_refresh_echo_trial_availability()
 	if saved and _save_failed and cinematic_hud != null:
 		cinematic_hud.clear_save_error()
 	if saved and _save_failed and game_menu != null:
@@ -1722,11 +1724,29 @@ func _install_echo_trial() -> void:
 		trial.name = "EchoTrial"
 		trial.hunt_id = StringName(definition.id)
 		trial.abilities = abilities
+		trial.available = _echo_trial_available(trial.hunt_id)
 		trial.position = definition.position
 		trial.start_requested.connect(_on_trial_start)
 		trial.completed.connect(_on_trial_claim)
 		room.add_child(trial)
 		break
+
+func _echo_trial_available(hunt_id: StringName) -> bool:
+	if hunt_id != &"label":
+		return true
+	# Let the first visit belong to Tick and the Count-In. Returning after the
+	# Descent opens the optional recordings without taking them from old saves.
+	if String(encounters.get("label_descent/descent_count_in", "")) == "opened":
+		return true
+	var history: Dictionary = collection.snapshot().hunts.get("label", {})
+	return bool(history.get("discovered", false)) or int(history.get("wins", 0)) > 0
+
+func _refresh_echo_trial_availability() -> void:
+	if room == null or development_mode or practice_mode:
+		return
+	var trial := room.get_node_or_null("EchoTrial")
+	if trial != null:
+		trial.call("set_available", _echo_trial_available(StringName(trial.hunt_id)))
 
 func _trial_context(source: Node) -> bool:
 	if development_mode or practice_mode or not _has_session or get_tree().paused or _respawn_pending or _health <= 0:
@@ -1736,7 +1756,7 @@ func _trial_context(source: Node) -> bool:
 	if source != room.get_node_or_null("EchoTrial") or not source.is_in_group("echo_trial"):
 		return false
 	var definition := CollectionCatalog.hunt(String(source.hunt_id))
-	return not definition.is_empty() and String(definition.room_id) == String(world_room_id) and source.position == definition.position
+	return not definition.is_empty() and String(definition.room_id) == String(world_room_id) and source.position == definition.position and _echo_trial_available(StringName(source.hunt_id))
 
 func _on_trial_start(source: Node) -> void:
 	if _collection_busy or not _trial_context(source) or not bool(source.call("can_start")):
@@ -1837,7 +1857,7 @@ func _observe_collection() -> void:
 		if not species.is_empty():
 			changed = bool(collection.record_species(species)) or changed
 	var trial := room.get_node_or_null("EchoTrial")
-	if trial != null and player.global_position.distance_to(trial.global_position) <= 320.0:
+	if trial != null and trial.available and _echo_trial_available(StringName(trial.hunt_id)) and player.global_position.distance_to(trial.global_position) <= 320.0:
 		changed = bool(collection.discover_hunt(String(trial.hunt_id))) or changed
 	if changed:
 		_queue_save()

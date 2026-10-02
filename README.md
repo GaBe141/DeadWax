@@ -34,9 +34,17 @@ A new journey begins with **a one-pixel shuffle per fresh direction press**.
 Tap A / D or flick the left stick to inch left toward the walking soles behind
 the cradle. Holding a direction does not keep moving. Recover **Walk** with
 E / Y to restore ordinary movement; jumping and interaction stay available
-throughout. Then recover Strike and Set in the Headshell, followed by the Hood,
-Groove Riding, Three-Strike Chain, and Pogo. Earlier saves keep their existing
-walking and moves; choose New Game to play this progression.
+throughout. Recover Strike in Horn Plaza, Hood on High Street, and Groove Riding
+in Practice. Set waits in the Yard, the chain on the Overture Stair, and Pogo
+in the Well. Earlier saves keep their existing walking and moves; choose New
+Game to play this progression.
+
+Each introduction room holds one new move. The Stalls applies Groove Riding;
+the Descent repeats Count-In before combos arrive on the quiet stairs. Tick's
+equipment trial appears on the return journey after opening the Descent Gate,
+giving the first Practice visit room for its rhythm lesson. Existing journeys
+that already discovered the trial retain access. Movement and combat speed
+are unchanged.
 
 After Walk, Skip builds into a run and carries a brief coast when you release
 the direction. Reversing takes a little commitment; Set plants more firmly.
@@ -77,8 +85,9 @@ low western route back to the takeoff; ordinary jumps cannot cross the tall
 eastern step. Count-In works before the Book has recorded its name.
 
 High Street's upper walk holds the **Hood** and avoids its Looper. The
-**Three-Strike Chain** waits on the Yard's western approach. Its voices can
-be heard or shattered with the moves you have recovered.
+**Set** waits on the Yard's western approach, before its first voice. Its
+voices can be heard or shattered with the moves you have recovered. The
+**Three-Strike Chain** waits further down, on the Overture Stair's middle landing.
 
 The first Yard voice carries a half-remembered name. Stand near it with
 **Hood** raised for its two notes, then lower Hood and begin holding **Set**
@@ -252,7 +261,7 @@ Three optional **Echo Trials** offer repeatable equipment hunts:
 
 | Source | Where to find it | What answers |
 | --- | --- | --- |
-| Label | Tick's Practice, beyond Tick | Auditioner recordings; listening or striking both count. |
+| Label | Tick's Practice, after opening the Descent Gate | Auditioner recordings; listening or striking both count. |
 | Overture | Eastern Worn Gallery, beyond the Arm's service door | Test Pressing recordings. |
 | Unplayed | Deep Gallery's lower floor | A mixture of Looper and Auditioner recordings. |
 
@@ -464,7 +473,7 @@ press executes once when recovery ends.
 High Street's **Looper** guards while counting three ticks, then swings on four.
 Strikes cannot damage or rebound from its guard. Step outside its reach, or
 parry as the swing lands, then use the one-second **OPEN** window to land a
-combo. Its first unguarded hit starts the count. The upper route still passes
+strike. Its first unguarded hit starts the count. The upper route still passes
 without fighting, and recovery resets an unfinished encounter.
 
 Choose **Move practice** on the title screen for a wide, empty floor to try
@@ -510,11 +519,11 @@ The Book names each missing ability and keeps a lead to its location.
 | Ability | Discovery | What changes |
 | --- | --- | --- |
 | Walk | Behind the Headshell cradle, at (60,554) | Restores sustained walking after the initial one-pixel shuffle. |
-| Strike | Headshell's lower floor | Basic Tap attacks and parries. |
-| Set | Headshell, toward the eastern passage | Kneeling and peaceful responses. |
+| Strike | Beneath Horn Plaza's horn, at (650,574) | Basic Tap attacks and parries. |
+| Set | Groove Yard's western approach, at (610,574) | Kneeling and peaceful responses. |
 | Hood | High Street's upper walk | Quiet movement, listening calls, and polishing wax. |
 | Groove Riding | Beyond Tick's Count-In door in Practice | Live-groove launches and thick-air jets; opens the Stalls crossing. |
-| Three-Strike Chain | Groove Yard's western approach | Links Tap, Sweep, and the stronger Accent. |
+| Three-Strike Chain | Overture Stair's middle landing, at (925,644) | Links Tap, Sweep, and the stronger Accent. |
 | Pogo | Overture Well's lower resting shelf | Airborne rebounds from vulnerable foes. |
 
 Walk restores the existing running speed, acceleration, braking, and air
@@ -735,7 +744,10 @@ practice isolation. Five ability suites cover strict move snapshots, the one-pix
 held/repeated input suppression, frame-rate independence, empty New Game,
 legacy migration, earned-input behavior, fixed pickups and
 failed writes, the Stalls gate and safe western return, and Book/readout
-permission cues. Native playtests still check the readability and pace of
+permission cues. The pacing checks cover one discovery per introduction room,
+the later Set and chain leads, dormant first-visit recordings, saved return
+availability, and preserved trial access for existing collections.
+Native playtests still check the readability and pace of
 repeated hunts and equipment handling.
 Controller profile, setup-menu, and integration checks cover the 18 physical
 captures, buttons and axes, neutral gating, saved settings, reconnects, menu

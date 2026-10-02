@@ -49,7 +49,7 @@ func configure(id: StringName) -> void:
 			spawn_pos = Vector2(180, 554)
 			register_entry(&"from_horn_plaza", Vector2(1080, 554))
 			# The Gallery return settles on the cradle's existing low block,
-			# clear of the map and both nearby recovered-move sleeves.
+			# clear of the map and the recovered soles.
 			register_entry(&"from_deep_gallery", Vector2(760, 494))
 		&"horn_plaza":
 			bg_color = Color("254b4e")
@@ -152,8 +152,6 @@ func _build_headshell() -> void:
 	else:
 		sign_label(Vector2(125, 300), "THE GRIP IS OPEN\nSomething let go of you.")
 	ability_pickup(Vector2(60, 554), &"walk")
-	ability_pickup(Vector2(365, 554), &"strike")
-	ability_pickup(Vector2(890, 554), &"set")
 	var folded_map := MapPickupScript.new()
 	folded_map.name = "FoldedMap"
 	folded_map.position = Vector2(500, 554)
@@ -179,6 +177,7 @@ func _build_horn_plaza() -> void:
 	_exit(Vector2(375, 574), &"headshell", "HOME")
 	_exit(Vector2(1190, 574), &"practice_room", "PRACTICE")
 	_exit(Vector2(1680, 574), &"the_stalls", "THE STALLS")
+	ability_pickup(Vector2(650, 574), &"strike")
 	sign_label(Vector2(760, 242), "THE VOICE\nRuntime: all of it.")
 	if _has_ability(&"hood"):
 		sign_label(Vector2(680, 424), "HOLD K / C / B — HOOD\nStand quietly beneath the horn.")
@@ -188,7 +187,7 @@ func _build_horn_plaza() -> void:
 	if String(session_outcomes.get("the_stalls/loft_voice", "")) == "freed":
 		sign_label(Vector2(1280, 260), "THE RETURNING NOTE\nA small song crosses the market.\nThe great horn carries it home.")
 	else:
-		sign_label(Vector2(1280, 260), "THE DESCENT\nEast, through the market.\nThe gate listens for a count.")
+		sign_label(Vector2(1280, 260), "THE MARKET\nThe shutters stay down.\nThe streets are still here.")
 	var hound := HoundScript.new()
 	hound.name = "Hound"
 	hound.position = Vector2(970, 574)
@@ -306,7 +305,7 @@ func _build_groove_yard() -> void:
 	_exit(Vector2(85, 574), &"the_stalls", "THE STALLS")
 	_exit(Vector2(1980, 574), &"label_descent", "THE DESCENT")
 	sign_label(Vector2(285, 310), "WORN NAMES\nSomeone kept writing them\nafter the sound had gone.")
-	ability_pickup(Vector2(610, 574), &"combo")
+	ability_pickup(Vector2(610, 574), &"set")
 	_update_yard_note(String(session_outcomes.get("groove_yard/yard_first_voice", "")))
 	var memory := YardMemoryScript.new()
 	memory.name = "YardMemory"
@@ -364,6 +363,7 @@ func _build_overture_stair() -> void:
 	platform(Vector2(1070, 770), Vector2(170, 40))
 	platform(Vector2(1215, 845), Vector2(170, 40))
 	platform(Vector2(1500, 920), Vector2(600, 140))
+	ability_pickup(Vector2(925, 644), &"combo")
 	_exit(Vector2(85, 404), &"label_descent", "THE LABEL")
 	_impression(&"stair", Vector2(910, 580), Vector2(720, 700))
 	_impression(&"arch", Vector2(1580, 622), Vector2(300, 450))
@@ -453,7 +453,7 @@ func _process(delta: float) -> void:
 		else:
 			objective_label = "Recover the Hood on the upper walk. The Looper can wait."
 		return
-	if room_id in [&"headshell", &"practice_room"]:
+	if room_id in [&"headshell", &"practice_room", &"groove_yard", &"overture_stair"]:
 		_refresh_ability_objective()
 		return
 	if room_id == &"the_stalls":
@@ -461,6 +461,7 @@ func _process(delta: float) -> void:
 		return
 	if room_id != &"horn_plaza" or _horn_heard:
 		return
+	_refresh_ability_objective()
 	var player := get_tree().get_first_node_in_group("player") as CharacterBody2D
 	if player == null:
 		return
@@ -500,21 +501,49 @@ func _refresh_ability_objective() -> void:
 			_refresh_headshell_guidance()
 			if not _has_ability(&"walk"):
 				objective_label = "Tap A / D or flick the stick to inch left. Recover your feet."
-			elif not _has_ability(&"strike"):
-				objective_label = "Recover your needle near the cradle. [E / Y] beside it."
-			elif not _has_ability(&"set"):
-				objective_label = "Recover your listening weight by the eastern arch."
-			elif String(session_outcomes.get("the_arm/tonearm", "")) not in ["freed", "shattered"]:
+			elif String(session_outcomes.get("the_arm/tonearm", "")) == "freed":
+				objective_label = "Home sounds different when something has come back."
+			elif String(session_outcomes.get("the_arm/tonearm", "")) == "shattered":
+				objective_label = "The cradle stays empty. The street is still here."
+			else:
 				objective_label = "Follow the light into the Label."
+		&"horn_plaza":
+			var arm_outcome := String(session_outcomes.get("the_arm/tonearm", ""))
+			if arm_outcome == "freed":
+				objective_label = "The horn carries a quieter street. There is time to wander."
+			elif arm_outcome == "shattered":
+				objective_label = "The street keeps going. Follow its light."
+			elif not _has_ability(&"strike"):
+				objective_label = "Recover your needle beneath the horn. [E / Y] beside it."
+			elif not _has_ability(&"hood"):
+				objective_label = "The upper walk of High Street keeps a quiet way forward."
+			else:
+				objective_label = "Tick keeps time in Practice. The market waits east."
 		&"practice_room":
-			if not _has_ability(&"groove"):
+			if not _has_ability(&"strike"):
+				objective_label = "The door can wait. Your needle rests beneath Horn Plaza's horn."
+			elif not _has_ability(&"groove"):
 				objective_label = "Give the door four even strikes, then recover the Groove in its sleeve."
 			elif abilities != null:
 				objective_label = "Carry the recovered Groove east. The Stalls span can be crossed."
+		&"groove_yard":
+			if not _has_ability(&"set"):
+				objective_label = "Recover your listening weight along the western approach."
+			elif not _has_ability(&"hood"):
+				objective_label = "The voices can wait. A Hood rests on High Street's upper walk."
+			elif String(session_outcomes.get("groove_yard/yard_first_voice", "")) not in ["freed", "shattered"]:
+				objective_label = "Hear the first voice under the Hood, then answer with Set."
+			else:
+				objective_label = "Let the worn name settle. The Descent Gate waits ahead."
+		&"overture_stair":
+			if not _has_ability(&"combo"):
+				objective_label = "A longer phrase rests on the middle landing."
+			else:
+				objective_label = "Follow the worn stairs to the Bootlegger's stall."
 		&"the_stalls": _refresh_stalls_objective()
 
 func _refresh_headshell_guidance() -> void:
-	var state := "%s/%s/%s" % [_has_ability(&"walk"), _has_ability(&"strike"), _has_ability(&"set")]
+	var state := str(_has_ability(&"walk"))
 	if state == _headshell_note_state:
 		return
 	_headshell_note_state = state
@@ -532,8 +561,6 @@ func _refresh_headshell_guidance() -> void:
 	_headshell_move_note = _notes.back()
 	if not _has_ability(&"walk"):
 		sign_label(Vector2(90, 180), "LEFT BY THE CRADLE\nYour feet are to the left.\nTap A / D. [E / Y] to recover them.")
-	elif not _has_ability(&"strike") or not _has_ability(&"set"):
-		sign_label(Vector2(90, 180), "LEFT IN THE CRADLE\nYour needle. Your listening weight.\n[E / Y] beside a lost part.")
 	else:
 		return
 	_headshell_recovery_note = _notes.back()

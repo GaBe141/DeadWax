@@ -85,6 +85,7 @@ class EchoLooper extends "res://scripts/street_looper.gd":
 
 var hunt_id: StringName = &"label"
 var abilities: RefCounted
+var available := true
 var ink := Color("ddc3a5")
 var stock := Color("2b2638")
 var cinematic_mode := false
@@ -107,7 +108,7 @@ func _ready() -> void:
 	_refresh_card()
 
 func _physics_process(delta: float) -> void:
-	if get_tree().paused or delta <= 0.0: return
+	if not available or get_tree().paused or delta <= 0.0: return
 	_near = _player_is_near()
 	if _state == &"active":
 		var player := _player()
@@ -133,13 +134,22 @@ func trial_bounds() -> Rect2:
 	return PROFILES.get(hunt_id, {}).get("bounds", Rect2())
 
 func can_start() -> bool:
-	return is_inside_tree() and not get_tree().paused and PROFILES.has(hunt_id) and _state == &"idle" and _player_is_near() and _has_trial_move()
+	return available and is_inside_tree() and not get_tree().paused and PROFILES.has(hunt_id) and _state == &"idle" and _player_is_near() and _has_trial_move()
 
 func _has_trial_move() -> bool:
 	return abilities == null or bool(abilities.call("has_ability", &"strike")) or (hunt_id == &"label" and bool(abilities.call("has_ability", &"set")))
 
 func can_claim() -> bool:
-	return is_inside_tree() and not get_tree().paused and _state == &"claim" and _player_is_near()
+	return available and is_inside_tree() and not get_tree().paused and _state == &"claim" and _player_is_near()
+
+func set_available(enabled: bool) -> void:
+	if available == enabled: return
+	available = enabled
+	if not available:
+		_near = false
+		cancel_trial(true)
+	_refresh_card()
+	queue_redraw()
 
 func try_interact() -> bool:
 	if can_start():
@@ -285,13 +295,14 @@ func set_reduced_motion(enabled: bool) -> void:
 	queue_redraw()
 
 func _prompt() -> String:
+	if not available: return ""
 	if _state == &"claim":
 		return "Your pressing is waiting.\n[E / Y]  Retry saving the claim" if _save_failed else "All three waves are complete.\n[E / Y]  Collect your pressing"
 	if _state == &"active":
 		if _warning > 0.0: return "WAVE %d / 3  —  GET READY\nThe next impression is forming." % _wave
 		return "WAVE %d / 3  —  %d REMAIN\nClear every copy. Leaving ends the trial." % [_wave, _copies.size()]
 	if not _has_trial_move():
-		return "Recover your needle in the Headshell.\nThese recordings need an answer before they can play."
+		return "Recover your needle in the Horn Plaza.\nThese recordings need an answer before they can play."
 	var receipt := ""
 	if not _receipt.is_empty():
 		receipt = String(_receipt.get("message", "Pressing collected. Check your Book.")) + "\n"
@@ -299,6 +310,9 @@ func _prompt() -> String:
 
 func _refresh_card() -> void:
 	if not is_inside_tree(): return
+	if not available:
+		if _card != null: _card.hide()
+		return
 	var text := _prompt()
 	if _card == null or _card_text != text:
 		_card_text = text
@@ -315,10 +329,10 @@ func _refresh_card() -> void:
 func set_cinematic_mode(enabled: bool) -> void:
 	cinematic_mode = enabled
 	if _card != null:
-		_card.visible = (_near or _state == &"active") and not cinematic_mode
+		_card.visible = available and (_near or _state == &"active") and not cinematic_mode
 
 func cinematic_snapshot() -> Dictionary:
-	if not PROFILES.has(hunt_id):
+	if not available or not PROFILES.has(hunt_id):
 		return {}
 	var text := ""
 	var priority := 20
@@ -336,8 +350,10 @@ func cinematic_snapshot() -> Dictionary:
 
 func snapshot() -> Dictionary:
 	return {"hunt": hunt_id, "state": _state, "wave": _wave, "remaining": _copies.size(), "warning": _warning,
+		"available": available,
 		"near": _near, "clock": 0.0 if _reduced_motion else _clock, "reduced_motion": _reduced_motion,
 		"save_failed": _save_failed, "receipt": _receipt.duplicate(true), "prompt": _prompt()}
 
 func _draw() -> void:
+	if not available: return
 	Press.draw_echo_trial(self, snapshot(), ink, stock)

@@ -18,6 +18,9 @@ var _abilities: RefCounted
 var _requests := 0
 
 func _init() -> void:
+	if DisplayServer.get_name() != "headless":
+		DisplayServer.window_set_flag(DisplayServer.WINDOW_FLAG_NO_FOCUS, true)
+		DisplayServer.window_set_position(Vector2i(-16000, -16000))
 	call_deferred("_run")
 
 func _run() -> void:
@@ -26,6 +29,7 @@ func _run() -> void:
 	_check(Campaign.room_ids().size() == 21 and Chart.LINKS.size() == 26, "the authored passage graph has 21 rooms and 26 pairs including the earned returns")
 	for record in Abilities.catalog():
 		await _placement(record)
+	await _intro_spacing()
 	await _opening_prompts()
 	await _interaction()
 	await _counted_sleeve()
@@ -81,16 +85,19 @@ func _placement(record: Dictionary) -> void:
 	_check(pickup.position == origin and pickup.snapshot().clock == 0.0 and before.clock == 0.0, "%s reduced-motion drawing leaves its origin fixed" % record.id)
 
 func _interaction() -> void:
-	await _fixture(&"headshell")
+	await _fixture(&"horn_plaza")
 	_abilities.unlock_ability(&"walk")
 	_room.refresh_abilities()
 	await process_frame
 	var pickup := _pickup(&"strike")
-	await _reset_at(Vector2(265, 554))
+	_check(pickup != null, "the interaction fixture uses the real Plaza needle")
+	if pickup == null: return
+	var origin: Vector2 = pickup.position
+	await _reset_at(origin + Vector2(-100, 0))
 	Input.action_press("enter_passage")
 	await _physics(2)
 	_check(_requests == 0, "a press outside pickup reach is rejected")
-	_player.position = Vector2(365, 554)
+	_player.position = origin
 	_player.velocity = Vector2.ZERO
 	await _physics(4)
 	_check(_requests == 0, "holding interact while walking into range does not collect")
@@ -116,14 +123,14 @@ func _interaction() -> void:
 	_player.velocity = Vector2.ZERO
 	await _physics(2)
 	_check(not pickup.try_interact() and _requests == 2, "airborne proximity cannot collect a move")
-	await _reset_at(Vector2(365, 554))
+	await _reset_at(origin)
 	_abilities.unlock_ability(&"strike")
 	_room.refresh_abilities()
 	await process_frame
 	_check(_pickup(&"strike") == null and _abilities.has_ability(&"strike"), "only confirmed ownership silently retires the pickup")
-	_check(_room.objective_label.contains("listening weight"), "recovering the needle advances the opening lead")
+	_check(_room.objective_label.contains("High Street"), "recovering the Plaza needle points toward the next room's Hood")
 	# Restoring a room from owned state starts settled and emits no request.
-	var restored: Node2D = Campaign.create_room(&"headshell")
+	var restored: Node2D = Campaign.create_room(&"horn_plaza")
 	restored.abilities = _abilities
 	root.add_child(restored)
 	await process_frame
@@ -137,10 +144,10 @@ func _opening_prompts() -> void:
 	await _fixture(&"headshell")
 	await _reset_at(Vector2(180, 554))
 	var soles := _pickup(&"walk")
-	var needle := _pickup(&"strike")
 	_check(_abilities.snapshot() == {"version": 2, "unlocked": []}, "the first page keeps the explicit empty version-two shuffle state")
 	_check(_room.objective_label.contains("inch left") and _room.objective_label.contains("feet"), "the initial objective points left to recover walking")
-	_check(soles._card.visible and not needle._card.visible, "the nearest walking-soles prompt does not overlap the needle prompt")
+	_check(soles._card.visible and _pickup(&"strike") == null and _pickup(&"set") == null,
+		"the first walking prompt is the only ability discovery in Headshell")
 	var card_origin: Vector2 = soles._card.get_global_transform_with_canvas().origin
 	_check(card_origin.x >= 11.9 and card_origin.x + soles._card.size.x <= soles.get_viewport_rect().size.x - 11.9, "the left-edge walking prompt stays inside the visible page; origin%s size%s viewport%s" % [card_origin, soles._card.size, soles.get_viewport_rect().size])
 	var initial_text := _card_text(_room._headshell_move_note)
@@ -148,8 +155,35 @@ func _opening_prompts() -> void:
 	_abilities.unlock_ability(&"walk")
 	_room.refresh_abilities()
 	await _physics(2)
-	_check(_room.objective_label.contains("needle") and _pickup(&"walk") == null, "confirmed Walk collection retires its sleeve and advances the needle lead")
+	_check(_room.objective_label.contains("Follow the light") and _pickup(&"walk") == null,
+		"confirmed Walk collection retires its sleeve and gives room to explore")
 	_check(_card_text(_room._headshell_move_note).contains("walk") and not _card_text(_room._headshell_move_note).contains("inch"), "the same room replaces its shuffle instruction once walking is recovered")
+
+func _intro_spacing() -> void:
+	var expected := {&"headshell": &"walk", &"horn_plaza": &"strike", &"high_street": &"hood",
+		&"practice_room": &"groove", &"the_stalls": &"", &"groove_yard": &"set",
+		&"label_descent": &"", &"overture_stair": &"combo"}
+	for room_id in expected:
+		await _fixture(room_id)
+		var sleeves: Array[StringName] = []
+		for child in _room.get_children():
+			if child.is_in_group("ability_pickup"): sleeves.append(child.ability)
+		var id: StringName = expected[room_id]
+		_check(sleeves.is_empty() if id.is_empty() else sleeves == [id],
+			"%s gives its discovery room to breathe: %s" % [room_id, id if not id.is_empty() else "no new ability"])
+		if room_id == &"headshell":
+			_check(_room.get_node_or_null("FoldedMap") != null, "the quieter opening keeps its carried map")
+		elif room_id == &"groove_yard":
+			var first_voice: Node2D = null
+			for child in _room.get_children():
+				if child.get_meta("chapter_state_id", &"") == &"yard_first_voice": first_voice = child
+			var listening_weight := _pickup(&"set")
+			_check(first_voice != null and listening_weight != null and listening_weight.is_available()
+				and listening_weight.position.x < first_voice.position.x,
+				"Set is available on the western approach before the Yard's first listening encounter")
+		elif room_id == &"overture_stair":
+			_check(_pickup(&"combo") != null and _pickup(&"set") == null,
+				"the first chain discovery belongs to the later Stair rather than the Set introduction")
 
 func _card_text(card: Control) -> String:
 	var result := ""

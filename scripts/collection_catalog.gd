@@ -38,7 +38,7 @@ const ITEMS: Array[Dictionary] = [
 		"description": "The last wax seal of a side never played, heavy with its unspent evening.", "tradeoff": "+1 maximum needle health; 10% less running speed.", "modifiers": {"health": 1, "speed": 0.9}},
 ]
 const HUNTS: Array[Dictionary] = [
-	{"id": "label", "name": "Label Echo Trial", "room_id": "practice_room", "position": Vector2(850, 574), "description": "Find the trial stand beyond Tick in Tick's Practice. Hear or shatter four echo copies across three waves.", "mastery_wins": MASTERY_WINS},
+	{"id": "label", "name": "Label Echo Trial", "room_id": "practice_room", "position": Vector2(850, 574), "description": "Return to Tick's Practice after opening the Descent Gate. Hear or shatter four echo copies across three waves.", "mastery_wins": MASTERY_WINS},
 	{"id": "overture", "name": "Overture Echo Trial", "room_id": "worn_gallery", "position": Vector2(2180, 574), "description": "Find the trial stand in the eastern Worn Gallery, beyond the Arm's service door. Face four pressing echoes across three waves.", "mastery_wins": MASTERY_WINS},
 	{"id": "unplayed", "name": "Unplayed Echo Trial", "room_id": "deep_gallery", "position": Vector2(1300, 834), "description": "Find the trial stand on the Deep Gallery's lower floor. Face four mixed echoes across three waves.", "mastery_wins": MASTERY_WINS},
 ]

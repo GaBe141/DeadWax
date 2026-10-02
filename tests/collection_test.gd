@@ -25,6 +25,7 @@ func _run() -> void:
 	# This fixture jumps to earned-move mechanics; opening acquisition has its own suite.
 	_main.abilities.restore_snapshot(_main.AbilitiesScript.legacy_snapshot())
 	await _frames(5)
+	await _check_trial_pacing()
 	await _check_posts()
 	await _check_trial_transaction()
 	await _check_equipment()
@@ -67,6 +68,71 @@ func _check_schema() -> void:
 	for value in errors:
 		legacy.collection = value
 		_check(not store.save_game(legacy) and store.load_game() == loaded, "malformed collection cannot replace a checkpoint")
+
+func _check_trial_pacing() -> void:
+	_main._load_world_room(&"practice_room")
+	await _frames(4)
+	var trial: Node2D = _main.room.get_node("EchoTrial")
+	await _stand(trial.position)
+	_check(not trial.available and trial._card == null and trial.cinematic_snapshot().is_empty(),
+		"first Practice visit presents Count-In without a trial card or cinematic cue")
+	var before: Dictionary = _main.collection.snapshot()
+	await _tap(KEY_E)
+	_main._on_trial_start(trial)
+	_main._observe_collection()
+	_check(trial.snapshot().state == "idle" and not trial.can_start() and not trial.try_interact(),
+		"fresh input and direct requests cannot start the early recordings")
+	_check(_main.collection.snapshot().hunts.label == before.hunts.label
+		and _main.collection.snapshot().rng_state == before.rng_state
+		and _main.collection.snapshot().offcuts == before.offcuts,
+		"the dormant post neither discovers the hunt nor rolls or awards materials")
+	trial.set_available(true)
+	_main._on_trial_start(trial)
+	_main._observe_collection()
+	_check(trial.snapshot().state == "idle" and _main.collection.snapshot().hunts.label == before.hunts.label,
+		"Main independently rejects forged early availability and proximity discovery")
+	_check(_main._persist_session() and not trial.available, "a saved refresh settles the dormant post")
+	_main.encounters["practice_room/practice_count_in"] = "opened"
+	_check(_main._persist_session() and not trial.available, "Tick's first lesson does not also unlock equipment trials")
+	_main.encounters["label_descent/descent_count_in"] = "opened"
+	var real_store: RefCounted = _main.save_store
+	_main.save_store = Save.new(_directory + "/missing/checkpoint.json")
+	_check(not _main._persist_session() and not trial.available, "a failed milestone write does not reveal the post")
+	_main.save_store = real_store
+	_check(_main._persist_session() and trial.available and trial._card != null,
+		"a saved Descent milestone reveals the Label recordings for the return journey")
+	_check(trial.can_start() and not trial.cinematic_snapshot().is_empty(), "the revealed post has a usable grounded cue")
+	_main._return_to_title()
+	_main._continue_game()
+	await _frames(5)
+	trial = _main.room.get_node("EchoTrial")
+	_check(trial.available and _main.collection.snapshot().hunts.label == before.hunts.label,
+		"Continue restores milestone availability without inventing hunt discovery or clears")
+	# An older journey may already know the recordings without the new return
+	# milestone. Reading that history must preserve access and every reward.
+	_main.encounters.erase("label_descent/descent_count_in")
+	var history := Collection.default_snapshot()
+	history.hunts.label = {"discovered": true, "wins": 0, "dry": 0}
+	_check(_main.collection.restore_snapshot(history) and _main._persist_session() and trial.available,
+		"a previously discovered Label hunt stays playable before Descent")
+	history.hunts.label = {"discovered": true, "wins": 4, "dry": 4}
+	history.offcuts = 4
+	history.owned = ["blunt_stylus"]
+	_check(_main.collection.restore_snapshot(history) and _main._persist_session(), "save a pre-pacing collection fixture")
+	_main._return_to_title()
+	_main._continue_game()
+	await _frames(5)
+	trial = _main.room.get_node("EchoTrial")
+	var restored: Dictionary = _main.collection.snapshot()
+	_check(trial.available and restored.hunts == history.hunts and restored.owned == history.owned
+		and restored.equipped == history.equipped and restored.offcuts == history.offcuts and restored.rng_state == history.rng_state,
+		"old clears, pity, gear and materials survive Continue without a milestone")
+	_check(_main._echo_trial_available(&"overture") and _main._echo_trial_available(&"unplayed"),
+		"later regional recordings retain their existing availability")
+	# The transaction checks below deliberately exercise a fresh, unlocked post.
+	_main.collection.restore_snapshot(Collection.default_snapshot())
+	_main.encounters["label_descent/descent_count_in"] = "opened"
+	_check(_main._persist_session(), "restore a fresh return-journey trial fixture")
 
 func _check_posts() -> void:
 	for hunt in Catalog.hunts():

@@ -46,6 +46,11 @@ func _run() -> void:
 		_check(_book.detail_title() == definition.name, "locked %s retains its identifiable name" % id)
 		_check(_book._detail_description.text.contains(definition.lead), "locked %s presents the real exploration lead" % id)
 		_check(not _book._detail_description.text.contains("ALWAYS YOURS"), "locked %s never promises a starting verb" % id)
+	var next_places := {&"strike": "Horn Plaza", &"set": "Groove Yard", &"combo": "Overture Stair"}
+	for id in next_places:
+		_book._select_slot(id)
+		_check(_book._detail_description.text.contains(next_places[id]),
+			"the missing %s lead names its later discovery room" % id)
 	_check(_abilities.snapshot() == original, "viewing all leads cannot grant moves")
 	_book.close_inventory()
 	_abilities.unlock_ability(&"walk")
@@ -89,12 +94,13 @@ func _run() -> void:
 		await _frames(4)
 		_abilities.restore_snapshot(Abilities.default_snapshot())
 		_book.refresh_abilities()
-		_book._select_slot(&"walk")
-		_book._focus_selected()
-		await _frames(4)
-		_check(_book._detail_description.text == Abilities.ability(&"walk").lead
-			and _book._detail_description.get_global_rect().end.y <= _book._journey_notes.get_global_rect().end.y + 1,
-			"the first Walk location lead is entirely visible without scrolling")
+		for id in [&"walk", &"strike", &"set", &"combo"]:
+			_book._select_slot(id)
+			_book._focus_selected()
+			await _frames(4)
+			_check(_book._detail_description.text == Abilities.ability(id).lead
+				and _book._detail_description.get_global_rect().end.y <= _book._journey_notes.get_global_rect().end.y + 1,
+				"the missing %s location lead is entirely visible without scrolling at %s" % [id, dimensions])
 		_abilities.restore_snapshot(original)
 		_book.refresh_abilities()
 		_book._select_slot(&"hood")

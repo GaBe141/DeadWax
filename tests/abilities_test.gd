@@ -81,12 +81,34 @@ func _opening() -> void:
 	await _physics(3)
 
 func _acquisition_context() -> void:
+	_check(_main.world_room_id == &"headshell" and _pickup(&"walk") != null
+		and _pickup(&"strike") == null and _pickup(&"set") == null,
+		"the opening leaves only walking to recover before the Plaza")
+	# Even a plausible sleeve at the new needle origin belongs to Horn Plaza,
+	# not whichever room happens to contain a freshly attached pickup node.
+	var misplaced := Pickup.new()
+	misplaced.ability = &"strike"
+	misplaced.abilities = _main.abilities
+	misplaced.position = Abilities.ability(&"strike").position
+	_main.room.add_child(misplaced)
+	await _stand(Vector2(650, 554))
+	_check(_main.player.is_on_floor() and misplaced.can_request()
+		and _main.player.position.distance_to(misplaced.position) < 76.0,
+		"wrong-room fixture otherwise satisfies grounded pickup reach")
+	_main._on_ability_requested(&"strike", misplaced)
+	_check(_main.abilities.snapshot() == Abilities.default_snapshot(), "a canonical-looking needle cannot be claimed in the wrong room")
+	misplaced.free()
+	_main._load_world_room(&"horn_plaza", &"from_headshell")
+	await _physics(3)
 	var source := _pickup(&"strike")
-	_check(source != null, "the missing needle exists in the opening")
+	_check(source != null, "the missing needle waits in Horn Plaza")
 	if source == null: return
-	await _stand(Vector2(260, 554))
+	await _stand(source.position + Vector2(-150, 0))
+	_check(_main.player.is_on_floor() and _main.player.position.distance_to(source.position) > 76.0,
+		"far pickup fixture is grounded beyond the actual needle reach")
 	_main._on_ability_requested(&"strike", source)
-	await _stand(Vector2(365, 454))
+	_check(not _main.abilities.has_ability(&"strike"), "a distant Plaza needle request is rejected")
+	await _stand(source.position + Vector2(0, -100))
 	_check(not _main.player.is_on_floor(), "airborne pickup fixture is off the floor")
 	_main._on_ability_requested(&"strike", source)
 	await _stand(source.position)
@@ -274,15 +296,25 @@ func _permissions() -> void:
 
 func _persistence() -> void:
 	_main.abilities.restore_snapshot({"version": 2, "unlocked": ["walk", "strike", "set"]})
+	_main._load_world_room(&"horn_plaza", &"from_headshell")
+	await _physics(3)
 	_check(_main._persist_session(), "save a deliberately partial journey")
 	var partial: Dictionary = _main.abilities.snapshot()
 	_main.abilities.reset()
 	_main._continue_game()
 	await _physics(4)
-	_check(_main.abilities.snapshot() == partial and _pickup(&"strike") == null and _pickup(&"set") == null,
-		"Continue restores partial permissions before building pickups")
+	_check(_main.abilities.snapshot() == partial and _main.world_room_id == &"horn_plaza" and _pickup(&"strike") == null,
+		"Continue restores partial permissions before building the Plaza needle")
 	_check(not _main.abilities.has_ability(&"hood") and _main.player.last_strike_ms == -100000,
 		"Continue grants no missing move or replayed strike")
+	_main._load_world_room(&"groove_yard")
+	await _physics(3)
+	_check(_main._persist_session(), "save the partial journey at the Set discovery's room")
+	_main.abilities.reset()
+	_main._continue_game()
+	await _physics(4)
+	_check(_main.abilities.snapshot() == partial and _main.world_room_id == &"groove_yard" and _pickup(&"set") == null,
+		"Continue retires the relocated owned Set without filling the missing chain")
 	_main._respawn()
 	await _physics(5)
 	_check(_main.abilities.snapshot() == partial, "recovery preserves the earned subset")
@@ -307,8 +339,13 @@ func _persistence() -> void:
 	_check(_main.abilities.snapshot() == partial, "Continue after practice retains partial progress")
 	_main._new_game(false)
 	await _physics(4)
-	_check(_main.abilities.snapshot() == Abilities.default_snapshot() and _pickup(&"strike") != null and _pickup(&"set") != null,
-		"New Game resets moves and recreates the two opening discoveries")
+	_check(_main.abilities.snapshot() == Abilities.default_snapshot() and _pickup(&"walk") != null
+		and _pickup(&"strike") == null and _pickup(&"set") == null,
+		"New Game resets moves and recreates only the walking discovery in Headshell")
+	for id in [&"strike", &"set", &"combo"]:
+		_main._load_world_room(Abilities.ability(id).room_id)
+		await _physics(3)
+		_check(_pickup(id) != null and not _main.abilities.has_ability(id), "%s returns at its later discovery after New Game" % id)
 
 func _migration() -> void:
 	var legacy := {"version": 1, "room_id": "high_street", "entry_id": "default", "shine": 3,

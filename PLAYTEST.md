@@ -17,6 +17,54 @@ original suite counts.
 - Overall frame pacing: smooth / occasional hitch / frequent hitch
 - Audio clarity and latency:
 
+## Opening pace
+
+Use New Game to assess the redistributed discoveries; Continue retains every
+move already earned. Avoid replacing a valued campaign checkpoint for a test.
+
+- [ ] Headshell introduces Walk and the carried map, with no combat or Set
+  sleeves. Walk and jump across its low block before leaving; the Book's
+  objective leads toward the light after Walk rather than another upgrade.
+- [ ] Horn Plaza introduces Strike at (650,574) in a safe stretch before the
+  Hound. High Street introduces Hood on the upper walk. Check that the route
+  around the Looper stays usable without Set or combos.
+- [ ] The first Practice visit concentrates on Tick and Count-In. There is no
+  Echo Trial post, grinding cue, or proximity hunt discovery. Groove Riding
+  remains a separate fresh E/Y pickup after opening the door. Enter from Horn
+  without Strike: the Book points back to the plaza needle and the return exit
+  remains usable.
+- [ ] Stalls introduces no further ability; practise the recovered launch and
+  its western recovery route. In the Yard, collect Set at (610,574), before the
+  first voice. Hear and answer its call with the already recovered Hood.
+- [ ] Descent repeats Count-In without a new ability. Three-Strike Chain waits
+  on Overture Stair's middle landing at (925,644). Reach it on ordinary jumps,
+  collect it while grounded, and use the safe stairs to try the chain.
+- [ ] After the Descent Gate is saved open, return to Practice: the optional
+  Label trial is present and works. A pre-existing discovered Label hunt stays
+  available even without that milestone; Continue preserves gear, pity and
+  materials. Other regional trials retain their previous timing.
+- [ ] At 1280×720 and 960×540, missing-move Book leads name the new locations
+  and stay readable. Check that this feels less crowded without changing run,
+  jump, attack cadence, parry or controller response.
+
+## Opening pacing verification — 2 October 2026
+
+Godot 4.7.2's complete `deadwax.cmd check` passed all 53 suites and 12,140
+checks, with no script errors. Older synthesized-audio ObjectDB teardown
+warnings remain. New regressions cover introduction density, relocated-source
+validation and rollback, readable Book leads, delayed Label trial availability,
+and old collection access through Continue.
+
+Native GL Compatibility checks passed ability world (127), acquisition and
+persistence (97), Book (111), and a separate 13-check collision/input review.
+That review earned Walk with 45 fresh taps, collected the map and relocated
+Strike/Set/chain, descended the real Stair and returned up its 80px treads
+using held ordinary jumps without Refrains. Eight renders were inspected at
+1280×720 and 960×540. Logs and images are ignored `.godot/pacing-*.log` and
+`.godot/pacing-native-*.png` files. All checkpoints/settings were private;
+the player's save and running game were untouched. Subjective pacing and
+audio/controller feel still need a human fresh-run playtest.
+
 ## USB GameCube controller and movement weight
 
 Use the physical controller for these checks; scripted events do not establish
@@ -264,8 +312,9 @@ Use isolated checkpoints for partial-save and write-failure checks.
   cue stays on screen at 1280×720 and 960×540. The objective in This Place
   and the Book's movement card then update immediately. Held movement
   regains the original speed and handling, and Continue preserves it.
-- [ ] Find Strike on the Headshell floor at (365,554), then Set toward the east
-  at (890,554). A fresh grounded E/Y within 76 px recovers each part once.
+- [ ] Find Strike beneath the Horn Plaza horn at (650,574), then Set on the
+  Yard's western approach at (610,574). Fresh grounded E/Y within 76 px
+  recovers each part once.
   Passing nearby, arriving, or holding E/Y from a different interaction never
   collects it. The artwork remains at the fixed interaction origin.
 - [ ] Strike initially gives single Tap attacks and the existing parry. Four
@@ -288,8 +337,8 @@ Use isolated checkpoints for partial-save and write-failure checks.
   The pickup remains unavailable until the door's saved opened outcome.
   Return to the Stalls: strike the live wax, steer onto the eastern bank,
   and reach the Yard. Miss deliberately and repeat the safe western return.
-- [ ] Take Three-Strike Chain on the Yard approach at (610,574). Fresh presses
-  now link Tap, Sweep, Accent through their distinct poses and impressions.
+- [ ] Take Three-Strike Chain on Overture Stair's middle landing at (925,644).
+  Fresh presses now link Tap, Sweep, Accent through their distinct poses and impressions.
   Move practice retains all three readout marks and link time. The stronger
   third hit changes no jump, launch, reach, or parry timing.
 - [ ] Before Pogo, airborne hits damage vulnerable foes without rebounding.
@@ -325,7 +374,8 @@ Use an isolated checkpoint when seeding equipment, dry streaks, or save failures
 Run the three trial sources naturally as well; do not treat an accelerated
 fixture as a measurement of completionist playtime.
 
-- [ ] Find the trial presses beyond Tick in Tick's Practice, in the eastern
+- [ ] After opening the Descent Gate, return for the trial beyond Tick in
+  Tick's Practice. Find the other trial presses in the eastern
   Worn Gallery beyond the Arm's service door, and on the Deep Gallery's lower
   floor. They are clear of arrivals, do not block walking, and remain readable
   at 1280×720 and 960×540.

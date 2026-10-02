@@ -82,8 +82,8 @@ func _nearest_prompt() -> bool:
 	var distance := _player_distance()
 	if distance > NOTICE_RADIUS:
 		return false
-	# The first two sleeves share the cradle. Show one readable prompt rather
-	# than stacking their cards; their independent interaction origins remain.
+	# Keep one readable prompt when future sleeves share a room. Their
+	# independent interaction origins never follow the presented card.
 	for candidate in get_tree().get_nodes_in_group("ability_pickup"):
 		if candidate == self or candidate.get_parent() != get_parent():
 			continue

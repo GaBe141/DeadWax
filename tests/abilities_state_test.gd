@@ -122,6 +122,12 @@ func _check_catalog() -> void:
 	_check(Abilities.catalog().size() == 7 and Abilities.ability(&"walk").description != "CHANGED", "catalog arrays and their entries cannot rewrite authored content")
 	_check(Abilities.ability(&"invented").is_empty(), "unknown discoveries have no fabricated location")
 	_check(Abilities.ability(&"groove").outcome_key == "practice_room/practice_count_in", "Groove Riding waits behind the existing Count-In result")
+	_check(Abilities.ability(&"strike").room_id == &"horn_plaza" and Abilities.ability(&"strike").position == Vector2(650, 574),
+		"the first needle waits under Horn Plaza's horn after the quiet opening")
+	_check(Abilities.ability(&"set").room_id == &"groove_yard" and Abilities.ability(&"set").position == Vector2(610, 574),
+		"the listening weight introduces Set on the Yard's western approach")
+	_check(Abilities.ability(&"combo").room_id == &"overture_stair" and Abilities.ability(&"combo").position == Vector2(925, 644),
+		"the chain is its own later discovery on the Stair's middle landing")
 	_check(Abilities.ability(&"pogo").room_id == &"overture_well", "Pogo names the real authored Well")
 	for id in EXPECTED_IDS:
 		if id != &"groove":
