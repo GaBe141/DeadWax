@@ -16,6 +16,7 @@ const WorldBackdrop := preload("res://scripts/ui_world_backdrop.gd")
 var exploration: RefCounted
 var collection: RefCounted
 var is_open := false
+var controller_labels: Dictionary = {}
 var overlay: Control
 var _snapshot: Dictionary = {}
 var _motion: Node
@@ -36,6 +37,7 @@ var _returns: Label
 var _legend: Label
 var _lost_status: Label
 var _carried_pressings: Array[String] = []
+var _page_axes: Dictionary = {}
 
 class ChartArt extends Control:
 	var visited: Array[String] = []
@@ -89,10 +91,20 @@ func _input(event: InputEvent) -> void:
 		get_viewport().set_input_as_handled()
 		_request_close()
 		return
-	for action in [&"ui_left", &"ui_right"]:
-		if event.is_action(action):
+	if event is InputEventJoypadMotion:
+		var axis_key := "%d/%d" % [event.device, event.axis]
+		var direction := -1 if event.is_action_pressed("ui_left", false, true) else (1 if event.is_action_pressed("ui_right", false, true) else 0)
+		var previous := int(_page_axes.get(axis_key, 0))
+		_page_axes[axis_key] = direction
+		if direction != 0:
 			get_viewport().set_input_as_handled()
-			if event.is_pressed() and not _opening_gate:
+			if direction != previous and not _opening_gate:
+				_turn_page(direction)
+			return
+	for action in [&"ui_left", &"ui_right"]:
+		if event.is_action(action, true):
+			get_viewport().set_input_as_handled()
+			if event.is_action_pressed(action, false, true) and not _opening_gate:
 				_turn_page(-1 if action == &"ui_left" else 1)
 			return
 	if event.is_action("ui_accept"):
@@ -142,6 +154,7 @@ func show_map(snapshot: Dictionary) -> void:
 	_count.text = "%02d / %02d PLACES VISITED" % [visited.size(), ids.size()]
 	is_open = true
 	_opening_gate = true
+	_page_axes.clear()
 	_close_pending = false
 	overlay.show()
 	_motion.reveal(_header, 0.0, 0.18)

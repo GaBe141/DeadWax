@@ -3,8 +3,10 @@
 Run `.\deadwax.cmd play` for the authored opening. Start with the chapter
 checklist, then use `.\deadwax.cmd dev` for focused mechanics regressions.
 Runtime errors are written to `.godot/deadwax-play.log`.
-Run `.\deadwax.cmd check` before handoff; the complete run contains 49 native
-suites, including cinematic presentation, Lost Pressings, and Book/map suites.
+Run `.\deadwax.cmd check` before handoff; the complete run contains 53 native
+suites, including calibrated controllers, movement weight, cinematic presentation,
+Lost Pressings, and Book/map suites. Older review results below retain their
+original suite counts.
 
 ## Session
 
@@ -14,6 +16,75 @@ suites, including cinematic presentation, Lost Pressings, and Book/map suites.
 - Input device:
 - Overall frame pacing: smooth / occasional hitch / frequent hitch
 - Audio clarity and latency:
+
+## USB GameCube controller and movement weight
+
+Use the physical controller for these checks; scripted events do not establish
+adapter compatibility or human feel. Record the adapter name and connection
+mode with the session's input device.
+
+- [ ] From title or pause, open **Settings → Controller setup** with mouse or
+  keyboard. Select the intended device, release both sticks/triggers/buttons,
+  choose Ready, and follow all 18 prompts. L/R squeeze fully; each control
+  must return to rest before the next prompt. Retry, Start over, and Escape
+  remain usable at 1280×720 and 960×540. Review and Save layout returns to Settings.
+- [ ] In Move practice, check physical **A jump**, **X strike**, **B Hood**,
+  **L Set**, **R flip**, **Z Book**, and **Start pause**. Flip still needs
+  Jump-Cut; use a campaign that has earned it to verify the live flip. A confirms
+  and B returns in menus; no confirming or closing press jumps, strikes, or
+  enters a passage underneath. L/R turn Book pages and C-stick Up/Down reaches
+  long Journey/equipment/bestiary notes.
+- [ ] In the campaign, use Y beside an available pickup, passage, and listening
+  post. D-pad Up browses the nearby Bootlegger while Y retains his dialogue.
+  D-pad Down opens the collected map. The D-pad navigates menus without opening
+  the shop/map behind them; all ability and map ownership gates remain intact.
+- [ ] Relaunch and verify the saved physical layout still works. New Game and
+  Continue leave it intact. Cancel a partial recalibration: the previous
+  layout remains usable. If saving fails, retry Save layout rather than
+  losing the captured controls or changing the campaign checkpoint.
+- [ ] Unplug while holding a direction, Hood, or trigger: the action releases.
+  Reconnect, rest every control, then press afresh. Leaving setup with A or a
+  trigger held does not fire a gameplay action. On Windows, switch to another
+  window and move the controller; the unfocused game ignores it. Refocus and
+  return the controls to rest before resuming.
+- [ ] In Move practice, run from rest, release, then reverse at full speed.
+  The run builds over about 0.18 seconds, a release coasts roughly 21 pixels,
+  and reversal visibly carries the existing motion before taking the new
+  direction. It should feel deliberate without obstructing short approaches.
+- [ ] Hold Hood while moving, then release movement: its slower pace settles
+  over a shorter distance. Hold Set during a run: Skip stops firmly and stays
+  planted even with a direction held. Fit acceleration/braking gear in the
+  campaign and compare its stated benefit and cost.
+- [ ] Jump and steer, launch from a groove, Gather to the Stalls loft, and try
+  a grounded combo while reversing. Air steering, jump height, strike cadence,
+  parry timing, and full running speed retain their feel. Ordinary running and
+  coyote jumps still cannot skip the Stalls' Groove Riding gate.
+- [ ] Start a fresh journey: a held key or stick gives one pixel and no coast
+  before Walk. Returning to neutral and tapping/flicking adds one pixel each
+  time, including while jumping. Recover Walk and check the continuous run.
+
+## Controller and movement verification — 2 October 2026
+
+Godot 4.7.2's complete `deadwax.cmd check` run passed all 53 suites and
+12,095 checks without script errors. Existing synthesized-audio teardown
+ObjectDB warnings remain in some older suites. New regressions cover strict
+calibration data, virtual events during pause, trigger hysteresis, held input
+and keyboard preservation on refresh, save failure/retry, physical GameCube
+menu meanings, close-input suppression, settings focus, restart, and campaign /
+practice isolation. Actual collision frames cover acceleration, coast,
+reversal, Set, Hood, equipment, unchanged air handling, and the opening shuffle.
+
+Native GL Compatibility runs also passed the profile (128), setup sheet (42),
+and full-game controller integration (65) checks. Setup ready/capture/review,
+Settings, and physical control labels were reviewed at 1280×720 and 960×540;
+the compact Settings sheet scrolls to Controller setup. Review images are in
+the ignored `.godot/controller-menu-*.png` and
+`.godot/controller-runtime-*.png` files.
+
+The attached device was detected as `DragonRise Inc. Generic USB Joystick`,
+with an unrecognised layout. Its physical buttons were not guessed: the
+player must complete Controller setup with the actual pad. Physical calibration,
+audio listening, and subjective controller/movement feel remain manual.
 
 ## Quiet Wax campaign presentation
 

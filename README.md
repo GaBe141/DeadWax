@@ -38,6 +38,10 @@ throughout. Then recover Strike and Set in the Headshell, followed by the Hood,
 Groove Riding, Three-Strike Chain, and Pogo. Earlier saves keep their existing
 walking and moves; choose New Game to play this progression.
 
+After Walk, Skip builds into a run and carries a brief coast when you release
+the direction. Reversing takes a little commitment; Set plants more firmly.
+Top speed, jumping, airborne steering, and combat timing remain familiar.
+
 Everything is built from code at runtime, so an empty editor viewport is
 expected. The Label, Overture, and first stretch of the Unplayed are authored;
 the remainder of the planned 53-room world is still development scaffolding.
@@ -49,7 +53,7 @@ The lightweight project commands are:
 .\deadwax.cmd play    play the campaign with a local runtime log
 .\deadwax.cmd dev     open the original mechanics rooms and planned-world tools
 .\deadwax.cmd editor  open the project in Godot
-.\deadwax.cmd check   import resources; run all forty-nine native test suites
+.\deadwax.cmd check   import resources; run all fifty-three native test suites
 .\deadwax.cmd vibe    start Mistral Vibe in this repository
 ```
 
@@ -347,20 +351,59 @@ binding, or reward save leaves the previous collection and effects intact.
 
 The checkpoint is `user://deadwax-save.json`. Writes are validated and keep a
 `.bak` recovery copy of the previous valid checkpoint. Volume, fullscreen,
-and reduced camera motion are saved separately in
+reduced camera motion, and calibrated controller layouts are saved separately in
 `user://deadwax-settings.cfg`. Reduced camera motion removes camera smoothing
 and shake, and freezes decorative ambient motion, parallax, and slow lamp
-modulation. Escape/gamepad Back opens pause; gamepad Start keeps its role as
-the Book. The needle has three health slots, or four with Spare Groove;
+modulation. A standard gamepad uses Back to pause and Start for the Book;
+a calibrated GameCube controller uses Start to pause and Z for the Book.
+The needle has three health slots, or four with Spare Groove;
 fitted equipment can adjust that capacity by one in either direction. Losing
 them recovers Skip at the active room entry with full health and preserved progress.
 Continue also starts there at full health.
+
+## USB GameCube controller setup
+
+Connect the controller or adapter, then use the mouse or keyboard to open
+**Settings → Controller setup** from the title or pause menu. Choose the
+controller if more than one is connected. Let both sticks, triggers, and
+buttons rest, choose **Ready**, then follow all **18 prompts**. Move sticks
+fully in the requested direction and squeeze L/R fully. Release every control
+between prompts. **Retry** corrects the previous capture; **Start over** begins
+again, and Escape cancels. Review the layout, then choose **Save layout**.
+
+This learns the adapter's buttons and axes, including analog triggers and
+D-pad axes. Your previous layout stays active until saving succeeds. The layout
+belongs to settings rather than a campaign checkpoint and remains available
+after New Game or Continue.
+
+| Physical GameCube control | Campaign action |
+| --- | --- |
+| Main stick | Shuffle before Walk; run after Walk; navigate menus |
+| A | Jump / confirm |
+| X | Strike |
+| Hold B | Raise Hood; B goes back in menus |
+| Y | Interact / enter / listen |
+| Hold L | Set; previous Book page while reading |
+| R | Flip with Jump-Cut; next Book page while reading |
+| Z | Open The Book |
+| Start | Pause |
+| D-pad Up / Down | Browse the nearby stall / open the collected map |
+| C stick Up / Down | Scroll Book notes |
+
+Unplugging releases held controls. After reconnecting or leaving setup, let
+the controls return to rest before pressing again. On Windows, controller
+input is ignored while the game window is unfocused; click back into the game
+before testing. If the adapter is missing from the picker, reconnect it and
+reopen the setup sheet.
 
 ## Controls
 
 Jumping, interaction, and menus work from the start. Each fresh direction
 press shuffles one pixel until Walk is recovered. Strike, Hood, Set, and the
 attack refinements below also wait for their discoveries.
+
+The gamepad names below describe a standard pad; a calibrated GameCube
+controller uses the physical layout above.
 
 - **A/D** or left stick: fresh taps/flicks shuffle; holding walks after **Walk**.
 - **SPACE** jumps (stubby on purpose — the strike does the flying).
@@ -397,6 +440,14 @@ A ready strike answers immediately. A press in the last 90 ms of the 200 ms
 cooldown queues one follow-up; holding the button does not repeat attacks.
 Ground recovery lasts 100 ms and keeps 80% movement acceleration. Hood, Set,
 damage, menus, recovery, and passages cancel a queued strike and its combo.
+
+Ground run acceleration is **1900 px/s²**, release braking **2400 px/s²**,
+and Set braking **3800 px/s²**. At 60 physics ticks, reaching the unchanged
+**340 px/s** top speed takes about 0.18 seconds; a full-speed release coasts
+about 21 pixels before settling. Air steering remains **1170 px/s²** with
+**760 px/s²** neutral drag. Equipment still applies its stated handling
+benefits and costs. Jump height, gravity, coyote time, hit reach, and strike
+and parry timing are unchanged.
 
 Before finding the chain, every attack is a single Tap. After recovering
 **Three-Strike Chain**, fresh presses link **Tap → Sweep → Accent**. Execute the next strike within
@@ -653,7 +704,7 @@ own animation while gameplay and the HUD remain paused underneath.
 
 ## Development checks
 
-Run `.\deadwax.cmd check` before committing. It imports resources and runs 49
+Run `.\deadwax.cmd check` before committing. It imports resources and runs 53
 dependency-free native suites, including smoke, save-store, campaign, Tonearm, Overture,
 sprite-animation, residents, economy-state, economy integration, scenery,
 lighting, attack-feel, GUI-animation, and map-item suites. These cover the original combat and
@@ -686,6 +737,11 @@ legacy migration, earned-input behavior, fixed pickups and
 failed writes, the Stalls gate and safe western return, and Book/readout
 permission cues. Native playtests still check the readability and pace of
 repeated hunts and equipment handling.
+Controller profile, setup-menu, and integration checks cover the 18 physical
+captures, buttons and axes, neutral gating, saved settings, reconnects, menu
+isolation, and translated gameplay actions. Movement checks exercise run-up,
+coast, reversal, Set/Hood handling, preserved air steering, equipment trade-offs,
+and the exact one-pixel shuffle.
 GitHub runs the checks on pushes and pull requests. Gameplay feel, real audio,
 rendering, and controller behavior still require `PLAYTEST.md`.
 

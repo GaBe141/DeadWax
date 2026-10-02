@@ -16,6 +16,7 @@ const WorldBackdrop := preload("res://scripts/ui_world_backdrop.gd")
 const AMBER := Color("b87a39")
 
 var is_open := false
+var controller_labels: Dictionary = {}
 var overlay: Control
 var _snapshot: Dictionary = {}
 var _catalog: Array[Dictionary] = []
@@ -79,7 +80,7 @@ func _input(event: InputEvent) -> void:
 	if event.is_action("trade"):
 		# D-pad Up opens the counter in the world and navigates the catalog
 		# inside it. Keyboard B and the ordinary cancel buttons close it.
-		var pad_up: bool = event is InputEventJoypadButton and event.button_index == JOY_BUTTON_DPAD_UP
+		var pad_up: bool = not event is InputEventKey and event.is_action_pressed("ui_up", false, true)
 		if _opening_gate or not pad_up:
 			get_viewport().set_input_as_handled()
 			if event.is_pressed() and not _opening_gate:

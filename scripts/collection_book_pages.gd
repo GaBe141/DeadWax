@@ -17,6 +17,7 @@ const SLOTS := ["needle", "lining", "charm"]
 
 var book: CanvasLayer
 var motion: Node
+var controller_labels: Dictionary = {}
 var _model: RefCounted
 var _snapshot: Dictionary = {}
 var _page := "equipment"
@@ -56,6 +57,7 @@ var _gear_list: ScrollContainer
 var _species_list: ScrollContainer
 var _gear_notes: ScrollContainer
 var _species_notes: ScrollContainer
+var _notes_hint: Label
 
 func _ready() -> void:
 	add_theme_constant_override("separation", 10)
@@ -76,16 +78,18 @@ func _input(event: InputEvent) -> void:
 func _process(delta: float) -> void:
 	if not is_visible_in_tree() or not book.is_open():
 		return
-	for device in Input.get_connected_joypads():
-		var amount := Input.get_joy_axis(device, JOY_AXIS_RIGHT_Y)
+	if InputMap.has_action("book_scroll_up") and InputMap.has_action("book_scroll_down"):
+		var amount := Input.get_axis("book_scroll_up", "book_scroll_down")
 		if absf(amount) > 0.25:
 			scroll_notes(amount * 520.0 * delta)
-			break
 
 func scroll_notes(amount: float) -> void:
 	var notes := _gear_notes if _page == "equipment" else _species_notes
 	if notes != null:
 		notes.scroll_vertical += roundi(amount)
+
+func _notes_controls() -> String:
+	return "NOTES  ·  Mouse wheel / PgUp PgDn / " + ("C stick" if String(controller_labels.get("inventory", "Start")) == "Z" else "right stick")
 
 func show_page(page_id: String) -> void:
 	_page = page_id
@@ -138,7 +142,9 @@ func refresh(model: RefCounted, notice := "") -> void:
 		var progress: Dictionary = hunts.get(hunt.id, {})
 		var wins := int(progress.get("wins", 0))
 		hunt_lines.append("%s %d/%d%s" % [hunt.name, mini(wins, int(hunt.mastery_wins)), int(hunt.mastery_wins), " ✓" if wins >= int(hunt.mastery_wins) else ""])
-	_hunt_progress.text = "OPTIONAL MASTERY  ·  " + "  /  ".join(hunt_lines) + "\nNOTES  ·  Mouse wheel / PgUp PgDn / right stick"
+	_hunt_progress.text = "OPTIONAL MASTERY  ·  " + "  /  ".join(hunt_lines) + "\n" + _notes_controls()
+	if _notes_hint != null:
+		_notes_hint.text = _notes_controls()
 	var seen := 0
 	var bestiary: Dictionary = _snapshot.get("bestiary", {})
 	for id in _species_buttons:
@@ -326,7 +332,8 @@ func _build_bestiary() -> void:
 	_species_tip = _text(_species_detail, Press.SIZE_BODY, ACCENT)
 	_species_counts = _text(_species_detail, Press.SIZE_SMALL, FADED)
 	var note_hint := _text(_bestiary, Press.SIZE_TINY, FADED)
-	note_hint.text = "NOTES  ·  Mouse wheel / PgUp PgDn / right stick"
+	note_hint.text = _notes_controls()
+	_notes_hint = note_hint
 
 func _select_item(id: String, animate := true) -> void:
 	var item: Dictionary = Catalog.item(id)

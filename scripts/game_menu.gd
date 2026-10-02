@@ -10,6 +10,7 @@ signal quit_requested
 signal settings_changed(settings: Dictionary)
 signal opening_requested
 signal practice_requested
+signal controller_requested
 
 const PressScript := preload("res://scripts/press.gd")
 const MotionScript := preload("res://scripts/ui_motion.gd")
@@ -24,6 +25,7 @@ const NARROW_AT := 900.0
 
 var is_open := false
 var screen := ""
+var controller_labels: Dictionary = {}
 var settings: Dictionary = {
 	"volume": 0.8,
 	"reduced_motion": false,
@@ -95,7 +97,7 @@ func _input(event: InputEvent) -> void:
 		return
 	if event is InputEventKey and event.echo:
 		return
-	if event.is_action_pressed("ui_cancel"):
+	if event.is_action_pressed("ui_cancel") or (InputMap.has_action("pause_game") and event.is_action_pressed("pause_game")):
 		get_viewport().set_input_as_handled()
 		match screen:
 			"settings", "controls":
@@ -354,7 +356,11 @@ func _build_settings() -> void:
 	_checkbox("Fullscreen", "fullscreen")
 	_checkbox("Reduced motion", "reduced_motion")
 	_page.add_child(_label("Steadies the camera, scenery, and interface.", PressScript.SIZE_TINY, FADED))
-	_space(22.0)
+	_space(10.0)
+	_button("Controller setup", controller_requested.emit)
+	if String(controller_labels.get("inventory", "Start")) == "Z":
+		_page.add_child(_label("GameCube: Z opens The Book. Start pauses.", PressScript.SIZE_TINY, FADED))
+	_space(10.0)
 	_button("Back", _show_screen.bind(_return_screen))
 
 
@@ -373,12 +379,13 @@ func _build_controls() -> void:
 		["Jump", "Space", "A"],
 		["Strike", "J / X", "X"],
 		["Raise Hood", "Hold K / C", "Hold B"],
-		["Kneel / Set", "Hold L", "Hold LB"],
+		["Kneel / Set", "Hold L", "Hold " + String(controller_labels.get("set", "LB"))],
+		["Turn pressing", "F", String(controller_labels.get("flip", "RB"))],
 		["Enter passage", "E", "Y"],
 		["Browse stall", "B", "D-pad Up"],
-		["The Book", "I", "Start"],
+		["The Book", "I", String(controller_labels.get("inventory", "Start"))],
 		["Map", "M", "D-pad Down"],
-		["Pause", "Esc", "Back"],
+		["Pause", "Esc", String(controller_labels.get("pause_game", "Back"))],
 		["Last entrance", "R", "—"],
 	]:
 		for cell in row:

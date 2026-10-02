@@ -40,6 +40,10 @@ const OpeningScript := preload("res://scripts/opening_cutscene.gd")
 const PracticeScript := preload("res://scripts/room_move_practice.gd")
 const ComboReadoutScript := preload("res://scripts/combo_readout.gd")
 const CinematicHudScript := preload("res://scripts/cinematic_hud.gd")
+const ControllerProfileScript := preload("res://scripts/controller_profile.gd")
+const ControllerRouterScript := preload("res://scripts/controller_router.gd")
+const ControllerMenuScript := preload("res://scripts/controller_menu.gd")
+const INACTIVE_PAD_DEVICE := 100000
 
 const MARGIN := 22.0
 const NEEDLE_HEALTH := 3
@@ -95,6 +99,11 @@ var _save_message_time := 0.0
 var _health := NEEDLE_HEALTH
 var _respawn_pending := false
 var _settings := {"volume": 0.8, "reduced_motion": false, "fullscreen": false}
+var controller_router: Node
+var controller_menu: CanvasLayer
+var controller_profiles: Dictionary = {}
+var _controller_closing := false
+var _book_closing := false
 
 var title: Label
 var subtitle: Label
@@ -179,6 +188,7 @@ func _ready() -> void:
 	inventory.can_open = _can_open_inventory
 	add_child(inventory)
 	inventory.opened.connect(_on_inventory_opened)
+	inventory.closed.connect(_on_inventory_closed)
 	inventory.map_requested.connect(_open_map_from_book)
 	inventory.equip_requested.connect(_equip_collection_item)
 	inventory.unequip_requested.connect(_unequip_collection_slot)
@@ -211,10 +221,22 @@ func _ready() -> void:
 	add_child(opening)
 	opening.shot_started.connect(_on_opening_shot)
 	opening.finished.connect(_on_opening_finished)
+	controller_router = ControllerRouterScript.new()
+	controller_router.name = "ControllerRouter"
+	add_child(controller_router)
+	controller_menu = ControllerMenuScript.new()
+	controller_menu.name = "ControllerSetup"
+	add_child(controller_menu)
+	controller_menu.profile_requested.connect(_save_controller_profile)
+	controller_menu.closed.connect(_on_controller_setup_closed)
+	game_menu.controller_requested.connect(_open_controller_setup)
+	Input.joy_connection_changed.connect(_on_controller_connection)
 	_load_settings()
 	_load_world_room(ChapterScript.START_ROOM)
 	get_tree().auto_accept_quit = false
 	_show_title()
+	if "--controller-setup" in OS.get_cmdline_user_args():
+		call_deferred("_boot_controller_setup")
 
 func _exit_tree() -> void:
 	if game_menu != null and get_tree() != null:
@@ -282,7 +304,7 @@ func _process(delta: float) -> void:
 	combo_readout.set_snapshot(player.combo_snapshot())
 	if practice_mode:
 		subtitle.text = room.objective_label
-		status.text = "J / X · STRIKE     SPACE / A · JUMP     K / B · HOOD     L / LB · SET"
+		status.text = _controller_text("J / X · STRIKE     SPACE / A · JUMP     K / B · HOOD     L / LB · SET")
 		controls_note.text = _controls_text()
 	elif development_mode:
 		status.text = "crackle   shine %d   hits taken %d   %s\n%s" % [player.shine, _hits_taken, _pressing_text(), progression.call("hud_text")]
@@ -306,7 +328,7 @@ func _update_place_notes() -> void:
 	var notes: Array[Dictionary] = []
 	for note in room._notes:
 		if not is_instance_valid(note): continue
-		notes.append({"heading": String(note.get_meta("card_heading", "")), "body": String(note.get_meta("card_body", ""))})
+		notes.append({"heading": String(note.get_meta("card_heading", "")), "body": _controller_text(String(note.get_meta("card_body", "")))})
 	inventory.place_notes = notes
 
 func _cinematic_focus() -> Dictionary:
@@ -333,7 +355,15 @@ func _cinematic_focus() -> Dictionary:
 	# quiet line disappears as soon as the nearby Walk sleeve becomes reachable.
 	if selected.is_empty() and world_room_id == &"headshell" and not abilities.has_ability(&"walk"):
 		return {"text": "Tap left toward the cradle. Your feet are waiting."}
+	if not selected.is_empty():
+		selected = selected.duplicate(true)
+		for field in ["text", "dialogue"]:
+			if selected.has(field): selected[field] = _controller_text(String(selected[field]))
 	return selected
+
+func _controller_text(text: String) -> String:
+	if game_menu == null or game_menu.controller_labels.is_empty(): return text
+	return text.replace("L / LB", "L").replace("F / RB", "F / R")
 
 func _update_cinematic_presentation() -> void:
 	var cinematic := _cinematic_campaign()
@@ -348,9 +378,11 @@ func _update_cinematic_presentation() -> void:
 	cinematic_hud.set_focus(_cinematic_focus())
 
 func _controls_text() -> String:
+	var gamecube := _gamecube_connected()
+	var pause_button := "START" if gamecube else "BACK"
 	if practice_mode:
-		return "A / D / STICK · MOVE     R · RESET     ESC / BACK · PAUSE"
-	var note := "I / START · THE BOOK     ESC / BACK · PAUSE"
+		return "A / D / STICK · MOVE     R · RESET     ESC / %s · PAUSE" % pause_button
+	var note := "I / %s · THE BOOK     ESC / %s · PAUSE" % ["Z" if gamecube else "START", pause_button]
 	return "M / D-PAD DOWN · MAP     " + note if map_state.owned else note
 
 func _pressing_text() -> String:
@@ -712,12 +744,13 @@ func _pause_game() -> void:
 func _resume_game() -> void:
 	if _opening_active():
 		return
+	_release_controller_menu_input()
 	game_menu.call("close_menu")
 	# Defer so the confirming button cannot also become a jump or passage.
 	call_deferred("_unpause_game")
 
 func _unpause_game() -> void:
-	if not _opening_active() and game_menu != null and not game_menu.is_open and not shop.is_open and not inventory.call("is_open") and not map_menu.is_open and not _map_closing:
+	if not _opening_active() and game_menu != null and not game_menu.is_open and not shop.is_open and not inventory.call("is_open") and not _book_closing and not map_menu.is_open and not _map_closing:
 		get_tree().paused = false
 
 # -- before the first footstep ----------------------------------------------
@@ -969,6 +1002,7 @@ func _show_map() -> void:
 func _close_map() -> void:
 	if not map_menu.is_open or _map_closing:
 		return
+	_release_controller_menu_input()
 	map_menu.close_map()
 	_map_closing = true
 	call_deferred("_finish_map_close")
@@ -1020,6 +1054,7 @@ func _open_shop() -> void:
 func _close_shop() -> void:
 	if not shop.is_open or _shop_closing:
 		return
+	_release_controller_menu_input()
 	shop.call("close_shop")
 	_shop_closing = true
 	# The closing button belongs to the stall, including controller A/Space.
@@ -1074,25 +1109,147 @@ func _load_settings() -> void:
 			var value: Variant = config.get_value("display", key, false)
 			if value is bool:
 				_settings[key] = value
+		var profiles: Variant = config.get_value("controllers", "profiles", {})
+		if profiles is Dictionary:
+			for key in profiles:
+				if key is String and not key.is_empty() and key.length() <= 512 and ControllerProfileScript.valid(profiles[key]):
+					controller_profiles[key] = profiles[key].duplicate(true)
 	game_menu.settings = _settings.duplicate(true)
+	_refresh_controllers()
 	_apply_settings()
 
 func _change_settings(values: Dictionary) -> void:
 	_settings = values.duplicate(true)
 	_apply_settings()
+	if not _save_settings_file(controller_profiles):
+		game_menu.call("set_notice", "These settings work now, but could not be saved for next time.")
+	_queue_save()
+
+func _save_settings_file(profiles: Dictionary) -> bool:
 	var config := ConfigFile.new()
+	# Read the existing file so a volume change cannot erase learned controls.
+	config.load(settings_path)
 	config.set_value("audio", "volume", _settings.volume)
 	config.set_value("display", "reduced_motion", _settings.reduced_motion)
 	config.set_value("display", "fullscreen", _settings.fullscreen)
-	if config.save(settings_path) != OK:
-		game_menu.call("set_notice", "These settings work now, but could not be saved for next time.")
-	_queue_save()
+	config.set_value("controllers", "profiles", profiles)
+	var temporary := settings_path + ".tmp"
+	if config.save(temporary) != OK:
+		return false
+	if DirAccess.rename_absolute(temporary, settings_path) != OK:
+		DirAccess.remove_absolute(temporary)
+		return false
+	return true
+
+func _controller_devices() -> Array:
+	var devices := []
+	for id in Input.get_connected_joypads():
+		var key := ControllerProfileScript.device_key(id)
+		devices.append({"id": id, "key": key, "name": Input.get_joy_name(id),
+			"configured": controller_profiles.has(key)})
+	return devices
+
+func _gamecube_connected() -> bool:
+	for device in _controller_devices():
+		if bool(device.configured): return true
+	return false
+
+func _refresh_controllers() -> void:
+	if controller_router != null:
+		controller_router.configure(controller_profiles, _controller_devices())
+		Input.flush_buffered_events()
+	_refresh_pad_input()
+	var labels := {"inventory": "Z", "pause_game": "Start", "set": "L", "flip": "R",
+		"book_previous": "L", "book_next": "R"} if _gamecube_connected() else {}
+	if game_menu != null: game_menu.controller_labels = labels.duplicate()
+	if inventory != null: inventory.controller_labels = labels.duplicate()
+	if controls_note != null: controls_note.text = _controls_text()
+
+func _on_controller_connection(_device: int, _connected: bool) -> void:
+	# A held virtual direction never survives a cable being pulled or a new ID.
+	_refresh_controllers()
+	if controller_menu != null and controller_menu.is_open:
+		controller_menu.set_notice("Controller connection changed. Choose the controller again if needed.")
+
+func _release_controller_menu_input() -> bool:
+	if controller_router == null: return false
+	for device in controller_router.configured_devices():
+		if Input.is_joy_button_pressed(controller_router.profile_device(device), JOY_BUTTON_B):
+			# Physical B also holds Hood. Its menu Back press must end here;
+			# the learned layout rearms after the player releases the control.
+			controller_router.refresh(_controller_devices())
+			player.cancel_pending_strike()
+			player.set("_buffer", 0.0)
+			return true
+	return false
+
+func _on_inventory_closed() -> void:
+	if not _release_controller_menu_input(): return
+	_book_closing = true
+	get_tree().paused = true
+	call_deferred("_finish_book_close")
+
+func _finish_book_close() -> void:
+	await get_tree().process_frame
+	_book_closing = false
+	if _opening_active() or shop.is_open or map_menu.is_open or (game_menu != null and game_menu.is_open) or inventory.is_open(): return
+	get_tree().paused = false
+
+func _boot_controller_setup() -> void:
+	game_menu._open_subpage("settings")
+	_open_controller_setup()
+
+func _open_controller_setup() -> void:
+	if controller_menu == null or controller_menu.is_open or _controller_closing or _opening_active(): return
+	if game_menu == null or not game_menu.is_open or game_menu.screen != "settings": return
+	_cancel_discovery_attempts()
+	player.cancel_pending_strike()
+	player.set("_buffer", 0.0)
+	controller_router.suspended = true
+	controller_router.refresh(_controller_devices())
+	get_tree().paused = true
+	controller_menu.open_controller(_controller_devices())
+
+func _save_controller_profile(key: String, profile: Dictionary) -> void:
+	if controller_menu == null or not controller_menu.is_open or not ControllerProfileScript.valid(profile): return
+	var connected := false
+	for device in _controller_devices():
+		if String(device.key) == key: connected = true
+	if not connected:
+		controller_menu.set_notice("Reconnect this controller before saving its layout.")
+		return
+	var next := controller_profiles.duplicate(true)
+	next[key] = profile.duplicate(true)
+	if not _save_settings_file(next):
+		controller_menu.set_notice("Could not save this layout. It is still here; try Save Layout again.")
+		return
+	controller_profiles = next
+	_refresh_controllers()
+	controller_menu.close_menu()
+	game_menu.set_notice("GameCube layout saved. Z opens the Book; Start pauses.")
+
+func _on_controller_setup_closed() -> void:
+	_controller_closing = true
+	call_deferred("_finish_controller_setup_close")
+
+func _finish_controller_setup_close() -> void:
+	await get_tree().physics_frame
+	await get_tree().process_frame
+	controller_router.refresh(_controller_devices())
+	controller_router.suspended = false
+	player.cancel_pending_strike()
+	player.set("_buffer", 0.0)
+	_controller_closing = false
+	# Setup returns to the settings sheet. Only its Resume intent unpauses play.
+	get_tree().paused = true
+	if game_menu.is_open and is_instance_valid(game_menu._first_focus):
+		game_menu._first_focus.grab_focus()
 
 func _apply_settings() -> void:
 	AudioServer.set_bus_volume_db(0, linear_to_db(maxf(0.001, float(_settings.volume))))
 	AudioServer.set_bus_mute(0, float(_settings.volume) <= 0.0)
 	camera.position_smoothing_enabled = not bool(_settings.reduced_motion)
-	for interface in [game_menu, inventory, shop, map_menu, hud_motion, opening, combo_readout, cinematic_hud]:
+	for interface in [game_menu, inventory, shop, map_menu, hud_motion, opening, combo_readout, cinematic_hud, controller_menu]:
 		if interface != null:
 			interface.call("set_reduced_motion", bool(_settings.reduced_motion))
 	if room != null:
@@ -1712,7 +1869,7 @@ func _on_route_blocked(message: String) -> void:
 	_flash(message)
 
 func _can_open_inventory() -> bool:
-	return not _opening_active() and (_has_session or practice_mode) and not _transition_pending and not _shop_closing and not shop.is_open and not _map_closing and (map_menu == null or not map_menu.is_open) and (game_menu == null or not game_menu.is_open)
+	return not _opening_active() and (_has_session or practice_mode) and not _transition_pending and not _book_closing and not _shop_closing and not shop.is_open and not _map_closing and (map_menu == null or not map_menu.is_open) and (game_menu == null or not game_menu.is_open)
 
 func _on_refrain_unlocked(refrain: int) -> void:
 	audio.play("freed", -7.0)
@@ -1744,6 +1901,7 @@ func _word_splatter(pos: Vector2) -> void:
 		tw.chain().tween_callback(l.queue_free)
 
 func _flash(text: String) -> void:
+	text = _controller_text(text)
 	feedback.text = text
 	feedback.modulate.a = 1.0
 	_fb_t = 1.4
@@ -1861,40 +2019,85 @@ func _build_hud() -> void:
 # -- input --------------------------------------------------------------------
 
 func _setup_input() -> void:
-	_action("move_left", [KEY_A, KEY_LEFT], [], [[JOY_AXIS_LEFT_X, -1.0]])
-	_action("move_right", [KEY_D, KEY_RIGHT], [], [[JOY_AXIS_LEFT_X, 1.0]])
-	_action("move_up", [KEY_W, KEY_UP], [], [[JOY_AXIS_LEFT_Y, -1.0]])
-	_action("move_down", [KEY_S, KEY_DOWN], [], [[JOY_AXIS_LEFT_Y, 1.0]])
-	_action("jump", [KEY_SPACE], [JOY_BUTTON_A])
-	_action("strike", [KEY_J, KEY_X], [JOY_BUTTON_X])
-	_action("lift", [KEY_K, KEY_C], [JOY_BUTTON_B])
-	_action("set", [KEY_L], [JOY_BUTTON_LEFT_SHOULDER])
-	_action("flip", [KEY_F], [JOY_BUTTON_RIGHT_SHOULDER])
-	_action("enter_passage", [KEY_E], [JOY_BUTTON_Y])
-	_action("trade", [KEY_B], [JOY_BUTTON_DPAD_UP])
-	_action("inventory", [KEY_I], [JOY_BUTTON_START])
-	_action("map", [] if development_mode else [KEY_M], [] if development_mode else [JOY_BUTTON_DPAD_DOWN])
-	_action("restart", [KEY_R], [JOY_BUTTON_BACK] if development_mode else [])
+	_action("move_left", [KEY_A, KEY_LEFT])
+	_action("move_right", [KEY_D, KEY_RIGHT])
+	_action("move_up", [KEY_W, KEY_UP])
+	_action("move_down", [KEY_S, KEY_DOWN])
+	_action("jump", [KEY_SPACE])
+	_action("strike", [KEY_J, KEY_X])
+	_action("lift", [KEY_K, KEY_C])
+	_action("set", [KEY_L])
+	_action("flip", [KEY_F])
+	_action("enter_passage", [KEY_E])
+	_action("trade", [KEY_B])
+	_action("inventory", [KEY_I])
+	_action("map", [] if development_mode else [KEY_M])
+	_action("restart", [KEY_R])
 	_action("switch_room", [KEY_TAB])
 	_action("world_map", [KEY_M])
 	_action("debug_grant", [KEY_G])
-	_action("pause_game", [KEY_ESCAPE], [] if development_mode else [JOY_BUTTON_BACK])
-	# Native Godot's default UI actions may only include keyboard events.
-	# Give every menu the same explicit controller vocabulary as the game.
-	for pair in [["ui_accept", JOY_BUTTON_A], ["ui_cancel", JOY_BUTTON_B],
+	_action("pause_game", [KEY_ESCAPE])
+	for action in ["book_previous", "book_next", "book_scroll_up", "book_scroll_down"]:
+		_action(action, [])
+	_refresh_pad_input()
+
+func _refresh_pad_input() -> void:
+	# Keep native keyboard UI events. Controller events are scoped per device;
+	# calibrated adapters receive only their translated, normalised events.
+	# Reuse event resources: erasing even a joypad event clears Godot's entire
+	# action state, including keys held during a USB connection change.
+	for action in InputMap.get_actions():
+		for event in InputMap.action_get_events(action):
+			if event is InputEventJoypadButton or event is InputEventJoypadMotion:
+				event.device = INACTIVE_PAD_DEVICE
+	var devices: Array = []
+	for controller in _controller_devices(): devices.append(int(controller.id))
+	if devices.is_empty(): devices.append(0) # standalone native input fixtures
+	for id in devices:
+		var mapped: int = controller_router.profile_device(id) if controller_router != null and controller_router.has_profile(id) else id
+		_install_pad_input(mapped)
+
+func _install_pad_input(device: int) -> void:
+	for pair in [["jump", JOY_BUTTON_A], ["strike", JOY_BUTTON_X], ["lift", JOY_BUTTON_B],
+		["set", JOY_BUTTON_LEFT_SHOULDER], ["flip", JOY_BUTTON_RIGHT_SHOULDER],
+		["enter_passage", JOY_BUTTON_Y], ["trade", JOY_BUTTON_DPAD_UP], ["inventory", JOY_BUTTON_START],
+		["book_previous", JOY_BUTTON_LEFT_SHOULDER], ["book_next", JOY_BUTTON_RIGHT_SHOULDER],
+		["ui_accept", JOY_BUTTON_A], ["ui_cancel", JOY_BUTTON_B],
 		["ui_left", JOY_BUTTON_DPAD_LEFT], ["ui_right", JOY_BUTTON_DPAD_RIGHT],
 		["ui_up", JOY_BUTTON_DPAD_UP], ["ui_down", JOY_BUTTON_DPAD_DOWN]]:
-		var event := InputEventJoypadButton.new()
-		event.button_index = int(pair[1])
-		if not InputMap.action_has_event(pair[0], event):
-			InputMap.action_add_event(pair[0], event)
-	for mapping in [["ui_left", JOY_AXIS_LEFT_X, -1.0], ["ui_right", JOY_AXIS_LEFT_X, 1.0],
-		["ui_up", JOY_AXIS_LEFT_Y, -1.0], ["ui_down", JOY_AXIS_LEFT_Y, 1.0]]:
-		var motion := InputEventJoypadMotion.new()
-		motion.axis = int(mapping[1])
-		motion.axis_value = float(mapping[2])
-		if not InputMap.action_has_event(mapping[0], motion):
-			InputMap.action_add_event(mapping[0], motion)
+		_pad_button(String(pair[0]), int(pair[1]), device)
+	if development_mode:
+		_pad_button("restart", JOY_BUTTON_BACK, device)
+	else:
+		_pad_button("pause_game", JOY_BUTTON_BACK, device)
+		_pad_button("map", JOY_BUTTON_DPAD_DOWN, device)
+	for mapping in [["move_left", JOY_AXIS_LEFT_X, -1.0], ["move_right", JOY_AXIS_LEFT_X, 1.0],
+		["move_up", JOY_AXIS_LEFT_Y, -1.0], ["move_down", JOY_AXIS_LEFT_Y, 1.0],
+		["ui_left", JOY_AXIS_LEFT_X, -1.0], ["ui_right", JOY_AXIS_LEFT_X, 1.0],
+		["ui_up", JOY_AXIS_LEFT_Y, -1.0], ["ui_down", JOY_AXIS_LEFT_Y, 1.0],
+		["book_scroll_up", JOY_AXIS_RIGHT_Y, -1.0], ["book_scroll_down", JOY_AXIS_RIGHT_Y, 1.0]]:
+		_pad_axis(String(mapping[0]), int(mapping[1]), float(mapping[2]), device)
+
+func _pad_button(action: String, button: int, device: int) -> void:
+	for event in InputMap.action_get_events(action):
+		if event is InputEventJoypadButton and event.device == INACTIVE_PAD_DEVICE and event.button_index == button:
+			event.device = device
+			return
+	var event := InputEventJoypadButton.new()
+	event.device = device
+	event.button_index = button
+	InputMap.action_add_event(action, event)
+
+func _pad_axis(action: String, axis: int, direction: float, device: int) -> void:
+	for event in InputMap.action_get_events(action):
+		if event is InputEventJoypadMotion and event.device == INACTIVE_PAD_DEVICE and event.axis == axis and event.axis_value == direction:
+			event.device = device
+			return
+	var motion := InputEventJoypadMotion.new()
+	motion.device = device
+	motion.axis = axis
+	motion.axis_value = direction
+	InputMap.action_add_event(action, motion)
 
 func _action(action_name: String, keys: Array, pad_buttons: Array = [], axes: Array = []) -> void:
 	if InputMap.has_action(action_name):

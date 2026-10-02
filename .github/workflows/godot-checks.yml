@@ -89,6 +89,13 @@ jobs:
           godot --headless --path . --script res://tests/ability_world_test.gd
           godot --headless --path . --script res://tests/ability_book_test.gd
           godot --headless --path . --script res://tests/walk_test.gd
+          godot --headless --path . --script res://tests/movement_weight_test.gd
+
+      - name: Validate calibrated USB controllers and menu input
+        run: |
+          godot --headless --path . --script res://tests/controller_profile_test.gd
+          godot --headless --path . --script res://tests/controller_menu_test.gd
+          godot --headless --path . --script res://tests/controller_integration_test.gd
 
       - name: Validate reverse-side exploration and permanent returns
         run: |

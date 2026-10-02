@@ -16,6 +16,18 @@ func _run() -> void:
 	for action in ["inventory", "map"]:
 		if not InputMap.has_action(action):
 			InputMap.add_action(action)
+	for action in ["book_previous", "book_next", "book_scroll_up", "book_scroll_down"]:
+		if not InputMap.has_action(action):
+			InputMap.add_action(action)
+	for binding in [["book_previous", JOY_BUTTON_LEFT_SHOULDER], ["book_next", JOY_BUTTON_RIGHT_SHOULDER]]:
+		var shoulder_binding := InputEventJoypadButton.new()
+		shoulder_binding.button_index = int(binding[1])
+		InputMap.action_add_event(StringName(binding[0]), shoulder_binding)
+	for binding in [["book_scroll_up", -1.0], ["book_scroll_down", 1.0]]:
+		var scroll_binding := InputEventJoypadMotion.new()
+		scroll_binding.axis = JOY_AXIS_RIGHT_Y
+		scroll_binding.axis_value = float(binding[1])
+		InputMap.action_add_event(StringName(binding[0]), scroll_binding)
 	root.min_size = Vector2i.ZERO
 	root.size = Vector2i(1280, 720)
 	root.content_scale_size = Vector2i(1280, 720)

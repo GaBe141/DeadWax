@@ -14,10 +14,13 @@ const PressScript := preload("res://scripts/press.gd")
 
 # -- RUN / JUMP (the honest legs) --------------------------------------------
 const RUN_SPEED := 340.0
-const RUN_ACCEL := 2600.0
-const RUN_FRICTION := 3800.0
+const RUN_ACCEL := 1900.0          # roughly eleven ticks to full speed at 60 Hz
+const RUN_FRICTION := 2400.0       # a short coast; direction changes still bite
+const SET_FRICTION := 3800.0       # kneeling plants the feet without the run coast
+const AIR_ACCEL := 1170.0         # retain the existing airborne steering
+const AIR_FRICTION := 760.0
 const SHUFFLE_STEP := 1.0         # one pixel per fresh direction press until Walk
-const AIR_CONTROL := 0.45          # M2: trimmed from 0.55 — grounded feels planted
+const AIR_CONTROL := AIR_ACCEL / RUN_ACCEL # ratio exposed to traversal fixtures
 const JUMP_VELOCITY := -640.0
 const JUMP_CUT := 0.45
 const COYOTE_TIME := 0.10
@@ -229,13 +232,14 @@ func _physics_process(delta: float) -> void:
 		facing = signf(dir)
 	if has_ability(&"walk"):
 		var speed := RUN_SPEED * equipment_speed * (hood_speed_mult * equipment_hood_speed if hooded else 1.0)
-		var accel := RUN_ACCEL * equipment_accel if is_on_floor() else RUN_ACCEL * AIR_CONTROL * equipment_air_control
+		var accel := RUN_ACCEL * equipment_accel if is_on_floor() else AIR_ACCEL * equipment_air_control
 		if _recover > 0.0 and is_on_floor():
 			accel *= STRIKE_RECOVER_ACCEL   # weight lives on the ground; the air stays free
 		if absf(dir) > 0.01:
 			velocity.x = move_toward(velocity.x, dir * speed, accel * delta)
 		else:
-			var fric := RUN_FRICTION * equipment_friction * (1.0 if is_on_floor() else 0.2)
+			var ground_fric := SET_FRICTION if setting else RUN_FRICTION
+			var fric := (ground_fric if is_on_floor() else AIR_FRICTION) * equipment_friction
 			velocity.x = move_toward(velocity.x, 0.0, fric * delta)
 	elif _stagger <= 0.0:
 		# A held key/stick and key-repeat create no further travel, even in air.

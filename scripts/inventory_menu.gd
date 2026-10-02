@@ -45,6 +45,7 @@ var place_name := ""
 var place_objective := ""
 var place_notes: Array[Dictionary] = []
 var can_open: Callable
+var controller_labels: Dictionary = {}
 
 var overlay: Control
 var _progress_label: Label
@@ -77,6 +78,8 @@ var _subtitle: Label
 var _journey_detail: PanelContainer
 var _journey_notes: ScrollContainer
 var _refinement_label: Label
+var _controls_footer: Label
+var _opening_gate := false
 
 func _ready() -> void:
 	layer = 100
@@ -110,11 +113,10 @@ func _input(event: InputEvent) -> void:
 		var step := 0
 		if event is InputEventKey and (event.keycode == KEY_TAB or event.physical_keycode == KEY_TAB):
 			step = -1 if event.shift_pressed else 1
-		elif event is InputEventJoypadButton:
-			if event.button_index == JOY_BUTTON_LEFT_SHOULDER:
-				step = -1
-			elif event.button_index == JOY_BUTTON_RIGHT_SHOULDER:
-				step = 1
+		elif InputMap.has_action("book_previous") and event.is_action_pressed("book_previous", false, true):
+			step = -1
+		elif InputMap.has_action("book_next") and event.is_action_pressed("book_next", false, true):
+			step = 1
 		if step != 0:
 			var order := ["journey", "equipment", "bestiary"]
 			select_page(order[posmod(order.find(_current_page) + step, order.size())], true)
@@ -125,24 +127,29 @@ func _input(event: InputEvent) -> void:
 		get_viewport().set_input_as_handled()
 		return
 	if event.is_action_pressed("inventory"):
-		toggle_inventory()
+		if not _open or not _opening_gate:
+			toggle_inventory()
 		get_viewport().set_input_as_handled()
-	elif (
-		_open
-		and event is InputEventKey
-		and event.pressed
-		and (event.physical_keycode == KEY_ESCAPE or event.keycode == KEY_ESCAPE)
-	):
-		close_inventory()
+	elif _open and (event.is_action_pressed("ui_cancel") or (InputMap.has_action("pause_game") and event.is_action_pressed("pause_game"))):
+		# Preserve the ordinary pad's Hood behaviour; a learned GameCube
+		# layout explicitly gives physical B the Book's Back action as well.
+		var legacy_hood := event is InputEventJoypadButton and event.is_action_pressed("lift") and controller_labels.is_empty()
+		if not legacy_hood:
+			close_inventory()
 		get_viewport().set_input_as_handled()
 
 func _process(delta: float) -> void:
+	if _open and _opening_gate and not _held("inventory") and not _held("ui_cancel") and not _held("pause_game") and not _held("ui_accept"):
+		_opening_gate = false
 	if not _open or _current_page != "journey" or _journey_notes == null:
 		return
-	for device in Input.get_connected_joypads():
-		var amount := Input.get_joy_axis(device, JOY_AXIS_RIGHT_Y)
+	if InputMap.has_action("book_scroll_up") and InputMap.has_action("book_scroll_down"):
+		var amount := Input.get_axis("book_scroll_up", "book_scroll_down")
 		if absf(amount) > 0.25:
 			_journey_notes.scroll_vertical += roundi(amount * 520.0 * delta)
+
+func _held(action: StringName) -> bool:
+	return InputMap.has_action(action) and Input.is_action_pressed(action)
 
 func is_open() -> bool:
 	return _open
@@ -160,6 +167,7 @@ func open_inventory() -> void:
 	_tree_was_paused = get_tree().paused
 	_motion.settle()
 	_open = true
+	_opening_gate = true
 	overlay.show()
 	_refresh()
 	_focus_selected()
@@ -173,6 +181,7 @@ func close_inventory() -> void:
 	if not _open:
 		return
 	_open = false
+	_opening_gate = false
 	overlay.hide()
 	var focus_owner := get_viewport().gui_get_focus_owner()
 	if focus_owner != null and overlay.is_ancestor_of(focus_owner):
@@ -487,10 +496,11 @@ func _build_menu() -> void:
 	_collection_pages.unequip_requested.connect(func(slot: String) -> void: unequip_requested.emit(slot))
 	_collection_pages.craft_requested.connect(func(id: String) -> void: craft_requested.emit(id))
 	select_page("journey")
-	var footer := _make_label("[I / START] close   [TAB / LB RB] pages   [ARROWS] select   [ENTER / A] act", PressScript.SIZE_SMALL, PAPER_DARK)
-	footer.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	page.add_child(footer)
-	_entrance_parts.append(footer)
+	_controls_footer = _make_label("", PressScript.SIZE_SMALL, PAPER_DARK)
+	_controls_footer.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	_controls_footer.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	page.add_child(_controls_footer)
+	_entrance_parts.append(_controls_footer)
 	_resize_page()
 	overlay.hide()
 
@@ -527,6 +537,10 @@ func _add_shelf(parent: VBoxContainer, title: String, slots: Array) -> Label:
 	return heading
 
 func _refresh() -> void:
+	if _controls_footer != null:
+		_controls_footer.text = "[I / %s] close   [TAB / %s %s] pages   [ARROWS] select   [ENTER / A] act" % [String(controller_labels.get("inventory", "START")).to_upper(), controller_labels.get("book_previous", "LB"), controller_labels.get("book_next", "RB")]
+	if _collection_pages != null:
+		_collection_pages.controller_labels = controller_labels.duplicate(true)
 	if _progress_label == null:
 		return
 	_progress_label.text = "%d / %d GROOVES FILLED" % [filled_slot_count(), slot_count()]
@@ -715,7 +729,8 @@ func _slot_description(slot: StringName) -> String:
 			text += " Airborne hits rebound from vulnerable foes."
 		return text
 	if _is_ability_slot(slot):
-		return String(_ability_definition(slot).get("description", "A move recovered from the record."))
+		var description := String(_ability_definition(slot).get("description", "A move recovered from the record."))
+		return description.replace("L / LB", "L") if String(controller_labels.get("set", "LB")) == "L" else description
 	match slot:
 		&"echo_spool":
 			match String(discoveries.snapshot().echo_spool):
@@ -736,7 +751,7 @@ func _slot_description(slot: StringName) -> String:
 		&"rest":
 			return "A remembered Refrain. Its effect is quiet here; another groove may answer it."
 		&"jump-cut":
-			return "Press F / RB to turn the pressing over. You have twelve seconds on the B-side; time on A replenishes it. Seek the sealed returns in the North Warren and Deep Gallery. Turn over there, then press E / Y at the seal to open a permanent way home. " + _return_leads()
+			return "Press F / %s to turn the pressing over. You have twelve seconds on the B-side; time on A replenishes it. Seek the sealed returns in the North Warren and Deep Gallery. Turn over there, then press E / Y at the seal to open a permanent way home. " % String(controller_labels.get("flip", "RB")) + _return_leads()
 	return "The groove has no readable note."
 
 func _place_description() -> String:
