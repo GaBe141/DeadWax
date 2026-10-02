@@ -30,7 +30,10 @@ static func segment(c: CanvasItem, start: Vector2, finish: Vector2, width: float
 	c.draw_circle(finish, width * 0.5, fill, true, -1, true)
 	var normal := (finish - start).normalized().orthogonal()
 	if normal.y > 0.0: normal = -normal
-	c.draw_line(start + normal * width * 0.18, finish + normal * width * 0.18, Color(highlight, fill.a * 0.52), maxf(width * 0.20, 1.1), true)
+	# A short worn edge and a broad underside give the joint weight without
+	# turning every limb into a uniformly polished plastic tube.
+	c.draw_line(start.lerp(finish, 0.16) - normal * width * 0.24, start.lerp(finish, 0.90) - normal * width * 0.24, Color(edge, fill.a * 0.24), maxf(width * 0.27, 1.0), true)
+	c.draw_line(start.lerp(finish, 0.08) + normal * width * 0.23, start.lerp(finish, 0.64) + normal * width * 0.23, Color(highlight, fill.a * 0.48), maxf(width * 0.14, 1.0), true)
 
 static func disc(c: CanvasItem, center: Vector2, radius: float, fill: Color, edge: Color, highlight: Color, alpha := 1.0) -> void:
 	c.draw_circle(center, radius + 1.5, Color(edge, alpha), true, -1, true)
@@ -40,8 +43,10 @@ static func disc(c: CanvasItem, center: Vector2, radius: float, fill: Color, edg
 		var angle := lerpf(-1.4, 1.7, index / 18.0)
 		shade.append(center + Vector2.from_angle(angle) * radius)
 	shade.append(center + Vector2(-radius * 0.18, radius * 0.68))
-	c.draw_colored_polygon(shade, Color(edge, 0.22 * alpha))
-	c.draw_arc(center + Vector2(0.5, 0.5), radius - 2.0, -2.92, -1.10, 22, Color(highlight, alpha * 0.70), maxf(radius * 0.13, 1.4), true)
+	c.draw_colored_polygon(shade, Color(edge, 0.28 * alpha))
+	var edge_width := maxf(radius * 0.065, 1.0)
+	c.draw_arc(center + Vector2(0.5, 0.5), radius - 1.5, -2.92, -2.10, 12, Color(highlight, alpha * 0.68), edge_width, true)
+	c.draw_arc(center + Vector2(0.5, 0.5), radius - 1.5, -1.89, -1.10, 12, Color(highlight, alpha * 0.46), edge_width, true)
 	c.draw_arc(center, radius - 0.8, 0.15, 1.45, 18, Color(edge, alpha * 0.55), 1.4, true)
 
 static func hatch(c: CanvasItem, center: Vector2, width: float, height: float, color: Color, count := 5) -> void:

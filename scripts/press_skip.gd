@@ -53,29 +53,35 @@ static func draw(canvas: CanvasItem, pose: Dictionary, palette: Dictionary) -> v
 		var knee := hip.lerp(foot, 0.5) + Vector2(-face * run * 3, 0)
 		Paint.segment(canvas, hip, knee, 4.0, paint.coat, ink, paint.teal)
 		Paint.segment(canvas, knee, foot, 4.5, paint.brass, ink, paint.gold)
-		canvas.draw_line(foot + Vector2(-3, 0), foot + Vector2(face * 5, 0), ink, 4.0, true)
+		var toe := Vector2(face * 5, 0)
+		Paint.shape(canvas, PackedVector2Array([foot + Vector2(-face*4,-2), foot + Vector2(face*3,-2), foot + toe + Vector2(0,1), foot + Vector2(-face*4,1)]), paint.shadow, ink, 1.2)
+		canvas.draw_line(foot + Vector2(-face*2,-1.5), foot + toe + Vector2(-face,-1.5), Color(paint.rim,0.62), 1.1, true)
 
 	canvas.draw_set_transform(translation, tilt, stretch)
-	var body := PackedVector2Array([Vector2(0, -34)])
-	for index in range(15):
-		var angle := lerpf(-0.55, 3.69, index / 14.0)
-		body.append(Vector2(0, 8) + Vector2(cos(angle), sin(angle)) * 19.0)
+	var body := PackedVector2Array([Vector2(0,-34), Vector2(8,-22), Vector2(17,2),
+		Vector2(19,15), Vector2(13,21), Vector2(-3,20), Vector2(-13,22),
+		Vector2(-18,14), Vector2(-15,-5), Vector2(-5,-28)])
 	var flash := hurt > 0.0 and int(hurt * 7.0) % 2 == 0
 	var fill: Color = paint.light if flash else paint.coat
 	Paint.shape(canvas, body, fill, ink, 2.3)
 	# A folded petrol coat surrounds the cream wax face. Broad painted planes
 	# carry its volume; the needle-shaped outer silhouette remains recognizable.
-	canvas.draw_colored_polygon(PackedVector2Array([Vector2(0,-31),Vector2(-15,-2),Vector2(-17,16),Vector2(-5,24),Vector2(-3,3)]), paint.shadow)
-	canvas.draw_colored_polygon(PackedVector2Array([Vector2(2,-25),Vector2(13,-3),Vector2(17,13),Vector2(9,23),Vector2(4,5)]), paint.teal)
-	Paint.hatch(canvas, Vector2(-10,19), 9, 13, Color(paint.teal,0.45), 4)
+	canvas.draw_colored_polygon(PackedVector2Array([Vector2(0,-31),Vector2(-15,-2),Vector2(-17,16),Vector2(-5,20),Vector2(-3,3)]), paint.shadow)
+	canvas.draw_colored_polygon(PackedVector2Array([Vector2(2,-25),Vector2(13,-3),Vector2(17,13),Vector2(9,20),Vector2(4,5)]), paint.teal)
+	canvas.draw_colored_polygon(PackedVector2Array([Vector2(-3,3),Vector2(-6,19),Vector2(1,19),Vector2(5,9)]),paint.shadow)
+	canvas.draw_polyline(PackedVector2Array([Vector2(-3,-28),Vector2(-13,-4),Vector2(-16,11)]),Color(paint.rim,0.56),1.25,true)
+	canvas.draw_line(Vector2(8,18),Vector2(13,16),Color(paint.rim,0.38),1.0,true)
 	var mask := PackedVector2Array([Vector2(0,-25),Vector2(10,-10),Vector2(12,4),Vector2(5,13),Vector2(-6,12),Vector2(-11,3),Vector2(-8,-11)])
-	Paint.shape(canvas, mask, pale, paint.wax, 1.2)
+	Paint.shape(canvas, mask, pale, paint.wax.lerp(ink,0.25), 0.9)
 	canvas.draw_colored_polygon(PackedVector2Array([Vector2(4,-18),Vector2(10,-8),Vector2(11,4),Vector2(5,12),Vector2(3,1)]), paint.wax)
-	canvas.draw_line(Vector2(-5,-12),Vector2(-8,1),Color(paint.light,0.85),2.4,true)
+	canvas.draw_colored_polygon(PackedVector2Array([Vector2(-8,-11),Vector2(-4,-18),Vector2(6,-10),Vector2(4,-4),Vector2(-6,-5)]),Color(paint.wax,0.58))
+	canvas.draw_line(Vector2(-5,-12),Vector2(-8,1),Color(paint.light,0.70),1.5,true)
+	canvas.draw_line(Vector2(6,6),Vector2(5,10),Color(ink,0.22),1.0,true)
 	# The short copper scarf follows the body rather than the collision node.
-	Paint.shape(canvas,PackedVector2Array([Vector2(-14,12),Vector2(12,12),Vector2(16,16),Vector2(2,19),Vector2(-13,17)]),paint.copper,ink,1.0)
+	Paint.shape(canvas,PackedVector2Array([Vector2(-14,12),Vector2(12,12),Vector2(16,16),Vector2(2,19),Vector2(-13,17)]),paint.copper.lerp(paint.wood,0.24),ink,0.8)
 	canvas.draw_colored_polygon(PackedVector2Array([Vector2(-face*9,15),Vector2(-face*(26+run*6),11+sin(time*6)*2),Vector2(-face*19,20),Vector2(-face*8,19)]),paint.copper)
-	canvas.draw_line(Vector2(-11,13),Vector2(10,14),paint.coral,1.3,true)
+	canvas.draw_colored_polygon(PackedVector2Array([Vector2(-14,15),Vector2(7,16),Vector2(2,19),Vector2(-13,17)]),Color(paint.wood,0.55))
+	canvas.draw_line(Vector2(-10,13),Vector2(5,14),Color(paint.coral,0.65),1.0,true)
 
 	# The flexible pickup tip trails the run and snaps with the strike.
 	var tip := Vector2(face * (24 - run * 6 + snap * 23), -39 + step * run * 5 + snap * 33 + kneel * 14)
@@ -97,11 +103,13 @@ static func draw(canvas: CanvasItem, pose: Dictionary, palette: Dictionary) -> v
 	# Lifting the sleeve is a short opening/closing motion, not a sprite swap.
 	if hood > 0.0:
 		var sleeve := PackedVector2Array([
-			Vector2(-24, 26), Vector2(-12 * (1.0 - hood), lerpf(18, -44, hood)),
-			Vector2(12 * (1.0 - hood), lerpf(18, -44, hood)), Vector2(24, 26),
+			Vector2(-23, 22), Vector2(-12 * (1.0 - hood), lerpf(18, -44, hood)),
+			Vector2(12 * (1.0 - hood), lerpf(18, -44, hood)), Vector2(23, 22),
 		])
 		Paint.shape(canvas,sleeve,fill.lerp(paint.shadow,hood*0.7),ink,2.0)
-		canvas.draw_colored_polygon(PackedVector2Array([Vector2(3,-36*hood),Vector2(21,24),Vector2(10,23),Vector2(0,-15*hood)]),Color(paint.teal,hood))
+		canvas.draw_colored_polygon(PackedVector2Array([Vector2(3,-36*hood),Vector2(21,21),Vector2(10,20),Vector2(0,-15*hood)]),Color(paint.teal,hood*0.82))
+		canvas.draw_colored_polygon(PackedVector2Array([Vector2(-4,-27*hood),Vector2(-15,21),Vector2(2,21),Vector2(2,-9*hood)]),Color(paint.shadow,hood*0.65))
+		canvas.draw_polyline(PackedVector2Array([Vector2(-2,-39*hood),Vector2(-11,-10*hood),Vector2(-19,17)]),Color(paint.rim,hood*0.58),1.3,true)
 		canvas.draw_line(Vector2(-17, 22), Vector2(-4, -24 * hood), Color(hood_ink, hood * 0.40), 1.5, true)
 		canvas.draw_line(Vector2(17, 22), Vector2(5, -21 * hood), Color(hood_ink, hood * 0.30), 1.5, true)
 		if bool(palette.get("warm_thread", false)):
@@ -109,11 +117,15 @@ static func draw(canvas: CanvasItem, pose: Dictionary, palette: Dictionary) -> v
 			canvas.draw_polyline(PackedVector2Array([
 				Vector2(-20, 24), Vector2(-8 * (1.0 - hood), lerpf(20, -38, hood)),
 				Vector2(8 * (1.0 - hood), lerpf(20, -38, hood)), Vector2(20, 24),
-			]), thread, 2.2, true)
-			canvas.draw_line(Vector2(-18, 21), Vector2(18, 21), thread, 1.8, true)
+			]), thread, 1.35, true)
+			canvas.draw_line(Vector2(-17, 20), Vector2(16, 20), thread, 1.1, true)
 	var eye_center := Vector2(face * 1.5, lerpf(-2, -12, hood) + kneel * 6)
 	if hood > 0.35:
-		Paint.disc(canvas,eye_center,9.0*hood,paint.cream,ink,paint.light,hood)
+		var opening := PackedVector2Array([eye_center+Vector2(-10,-4),eye_center+Vector2(-5,-10),
+			eye_center+Vector2(6,-9),eye_center+Vector2(10,-3),eye_center+Vector2(8,7),eye_center+Vector2(-7,8)])
+		Paint.shape(canvas,opening,Color(pale,hood),Color(ink,hood),1.2)
+		canvas.draw_colored_polygon(PackedVector2Array([eye_center+Vector2(3,-8),eye_center+Vector2(9,-3),eye_center+Vector2(7,6),eye_center+Vector2(2,7)]),Color(paint.wax,hood))
+		canvas.draw_line(eye_center+Vector2(-7,-4),eye_center+Vector2(6,-5),Color(paint.shadow,hood*0.42),1.8,true)
 	var blink_phase := fmod(time, 4.7)
 	var blink := clampf(1.0 - absf(blink_phase - 4.43) / 0.085, 0.0, 1.0)
 	var lid := maxf(blink, 0.72 if hurt > 0.1 else kneel * 0.25)
@@ -123,8 +135,9 @@ static func draw(canvas: CanvasItem, pose: Dictionary, palette: Dictionary) -> v
 		if lid > 0.65:
 			canvas.draw_line(eye + Vector2(-2.4, 0), eye + Vector2(2.4, 0), eye_color, 1.7, true)
 		else:
-			canvas.draw_circle(eye, lerpf(2.8, 2.1, hood) * (1.0 - lid * 0.45), eye_color, true, -1, true)
-			canvas.draw_circle(eye+Vector2(-0.7,-0.8),0.8,paint.light,true,-1,true)
+			var eye_height := lerpf(2.2,1.7,hood)*(1.0-lid*0.45)
+			Paint.shape(canvas,PackedVector2Array([eye+Vector2(-2.4,-eye_height*0.50),eye+Vector2(1.8,-eye_height*0.75),eye+Vector2(2.1,eye_height*0.55),eye+Vector2(-1.9,eye_height*0.72)]),eye_color,eye_color,0.6)
+			canvas.draw_line(eye+Vector2(-0.9,-0.8),eye+Vector2(0.3,-0.7),Color(paint.light,0.64),0.8,true)
 			if noise > 0.03 and hood < 0.5:
 				canvas.draw_line(eye+Vector2(-2,-4),eye+Vector2(2,-3),Color(ink,noise*(1.0-hood)),1.2,true)
 	canvas.draw_line(eye_center+Vector2(-2,6),eye_center+Vector2(2,6+hurt*2),ink,1.0,true)

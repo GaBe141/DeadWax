@@ -82,6 +82,16 @@ draw the room-specific middle distance and platform faces. `figure_paint.gd`
 provides rounded limbs, coloured planes, and brush marks for the animated
 cast. The original poses and combat clocks remain authoritative.
 
+The Quiet Wax figure refinement keeps the same cast and drawn animation.
+Broader wax shadows, worn cloth planes, restrained edge light, and broken
+brass highlights join the figures to the dim painted rooms. Skip's angular
+mask and quieter eyes sit above exposed, shaped feet; the raised Hood keeps
+a shaped face opening. Residents have clearer coat folds and grounded joints,
+the Hound has layered wax and mechanism planes, and enemy/boss materials use
+the same subdued contours. Fine texture stays secondary to the silhouette at
+normal game size. These are draw-only changes: colliders, reach, pose clocks,
+combat tells, rewards, and interaction origins retain their existing rules.
+
 Journal covers, signage and HUD use dark cloth, cream type and brass inlay.
 Small groove housings, wax medallions, lanterns and passage arches use the
 same palette. A/B reinking changes presentation without changing authored
@@ -119,3 +129,10 @@ and the full rerun passed without input-code changes. Final scenery and GUI
 checks also passed after restricting the lower-edge fade to world platforms.
 Native GL review covered the Headshell, Verse Hall, Well, HUSH, North Warren,
 Gallery A→B→A at 960 × 540, and the opaque title menu using isolated saves.
+
+The Quiet Wax figure refinement passed all 49 native suites (11,834 checks)
+on 2026-10-02. Native GL captures reviewed the player at rest, running,
+jumping, Set, Hood and all three strikes at 1280 × 720 and 960 × 540,
+with separate cast sheets on light and dark stock. World captures used
+isolated checkpoints; both-direction player detail sheets used explicit
+poses. No character assets, physics, combat clocks, or save fields changed.

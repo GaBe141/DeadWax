@@ -614,6 +614,8 @@ remains its central drawing vocabulary; rooms supply their palette and subject.
   details move gently and camera travel gives the scenery parallax.
 - **Characters.** Layered clothes, wax masks, articulated limbs and worn brass
   give Skip, the voices, residents, Hound and bosses distinct silhouettes.
+  The figure refinement adds broad mask shadows, quiet angular eyes, clearer
+  feet and coat folds, and broken metal highlights that suit the dim world.
   Their existing animation poses follow the original combat clocks.
 - **Solid surfaces.** Dark textured cutaways have crisp illuminated upper lips.
   Wood grain, scoring and rivets are clipped to actual platform faces, at least

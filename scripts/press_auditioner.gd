@@ -63,12 +63,21 @@ static func draw_auditioner(canvas: CanvasItem, pose: Dictionary, ink: Color, bo
 	var squash := Vector2(1.0 + recoil * 0.14 - breath * 0.016, 1.0 - recoil * 0.10 + breath * 0.025)
 	canvas.draw_set_transform(center, rotation, squash)
 	Paint.disc(canvas,Vector2.ZERO,22.0,body,ink,paint.teal,alpha)
-	# The wax face is nestled in an asymmetric hood and a heavy copper wrap.
-	Paint.disc(canvas,Vector2(face*2,-3),15.5,pale,paint.wax,paint.light,alpha)
+	# Broad wax planes and a dark cowl read before the small worn seams.
+	var mask_center := Vector2(face * 2.0, -3.0)
+	Paint.disc(canvas,mask_center,15.5,paint.wax.lerp(pale,0.48),paint.wax,pale,alpha)
+	canvas.draw_colored_polygon(PackedVector2Array([
+		mask_center+Vector2(3,-14),mask_center+Vector2(12,-8),mask_center+Vector2(14,4),
+		mask_center+Vector2(7,13),mask_center+Vector2(2,8),
+	]),Color(paint.wood,alpha*0.24))
+	canvas.draw_line(mask_center+Vector2(-9,-10),mask_center+Vector2(-2,-13),Color(pale,alpha*0.8),1.4,true)
 	Paint.shape(canvas,PackedVector2Array([Vector2(-21,-10),Vector2(-12,-23),Vector2(7,-23),Vector2(16,-13),Vector2(-6,-17),Vector2(-16,-5)]),Color(paint.teal,alpha),inked,1.2)
-	Paint.shape(canvas,PackedVector2Array([Vector2(-22,8),Vector2(-8,11),Vector2(16,7),Vector2(23,14),Vector2(9,24),Vector2(-14,21)]),Color(paint.copper,alpha),inked,1.3)
-	canvas.draw_line(Vector2(-15,12),Vector2(15,12),Color(paint.coral,alpha*0.8),2.1,true)
-	Paint.hatch(canvas,Vector2(-4,21),22,5,Color(paint.wood,alpha*0.48),5)
+	canvas.draw_colored_polygon(PackedVector2Array([Vector2(7,-23),Vector2(16,-13),Vector2(-6,-17),Vector2(-9,-21)]),Color(paint.shadow,alpha*0.72))
+	Paint.shape(canvas,PackedVector2Array([Vector2(-22,8),Vector2(-8,11),Vector2(16,7),Vector2(23,14),Vector2(9,24),Vector2(-14,21)]),Color(paint.copper.lerp(paint.wood,0.42),alpha),inked,1.3)
+	canvas.draw_colored_polygon(PackedVector2Array([Vector2(-18,16),Vector2(12,15),Vector2(23,14),Vector2(9,24),Vector2(-14,21)]),Color(paint.shadow,alpha*0.36))
+	canvas.draw_line(Vector2(-15,12),Vector2(-7,13),Color(paint.brass,alpha*0.72),1.5,true)
+	canvas.draw_line(Vector2(7,11),Vector2(14,10),Color(paint.brass,alpha*0.5),1.2,true)
+	Paint.hatch(canvas,Vector2(-4,21),20,4,Color(paint.wood,alpha*0.35),3)
 	# The eye narrows through the recoil, then opens as the voice settles.
 	for side in [-1.0,1.0]:
 		var eye := Vector2(face*3+side*4.8,-4)
@@ -77,9 +86,9 @@ static func draw_auditioner(canvas: CanvasItem, pose: Dictionary, ink: Color, bo
 		elif recoil > 0.35:
 			canvas.draw_line(eye+Vector2(-2,-1),eye+Vector2(2,1),inked,1.8,true)
 		else:
-			canvas.draw_circle(eye,2.6,inked,true,-1,true)
-			canvas.draw_circle(eye+Vector2(-0.6,-0.7),0.7,edge,true,-1,true)
-	canvas.draw_arc(Vector2(face*3,1),3.6,0.1,PI-0.1,13,inked,1.1,true)
+			canvas.draw_line(eye+Vector2(-2.4,-0.5),eye+Vector2(2.1,0.2),inked,1.8,true)
+			canvas.draw_line(eye+Vector2(-2.2,1.1),eye+Vector2(0.8,1.1),Color(paint.wax,alpha),1.0,true)
+	canvas.draw_line(Vector2(face*3-2.8,3.6),Vector2(face*3+2.2,3.0),Color(ink,alpha*0.68),1.1,true)
 	canvas.draw_set_transform(Vector2.ZERO)
 	var far_hand := center + Vector2(face * (13.0 + extension * 22.0), 13.0 + step * 3.0)
 	var near_hand := center + Vector2(face * (18.0 + extension * 48.0 - anticipation * 10.0), -7.0 - extension * 13.0 + breath)

@@ -64,16 +64,23 @@ static func _bootlegger(canvas: CanvasItem, pose: Dictionary, ink: Color, stock:
 	canvas.draw_colored_polygon(PackedVector2Array([
 		Vector2(-9.0, -87.0), Vector2(16.0, -87.0), Vector2(24.0, -7.0),
 		Vector2(-14.0, -3.0), Vector2(-18.0, -54.0),
-	]),paint.copper)
+	]),paint.copper.lerp(paint.wood, 0.30))
+	# Long, broad folds read at walking distance; the hem keeps its old outline.
+	canvas.draw_colored_polygon(PackedVector2Array([
+		Vector2(14, -84), Vector2(27, -67), Vector2(25, 12), Vector2(7, 17), Vector2(3, -22),
+	]), paint.coat.lerp(paint.shadow, 0.62))
+	canvas.draw_colored_polygon(PackedVector2Array([
+		Vector2(-27, -52), Vector2(-14, -39), Vector2(-13, 14), Vector2(-24, 12),
+	]), paint.coat.lerp(paint.shadow, 0.38))
 	Paint.shape(canvas,PackedVector2Array([Vector2(-25,-91),Vector2(-10,-81),Vector2(-3,-52),Vector2(-22,-67)]),paint.teal,ink,1.2)
 	Paint.shape(canvas,PackedVector2Array([Vector2(18,-95),Vector2(8,-82),Vector2(8,-54),Vector2(28,-72)]),paint.coat,ink,1.2)
 	canvas.draw_colored_polygon(PackedVector2Array([Vector2(-6,-79),Vector2(8,-78),Vector2(14,-39),Vector2(-4,-41)]),paint.wood)
-	Paint.hatch(canvas,Vector2(-20,11),16,45,Color(paint.teal,0.45),6)
-	Paint.hatch(canvas,Vector2(18,-9),18,33,Color(paint.coral,0.32),5)
+	Paint.hatch(canvas,Vector2(-20,11),12,30,Color(paint.teal,0.28),3)
+	Paint.hatch(canvas,Vector2(18,-9),10,22,Color(paint.copper,0.24),2)
 	for y in [-70.0,-57.0]: Paint.bolt(canvas,Vector2(0,y),2.6,paint.brass,ink,paint.light)
-	canvas.draw_line(Vector2(-9.0, -87.0), Vector2(-17.0, -95.0), edge, 2.0, true)
-	canvas.draw_line(Vector2(15.0, -87.0), Vector2(13.0, -97.0), edge, 2.0, true)
-	canvas.draw_line(Vector2(22.0, -71.0), Vector2(28.0, 11.0), Color(edge, 0.35), 1.2, true)
+	canvas.draw_line(Vector2(-9.0, -87.0), Vector2(-17.0, -95.0), edge.lerp(fold, 0.40), 1.8, true)
+	canvas.draw_line(Vector2(15.0, -87.0), Vector2(13.0, -97.0), edge.lerp(fold, 0.40), 1.8, true)
+	canvas.draw_line(Vector2(22.0, -71.0), Vector2(28.0, 11.0), Color(edge, 0.22), 1.2, true)
 	canvas.draw_line(Vector2(-14.0, -47.0), Vector2(21.0, -50.0), ink, 2.0, true)
 	# A belt of tape reels and torn, anonymous paper labels.
 	canvas.draw_rect(Rect2(Vector2(-25.0,-35.0),Vector2(52.0,18.0)),paint.wood)
@@ -90,15 +97,16 @@ static func _bootlegger(canvas: CanvasItem, pose: Dictionary, ink: Color, stock:
 	# The brim is never a static sticker: its tilt follows the neck and startle.
 	canvas.draw_set_transform(head, face * (-0.085 + talking * 0.025 + startle * 0.10))
 	Paint.shape(canvas,PackedVector2Array([Vector2(-16,-14),Vector2(13,-14),Vector2(17,8),Vector2(5,19),Vector2(-15,12)]),paint.cream,ink,1.8)
-	canvas.draw_colored_polygon(PackedVector2Array([Vector2(7,-12),Vector2(14,-9),Vector2(16,8),Vector2(5,18),Vector2(4,1)]),paint.wax)
+	canvas.draw_colored_polygon(PackedVector2Array([Vector2(5,-12),Vector2(14,-9),Vector2(16,8),Vector2(5,18),Vector2(1,7)]),paint.wax.lerp(paint.wood, 0.20))
+	canvas.draw_colored_polygon(PackedVector2Array([Vector2(-15,-12),Vector2(13,-12),Vector2(13,-3),Vector2(-13,-2)]),paint.wax.lerp(paint.shadow, 0.34))
 	Paint.shape(canvas,PackedVector2Array([Vector2(-23,-16),Vector2(-15,-30),Vector2(9,-28),Vector2(23,-15)]),paint.coat,ink,2.0)
 	canvas.draw_colored_polygon(PackedVector2Array([Vector2(-20,-18),Vector2(-13,-24),Vector2(17,-22),Vector2(20,-16)]),paint.copper)
 	Paint.shape(canvas,PackedVector2Array([Vector2(-34,-15),Vector2(-21,-19),Vector2(23,-18),Vector2(35,-13),Vector2(17,-10),Vector2(-26,-10)]),paint.shadow,ink,1.5)
-	canvas.draw_line(Vector2(-28,-14),Vector2(24,-14),paint.teal,2.1,true)
+	canvas.draw_line(Vector2(-28,-14),Vector2(24,-14),paint.teal.lerp(paint.coat, 0.30),1.7,true)
 	for side in [-1.0,1.0]:
 		var eye := Vector2(face*3+side*5.5,-2-startle*1.2)
-		canvas.draw_circle(eye,2.6,ink,true,-1,true)
-		canvas.draw_circle(eye+Vector2(-0.6,-0.7),0.7,paint.light,true,-1,true)
+		canvas.draw_line(eye + Vector2(-2.1, -0.5), eye + Vector2(2.1, -0.5), ink, 1.7, true)
+		canvas.draw_line(eye + Vector2(-2.4, -2.2), eye + Vector2(2.0, -1.7), Color(paint.wood, 0.60), 1.2, true)
 	canvas.draw_line(Vector2(-2,9),Vector2(6,8+sin(clock*12)*talking*1.6),ink,1.5,true)
 	canvas.draw_line(Vector2(-10,3),Vector2(-5,4),Color(paint.copper,0.6),1.6,true)
 	canvas.draw_set_transform(Vector2.ZERO)
@@ -106,8 +114,8 @@ static func _bootlegger(canvas: CanvasItem, pose: Dictionary, ink: Color, stock:
 	var greeting_hand := Vector2(-face * (40.0 + greeting * 14.0), -45.0 - greeting * 43.0 + sin(clock * 4.5) * talking * 9.0)
 	var near_shoulder := Vector2(face * 25.0, -82.0) + coat_shift
 	var far_shoulder := Vector2(-face * 24.0, -82.0) + coat_shift
-	_arm(canvas,far_shoulder,Vector2(-face*42,-56),greeting_hand,paint.coat,edge,12.0)
-	_arm(canvas,near_shoulder,Vector2(face*40,-56-inspect*4),tape_hand,paint.teal,edge,12.0)
+	_arm(canvas,far_shoulder,Vector2(-face*42,-56),greeting_hand,paint.coat,edge,12.0,ink,paint.wax)
+	_arm(canvas,near_shoulder,Vector2(face*40,-56-inspect*4),tape_hand,paint.teal,edge,12.0,ink,paint.wax)
 	canvas.draw_line(greeting_hand + Vector2(-4.0, 0.0), greeting_hand + Vector2(4.0, -2.0), edge, 2.5, true)
 	canvas.draw_set_transform(tape_hand, face * (-0.16 + inspect * 0.36 + sin(clock * 3.4) * 0.035))
 	_cassette(canvas, ink, label)
@@ -148,12 +156,13 @@ static func _tick(canvas: CanvasItem, pose: Dictionary, ink: Color, stock: Color
 	canvas.draw_colored_polygon(PackedVector2Array([Vector2(-20.0, 12.0), Vector2(-9.0, -64.0), Vector2(9.0, -64.0), Vector2(20.0, 12.0)]), shell)
 	canvas.draw_colored_polygon(PackedVector2Array([Vector2(-20,12),Vector2(-9,-64),Vector2(-4,-58),Vector2(-11,9)]),paint.copper)
 	canvas.draw_colored_polygon(PackedVector2Array([Vector2(9,-64),Vector2(20,12),Vector2(12,9),Vector2(5,-58)]),paint.shadow)
+	canvas.draw_colored_polygon(PackedVector2Array([Vector2(-7,-62),Vector2(5,-62),Vector2(11,9),Vector2(-7,9)]),shell.lerp(paint.shadow, 0.24))
 	Paint.shape(canvas,PackedVector2Array([Vector2(-10,-52),Vector2(9,-52),Vector2(13,4),Vector2(-13,4)]),paint.coat,paint.brass,1.7)
-	Paint.hatch(canvas,Vector2(-15,9),7,53,Color(paint.gold,0.22),4)
+	Paint.hatch(canvas,Vector2(-15,9),7,43,Color(paint.wax,0.20),3)
 	canvas.draw_rect(Rect2(-20,10,40,7),paint.brass)
 	Paint.bolt(canvas,Vector2(-17,13),2.5,paint.gold,ink,paper)
 	Paint.bolt(canvas,Vector2(17,13),2.5,paint.gold,ink,paper)
-	canvas.draw_line(Vector2(-21.0, 12.0), Vector2(21.0, 12.0), paper, 2.0, true)
+	canvas.draw_line(Vector2(-21.0, 12.0), Vector2(21.0, 12.0), paper.lerp(warm, 0.52), 1.6, true)
 	canvas.draw_line(Vector2(-9.0, -63.0), Vector2(-19.0, 6.0), Color(paper, 0.22), 1.2, true)
 	for mark in range(5):
 		var mark_y := -53.0 + mark * 10.0
@@ -174,31 +183,32 @@ static func _tick(canvas: CanvasItem, pose: Dictionary, ink: Color, stock: Color
 	canvas.draw_set_transform(shift)
 	canvas.draw_circle(pivot, 4.0, ink, true, -1.0, true)
 	canvas.draw_circle(pivot, 1.7, paper, true, -1.0, true)
-	# Tiny attentive eyes sit above the mechanism; nods do not alter the count.
+	# Quiet eyelids sit above the mechanism; nods do not alter the count.
 	var head := Vector2(face * 2.0, -81.0 + on_beat * 1.8 - startle * 4.0)
 	canvas.draw_set_transform(shift + head, face * (talking * sin(clock * 4.0) * 0.09 - startle * 0.12))
 	Paint.shape(canvas,PackedVector2Array([Vector2(-12,-10),Vector2(10,-12),Vector2(14,6),Vector2(-11,8)]),paint.cream,ink,1.6)
+	canvas.draw_colored_polygon(PackedVector2Array([Vector2(5,-10),Vector2(10,-10),Vector2(13,5),Vector2(2,7),Vector2(1,-2)]),paint.wax.lerp(paint.wood, 0.22))
 	canvas.draw_colored_polygon(PackedVector2Array([Vector2(-13,-9),Vector2(-7,-16),Vector2(12,-12),Vector2(15,-7)]),paint.coat)
 	canvas.draw_line(Vector2(-12,-9),Vector2(12,-8),paint.brass,2.2,true)
 	for side in [-1.0,1.0]:
 		var eye := Vector2(face*2+side*4,-1)
-		canvas.draw_circle(eye,2.1,ink,true,-1,true)
-		canvas.draw_circle(eye+Vector2(-0.6,-0.7),0.6,paint.light,true,-1,true)
+		canvas.draw_line(eye + Vector2(-1.7, -0.5), eye + Vector2(1.7, -0.5), ink, 1.5, true)
+		canvas.draw_line(eye + Vector2(-2.0, -2.1), eye + Vector2(1.7, -1.8), Color(paint.wood, 0.52), 1.0, true)
 	canvas.draw_line(Vector2(-1,5),Vector2(5,5-talking),ink,1.0,true)
 	canvas.draw_set_transform(Vector2.ZERO)
 	var raised_hand := shift + Vector2(face * (35.0 + talking * 3.0), -27.0 - greeting * 24.0 - on_beat * 4.0)
 	var resting_hand := shift + Vector2(-face * 31.0, -8.0 + sin(clock * 3.0) * 2.0)
-	_arm(canvas, shift + Vector2(face * 17.0, -34.0), shift + Vector2(face * 29.0, -21.0), raised_hand, ink, paper, 3.5)
-	_arm(canvas, shift + Vector2(-face * 18.0, -30.0), shift + Vector2(-face * 29.0, -18.0), resting_hand, ink, paper, 3.5)
+	_arm(canvas, shift + Vector2(face * 17.0, -34.0), shift + Vector2(face * 29.0, -21.0), raised_hand, ink, paper, 3.5,paint.shadow,paint.wax)
+	_arm(canvas, shift + Vector2(-face * 18.0, -30.0), shift + Vector2(-face * 29.0, -18.0), resting_hand, ink, paper, 3.5,paint.shadow,paint.wax)
 	if talking > 0.02 or pose.near:
 		for mark in range(3):
 			var mark_color := warm if mark <= beat and beat < 3 else Color(ink, 0.25)
 			var point := shift + Vector2(-10.0 + mark * 10.0, -111.0)
 			canvas.draw_line(point, point + Vector2(0.0, 5.0), mark_color, 2.5, true)
 
-static func _arm(canvas: CanvasItem, shoulder: Vector2, elbow: Vector2, hand: Vector2, ink: Color, paper: Color, width: float) -> void:
+static func _arm(canvas: CanvasItem, shoulder: Vector2, elbow: Vector2, hand: Vector2, ink: Color, paper: Color, width: float, edge: Color, highlight: Color) -> void:
 	# Overlapping rounded segments keep folded elbows clean even when an
 	# inspecting hand comes back toward its shoulder; a miter would grow a spike.
-	Paint.segment(canvas,shoulder,elbow,width,ink,Color("13292e"),Color("aab995"))
-	Paint.segment(canvas,elbow,hand,width*0.82,ink,Color("13292e"),Color("aab995"))
-	Paint.disc(canvas,hand,maxf(width*0.43,3.0),paper,Color("13292e"),Color("fff0ce"))
+	Paint.segment(canvas,shoulder,elbow,width,ink,edge,highlight)
+	Paint.segment(canvas,elbow,hand,width*0.82,ink,edge,highlight)
+	Paint.disc(canvas,hand,maxf(width*0.43,3.0),paper,edge,highlight)

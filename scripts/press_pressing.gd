@@ -60,25 +60,31 @@ static func draw_pressing(canvas: CanvasItem, pose: Dictionary, ink: Color, wax:
 	canvas.draw_line(collar+Vector2(-7,-2),collar+Vector2(7,-2),paint.gold,1.6,true)
 	canvas.draw_set_transform(center, tilt, squash)
 	# A thick cast rim and inset wax diaphragm replace the flat test-disc face.
-	Paint.disc(canvas,Vector2.ZERO,31,paint.brass,ink,paint.gold)
+	Paint.disc(canvas,Vector2.ZERO,31,paint.brass.lerp(paint.wood,0.24),ink,paint.brass)
+	canvas.draw_arc(Vector2.ZERO,29.0,0.2,1.95,30,Color(paint.shadow,0.44),3.2,true)
+	canvas.draw_arc(Vector2.ZERO,29.0,-2.45,-2.10,8,Color(paint.gold,0.62),1.5,true)
+	canvas.draw_arc(Vector2.ZERO,29.0,-1.75,-1.58,6,Color(paint.gold,0.45),1.2,true)
 	Paint.disc(canvas,Vector2(-1,-1),25,wax,ink,paint.teal)
 	canvas.draw_arc(Vector2(-1,-1),19,-2.8,2.3,40,Color(paint.brass,0.65),2.0,true)
 	canvas.draw_arc(Vector2(-1,-1),14,-2.4,1.5,32,Color(paint.teal,0.8),1.6,true)
 	for side in [-1.0,1.0]:
 		Paint.shape(canvas,PackedVector2Array([Vector2(side*25,-15),Vector2(side*34,-12),Vector2(side*35,8),Vector2(side*27,15)]),paint.wood,ink,1.4)
-		canvas.draw_line(Vector2(side*31,-9),Vector2(side*31,6),paint.copper,2.3,true)
-	Paint.hatch(canvas,Vector2(-11,15),14,7,Color(paint.brass,0.25),5)
-	Paint.disc(canvas,Vector2(face*8,-2),9.5,paint.cream,ink,paint.light)
+		canvas.draw_line(Vector2(side*31,-9),Vector2(side*31,6),paint.copper.lerp(paint.wood,0.35),2.0,true)
+	Paint.hatch(canvas,Vector2(-11,15),14,7,Color(paint.brass,0.21),3)
+	# The offset register is an old optical fitting, with a slit beneath its
+	# worn brow rather than a large white cartoon eye.
+	Paint.disc(canvas,Vector2(face*8,-2),9.5,paint.brass.lerp(paint.wax,0.4),ink,paint.brass)
+	canvas.draw_arc(Vector2(face*8,-2),7.5,0.2,2.6,22,Color(paint.shadow,0.38),2.5,true)
 	# A label register turns slowly like an eccentric record, making idle motion
 	# legible even while the spring has nearly settled.
 	canvas.draw_arc(Vector2.ZERO, 25.0, clock * 0.23, clock * 0.23 + 0.34, 10, Color(pale, 0.55), 1.5, true)
 	if recoil > 0.4:
 		canvas.draw_line(Vector2(face * 8.0 - 3.0, -3.0), Vector2(face * 8.0 + 3.0, 0.0), ink, 2.2, true)
 	else:
-		canvas.draw_circle(Vector2(face * 8.0, -2.0), 4.5, ink, true, -1.0, true)
+		canvas.draw_line(Vector2(face*8-4,-2),Vector2(face*8+4,-2),ink,4.0,true)
 		canvas.draw_circle(Vector2(face*9,-2),2.1,paint.gold if phase=="calm" else accent,true,-1,true)
-		canvas.draw_circle(Vector2(face*8-1,-4),1.1,paint.light,true,-1,true)
-	canvas.draw_line(Vector2(face*8-6,-10),Vector2(face*8+5,-9-recoil*3),ink,2.5,true)
+		canvas.draw_line(Vector2(face*8-3,-5),Vector2(face*8,-5),Color(paint.cream,0.6),1.1,true)
+	canvas.draw_line(Vector2(face*8-6,-10),Vector2(face*8+5,-10),paint.wood,2.0,true)
 	canvas.draw_set_transform(Vector2.ZERO)
 	var elbow := center + Vector2(face * 19.0, -2.0)
 	Paint.segment(canvas,center,elbow,9,paint.coat,ink,paint.teal)

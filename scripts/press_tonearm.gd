@@ -13,6 +13,8 @@ static func draw_tonearm(canvas: CanvasItem, pose: Dictionary, ink: Color, stock
 	var warm: Color = paint.gold
 	var pale: Color = paint.cream
 	var muted: Color = paint.teal
+	var bronze: Color = paint.brass.lerp(paint.wood, 0.28)
+	var aged_copper: Color = paint.copper.lerp(paint.shadow, 0.3)
 	var clock: float = pose.get("clock", pose.time)
 	var recoil: float = pose.get("hit_recoil", 0.0)
 	var settle := smoothstep(0.0, 1.0, float(pose.get("settle", 1.0)))
@@ -73,36 +75,42 @@ static func draw_tonearm(canvas: CanvasItem, pose: Dictionary, ink: Color, stock
 		var impact := sin((1.0 - recoil) * PI) * recoil
 		tip += Vector2(-face * 12.0, -6.0) * impact
 		tip_rotation += -face * impact * 0.16
-	var bright: Color = accent if phase == "sweep" else (warm if phase == "freed" else paint.brass)
+	var bright: Color = accent if phase == "sweep" else (warm if phase == "freed" else bronze)
 	var offset := Vector2(3.0, 2.0)
 	# Counterweight and overhead mounting plate; fine rules repeat the record's
 	# concentric geometry without making the silhouette read as another dummy.
 	Paint.shape(canvas,PackedVector2Array([pivot+Vector2(-83,-60),pivot+Vector2(124,-60),pivot+Vector2(139,-43),pivot+Vector2(135,-10),pivot+Vector2(-80,-10)]),paint.coat,ink,3.0)
 	canvas.draw_rect(Rect2(pivot+Vector2(-74,-51),Vector2(191,24)),paint.wood)
-	canvas.draw_line(pivot+Vector2(-73,-49),pivot+Vector2(116,-49),paint.copper,5.0,true)
+	canvas.draw_line(pivot+Vector2(-73,-49),pivot+Vector2(116,-49),aged_copper,4.0,true)
+	canvas.draw_line(pivot+Vector2(-65,-50),pivot+Vector2(-36,-50),Color(paint.brass,0.65),1.5,true)
+	canvas.draw_line(pivot+Vector2(78,-50),pivot+Vector2(105,-50),Color(paint.brass,0.5),1.3,true)
 	canvas.draw_line(pivot + Vector2(-94.0, -62.0), pivot + Vector2(150.0, -62.0), ink, 2.0, true)
 	for mark in range(7):
 		var x := pivot.x - 60.0 + mark * 27.0
 		canvas.draw_line(Vector2(x,pivot.y-42),Vector2(x,pivot.y-25),Color(paint.shadow,0.7),3.0,true)
-	for x in [-65.0,118.0]: Paint.bolt(canvas,pivot+Vector2(x,-38),5.5,paint.brass,ink,pale)
-	Paint.segment(canvas,pivot+Vector2(95,0),pivot,31,paint.wood,ink,paint.copper)
+	for x in [-65.0,118.0]: Paint.bolt(canvas,pivot+Vector2(x,-38),5.5,bronze,ink,paint.brass)
+	Paint.segment(canvas,pivot+Vector2(95,0),pivot,31,paint.wood,ink,aged_copper)
 	# Broad bevelled beams, riveted collars and a dark underside make the arm
 	# carry physical weight while the original two joints keep their exact arc.
 	Paint.segment(canvas,pivot+offset*2,elbow+offset*2,37,paint.shadow,ink,paint.coat)
-	Paint.segment(canvas,pivot,elbow,30,paint.brass,ink,paint.gold)
-	canvas.draw_line(pivot+Vector2(0,5),elbow+Vector2(0,5),paint.wood,7.0,true)
+	Paint.segment(canvas,pivot,elbow,30,bronze,ink,paint.brass)
+	canvas.draw_line(pivot+Vector2(0,5),elbow+Vector2(0,5),paint.wood.lerp(paint.shadow,0.42),7.0,true)
+	canvas.draw_line(pivot.lerp(elbow,0.32)+Vector2(0,-7),pivot.lerp(elbow,0.39)+Vector2(0,-7),Color(paint.gold,0.58),1.6,true)
+	canvas.draw_line(pivot.lerp(elbow,0.72)+Vector2(0,-7),pivot.lerp(elbow,0.75)+Vector2(0,-7),Color(paint.gold,0.42),1.2,true)
 	Paint.disc(canvas,pivot,43,paint.coat,ink,paint.teal)
-	Paint.disc(canvas,pivot,32,paint.brass,ink,paint.gold)
-	Paint.disc(canvas,pivot,22,paint.wood,ink,paint.copper)
+	Paint.disc(canvas,pivot,32,bronze,ink,paint.brass)
+	canvas.draw_arc(pivot,30,0.1,1.85,30,Color(paint.shadow,0.36),5.0,true)
+	Paint.disc(canvas,pivot,22,paint.wood,ink,aged_copper)
 	for index in range(8):
 		var bolt := pivot+Vector2.from_angle(index*TAU/8.0)*35
-		Paint.bolt(canvas,bolt,3.0,paint.gold,ink,pale)
-	Paint.bolt(canvas,pivot,9,paint.brass,ink,pale)
+		Paint.bolt(canvas,bolt,3.0,bronze,ink,paint.brass)
+	Paint.bolt(canvas,pivot,9,bronze,ink,paint.brass)
 	var shoulder := tip + Vector2(-face * 14.0, -77.0).rotated(tip_rotation)
 	Paint.segment(canvas,elbow+offset,shoulder+offset,29,paint.shadow,ink,paint.teal)
-	Paint.segment(canvas,elbow,shoulder,22,bright,ink,paint.gold)
+	Paint.segment(canvas,elbow,shoulder,22,bright,ink,paint.brass)
+	canvas.draw_line(elbow+Vector2(0,4),shoulder+Vector2(0,4),Color(paint.shadow,0.3),4.0,true)
 	Paint.disc(canvas,elbow,25,paint.coat,ink,paint.teal)
-	Paint.bolt(canvas,elbow,15,paint.brass,ink,pale)
+	Paint.bolt(canvas,elbow,15,bronze,ink,paint.brass)
 	for index in range(4):
 		var point := elbow.lerp(shoulder,0.20+index*0.18)
 		canvas.draw_line(point+Vector2(-7,-2),point+Vector2(6,1),Color(paint.wood,0.6),2.0,true)
@@ -112,14 +120,15 @@ static func draw_tonearm(canvas: CanvasItem, pose: Dictionary, ink: Color, stock
 	var cartridge := Rect2(Vector2(-32.0, -72.0), Vector2(64.0, 40.0))
 	Paint.shape(canvas,PackedVector2Array([Vector2(-34,-76),Vector2(24,-76),Vector2(35,-64),Vector2(31,-31),Vector2(-29,-31),Vector2(-36,-43)]),paint.coat,ink,2.4)
 	Paint.shape(canvas,PackedVector2Array([Vector2(-31,-73),Vector2(22,-73),Vector2(29,-65),Vector2(-28,-62)]),bright,ink,1.5)
-	canvas.draw_rect(Rect2(cartridge.position+Vector2(7,13),Vector2(50,20)),pale)
-	canvas.draw_rect(Rect2(cartridge.position+Vector2(8,26),Vector2(48,7)),paint.wax)
-	Paint.bolt(canvas,Vector2(-27,-43),3,paint.brass,ink,pale)
-	Paint.bolt(canvas,Vector2(27,-43),3,paint.brass,ink,pale)
+	canvas.draw_rect(Rect2(cartridge.position+Vector2(7,13),Vector2(50,20)),paint.wax)
+	canvas.draw_colored_polygon(PackedVector2Array([Vector2(-24,-56),Vector2(14,-56),Vector2(6,-43),Vector2(-24,-40)]),pale.lerp(paint.wax,0.16))
+	canvas.draw_rect(Rect2(cartridge.position+Vector2(8,26),Vector2(48,7)),paint.wood.lerp(paint.wax,0.35))
+	Paint.bolt(canvas,Vector2(-27,-43),3,bronze,ink,paint.brass)
+	Paint.bolt(canvas,Vector2(27,-43),3,bronze,ink,paint.brass)
 	for vent in range(4):
 		canvas.draw_line(Vector2(-18.0+vent*12,-52),Vector2(-18.0+vent*12,-44),paint.shadow,3.0,true)
 	var nib := PackedVector2Array([Vector2(-15.0, -29.0), Vector2(15.0, -29.0), Vector2(4.0, 13.0), Vector2(-4.0, 13.0)])
-	Paint.shape(canvas,nib,accent if pose.open else paint.brass,ink,2.0)
+	Paint.shape(canvas,nib,accent if pose.open else bronze,ink,2.0)
 	canvas.draw_colored_polygon(PackedVector2Array([Vector2(-12,-27),Vector2(0,-27),Vector2(-1,10),Vector2(-4,12)]),paint.gold)
 	Paint.segment(canvas,Vector2(0,13),Vector2(face*13,24),3.5,paint.cream,ink,paint.light)
 	canvas.draw_set_transform(Vector2.ZERO)

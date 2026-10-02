@@ -513,6 +513,32 @@ At that review, `deadwax.cmd check` passed its then-current 29 suites and 7,813 
 - [ ] The sheet, HUD, Book, shop, pause, and title retain their original colours and contrast. Room changes leave one ambient modulator for the active authored room, with no lingering lights from the previous room.
 - [ ] In an isolated native preview, the B-side receives extra ambient fill and returning to A restores the authored exposure. Development rooms and grayboxes create no room lighting and keep their previous appearance.
 
+## Refined figure materials
+
+Native GL Compatibility captures reviewed at 1280×720 and 960×540 include
+Skip's Hood/jump poses, the Bootlegger under dim light, and the Hound's grounded
+silhouette. Captures: `.godot/sprite-review/world/`; the detail sheet is
+`.godot/sprite-review/refined-sheet.png`. Timing and controller feel remain manual.
+The full refinement check passed all **49 suites and 11,834 checks**, exit 0,
+with no script/runtime errors (`.godot/sprite-refinement-full-check.log`).
+Existing non-fatal audio ObjectDB teardown warnings remain in older suites.
+
+- [ ] At 1280×720 and 960×540, inspect Skip at normal game size in the Headshell,
+  Horn Plaza, Practice, and a dark Unplayed room. The angular mask, narrow eyes,
+  exposed feet, and coat edge remain distinct without brightening the whole
+  figure or losing it against the street.
+- [ ] Run both ways, jump, land, Set, raise/lower Hood, and use Tap/Sweep/Accent.
+  Shaped feet remain planted or clearly airborne, the tip reads through each
+  strike, and cloth/face planes follow the same pose. Warm Thread keeps a quiet
+  visible trim. No draw shape changes interaction reach or collision.
+- [ ] Inspect Tick, the Bootlegger, the Hound, Auditioners, pressings, HUSH, and
+  Tonearm at normal size. Broad cloth/wax planes and broken brass highlights
+  remain readable under lamps; folds and joints never obscure a combat tell.
+  Check both directions and the Hound's standing/settled poses.
+- [ ] Pause and enable Reduced motion. Material marks stay stable; functional
+  combat and reply cues retain their timing. Reink A→B→A and recover: the
+  character material palette restores without replaying a resolved reward.
+
 ## Sprite animation
 
 - [ ] Skip's idle breath/blink, running feet, takeoff stretch, falling pose, and landing squash read clearly at normal game size.
