@@ -30,6 +30,8 @@ const DiscoveriesScript := preload("res://scripts/discoveries_state.gd")
 const ExplorationScript := preload("res://scripts/exploration_state.gd")
 const ExplorationCatalog := preload("res://scripts/exploration_catalog.gd")
 const ExplorationFixture := preload("res://scripts/exploration_fixture.gd")
+const LostPressingsCatalog := preload("res://scripts/lost_pressings_catalog.gd")
+const LostPressingScript := preload("res://scripts/lost_pressing.gd")
 const CollectionScript := preload("res://scripts/collection_state.gd")
 const CollectionCatalog := preload("res://scripts/collection_catalog.gd")
 const TrialScript := preload("res://scripts/echo_trial.gd")
@@ -120,7 +122,7 @@ func _ready() -> void:
 	randomize()
 	development_mode = development_mode or (OS.is_debug_build() and "--dev-rooms" in OS.get_cmdline_user_args())
 	if not development_mode and DisplayServer.get_name() != "headless":
-		DisplayServer.window_set_title("Dead Wax — Side One")
+		DisplayServer.window_set_title("Dead Wax — Lost Pressings")
 	_setup_input()
 	progression = ProgressionScript.new()
 	abilities = AbilitiesScript.new()
@@ -185,6 +187,7 @@ func _ready() -> void:
 	shop.close_requested.connect(_close_shop)
 	map_menu = MapMenuScript.new()
 	map_menu.exploration = exploration
+	map_menu.collection = collection
 	add_child(map_menu)
 	map_menu.close_requested.connect(_close_map)
 	if development_mode:
@@ -377,6 +380,7 @@ func _swap_room(next_room: Node2D, entry_id: StringName) -> void:
 		_restore_encounters()
 		_install_echo_trial()
 		_install_exploration()
+		_install_lost_pressings()
 		if chapter_complete:
 			for child in room.get_children():
 				if child.is_in_group("chapter_endpoint"):
@@ -815,6 +819,7 @@ func _leave_practice() -> void:
 
 func _bind_session_models() -> void:
 	map_menu.exploration = exploration
+	map_menu.collection = collection
 	player.progression = progression
 	player.abilities = abilities
 	player.economy = economy
@@ -1369,6 +1374,69 @@ func _on_exploration_requested(action: StringName, source: Node2D) -> void:
 			if not exploration.is_open(id): return
 			_on_route_requested(definition.target_room, definition.target_entry)
 	_refresh_exploration()
+
+# -- lost pressings: equipment found by revisiting the wax ------------------
+
+func _install_lost_pressings() -> void:
+	if development_mode or practice_mode or room == null:
+		return
+	for definition in LostPressingsCatalog.for_room(world_room_id):
+		var fixture := LostPressingScript.new()
+		fixture.name = "LostPressing_" + String(definition.id)
+		fixture.definition = definition
+		fixture.position = definition.position
+		fixture.collection = collection
+		fixture.abilities = abilities
+		fixture.progression = progression
+		fixture.pressing = pressing
+		fixture.ink = room.ink
+		fixture.stock = room.bg_color
+		fixture.requested.connect(_on_lost_pressing_requested)
+		room.add_child(fixture)
+
+func _on_lost_pressing_requested(source: Node2D) -> void:
+	if _collection_busy or development_mode or practice_mode or not _has_session or get_tree().paused or _respawn_pending or _health <= 0:
+		return
+	if not _can_open_inventory() or inventory.is_open() or room == null or not is_instance_valid(source):
+		return
+	if source.get_parent() != room or source.get_script() != LostPressingScript or not source.is_in_group("lost_pressing"):
+		return
+	var id := StringName(source.definition.get("id", ""))
+	var definition := LostPressingsCatalog.definition(world_room_id, id)
+	if definition.is_empty() or source.definition != definition or source.position != definition.position:
+		return
+	if room.get_node_or_null("LostPressing_" + String(id)) != source:
+		return
+	if not player.is_on_floor() or player.global_position.distance_to(source.global_position) > LostPressingScript.INTERACT_RADIUS:
+		return
+	# Main checks the earned permission independently of the presentation.
+	match String(definition.requirement):
+		"groove":
+			if not abilities.has_ability(&"groove"): return
+		"gather":
+			if not progression.has_refrain(ProgressionScript.Refrain.GATHER): return
+		"jump_cut":
+			if not progression.has_refrain(ProgressionScript.Refrain.JUMP_CUT) or not pressing.on_b_side(): return
+		_:
+			return
+	if not source.is_available() or collection.has_item(String(id)):
+		return
+	_collection_busy = true
+	var before: Dictionary = collection.snapshot()
+	if not collection.claim_exploration_item(String(id)) or not _persist_session():
+		collection.restore_snapshot(before)
+		source.refresh()
+		_flash("Could not save. Your pressing is waiting; E / Y to retry.")
+		_collection_busy = false
+		return
+	# Finding a fitting never changes handling or heals. The Book owns the
+	# fitting intent and the existing saved equipment transaction applies it.
+	player.cancel_pending_strike()
+	source.refresh()
+	audio.play("polish", -9.0, 1.1)
+	_flash("%s — FOUND. Equip in the Book." % String(CollectionCatalog.item(String(id)).name).to_upper())
+	_fb_t = 4.0
+	_collection_busy = false
 
 # -- carried discoveries ----------------------------------------------------
 

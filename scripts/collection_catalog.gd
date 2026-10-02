@@ -30,6 +30,12 @@ const ITEMS: Array[Dictionary] = [
 		"description": "An almost weightless seal with a stubborn drift.", "tradeoff": "+20% steering in the air; 20% less braking.", "modifiers": {"air_control": 1.2, "friction": 0.8}},
 	{"id": "ballast_seal", "name": "Ballast Seal", "slot": "charm", "source": "unplayed", "rarity": "Singular", "drop_chance": 1,
 		"description": "A dense wax seal, kept whole through years of pressure.", "tradeoff": "+1 maximum needle health; 20% less steering in the air.", "modifiers": {"health": 1, "air_control": 0.8}},
+	{"id": "copper_stylus", "name": "Copper Stylus", "slot": "needle", "source": "exploration", "rarity": "Lost Pressing", "drop_chance": 0,
+		"description": "A warm copper point, forgotten where the first grooves turn back on themselves.", "tradeoff": "+15% ground acceleration; 10% less braking.", "modifiers": {"accel": 1.15, "friction": 0.9}},
+	{"id": "seam_lining", "name": "Seam Lining", "slot": "lining", "source": "exploration", "rarity": "Lost Pressing", "drop_chance": 0,
+		"description": "Cloth lifted from an unopened sleeve. Its folded seams hold a little quiet.", "tradeoff": "+20% movement under the Hood; 10% less steering in the air.", "modifiers": {"hood_speed": 1.2, "air_control": 0.9}},
+	{"id": "dusk_seal", "name": "Dusk Seal", "slot": "charm", "source": "exploration", "rarity": "Lost Pressing", "drop_chance": 0,
+		"description": "The last wax seal of a side never played, heavy with its unspent evening.", "tradeoff": "+1 maximum needle health; 10% less running speed.", "modifiers": {"health": 1, "speed": 0.9}},
 ]
 const HUNTS: Array[Dictionary] = [
 	{"id": "label", "name": "Label Echo Trial", "room_id": "practice_room", "position": Vector2(850, 574), "description": "Find the trial stand beyond Tick in Tick's Practice. Hear or shatter four echo copies across three waves.", "mastery_wins": MASTERY_WINS},

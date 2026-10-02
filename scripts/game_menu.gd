@@ -185,7 +185,7 @@ func _build_frame() -> void:
 	var imprint := _label("DW   /   AN INDEPENDENT PRESSING", PressScript.SIZE_TINY, INK)
 	imprint.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	header.add_child(imprint)
-	header.add_child(_label("SIDE ONE  ·  01", PressScript.SIZE_TINY, FADED))
+	header.add_child(_label("LOST PRESSINGS  ·  PLAYABLE UPDATE", PressScript.SIZE_TINY, FADED))
 	sheet.add_child(_rule(INK))
 
 	_content = HBoxContainer.new()

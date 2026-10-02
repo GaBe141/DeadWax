@@ -96,3 +96,30 @@ jobs:
           godot --headless --path . --script res://tests/exploration_test.gd
           godot --headless --path . --script res://tests/exploration_world_test.gd
           godot --headless --path . --script res://tests/exploration_map_test.gd
+
+      - name: Validate discovery journeys and synthesized cues
+        run: |
+          godot --headless --path . --script res://tests/gather_reward_test.gd
+          godot --headless --path . --script res://tests/gather_route_test.gd
+          godot --headless --path . --script res://tests/loft_voice_test.gd
+          godot --headless --path . --script res://tests/home_song_test.gd
+          godot --headless --path . --script res://tests/opening_cutscene_test.gd
+          godot --headless --path . --script res://tests/opening_audio_test.gd
+          godot --headless --path . --script res://tests/yard_voice_test.gd
+          godot --headless --path . --script res://tests/yard_audio_test.gd
+          godot --headless --path . --script res://tests/unplayed_test.gd
+          godot --headless --path . --script res://tests/discoveries_test.gd
+          godot --headless --path . --script res://tests/echo_audio_test.gd
+
+      - name: Validate collection state and trial rewards
+        run: |
+          godot --headless --path . --script res://tests/collection_state_test.gd
+          godot --headless --path . --script res://tests/collection_test.gd
+          godot --headless --path . --script res://tests/collection_book_test.gd
+          godot --headless --path . --script res://tests/echo_trial_test.gd
+
+      - name: Validate Lost Pressings rewards and return visits
+        run: |
+          godot --headless --path . --script res://tests/lost_pressings_test.gd
+          godot --headless --path . --script res://tests/lost_pressings_world_test.gd
+          godot --headless --path . --script res://tests/lost_pressings_book_test.gd

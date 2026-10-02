@@ -12,7 +12,7 @@ const ExplorationCatalog := preload("res://scripts/exploration_catalog.gd")
 const ExplorationFixture := preload("res://scripts/exploration_fixture.gd")
 const BASELINE := {
 	&"headshell": [4, 4, 0, 0, 1, 0],
-	&"horn_plaza": [3, 3, 0, 1, 4, 1],
+	&"horn_plaza": [4, 4, 0, 1, 4, 1],
 	&"high_street": [7, 7, 0, 1, 2, 2],
 	&"practice_room": [5, 5, 0, 1, 2, 2],
 	&"the_stalls": [11, 11, 1, 1, 3, 2],

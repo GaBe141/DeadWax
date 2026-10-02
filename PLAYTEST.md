@@ -3,8 +3,8 @@
 Run `.\deadwax.cmd play` for the authored opening. Start with the chapter
 checklist, then use `.\deadwax.cmd dev` for focused mechanics regressions.
 Runtime errors are written to `.godot/deadwax-play.log`.
-Run `.\deadwax.cmd check` before handoff; the complete run contains 42 native
-suites, including ability model, integration, world, Book, and Walk suites.
+Run `.\deadwax.cmd check` before handoff; the complete run contains 45 native
+suites, including Lost Pressings claims, world traversal, and Book/map suites.
 
 ## Session
 
@@ -14,6 +14,45 @@ suites, including ability model, integration, world, Book, and Walk suites.
 - Input device:
 - Overall frame pacing: smooth / occasional hitch / frequent hitch
 - Audio clarity and latency:
+
+## Lost Pressings
+
+Verified on 2026-10-02 in native Godot 4.7.2 / GL Compatibility with private
+checkpoints: all three actual E pickups and Continue, the earned Gather ascent
+and safe descent, blocked ordinary-jump approaches, and readable title,
+equipment cards, Book and map at 1280×720 and 960×540. Moved two static signs
+clear of the new cards and placed Dusk clear of dialogue and arrivals.
+Captures are in `.godot/lost-pressings-review/` and
+`.godot/lost-pressings-ui/`; native log is `.godot/lost-pressings-native.log`.
+Audio listening and physical-controller feel remain manual.
+
+Full `deadwax.cmd check`: **45 suites, 11,652 checks, exit 0**, with no script
+errors. Log: `.godot/lost-pressings-full-check.log`. Existing non-fatal
+ObjectDB teardown warnings remain in older suites. GitHub's suite list now
+matches all 45 local suites.
+
+- Continue an existing checkpoint; its gear, trial pity, Offcuts, Shine and
+  story choices should remain intact. Open Book → Equipment for three new
+  Lost Pressings leads, separately counted from the twelve trial pieces.
+- Ride the Stalls' groove to the eastern shutter. With Groove Riding, use
+  fresh grounded E / Y at the Copper Stylus cabinet. It should add the piece
+  without fitting it or altering the trial ledger.
+- Return to Horn Plaza with Gather. The new balcony above the homeward door
+  should need an airborne strike lift; ordinary jumping and fast equipment
+  should not reach it. Collect Seam Lining, then drop safely to the street.
+- Return to Addie's Door with Jump-Cut. The sleeve beyond her doorway should
+  remain sealed on A. Turn with F / RB and collect Dusk Seal on B. Using the
+  nearby listening post should never also collect the sleeve.
+- Fit each piece in the Book and compare the stated benefit and cost. Dusk
+  Seal increases capacity without healing; recovery fills the extra point.
+- Revisit, recover, and Continue. Collected cabinets stay empty, with no
+  duplicate gear, Offcuts, or reward sound. A failed save leaves the same
+  pressing available for another fresh input.
+- On the collected map, Label has two Lost Pressings and Overture one.
+  Counts refresh when reopening; room names remain hidden until visited.
+- At 960×540 and 1280×720, inspect all three cards, Book leads and map totals.
+  Tab / LB / RB pages and scroll/focus must keep every equipment item usable.
+  Pause freezes the cabinets; Reduced motion keeps their prompts active.
 
 ## Reverse-side exploration review — 2026-09-11
 

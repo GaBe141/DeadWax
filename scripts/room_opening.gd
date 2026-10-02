@@ -168,6 +168,10 @@ func _build_headshell() -> void:
 
 func _build_horn_plaza() -> void:
 	_floor(1800)
+	# An optional 200px return ledge above the homeward road. Gather reaches
+	# its sleeve; ordinary walking and every existing passage remain below.
+	platform(Vector2(500, 415), Vector2(200, 30))
+	get_child(get_child_count() - 1).name = "LostPressingBalcony"
 	_impression(&"horn", Vector2(810, 350), Vector2(420, 370))
 	_impression(&"facade", Vector2(220, 317), Vector2(350, 390))
 	_impression(&"market", Vector2(1500, 360), Vector2(440, 330))
@@ -175,7 +179,7 @@ func _build_horn_plaza() -> void:
 	_exit(Vector2(375, 574), &"headshell", "HOME")
 	_exit(Vector2(1190, 574), &"practice_room", "PRACTICE")
 	_exit(Vector2(1680, 574), &"the_stalls", "THE STALLS")
-	sign_label(Vector2(600, 242), "THE VOICE\nRuntime: all of it.")
+	sign_label(Vector2(760, 242), "THE VOICE\nRuntime: all of it.")
 	if _has_ability(&"hood"):
 		sign_label(Vector2(680, 424), "HOLD K / C / B — HOOD\nStand quietly beneath the horn.")
 	else:
@@ -255,7 +259,7 @@ func _build_stalls() -> void:
 		sign_label(Vector2(310, 310), "STILL HOT\nStand on the groove. STRIKE [J / X].\nSteer right as it carries you.")
 	else:
 		sign_label(Vector2(310, 310), "A MISSING LIFT\nThe market span is out of reach.\nTick keeps a Groove in Practice.")
-	sign_label(Vector2(1430, 215), "THE UPPER ROOM\nSomeone kept a song\nabove the shutters.")
+	sign_label(Vector2(1100, 215), "THE UPPER ROOM\nSomeone kept a song\nabove the shutters.")
 	# This shelf is too high for the legs beneath it, and too far from the
 	# live groove and middle walk. A held breath gives the return its lift.
 	platform(Vector2(1990, 295), Vector2(420, 30))

@@ -60,6 +60,7 @@ func _run() -> void:
 	var pages: Control = _book._collection_pages
 	_check(pages._equipment.is_visible_in_tree() and not _book._journey.visible, "equipment page takes the Book content area")
 	_check(pages._gear_buttons.size() == Catalog.items().size(), "every catalog gear target has a selectable card")
+	pages.select_item(String(Catalog.items()[0].id))
 	_check(pages._gear_title.text == Catalog.items()[0].name and pages._gear_tradeoff.text == Catalog.items()[0].tradeoff, "selection exposes the actual catalog trade-off")
 	_check(pages._gear_odds.text.contains("4%") and pages._gear_odds.text.contains("20"), "odds and bounded dry streak are printed")
 	_check(pages._gear_action.disabled, "unearned recipe cannot request a bind")

@@ -14,6 +14,7 @@ func _run() -> void:
 	_check_catalog()
 	_check_schema()
 	_check_rolls()
+	_check_exploration_claims()
 	_check_equipment()
 	_check_crafting()
 	_check_bestiary()
@@ -27,11 +28,11 @@ func _run() -> void:
 	quit(1)
 
 func _check_catalog() -> void:
-	_check(Catalog.ITEMS.size() == 12 and Catalog.SPECIES.size() == 10, "twelve equipment choices and ten grounded bestiary entries")
+	_check(Catalog.ITEMS.size() == 15 and Catalog.SPECIES.size() == 10, "fifteen equipment choices and ten grounded bestiary entries")
 	var ids: Array[String] = []
 	var slots := {"needle": 0, "lining": 0, "charm": 0}
 	for item in Catalog.items():
-		_check(item.id not in ids and item.slot in Catalog.SLOTS and not Catalog.hunt(item.source).is_empty(), "each equipment item has a unique ID, slot and real source: " + item.id)
+		_check(item.id not in ids and item.slot in Catalog.SLOTS and (item.source == "exploration" or not Catalog.hunt(item.source).is_empty()), "each equipment item has a unique ID, slot and real source: " + item.id)
 		ids.append(item.id)
 		slots[item.slot] += 1
 		var upside := false
@@ -43,15 +44,18 @@ func _check_catalog() -> void:
 			downside = downside or item.modifiers[key] < neutral
 		_check(upside and downside and not item.tradeoff.is_empty(), "every item has an explicit benefit and cost: " + item.id)
 	for slot in slots:
-		_check(slots[slot] == 4, "four alternatives in the " + slot + " slot")
+		_check(slots[slot] == 5, "five alternatives in the " + slot + " slot")
 	for hunt in Catalog.hunts():
 		var chance := 0
 		var count := 0
+		var chances: Array[int] = []
 		for item in Catalog.items():
 			if item.source == hunt.id:
 				chance += int(item.drop_chance)
 				count += 1
+				chances.append(int(item.drop_chance))
 		_check(count == 4 and chance == 10 and hunt.mastery_wins == 100, "source has four drops totaling ten percent and its own mastery: " + hunt.id)
+		_check(chances == [4, 3, 2, 1], "regional probability bands stay in the same order: " + hunt.id)
 	var copy := Catalog.item("glass_needle")
 	copy.modifiers.health = 99
 	_check(Catalog.item("glass_needle").modifiers.health == -1, "catalog callers cannot rewrite nested tuning")
@@ -179,6 +183,53 @@ func _check_rolls() -> void:
 	salvage = state.finish_hunt("label")
 	_check(salvage.offcuts == 3 and salvage.total_offcuts == Collection.MAX_OFFCUTS, "receipt reports only material actually carried when wallet saturates")
 
+func _check_exploration_claims() -> void:
+	var state := Collection.new()
+	var legacy := Collection.default_snapshot()
+	for item in Catalog.ITEMS:
+		if item.source != "exploration":
+			legacy.owned.append(item.id)
+	legacy.equipped.needle = "blunt_stylus"
+	legacy.offcuts = 71
+	legacy.hunts.label = {"discovered": true, "wins": 19, "dry": 19}
+	legacy.bestiary.auditioner = {"seen": true, "freed": 2, "shattered": 1}
+	_check(legacy.owned.size() == 12 and state.restore_snapshot(JSON.parse_string(JSON.stringify(legacy))) and state.snapshot() == legacy, "a complete legacy twelve-item collection restores exactly without auto-granting Lost Pressings")
+	var before := state.snapshot()
+	for id in ["", "invented", "quicksilver_tip", "label"]:
+		_check(not state.claim_exploration_item(id) and state.snapshot() == before, "only exploration equipment can be claimed from a cache: " + id)
+	var handling := state.modifiers()
+	for id in ["copper_stylus", "seam_lining", "dusk_seal"]:
+		var item := Catalog.item(id)
+		_check(item.source == "exploration" and item.rarity == "Lost Pressing" and item.drop_chance == 0, "Lost Pressing belongs exclusively to exploration: " + id)
+		_check(not state.can_craft(id) and not state.craft(id) and state.snapshot() == before, "ample Offcuts and a cleared hunt cannot bind exploration equipment: " + id)
+		var expected := before.duplicate(true)
+		expected.owned.append(id)
+		_check(state.claim_exploration_item(id) and state.snapshot() == expected, "claim changes ownership only, preserving RNG, hunts, materials, equipment and bestiary: " + id)
+		_check(state.modifiers() == handling, "finding equipment does not apply it automatically: " + id)
+		_check(not state.claim_exploration_item(id) and state.snapshot() == expected, "repeat exploration claim grants nothing: " + id)
+		_check(state.restore_snapshot(JSON.parse_string(JSON.stringify(expected))) and state.snapshot() == expected, "claimed gear roundtrips in the existing collection schema: " + id)
+		before = state.snapshot()
+	_check(state.completion_snapshot().gear_found == 15 and state.completion_snapshot().gear_total == 15, "collecting all three caches completes the expanded gear count")
+	_check(state.restore_snapshot(legacy) and state.claim_exploration_item("copper_stylus") and state.restore_snapshot(legacy) and not state.has_item("copper_stylus"), "Main can roll a failed exploration write back without leaving an item")
+	var empty := Collection.default_snapshot()
+	_check(state.restore_snapshot(empty) and state.claim_exploration_item("copper_stylus") and state.equip("copper_stylus"), "Copper Stylus fits the needle slot")
+	_check(is_equal_approx(state.modifiers().accel, 1.15) and is_equal_approx(state.modifiers().friction, 0.9), "Copper Stylus trades fifteen percent acceleration for ten percent braking")
+	_check(state.claim_exploration_item("seam_lining") and state.equip("seam_lining"), "Seam Lining fits its own slot alongside the stylus")
+	_check(is_equal_approx(state.modifiers().hood_speed, 1.2) and is_equal_approx(state.modifiers().air_control, 0.9), "Seam Lining trades twenty percent Hood speed for ten percent air steering")
+	_check(state.claim_exploration_item("dusk_seal") and state.equip("dusk_seal"), "Dusk Seal completes a three-slot exploration loadout")
+	_check(state.modifiers().health == 1 and is_equal_approx(state.modifiers().speed, 0.9), "Dusk Seal trades ten percent running speed for one maximum health")
+	for hunt in Catalog.HUNTS:
+		var ordinary := Collection.new()
+		var explorer := Collection.new()
+		ordinary.discover_hunt(hunt.id)
+		explorer.discover_hunt(hunt.id)
+		for id in ["copper_stylus", "seam_lining", "dusk_seal"]:
+			explorer.claim_exploration_item(id)
+		for index in 100:
+			var receipt := ordinary.finish_hunt(hunt.id)
+			_check(receipt == explorer.finish_hunt(hunt.id), "exploration ownership leaves rolls and pity identical in %s, win %d" % [hunt.id, index + 1])
+			_check(receipt.item_id.is_empty() or Catalog.item(receipt.item_id).source == hunt.id, "trial rewards stay inside their regional pool: " + hunt.id)
+
 func _check_equipment() -> void:
 	var state := Collection.new()
 	var neutral := {"speed": 1.0, "accel": 1.0, "friction": 1.0, "air_control": 1.0, "hood_speed": 1.0, "noise_decay": 1.0, "health": 0}
@@ -238,7 +289,7 @@ func _check_bestiary() -> void:
 func _check_mastery() -> void:
 	var state := Collection.new()
 	var empty := state.completion_snapshot()
-	_check(empty.gear_found == 0 and empty.gear_total == 12 and empty.species_seen == 0 and empty.species_total == 10, "completion starts honestly empty")
+	_check(empty.gear_found == 0 and empty.gear_total == 15 and empty.species_seen == 0 and empty.species_total == 10, "completion starts honestly empty")
 	_check(empty.mastery_wins == 0 and empty.mastery_total == 300 and empty.hunts_mastered == 0, "three one-hundred-win ledgers are separate from drop ownership")
 	var sample := Collection.default_snapshot()
 	sample.hunts.label = {"discovered": true, "wins": 150, "dry": 0}

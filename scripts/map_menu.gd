@@ -6,6 +6,7 @@ signal close_requested
 const Press := preload("res://scripts/press.gd")
 const Chart := preload("res://scripts/campaign_chart.gd")
 const Motion := preload("res://scripts/ui_motion.gd")
+const LostPressings := preload("res://scripts/lost_pressings_catalog.gd")
 const PAPER := Color("17343c")
 const STOCK := Color("0b222b")
 const INK := Color("f1dfb8")
@@ -13,6 +14,7 @@ const FADED := Color("c0b28b")
 const WorldBackdrop := preload("res://scripts/ui_world_backdrop.gd")
 
 var exploration: RefCounted
+var collection: RefCounted
 var is_open := false
 var overlay: Control
 var _snapshot: Dictionary = {}
@@ -32,6 +34,8 @@ var _opening_gate := false
 var _close_pending := false
 var _returns: Label
 var _legend: Label
+var _lost_status: Label
+var _carried_pressings: Array[String] = []
 
 class ChartArt extends Control:
 	var visited: Array[String] = []
@@ -125,6 +129,10 @@ func show_map(snapshot: Dictionary) -> void:
 	_chart.current_room = current
 	_chart.clock = 0.0
 	_chart.opened_returns.clear()
+	_carried_pressings.clear()
+	if collection != null:
+		for id in collection.snapshot().get("owned", []):
+			_carried_pressings.append(String(id))
 	if exploration != null:
 		for id in Chart.return_ids():
 			if bool(exploration.call("is_open", StringName(id))):
@@ -180,6 +188,7 @@ func _select_region(region: StringName) -> void:
 	_chart.region = region
 	_chart.queue_redraw()
 	_refresh_returns()
+	_refresh_lost_pressings()
 	for index in _tabs.size():
 		var selected: bool = Chart.REGIONS[index].id == region
 		_tabs[index].set_pressed_no_signal(selected)
@@ -187,6 +196,23 @@ func _select_region(region: StringName) -> void:
 
 func return_status_text() -> String:
 	return _returns.text if _returns != null else ""
+
+func lost_pressings_status_text() -> String:
+	return _lost_status.text if _lost_status != null else ""
+
+func _refresh_lost_pressings() -> void:
+	if _lost_status == null:
+		return
+	var found := 0
+	var total := 0
+	for entry in LostPressings.entries():
+		if Chart.region_for_room(StringName(entry.room_id)) != _region:
+			continue
+		total += 1
+		if String(entry.id) in _carried_pressings:
+			found += 1
+	_lost_status.text = "LOST PRESSINGS · %d / %d FOUND · Leads in the Book's Equipment page." % [found, total] if total > 0 else ""
+	_lost_status.visible = total > 0
 
 func _refresh_returns() -> void:
 	if _returns == null:
@@ -277,6 +303,9 @@ func _build() -> void:
 		_tabs.append(tab)
 		_motion.bind_button(tab, Press.PINK)
 		tab.pressed.connect(_select_region.bind(region.id))
+	_lost_status = _label("", Press.SIZE_SMALL, FADED)
+	_lost_status.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	sheet.add_child(_lost_status)
 	_chart = ChartArt.new()
 	_chart.name = "CampaignChart"
 	_chart.size_flags_vertical = Control.SIZE_EXPAND_FILL

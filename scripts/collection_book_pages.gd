@@ -8,6 +8,8 @@ signal craft_requested(item_id: String)
 
 const Press := preload("res://scripts/press.gd")
 const Catalog := preload("res://scripts/collection_catalog.gd")
+const LostPressings := preload("res://scripts/lost_pressings_catalog.gd")
+const Chart := preload("res://scripts/campaign_chart.gd")
 const INK := Color("f2e1bc")
 const FADED := Color("c2ae87")
 const ACCENT := Color("d6a968")
@@ -27,6 +29,8 @@ var _species_buttons: Dictionary = {}
 var _slot_names: Dictionary = {}
 var _clear_buttons: Dictionary = {}
 var _completion: Label
+var _lost_completion: Label
+var _trial_completion: Label
 var _offcuts: Label
 var _gear_title: Label
 var _gear_kind: Label
@@ -98,7 +102,16 @@ func refresh(model: RefCounted, notice := "") -> void:
 	var owned: Array = _snapshot.get("owned", [])
 	var equipped: Dictionary = _snapshot.get("equipped", {})
 	var offcuts := int(_snapshot.get("offcuts", 0))
-	_completion.text = "RARE PRESSINGS   %02d / %02d" % [owned.size(), Catalog.items().size()]
+	_completion.text = "EQUIPMENT   %02d / %02d" % [owned.size(), Catalog.items().size()]
+	var lost_found := 0
+	var lost_total := 0
+	for item in Catalog.items():
+		if item.source == "exploration":
+			lost_total += 1
+			if item.id in owned:
+				lost_found += 1
+	_lost_completion.text = "LOST PRESSINGS   %d / %d FOUND" % [lost_found, lost_total]
+	_trial_completion.text = "ECHO TRIAL PRESSINGS   %d / %d FOUND" % [owned.size() - lost_found, Catalog.items().size() - lost_total]
 	_offcuts.text = "OFFCUTS %03d" % offcuts
 	_notice.text = notice
 	_notice.visible = not notice.is_empty()
@@ -151,6 +164,18 @@ func focus_selected() -> void:
 	var button: Button = _gear_buttons.get(_selected_item) if _page == "equipment" else _species_buttons.get(_selected_species)
 	if button != null:
 		button.grab_focus()
+		# A resize can clip an already-focused card without another focus event.
+		var list := _gear_list if _page == "equipment" else _species_list
+		call_deferred("_ensure_selected_visible", list, button)
+
+func _ensure_selected_visible(list: ScrollContainer, button: Button) -> void:
+	list.ensure_control_visible(button)
+	# Keep a group's found count beside its first card when focus returns upward.
+	var siblings := button.get_parent().get_children()
+	var previous := button.get_index() - 1
+	while previous >= 0 and siblings[previous] is Label:
+		list.ensure_control_visible(siblings[previous])
+		previous -= 1
 
 func select_item(item_id: String) -> void:
 	_select_item(item_id)
@@ -203,20 +228,19 @@ func _build_equipment() -> void:
 	list.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	list.add_theme_constant_override("separation", 7)
 	_gear_list.add_child(list)
+	_lost_completion = _label("", Press.SIZE_SMALL, ACCENT)
+	list.add_child(_lost_completion)
+	for item in Catalog.items():
+		if item.source == "exploration":
+			_add_gear_button(list, item)
+	_trial_completion = _label("", Press.SIZE_SMALL, ACCENT)
+	list.add_child(_trial_completion)
 	for hunt in Catalog.hunts():
 		list.add_child(_label(String(hunt.name).to_upper(), Press.SIZE_SMALL, FADED))
 		for item in Catalog.items():
 			if item.source != hunt.id:
 				continue
-			var id := String(item.id)
-			if _selected_item.is_empty():
-				_selected_item = id
-			var button := _button("", _select_item.bind(id, true))
-			button.alignment = HORIZONTAL_ALIGNMENT_LEFT
-			button.custom_minimum_size.y = 62
-			button.focus_entered.connect(_select_item.bind(id, true))
-			list.add_child(button)
-			_gear_buttons[id] = button
+			_add_gear_button(list, item)
 	var detail_column := VBoxContainer.new()
 	detail_column.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	detail_column.add_theme_constant_override("separation", 8)
@@ -231,10 +255,10 @@ func _build_equipment() -> void:
 	_gear_detail = _inset(panel, 18)
 	_gear_kind = _text(_gear_detail, Press.SIZE_SMALL, ACCENT)
 	_gear_title = _text(_gear_detail, Press.SIZE_TITLE, INK)
-	_gear_description = _text(_gear_detail, Press.SIZE_BODY, FADED)
-	_gear_detail.add_child(_rule())
 	_gear_tradeoff = _text(_gear_detail, Press.SIZE_BODY, INK)
 	_gear_source = _text(_gear_detail, Press.SIZE_SMALL, ACCENT)
+	_gear_description = _text(_gear_detail, Press.SIZE_BODY, FADED)
+	_gear_detail.add_child(_rule())
 	_gear_odds = _text(_gear_detail, Press.SIZE_SMALL, FADED)
 	_recipe = _text(_gear_detail, Press.SIZE_SMALL, FADED)
 	_gear_detail.add_child(_rule())
@@ -245,6 +269,17 @@ func _build_equipment() -> void:
 		button.focus_neighbor_right = button.get_path_to(_gear_action)
 	_notice = _text(detail_column, Press.SIZE_SMALL, ACCENT)
 	_hunt_progress = _text(_equipment, Press.SIZE_TINY, FADED)
+
+func _add_gear_button(list: VBoxContainer, item: Dictionary) -> void:
+	var id := String(item.id)
+	if _selected_item.is_empty():
+		_selected_item = id
+	var button := _button("", _select_item.bind(id, true))
+	button.alignment = HORIZONTAL_ALIGNMENT_LEFT
+	button.custom_minimum_size.y = 62
+	button.focus_entered.connect(_select_item.bind(id, true))
+	list.add_child(button)
+	_gear_buttons[id] = button
 
 func _build_bestiary() -> void:
 	_bestiary = VBoxContainer.new()
@@ -302,21 +337,31 @@ func _select_item(id: String, animate := true) -> void:
 	var owned: Array = _snapshot.get("owned", [])
 	var equipped: Dictionary = _snapshot.get("equipped", {})
 	var fitted := String(equipped.get(item.slot, "")) == id
-	var hunt: Dictionary = Catalog.hunt(item.source)
-	var source_state: Dictionary = _snapshot.get("hunts", {}).get(item.source, {})
-	var wins := int(source_state.get("wins", 0))
-	var dry := int(source_state.get("dry", 0))
+	var exploration_piece: bool = item.source == "exploration"
 	_gear_kind.text = "%s / %s / %s" % [String(item.slot).to_upper(), String(item.rarity).to_upper(), "FITTED" if fitted else ("CARRIED" if id in owned else "NOT FOUND")]
 	_gear_title.text = String(item.name)
 	_gear_description.text = String(item.description)
 	_gear_tradeoff.text = String(item.tradeoff)
-	_gear_source.text = "%s\n%s" % [hunt.name, hunt.description]
-	_gear_odds.text = "%d%% per clear. Any gear: 10%%.\nGuaranteed gear within 20 clears without a drop; missing pieces take priority. %d clears remain." % [int(item.drop_chance), maxi(1, 20 - dry)]
+	if exploration_piece:
+		_gear_source.text = "EXPLORATION FIND\n" + _lost_pressing_clue(id)
+		_gear_odds.text = "A guaranteed find waiting in the world. Return with the move its hiding place asks of you."
+	else:
+		var hunt: Dictionary = Catalog.hunt(item.source)
+		var source_state: Dictionary = _snapshot.get("hunts", {}).get(item.source, {})
+		var dry := int(source_state.get("dry", 0))
+		_gear_source.text = "%s\n%s" % [hunt.name, hunt.description]
+		_gear_odds.text = "%d%% per clear. Any gear: 10%%.\nGuaranteed gear within 20 clears without a drop; missing pieces take priority. %d clears remain." % [int(item.drop_chance), maxi(1, 20 - dry)]
 	if id in owned:
 		_recipe.text = "One piece per slot. Fitting another %s replaces the current one." % String(item.slot)
 		_gear_action.text = "Remove %s" % String(item.slot) if fitted else "Fit %s" % String(item.slot)
 		_gear_action.disabled = _model == null
+	elif exploration_piece:
+		_recipe.text = "Recover the pressing with E / Y when you reach its sleeve."
+		_gear_action.text = "Find this Lost Pressing"
+		_gear_action.disabled = true
 	else:
+		var source_state: Dictionary = _snapshot.get("hunts", {}).get(item.source, {})
+		var wins := int(source_state.get("wins", 0))
 		_recipe.text = "Every clear: +1 Offcut. Duplicate gear: +5 more.\nBind a missing piece for 40 Offcuts after one clear of its source."
 		_gear_action.text = "Bind for 40 Offcuts" if wins > 0 else "Clear this trial to bind"
 		_gear_action.disabled = _model == null or not bool(_model.can_craft(id))
@@ -326,6 +371,12 @@ func _select_item(id: String, animate := true) -> void:
 		_gear_notes.scroll_vertical = 0
 	if animate and changed and is_visible_in_tree():
 		motion.reveal(_gear_detail, 0.0, 0.16)
+
+func _lost_pressing_clue(id: String) -> String:
+	for entry in LostPressings.entries():
+		if String(entry.id) == id:
+			return Chart.room_label(StringName(entry.room_id)) + "\n" + String(entry.clue)
+	return "Look for a forgotten sleeve along a road you have already walked."
 
 func _select_species(id: String, animate := true) -> void:
 	var entry: Dictionary = Catalog.species_entry(id)
@@ -357,7 +408,7 @@ func _request_item_action() -> void:
 			unequip_requested.emit(String(item.slot))
 		else:
 			equip_requested.emit(_selected_item)
-	elif bool(_model.can_craft(_selected_item)):
+	elif item.source != "exploration" and bool(_model.can_craft(_selected_item)):
 		craft_requested.emit(_selected_item)
 
 func _request_unequip(slot: String) -> void:

@@ -1,4 +1,4 @@
-# DEAD WAX — The Label, Overture & Unplayed
+# DEAD WAX — Lost Pressings
 
 [![Godot checks](https://github.com/GaBe141/DeadWax/actions/workflows/godot-checks.yml/badge.svg)](https://github.com/GaBe141/DeadWax/actions/workflows/godot-checks.yml)
 
@@ -7,6 +7,11 @@ and the song still playing underneath it. Start at the Headshell, count in
 the Descent Gate, then follow the Overture through wind-played grooves,
 Addie's doorway, HUSH's duel, and the Tonearm. How you answer the Tonearm
 changes what waits at home and opens the way into the six rooms beneath its seal.
+
+The **Lost Pressings** update adds three guaranteed equipment finds to the
+return journey: a cabinet beyond the Stalls' groove, a high balcony in Horn
+Plaza, and a sleeve on Addie's reverse face. Existing saves can collect them.
+The Book carries their leads, and the folded map counts finds by region.
 
 Open this folder in **Godot 4.7.x** and press **F5**, or run
 `.\deadwax.cmd play`. The title screen offers **New Game** and **Continue**.
@@ -36,7 +41,7 @@ The lightweight project commands are:
 .\deadwax.cmd play    play the campaign with a local runtime log
 .\deadwax.cmd dev     open the original mechanics rooms and planned-world tools
 .\deadwax.cmd editor  open the project in Godot
-.\deadwax.cmd check   import resources; run all forty-two native test suites
+.\deadwax.cmd check   import resources; run all forty-five native test suites
 .\deadwax.cmd vibe    start Mistral Vibe in this repository
 ```
 
@@ -247,7 +252,7 @@ are recordings and never restore a resolved neighbour. Trial rewards grant
 equipment and Offcuts; they do not grant story choices, Refrains, routes, or
 Shine. Ordinary nearby wax and Count-In interactions still work during play.
 
-There are **12 pieces of equipment**, four in each regional pool, fitted into
+There are **12 trial pieces**, four in each regional pool, fitted into
 three slots: **Needle**, **Lining**, and **Charm**. Every piece has a benefit
 and a cost. Quicksilver Tip runs faster but brakes more slowly; Felt Cuff
 quiets lingering noise faster but slows Hood movement; Glass Needle improves
@@ -270,13 +275,31 @@ Refrain permissions stay the same. Fitting extra health capacity does not heal
 Skip; recovery fills it. Benefits apply only after the change has been saved.
 
 Each source also has an optional **100-clear mastery ledger**, tracked
-separately from finding all 12 pieces. These are completion goals, with actual
+separately from finding all 12 trial pieces. These are completion goals, with actual
 playtime depending on route, combat approach, and pace.
 
 Opening a menu, leaving the trial bounds, or recovering ends an unfinished
 attempt without spending a roll. A completed claim waits through menus, but
 **collect it before recovering or leaving the room**. A failed claim save keeps
 the claim available and restores the same roll for a retry.
+
+## Lost Pressings
+
+Three more pieces bring the equipment collection to **15**. These guaranteed
+finds reward exploration with earned moves; each has a benefit and a cost.
+
+| Pressing | Return route | Benefit and cost |
+| --- | --- | --- |
+| Copper Stylus — Needle | Ride the Stalls' groove to the first eastern shutter. Requires Groove Riding. | +15% ground acceleration; 10% less braking. |
+| Seam Lining — Lining | Return to Horn Plaza with Gather and climb the high balcony above the homeward door. | +20% Hood movement speed; 10% less air steering. |
+| Dusk Seal — Charm | Return beyond Addie's door with Jump-Cut and turn to the B-side. | +1 maximum needle health; 10% less running speed. |
+
+Stand beside a sleeve and use a fresh **E / Y** to collect it. Collection saves
+before showing success and leaves an empty sleeve behind. Fit it separately
+in **Book → Equipment**; finding gear neither auto-equips nor heals. These
+pieces have their own Book group and regional map counts. They cannot drop
+from trials or be bound with Offcuts, and leave trial odds and pity unchanged.
+All 21 campaign rooms and 26 passage pairs remain intact.
 
 ## Saving and settings
 
@@ -489,8 +512,9 @@ and Pogo. The ability counter tracks all seven moves, with Walk initially
 selected for a new journey. New Game starts with none filled. Missing abilities
 show names and leads; found-item entries retain the next lead and survey clue.
 Inside the game, unknown techniques and Refrains
-remain unnamed until the session records them. Equipment lists all 12 pieces,
-their sources, exact trade-offs and chances, your fittings, Offcuts, and regional
+remain unnamed until the session records them. Equipment lists all 15 pieces,
+separates three Lost Pressings from twelve trial finds, and shows their
+sources, exact trade-offs and trial chances, your fittings, Offcuts, and regional
 mastery. Its buttons explicitly fit, remove, or bind equipment; merely opening
 the Book or reading a description changes nothing.
 
@@ -613,7 +637,7 @@ own animation while gameplay and the HUD remain paused underneath.
 
 ## Development checks
 
-Run `.\deadwax.cmd check` before committing. It imports resources and runs 42
+Run `.\deadwax.cmd check` before committing. It imports resources and runs 45
 dependency-free native suites, including smoke, save-store, campaign, Tonearm, Overture,
 sprite-animation, residents, economy-state, economy integration, scenery,
 lighting, attack-feel, GUI-animation, and map-item suites. These cover the original combat and
@@ -655,3 +679,6 @@ than a configured distributable build.
 The exploration suites cover strict optional shortcut saves, old restored-phrase
 checkpoints, grounded fresh-input rewards, far-end B-side opening, permanent
 return travel, safe arrivals, failed-write rollback, and practice isolation.
+The Lost Pressings suites cover deliberate one-time equipment claims, saved
+ownership and fitting, rollback, unchanged trial pools, physically earned
+balcony access, separate interaction reaches, and Book/map readability.

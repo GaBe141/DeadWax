@@ -103,6 +103,13 @@ func restore_snapshot(value: Variant) -> bool:
 func has_item(id: String) -> bool:
 	return id in _data.owned
 
+func claim_exploration_item(id: String) -> bool:
+	var item := Catalog.item(id)
+	if item.get("source", "") != "exploration" or has_item(id):
+		return false
+	_data.owned.append(id)
+	return true
+
 func equip(id: String) -> bool:
 	if not has_item(id):
 		return false
@@ -178,7 +185,7 @@ func finish_hunt(id: String) -> Dictionary:
 
 func can_craft(id: String) -> bool:
 	var item := Catalog.item(id)
-	return not item.is_empty() and not has_item(id) and _data.offcuts >= CRAFT_COST and _data.hunts[item.source].wins > 0
+	return not item.is_empty() and _data.hunts.has(item.source) and not has_item(id) and _data.offcuts >= CRAFT_COST and _data.hunts[item.source].wins > 0
 
 func craft(id: String) -> bool:
 	if not can_craft(id):
