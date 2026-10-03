@@ -13,6 +13,8 @@ var stock := Color(0.92, 0.90, 0.85)
 var launched := false
 var combo_step := 1
 var facing := 1.0
+var contact: StringName = &"miss"
+var impacts: Array[Dictionary] = []
 
 var _t := 0.0
 var _sid := 0
@@ -36,4 +38,5 @@ func _draw() -> void:
 		"age": _t, "life": life, "hit_radius": hit_radius, "echo_radius": max_r,
 		"big": big, "launched": launched, "seed": _sid,
 		"combo_step": clampi(combo_step, 1, 3), "facing": facing,
+		"contact": contact, "impacts": impacts,
 	}, ink, stock)

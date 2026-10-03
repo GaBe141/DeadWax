@@ -24,7 +24,7 @@ const PARRY_RECOVER_TIME := 2.4
 const PARRY_WINDOW_MS := 100
 const HP_MAX := 6.0
 const HP_PER_HIT := 1.0
-const HP_PER_BIG := 1.6
+const HP_PER_BIG := 2.0
 const MAX_FRAME_STEP := 0.1
 const RESOLUTION_SETTLE_TIME := 1.1
 const HIT_RECOIL_DECAY := 5.5
@@ -164,9 +164,9 @@ func _resolve_sweep(now_ms: int) -> void:
 	_player.take_hit(global_position)
 	_sound("thud", -5.0, 0.78)
 
-func on_player_strike(pos: Vector2, big: bool) -> void:
+func on_player_strike(pos: Vector2, big: bool) -> StringName:
 	if not outcome.is_empty() or global_position.distance_to(pos) > STRIKE_HIT_RANGE or get_tree().paused:
-		return
+		return &"ignored"
 	if not _engaged:
 		_engaged = true
 		_listening = 0.0
@@ -174,19 +174,19 @@ func on_player_strike(pos: Vector2, big: bool) -> void:
 			_begin_gesture()
 		elif state != S.GESTURE:
 			_begin_count()
-		return
+		return &"guard"
 	# The cartridge opens only after a completed sweep. The swing-time strike
 	# belongs solely to the parry check, never a simultaneous chip or double hit.
 	if not is_pogoable():
-		return
+		return &"guard"
 	_opening_hit = true
 	_listening = 0.0
 	hp = maxf(hp - (HP_PER_BIG if big else HP_PER_HIT), 0.0)
 	_hit_recoil = 1.0
-	_sound("thud", -9.0, 0.7)
 	if hp <= 0.0:
 		_resolve_outcome("shattered")
 	queue_redraw()
+	return &"hit"
 
 func _resolve_outcome(result: String) -> void:
 	if not outcome.is_empty() or (result != "freed" and result != "shattered"):

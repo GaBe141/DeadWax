@@ -25,7 +25,7 @@ const RES_DECAY := 0.045
 # -- HP: the slow, patient bar (M2 delta #1 — the two-bar Sekiro model) --------
 const HP_MAX := 5.0               # committed grounded strikes to down it the slow way
 const HP_PER_HIT := 1.0           # chip per ordinary strike
-const HP_PER_BIG := 1.6           # a hot / on-echo strike bites deeper
+const HP_PER_BIG := 2.0           # a committed Accent / hot strike carries a full second hit
 
 const TICK_GAP := 0.42            # three ticks, then the swing on "four"
 const REFORM_TIME := 2.6
@@ -160,22 +160,25 @@ func _resolve_swing(d: float) -> void:
 	state = S.ALERT
 	_t = 0.0
 
-func on_player_strike(pos: Vector2, big: bool) -> void:
+## The receipt describes contact for Skip's impression; combat remains here.
+func on_player_strike(pos: Vector2, big: bool) -> StringName:
 	if state == S.DOWN:
-		return
+		return &"ignored"
 	if global_position.distance_to(pos) <= STRIKE_HIT_RANGE:
 		_print_recoil = 0.24 if muted else (1.0 if big else 0.72)
 		if muted:
 			# his rules: it barely flinches, and learns nothing about breaking
 			_t = maxf(_t - 0.1, 0.0)
-			return
+			return &"guard"
 		# TWO BARS, one blow: build resonance (fast lane) AND chip HP (slow lane)
 		_gain(RES_HIT_BIG if big else RES_HIT)
 		if state == S.DOWN:
-			return
+			return &"hit"
 		hp = maxf(hp - (HP_PER_BIG if big else HP_PER_HIT), 0.0)
 		if hp <= 0.0:
 			_down(true)
+		return &"hit"
+	return &"ignored"
 
 func _gain(amount: float) -> void:
 	resonance += amount

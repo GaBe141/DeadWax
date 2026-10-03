@@ -19,9 +19,13 @@ static func draw(canvas: CanvasItem, pose: Dictionary, palette: Dictionary) -> v
 	var land: float = pose.land
 	var strike: float = pose.strike
 	var combo_step := clampi(int(pose.get("combo_step", 1)), 1, 3)
-	# Contact is immediate. The tip snaps on the first frame and settles quickly;
-	# there is no visual windup to wait through.
-	var snap := pow(clampf((strike - 0.40) / 0.60, 0.0, 1.0), 0.75)
+	var attack_face := -1.0 if float(pose.get("strike_face", face)) < 0.0 else 1.0
+	var contact := StringName(pose.get("strike_contact", &"miss"))
+	# The full extension is already drawn at contact. A short follow-through
+	# carries its weight back to rest; none of these poses delays a strike.
+	var snap := pow(clampf(strike, 0.0, 1.0), 1.35)
+	var follow := sin(clampf(1.0 - strike, 0.0, 1.0) * PI) * snap
+	var guard_recoil := follow if contact == &"guard" else 0.0
 	var hurt: float = pose.hurt
 	var noise: float = pose.noise
 	var breath := sin(time * 2.7)
@@ -33,13 +37,13 @@ static func draw(canvas: CanvasItem, pose: Dictionary, palette: Dictionary) -> v
 		1.0 - compression * 0.24 + rise * 0.16 - kneel * 0.30
 	)
 	stretch.y += breath * 0.018 * (1.0 - run) + cos(stride * 2.0) * run * 0.045
-	var strike_tilt: float = [0.24, -0.22, 0.08][combo_step - 1]
-	var tilt := face * (run * 0.13 + snap * strike_tilt + kneel * 0.08)
+	var strike_tilt: float = [0.19, -0.22, 0.25][combo_step - 1]
+	var tilt := face * (run * 0.13 + kneel * 0.08) + attack_face * (snap * strike_tilt - guard_recoil * 0.18)
 	if combo_step == 3:
-		stretch += Vector2(0.15, -0.12) * snap
+		stretch += Vector2(0.13, -0.10) * snap + Vector2(-0.07, 0.08) * follow
 	tilt -= float(pose.hit_direction) * sin(hurt * PI) * 0.23
 	var bob := -absf(step) * run * 3.5 - sin(float(pose.launch) * PI) * 2.0
-	var offset := Vector2(face * snap * (-3.0 if combo_step == 2 else 5.0), bob)
+	var offset := Vector2(attack_face * (snap * (-4.0 if combo_step == 2 else 5.0) - guard_recoil * 5.0), bob + (snap * 2.5 if combo_step == 3 else 0.0))
 	var anchor := Vector2(0, 26)
 	var translation := anchor + offset - (anchor * stretch).rotated(tilt)
 
@@ -58,6 +62,14 @@ static func draw(canvas: CanvasItem, pose: Dictionary, palette: Dictionary) -> v
 		canvas.draw_line(foot + Vector2(-face*2,-1.5), foot + toe + Vector2(-face,-1.5), Color(paint.rim,0.62), 1.1, true)
 
 	canvas.draw_set_transform(translation, tilt, stretch)
+	# The opposite arm counterbalances the stylus. Feet stay on their original
+	# pivots above while these joints and the coat move only in the impression.
+	if snap > 0.0:
+		var shoulder := Vector2(-attack_face * 10, 2)
+		var rear_elbow := Vector2(-attack_face * (22 + snap * 7), 7 - snap * 9)
+		var hand := Vector2(-attack_face * (19 + snap * 13), 15 + follow * 5)
+		Paint.segment(canvas, shoulder, rear_elbow, 5.0, paint.coat, ink, paint.teal)
+		Paint.segment(canvas, rear_elbow, hand, 4.0, paint.brass, ink, paint.gold)
 	var body := PackedVector2Array([Vector2(0,-34), Vector2(8,-22), Vector2(17,2),
 		Vector2(19,15), Vector2(13,21), Vector2(-3,20), Vector2(-13,22),
 		Vector2(-18,14), Vector2(-15,-5), Vector2(-5,-28)])
@@ -83,20 +95,33 @@ static func draw(canvas: CanvasItem, pose: Dictionary, palette: Dictionary) -> v
 	canvas.draw_colored_polygon(PackedVector2Array([Vector2(-14,15),Vector2(7,16),Vector2(2,19),Vector2(-13,17)]),Color(paint.wood,0.55))
 	canvas.draw_line(Vector2(-10,13),Vector2(5,14),Color(paint.coral,0.65),1.0,true)
 
-	# The flexible pickup tip trails the run and snaps with the strike.
-	var tip := Vector2(face * (24 - run * 6 + snap * 23), -39 + step * run * 5 + snap * 33 + kneel * 14)
-	var elbow := Vector2(face * (11 - run * 5), -43 + step * run * 3 + snap * 14)
-	if combo_step == 2:
-		tip = tip.lerp(Vector2(face * 50, 7), snap)
-		elbow = elbow.lerp(Vector2(face * 21, -24), snap)
-	elif combo_step == 3:
-		tip = tip.lerp(Vector2(face * 34, 20), snap)
-		elbow = elbow.lerp(Vector2(face * 38, -31), snap)
+	# Each stroke has a different silhouette: direct jab, low crossing sweep,
+	# then a planted downward accent. Captured facing survives a running turn.
+	var tip_face := attack_face if strike > 0.0 else face
+	var rest_tip := Vector2(tip_face * (24 - run * 6), -39 + step * run * 5 + kneel * 14)
+	var rest_elbow := Vector2(tip_face * (11 - run * 5), -43 + step * run * 3)
+	var attack_tip: Vector2
+	var attack_elbow: Vector2
+	match combo_step:
+		1:
+			attack_tip = Vector2(attack_face * (51 - follow * 15 - guard_recoil * 13), -7 + follow * 7)
+			attack_elbow = Vector2(attack_face * (17 - guard_recoil * 7), -31 + follow * 5)
+		2:
+			attack_tip = Vector2(attack_face * (54 - follow * 19 - guard_recoil * 11), 9 + follow * 19)
+			attack_elbow = Vector2(attack_face * (23 - follow * 8), -25 + follow * 9)
+		3:
+			attack_tip = Vector2(attack_face * (38 + follow * 15 - guard_recoil * 16), 20 + follow * 9)
+			attack_elbow = Vector2(attack_face * (35 - guard_recoil * 8), -30 + follow * 17)
+	var tip := rest_tip.lerp(attack_tip, snap)
+	var elbow := rest_elbow.lerp(attack_elbow, snap)
 	var stem := PackedVector2Array([Vector2(0, -34), elbow, tip])
 	canvas.draw_polyline(stem, Color(ink, 1.0 - hood), 5.0, true)
 	canvas.draw_polyline(stem, Color(paint.brass, 1.0 - hood), 3.2, true)
 	canvas.draw_line(elbow + Vector2(0,-1),tip + Vector2(0,-1),Color(paint.gold,1.0-hood),1.1,true)
 	canvas.draw_circle(elbow,2.4,Color(paint.gold,1.0-hood),true,-1,true)
+	if snap > 0.0:
+		var point := (tip - elbow).normalized()
+		canvas.draw_line(tip - point * 7.0, tip + point * 3.0, Color(paint.light, snap * (1.0 - hood)), 2.6, true)
 	if noise > 0.03:
 		canvas.draw_line(elbow, tip, Color(pink, noise * (1.0 - hood)), 2.0, true)
 
@@ -145,7 +170,7 @@ static func draw(canvas: CanvasItem, pose: Dictionary, palette: Dictionary) -> v
 
 	# Strike and landing marks are short impressions, rooted at the actual body.
 	if snap > 0.0:
-		_strike_cut(canvas, combo_step, face, snap, pink, bool(pose.big))
+		_strike_cut(canvas, combo_step, attack_face, snap, pink, bool(pose.big), contact)
 	if land > 0.0 and float(pose.impact) > 0.35:
 		for side in [-1.0, 1.0]:
 			var puff := Vector2(side * (20 + (1.0 - land) * 21), 25 - sin(land * PI) * 5)
@@ -155,7 +180,7 @@ static func draw(canvas: CanvasItem, pose: Dictionary, palette: Dictionary) -> v
 		for radius in [14.0, 23.0]:
 			canvas.draw_arc(Vector2(face * 7, 22), radius + sin(time * 3.0) * 1.5, PI, TAU, 24, Color(pink, kneel * pulse * (0.6 if radius == 14 else 0.3)), 2.0, true)
 
-static func _strike_cut(canvas: CanvasItem, step: int, face: float, snap: float, color: Color, big: bool) -> void:
+static func _strike_cut(canvas: CanvasItem, step: int, face: float, snap: float, color: Color, big: bool, contact: StringName) -> void:
 	var radius := 42.0 + (1.0 - snap) * 13.0
 	var start := -1.15 if step == 1 else (-2.5 if step == 2 else -1.0)
 	var sweep := 1.65 if step == 1 else (3.35 if step == 2 else 1.90)
@@ -164,12 +189,13 @@ static func _strike_cut(canvas: CanvasItem, step: int, face: float, snap: float,
 		var point := Vector2.from_angle(start + sweep * index / 29.0) * radius
 		point.x *= -1.0 if face < 0.0 else 1.0
 		points.append(point + Vector2(0, -7))
-	canvas.draw_polyline(points, Color(color, snap * 0.9), 4.0 if big or step == 3 else 2.8, true)
+	var strength := 0.28 if contact == &"miss" else (0.55 if contact == &"guard" else 0.80)
+	canvas.draw_polyline(points, Color(color, snap * strength), 2.8 if big or step == 3 else 1.8, true)
 	if step == 3:
 		var direction := -1.0 if face < 0.0 else 1.0
 		for side in [-1.0, 1.0]:
 			var mark := Vector2(direction * (radius - 3), -7 + side * 17)
-			canvas.draw_line(mark, mark + Vector2(direction * 10, side * 5), Color(color, snap * 0.7), 2.4, true)
+			canvas.draw_line(mark, mark + Vector2(direction * 10, side * 5), Color(color, snap * strength), 1.8, true)
 
 static func _outline(canvas: CanvasItem, points: PackedVector2Array, color: Color, time: float, amplitude: float) -> void:
 	var outline := PackedVector2Array()

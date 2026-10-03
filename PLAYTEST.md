@@ -3,8 +3,8 @@
 Run `.\deadwax.cmd play` for the authored opening. Start with the chapter
 checklist, then use `.\deadwax.cmd dev` for focused mechanics regressions.
 Runtime errors are written to `.godot/deadwax-play.log`.
-Run `.\deadwax.cmd check` before handoff; the complete run contains 53 native
-suites, including calibrated controllers, movement weight, cinematic presentation,
+Run `.\deadwax.cmd check` before handoff; the complete run contains 54 native
+suites, including contact feedback, calibrated controllers, movement weight, cinematic presentation,
 Lost Pressings, and Book/map suites. Older review results below retain their
 original suite counts.
 
@@ -606,15 +606,38 @@ At that review, `deadwax.cmd check` passed its then-current 29 suites and 7,813 
 - [ ] Press J/X three times within the link window. Tap, Sweep, and Accent have distinct poses, directional ink, and sound; the readout marks each execution. A fourth starts Tap. Holding Strike never repeats; waiting longer than 650 ms starts a fresh chain.
 - [ ] Try the chain facing both ways, running, jumping, and near the ends of the practice floor. R returns to the start and clears the chain. Hood/Set, Book, and pause cancel the chain; the next strike is Tap. Reduced motion settles the readout while its timing remains truthful.
 - [ ] Pause practice and choose Return to title, then Continue. The campaign entry, Shine, purchases, map, progression, and choices are unchanged. Starting practice without a campaign save does not create Continue. Settings remain usable during practice.
-- [ ] With the corresponding abilities found, campaign Accent lands harder on a vulnerable foe with the same 120 px reach. A hot-groove Accent gets the normal on-beat launch, and airborne foe/Gather rebounds do not become stronger on hit three. Muted targets retain their parry-only rules.
+- [ ] With the chain found, three connected campaign strikes finish an ordinary four-health voice: Tap, Sweep, then the two-damage Accent. A miss or guard starts the next strike at Tap; striking multiple foes advances only once. The existing 650 ms link window stays forgiving, with no new timing test or combat meter.
+- [ ] Listen and watch for a light air sound on every swing, a wax impact and sparks at a foe on actual contact, a heavier third impact, and a dry clack at a guard. A whiff gets no hit burst or combat camera impulse. Turn immediately after swinging: the arm follows through in its original direction while Skip remains free to turn.
+- [ ] Campaign Accent keeps the same 120 px reach. A hot-groove Accent gets the normal on-beat launch and one two-damage hit, and airborne foe/Gather rebounds do not become stronger on hit three. Muted targets retain their parry-only rules.
 - [ ] Standing beside a vulnerable foe, J/X lands a hit without launching Skip. Starting or reversing a run during the short recovery stays responsive.
 - [ ] Jumping into a nearby foe and striking rebounds upward; pressing jump and strike together also works. Enemy reach remains 120 px, and every enemy rebound registers a hit.
 - [ ] Live grooves still launch from the ground or air and take priority when an enemy is nearby. Whistlers' directed launches and groove echoes retain their timing.
-- [ ] A fresh press during the last 90 ms of the 200 ms cooldown produces one follow-up when ready. Earlier presses and holding J/X do not create repeated attacks.
+- [ ] Tap and Sweep repeat after 200 ms; Accent follows through for 320 ms. Its grounded weight lasts 160 ms at 60% acceleration, while basic strokes retain 100 ms at 80%; reversing and air steering remain usable. A fresh press during the last 90 ms of either cooldown produces one follow-up when ready. Earlier presses and holding J/X do not create repeated attacks.
 - [ ] The combo's input line shows RECOVERING, J / X · PRESS, and QUEUED independently of LINK TIME. Press too early to see EARLY · WAIT, then tap during PRESS: QUEUED becomes the next executed beat. Pause freezes feedback; Reduced motion keeps it truthful and lets the early notice expire. Check both window sizes and keyboard/controller X.
 - [ ] Queue a follow-up, then raise Hood, Set, take a hit, open pause/Book/shop, recover, or change rooms: no stale strike fires afterward.
 - [ ] HUSH and the muted practice dummy give no enemy rebound from raw hits. Three correctly timed parries still win; the actual strike must fall within the unchanged 100 ms window.
-- [ ] The immediate circular strike impression reads clearly on both sides of the wax at normal game size. Fainter groove/air echoes do not imply a larger enemy-hit radius or hide enemy tells; there is no animation delay or hitstop.
+- [ ] The jab, sweep, and downstroke read clearly on both sides of the wax at normal game size. Faint reach cuts and groove/air echoes do not imply a larger enemy-hit radius or hide enemy tells. Contacts arrive immediately, with no hitstop. Pause freezes impressions; Reduced motion disables camera shake while preserving functional contact marks.
+
+## Attack feedback verification — 3 October 2026
+
+Godot 4.7.2's complete `deadwax.cmd check` passed all 54 suites and 12,279
+checks, with no script errors. Existing audio ObjectDB teardown warnings
+remain in older suites; the updated focused attack suites exit cleanly.
+
+The contact-feedback suite passed 102 checks headless and in native GL
+Compatibility, including finite cached audio, real hit/guard/miss receipts,
+single contact sounds, frozen impressions, captured attack direction, hidden
+campaign combo text, and disposable practice state. Native Book checks passed
+111 checks at both window sizes with the updated move descriptions.
+
+A separate native Main review passed 147 checks and produced 24 inspected
+captures: actual J presses against Yard voices and the High Street guard,
+Tap/Sweep/Accent damage, fatal contact, whiffs, and turning during follow-through.
+The review covered 1280×720 and 960×540 on both A/B palettes, with no script or
+renderer errors. Logs and captures are ignored `.godot/attack-*` files. All
+checkpoints/settings were isolated; the player's save and running game were
+untouched. Physical controller feel, perceived sound weight and latency remain
+manual playtest items.
 
 ## Scenery and depth
 

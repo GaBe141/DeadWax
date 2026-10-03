@@ -83,19 +83,20 @@ func _begin_count() -> void:
 	_count = 0
 	_t = 0.0
 
-func on_player_strike(pos: Vector2, big: bool) -> void:
+func on_player_strike(pos: Vector2, big: bool) -> StringName:
 	if state == S.DOWN or global_position.distance_to(pos) > STRIKE_HIT_RANGE:
-		return
+		return &"ignored"
 	if not is_pogoable():
 		# A guard hit is still a real player strike for the parry clock. It
 		# changes only this short cue, never the beat, health or resonance.
 		_blocked_time = 0.0 if reduced_motion else BLOCKED_FLASH_TIME
 		queue_redraw()
-		return
+		return &"guard"
 	var opening_hit := not _engaged and state in [S.CALM, S.ALERT]
-	super.on_player_strike(pos, big)
+	var contact := super.on_player_strike(pos, big)
 	if opening_hit and state != S.DOWN:
 		_begin_count()
+	return contact
 
 func _resolve_swing(distance: float) -> void:
 	if state == S.DOWN:

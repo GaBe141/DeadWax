@@ -200,6 +200,26 @@ func _remaining_moves() -> void:
 	await _collect(&"pogo")
 	_check(_main.abilities.snapshot() == Abilities.legacy_snapshot(), "seven distinct grounded discoveries complete the ordinary moveset")
 	_check(_main.progression.snapshot().refrains.is_empty() and _main.player.shine == 0, "move pickups grant no Refrains or money")
+	await _earned_chain()
+
+func _earned_chain() -> void:
+	_main._load_world_room(&"headshell")
+	await _physics(3)
+	await _stand(Vector2(300, 554))
+	var foe := Dummy.new()
+	foe.position = Vector2(390, 554)
+	_main.room.add_child(foe)
+	foe.set_process(false)
+	_check(not _main.player.free_combo_practice, "earned campaign chain uses confirmed contacts rather than practice gestures")
+	for step in [1, 2, 3]:
+		await _tap(KEY_J)
+		_check(_strikes.back().step == step and _strikes.back().big == (step == 3)
+			and _main.player.last_strike_contact == &"hit", "earned chain stroke %d follows a confirmed hit" % step)
+		await _physics(14)
+	_check(is_equal_approx(foe.hp, Dummy.HP_MAX - 4.0) and _main.player.is_on_floor(),
+		"earned Tap, Sweep and Accent deliver four damage while staying grounded")
+	foe.queue_free()
+	await _physics(2)
 
 func _collect(id: StringName, controller: bool = false) -> void:
 	var record := Abilities.ability(id)
@@ -379,7 +399,7 @@ func _boot() -> void:
 	root.add_child(_main)
 	await _frames(3)
 	_main.player.struck.connect(func(_at: Vector2, big: bool, launched: bool) -> void:
-		_strikes.append({"big": big, "launched": launched, "step": _main.player.combo_step, "velocity": _main.player.velocity}))
+		_strikes.append({"big": big, "launched": launched, "step": _main.player.executed_strike_step, "velocity": _main.player.velocity}))
 
 func _development() -> void:
 	var store := Save.new(_directory + "/checkpoint.json")
@@ -397,6 +417,8 @@ func _development() -> void:
 	_check(development._persist_session() and store.load_game() == before, "development cannot overwrite campaign permissions")
 	development.queue_free()
 	await _frames(3)
+	# Let the mixer release the development bank's finite and looping voices.
+	await create_timer(0.25).timeout
 
 func _pickup(id: StringName) -> Node2D:
 	for child in _main.room.get_children():

@@ -15,6 +15,10 @@ var practice_mode := false:
 		practice_mode = value
 		_apply_snapshot()
 var reduced_motion := false
+var cinematic_mode := false:
+	set(value):
+		cinematic_mode = value
+		_apply_snapshot()
 var _ink := Color("f1dfb8")
 var _stock := Color("13313a")
 var _snapshot := {"step": 0, "remaining": 0.0, "window": 0.65, "label": "", "input_state": "ready", "strike_unlocked": true, "chain_unlocked": true}
@@ -145,7 +149,7 @@ func _apply_snapshot() -> void:
 	var step := int(_snapshot.step)
 	var strike_unlocked := bool(_snapshot.strike_unlocked)
 	var chain_unlocked := bool(_snapshot.chain_unlocked)
-	visible = practice_mode or (strike_unlocked and step > 0)
+	visible = not cinematic_mode and (practice_mode or (strike_unlocked and step > 0))
 	if not strike_unlocked:
 		_headline.text = "FIND YOUR NEEDLE"
 	elif not chain_unlocked:

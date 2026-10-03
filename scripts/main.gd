@@ -369,6 +369,7 @@ func _update_cinematic_presentation() -> void:
 	var cinematic := _cinematic_campaign()
 	for control in [masthead, title, title_rule, subtitle, footer_stock, status, controls_note, crackle_bar, feedback, hud_motion.shine_notice]:
 		control.visible = not cinematic
+	combo_readout.cinematic_mode = cinematic
 	combo_readout.visible = not cinematic
 	cinematic_hud.visible = cinematic and _has_session
 	_update_place_notes()
@@ -436,6 +437,7 @@ func _swap_room(next_room: Node2D, entry_id: StringName) -> void:
 		remove_child(room)
 		room.queue_free()
 	room = next_room
+	player.free_combo_practice = practice_mode or development_mode
 	room.progression = progression
 	room.abilities = abilities
 	if "session_outcomes" in room:
@@ -1416,11 +1418,31 @@ func _on_strike_input_rejected() -> void:
 	combo_readout.show_early_press()
 
 func _on_struck(pos: Vector2, big: bool, launched: bool) -> void:
+	var step: int = player.executed_strike_step
+	var contact: StringName = &"miss"
+	var impacts: Array[Dictionary] = []
+	var pitch: float = [1.0, 1.04, 0.94][clampi(step - 1, 0, 2)]
+	audio.play(["strike_tap", "strike_sweep", "strike_accent"][clampi(step - 1, 0, 2)], -7.0, pitch)
+	# Combat listeners acknowledge actual contact. A closed guard or an empty
+	# swing must sound different from wax giving way; doors and residents never
+	# claim a hit. Capture origins before fatal signals retire the actor.
+	for n in get_tree().get_nodes_in_group("hears_strikes"):
+		if not is_instance_valid(n) or n.is_queued_for_deletion():
+			continue
+		var origin: Vector2 = n.global_position
+		var receipt: Variant = n.call("on_player_strike", pos, big)
+		if receipt is StringName and receipt in [&"hit", &"guard"]:
+			impacts.append({"offset": origin - pos, "kind": receipt})
+			if receipt == &"hit" or contact != &"hit":
+				contact = receipt
+	player.resolve_strike_contact(contact)
 	var w := WaveScript.new()
 	w.big = big
 	w.launched = launched
-	w.combo_step = player.combo_step
+	w.combo_step = step
 	w.facing = player.facing
+	w.contact = contact
+	w.impacts = impacts
 	w.hit_radius = SkipScript.POGO_RANGE
 	w.ink = room.call("_solid_color")
 	w.stock = room.call("_stock_color")
@@ -1428,16 +1450,14 @@ func _on_struck(pos: Vector2, big: bool, launched: bool) -> void:
 	w.life = 0.26 + 0.18 * player.air_density
 	add_child(w)
 	w.global_position = pos
-	var pitch: float = [1.0, 1.12, 0.82][clampi(player.combo_step - 1, 0, 2)]
-	audio.play("strike", -6.0 if player.combo_step == 3 else -8.0, pitch * randf_range(0.98, 1.02))
+	if contact == &"hit":
+		audio.play("strike_finish" if step == 3 or big else "strike_hit", -6.0 if step == 3 or big else -8.0)
+		_shake = maxf(_shake, 5.0 if step == 3 or big else 2.0)
+	elif contact == &"guard":
+		audio.play("strike_guard", -10.0)
 	combo_readout.set_snapshot(player.combo_snapshot())
-	if big:
-		_shake = 7.0
-	elif launched:
-		_shake = 3.5
-	# everything with ears gets told
-	for n in get_tree().get_nodes_in_group("hears_strikes"):
-		n.on_player_strike(pos, big)
+	if launched:
+		_shake = maxf(_shake, 3.5)
 
 func _on_beat() -> void:
 	audio.play("onbeat", -6.0)

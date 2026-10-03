@@ -61,7 +61,7 @@ The lightweight project commands are:
 .\deadwax.cmd play    play the campaign with a local runtime log
 .\deadwax.cmd dev     open the original mechanics rooms and planned-world tools
 .\deadwax.cmd editor  open the project in Godot
-.\deadwax.cmd check   import resources; run all fifty-three native test suites
+.\deadwax.cmd check   import resources; run all fifty-four native test suites
 .\deadwax.cmd vibe    start Mistral Vibe in this repository
 ```
 
@@ -445,26 +445,31 @@ PgDn**, the mouse wheel, or the right stick scrolls Journey, equipment, and best
 During exploration, Tab's room cycling and G remain exclusive to the opt-in
 development rooms below; there M continues to switch development atlases.
 
-A ready strike answers immediately. A press in the last 90 ms of the 200 ms
-cooldown queues one follow-up; holding the button does not repeat attacks.
-Ground recovery lasts 100 ms and keeps 80% movement acceleration. Hood, Set,
-damage, menus, recovery, and passages cancel a queued strike and its combo.
+A ready strike answers immediately. Tap and Sweep are ready again after 200 ms;
+Accent takes 320 ms with a little more follow-through. A press in the last 90 ms
+of either cooldown queues one follow-up; holding the button does not repeat
+attacks. Ground recovery lasts 100 ms at 80% movement acceleration for basic
+strokes, or 160 ms at 60% for Accent. Turning and air steering stay responsive.
+Hood, Set, damage, menus, recovery, and passages cancel a queued strike and its combo.
 
 Ground run acceleration is **1900 px/s²**, release braking **2400 px/s²**,
 and Set braking **3800 px/s²**. At 60 physics ticks, reaching the unchanged
 **340 px/s** top speed takes about 0.18 seconds; a full-speed release coasts
 about 21 pixels before settling. Air steering remains **1170 px/s²** with
 **760 px/s²** neutral drag. Equipment still applies its stated handling
-benefits and costs. Jump height, gravity, coyote time, hit reach, and strike
-and parry timing are unchanged.
+benefits and costs. Jump height, gravity, coyote time, hit reach, basic strike
+cadence, and the 100 ms parry window are unchanged.
 
 Before finding the chain, every attack is a single Tap. After recovering
-**Three-Strike Chain**, fresh presses link **Tap → Sweep → Accent**. Execute the next strike within
-650 ms to keep the chain; a fourth begins another Tap. Each stroke has its own
-pose, ink impression, and sound pitch. Accent uses the existing stronger hit
-against vulnerable foes without increasing reach, launch speed, or the parry
-window. Its strength does not stack with an on-beat groove strike. In **Move
-practice** and development rooms, the three marks at the top right show the
+**Three-Strike Chain**, connected hits link **Tap → Sweep → Accent**. Execute
+the next strike within 650 ms to keep the chain; a fourth begins another Tap.
+A miss or closed guard breaks the chain. Each stroke has its own jab, sweep,
+or downstroke, with a light air sound. Actual hits add wax impact, sparks at
+the target, and a short camera impulse; guards give a dry clack. Accent deals
+two damage, finishing an ordinary four-health voice in three hits, without
+increasing reach, launch speed, or the parry window. Its strength does not stack
+with an on-beat groove strike. **Move practice** and development rooms allow
+all three gestures in empty air. There, the three marks at the top right show the
 current stroke and remaining **LINK TIME**.
 The input line shows **RECOVERING**, **J / X · PRESS**, or **QUEUED** separately
 from that chain timer. An early press briefly shows **EARLY · WAIT**; a queued
@@ -486,8 +491,9 @@ Abilities, carried discoveries, and collections use disposable practice state, l
 the campaign's recovered moves, spool, slip, equipment, materials, trial records, and bestiary
 untouched. Equipment effects return to stock for the empty practice floor.
 
-The immediate circular impression shows the 120 px enemy-hit reach; fainter
-echoes show groove and air responses. Muted HUSH does not give a rebound from
+Faint perimeter cuts acknowledge the immediate 120 px enemy-hit reach; the
+forward gesture and actual contact marks carry the emphasis. Fainter echoes
+show groove and air responses. Muted HUSH does not give a rebound from
 raw hits. His three-parry challenge and the 100 ms parry window stay the same.
 
 ## The folded map
@@ -523,7 +529,7 @@ The Book names each missing ability and keeps a lead to its location.
 | Set | Groove Yard's western approach, at (610,574) | Kneeling and peaceful responses. |
 | Hood | High Street's upper walk | Quiet movement, listening calls, and polishing wax. |
 | Groove Riding | Beyond Tick's Count-In door in Practice | Live-groove launches and thick-air jets; opens the Stalls crossing. |
-| Three-Strike Chain | Overture Stair's middle landing, at (925,644) | Links Tap, Sweep, and the stronger Accent. |
+| Three-Strike Chain | Overture Stair's middle landing, at (925,644) | Links connected Tap and Sweep hits into a heavier Accent. |
 | Pogo | Overture Well's lower resting shelf | Airborne rebounds from vulnerable foes. |
 
 Walk restores the existing running speed, acceleration, braking, and air

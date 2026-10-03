@@ -99,18 +99,21 @@ func _count_and_opening() -> void:
 	_check(foe.state == Looper.S.STAGGER and foe.is_pogoable()
 		and foe.encounter_snapshot().opening_remaining == Looper.OPENING_DURATION,
 		"a safely dodged swing offers the full one-second opening")
+	# Isolate the opening timer at full health. An authored opener followed by
+	# this stronger chain now defeats the target, checked separately below.
+	foe.hp = Looper.HP_MAX
 	for big in [false, false, true]:
 		foe.on_player_strike(foe.position, big)
 		foe._process(0.2)
-	_check(is_equal_approx(foe.hp, 0.4) and foe.state == Looper.S.STAGGER,
-		"the punish window accepts Tap, Sweep and Accent using existing damage values")
+	_check(is_equal_approx(foe.hp, 1.0) and foe.state == Looper.S.STAGGER,
+		"the punish window accepts two ordinary hits and the two-point finisher")
 	_check(is_equal_approx(foe.encounter_snapshot().opening_remaining, 0.4), "punishing does not extend the opening timer")
 	foe._process(0.401)
 	_check(foe.state == Looper.S.ALERT and not foe.is_pogoable() and foe.encounter_snapshot().phase == "guard",
 		"an engaged Looper waiting far away never advertises another free opener")
 	foe._process(3.0)
 	foe.on_player_strike(foe.position, true)
-	_check(is_equal_approx(foe.hp, 0.4) and foe._engaged, "walking away and quieting down cannot renew the initial cheap hit")
+	_check(is_equal_approx(foe.hp, 1.0) and foe._engaged, "walking away and quieting down cannot renew the initial cheap hit")
 	_main.player.position = foe.position + Vector2(90, 0)
 	foe._process(0.01)
 	_check(foe.state == Looper.S.COUNTING and foe._count == 0, "returning after a miss begins another complete count")
@@ -144,6 +147,13 @@ func _parry_and_terminal_state() -> void:
 	_check(_shatters == 1 and foe.state == Looper.S.DOWN and not foe.is_in_group("hears_strikes")
 		and not foe.is_in_group("strikable"), "a shattered Looper never reforms or replays its outcome")
 	foe.free()
+	var payoff := _fixture()
+	payoff.on_player_strike(payoff.position, false)
+	payoff._resolve_swing(600)
+	for big in [false, false, true]: payoff.on_player_strike(payoff.position, big)
+	_check(payoff.hp == 0.0 and payoff.state == Looper.S.DOWN and _shatters == 2,
+		"an authored opener and a complete punish chain finish the five-point Looper")
+	payoff.free()
 
 func _native_guard_and_recovery() -> void:
 	var foe: Node2D = await _prepare_street()

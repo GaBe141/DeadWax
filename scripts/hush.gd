@@ -34,12 +34,12 @@ func _process(delta: float) -> void:
 		_pose_age = 0.0
 	queue_redraw()
 
-func on_player_strike(pos: Vector2, big: bool) -> void:
+func on_player_strike(pos: Vector2, big: bool) -> StringName:
 	# HUSH keeps his time. Rewinding the swing on a close raw strike would
 	# postpone contact beyond the same strike's 100 ms parry window.
 	if muted:
-		return
-	super.on_player_strike(pos, big)
+		return &"guard" if not _won and state != S.DOWN and global_position.distance_to(pos) <= STRIKE_HIT_RANGE else &"ignored"
+	return super.on_player_strike(pos, big)
 
 func _down(spill: bool) -> void:
 	if _won:

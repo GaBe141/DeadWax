@@ -29,6 +29,8 @@ func _run() -> void:
 	_main._new_game(false)
 	# This fixture jumps to earned-move mechanics; opening acquisition has its own suite.
 	_main.abilities.restore_snapshot(_main.AbilitiesScript.legacy_snapshot())
+	# Readout/input cases deliberately use the empty move-practice chain.
+	_main.player.free_combo_practice = true
 	await _physics(3)
 	_main.player.strike_input_rejected.connect(func() -> void: _rejected += 1)
 	_main.player.struck.connect(func(_pos: Vector2, _big: bool, _launched: bool) -> void:
@@ -37,6 +39,7 @@ func _run() -> void:
 	_snapshot_contract()
 	await _early_and_held_input()
 	await _exact_queue_boundary()
+	await _finisher_queue()
 	await _queued_cancellation()
 	_readout_ownership()
 	_release()
@@ -166,6 +169,35 @@ func _queued_cancellation() -> void:
 		_check(_strikes.size() == count and _main.player.combo_snapshot().input_state == "ready",
 			"leaving the quiet verb cannot release its canceled queued attack")
 
+func _finisher_queue() -> void:
+	await _prepare()
+	for beat in [1, 2, 3]:
+		while _main.player._strike_cd > 0.0: await _physics(1)
+		await _tap(KEY_J)
+	var snapshot: Dictionary = _main.player.combo_snapshot()
+	_check(snapshot.step == 3 and snapshot.cooldown_duration == 0.32
+		and is_equal_approx(snapshot.cooldown_remaining, 0.32) and snapshot.input_state == "recover",
+		"the finisher snapshot presents its entire 320ms recovery honestly")
+	var count := _strikes.size()
+	var stamp: int = _main.player.last_strike_ms
+	var rejected := _rejected
+	await _physics(1)
+	await _tap(KEY_J)
+	_check(_strikes.size() == count and _rejected == rejected + 1 and _main.player.last_strike_ms == stamp,
+		"an early finisher follow-up cannot execute or refresh the parry clock")
+	while _main.player._strike_cd > 0.055: await _physics(1)
+	await _tap(KEY_J)
+	snapshot = _main.player.combo_snapshot()
+	_check(snapshot.cooldown_duration == 0.32 and snapshot.queued and snapshot.step == 3,
+		"the same final-90ms queue applies to the heavier finisher")
+	await _frames(1)
+	_check(_main.combo_readout._input_hint.text == "QUEUED · 1 TAP",
+		"a queued finisher follow-up names the new Tap without changing the executed Accent")
+	await _physics(8)
+	_check(_strikes.size() == count + 1 and _strikes.back().step == 1
+		and _main.player.combo_snapshot().cooldown_duration == 0.20,
+		"the queued finisher follow-up fires once and reports regular Tap recovery")
+
 func _readout_ownership() -> void:
 	var view := Readout.new()
 	view.size = Vector2(350, 104)
@@ -224,6 +256,7 @@ func _prepare() -> void:
 	_main._load_world_room(&"headshell")
 	await _physics(3)
 	_main.player.position = Vector2(300, 554)
+	_main.player.free_combo_practice = true
 	_main.player.velocity = Vector2.ZERO
 	_main.player._strike_cd = 0.0
 	_main.player._recover = 0.0

@@ -102,7 +102,7 @@ func _prompt() -> String:
 		&"set": hint = "Hold L / LB — kneel and listen."
 		&"hood": hint = "Hold K / C / B — move quietly."
 		&"groove": hint = "Strike live wax to launch."
-		&"combo": hint = "Three fresh strikes: Tap, Sweep, Accent."
+		&"combo": hint = "Three connected hits: Tap, Sweep, Accent."
 		&"pogo": hint = "Strike a vulnerable foe in the air to rebound."
 	return "%s\n[E / Y]  Recover %s" % [hint, String(definition.get("name", ability)).to_upper()]
 

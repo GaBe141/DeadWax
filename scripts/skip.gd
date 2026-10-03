@@ -38,6 +38,9 @@ const STRIKE_COOLDOWN := 0.20
 const STRIKE_BUFFER := 0.09       # a slightly early tap survives the end of recovery
 const STRIKE_RECOVER := 0.10
 const STRIKE_RECOVER_ACCEL := 0.80 # a little weight without trapping a change of direction
+const ACCENT_COOLDOWN := 0.32     # the payoff leaves a short, deliberate follow-through
+const ACCENT_RECOVER := 0.16
+const ACCENT_RECOVER_ACCEL := 0.60
 const COMBO_WINDOW := 0.65
 const COMBO_LENGTH := 3
 const GROOVE_IMPULSE := 900.0
@@ -105,6 +108,11 @@ var _recover := 0.0
 var _hit_flash := 0.0
 var combo_step := 0
 var combo_remaining := 0.0
+var free_combo_practice := false # only Main's disposable practice/development rooms
+var executed_strike_step := 0
+var last_strike_contact: StringName = &"miss"
+var _strike_duration := STRIKE_COOLDOWN
+var _recover_accel := STRIKE_RECOVER_ACCEL
 
 # Presentation has its own clock and impulses. None feed back into movement,
 # contact, strike cooldowns or the 100 ms combat clock.
@@ -125,6 +133,8 @@ var _launch_pose := 0.0
 var _strike_pose := 0.0
 var _strike_big := false
 var _strike_combo := 0
+var _strike_face := 1.0
+var _strike_pose_duration := STRIKE_POSE_TIME
 var _hit_direction := 1.0
 var _animation_grounded := true
 
@@ -175,7 +185,17 @@ func combo_snapshot() -> Dictionary:
 	return {"step": combo_step, "remaining": combo_remaining, "window": COMBO_WINDOW, "label": label,
 		"strike_unlocked": has_ability(&"strike"), "chain_unlocked": has_ability(&"combo"),
 		"input_state": input_state, "queued": input_state == "queued",
-		"cooldown_remaining": clampf(_strike_cd, 0.0, STRIKE_COOLDOWN), "cooldown_duration": STRIKE_COOLDOWN}
+		"cooldown_remaining": clampf(_strike_cd, 0.0, _strike_duration), "cooldown_duration": _strike_duration,
+		"executed_step": executed_strike_step, "contact": last_strike_contact}
+
+## Main supplies actual combat contact after every synchronous strike broadcast.
+## An empty swing cannot bank a finisher in the campaign. The blank practice
+## floor and standalone mechanics figures can still rehearse all three gestures.
+func resolve_strike_contact(contact: StringName) -> void:
+	last_strike_contact = contact if contact in [&"hit", &"guard", &"miss"] else &"miss"
+	if has_ability(&"combo") and not free_combo_practice and abilities != null and last_strike_contact != &"hit":
+		combo_step = 0
+		combo_remaining = 0.0
 
 func add_shine(amount: int) -> bool:
 	if amount <= 0 or amount > 2147483647 - shine:
@@ -234,7 +254,7 @@ func _physics_process(delta: float) -> void:
 		var speed := RUN_SPEED * equipment_speed * (hood_speed_mult * equipment_hood_speed if hooded else 1.0)
 		var accel := RUN_ACCEL * equipment_accel if is_on_floor() else AIR_ACCEL * equipment_air_control
 		if _recover > 0.0 and is_on_floor():
-			accel *= STRIKE_RECOVER_ACCEL   # weight lives on the ground; the air stays free
+			accel *= _recover_accel   # weight lives on the ground; the air stays free
 		if absf(dir) > 0.01:
 			velocity.x = move_toward(velocity.x, dir * speed, accel * delta)
 		else:
@@ -306,9 +326,15 @@ func _strike() -> void:
 	_strike_buffer = 0.0
 	combo_step = combo_step % COMBO_LENGTH + 1 if has_ability(&"combo") else 1
 	combo_remaining = COMBO_WINDOW if has_ability(&"combo") else 0.0
+	executed_strike_step = combo_step
 	_strike_combo = combo_step
-	_strike_cd = STRIKE_COOLDOWN
-	_recover = STRIKE_RECOVER
+	_strike_face = facing
+	_strike_duration = ACCENT_COOLDOWN if combo_step == COMBO_LENGTH else STRIKE_COOLDOWN
+	_strike_cd = _strike_duration
+	_recover = ACCENT_RECOVER if combo_step == COMBO_LENGTH else STRIKE_RECOVER
+	_recover_accel = ACCENT_RECOVER_ACCEL if combo_step == COMBO_LENGTH else STRIKE_RECOVER_ACCEL
+	_strike_pose_duration = [0.18, 0.24, 0.34][combo_step - 1]
+	last_strike_contact = &"pending"
 	noise = 1.0
 	last_strike_ms = Time.get_ticks_msec()
 	var launched := false
@@ -379,12 +405,14 @@ func _strike() -> void:
 	# The accent strengthens the existing hit only after traversal resolves.
 	# A hot groove can already be big; it receives no second beat or impulse.
 	big = big or combo_step == COMBO_LENGTH
-	_strike_pose = STRIKE_POSE_TIME
+	_strike_pose = _strike_pose_duration
 	_strike_big = big
 	_look_face = facing
 	if launched:
 		_launch_pose = LAUNCH_POSE_TIME
 	struck.emit(global_position, big, launched)
+	if last_strike_contact == &"pending":
+		resolve_strike_contact(&"miss")
 
 func take_hit(from_pos: Vector2) -> void:
 	cancel_pending_strike()
@@ -429,8 +457,8 @@ func _animation_pose() -> Dictionary:
 		"hood": _hood_blend, "set": _set_blend, "face": _look_face,
 		"land": _land_pose / LAND_POSE_TIME, "impact": _land_strength,
 		"launch": _launch_pose / LAUNCH_POSE_TIME,
-		"strike": _strike_pose / STRIKE_POSE_TIME, "big": _strike_big,
-		"combo_step": _strike_combo,
+		"strike": _strike_pose / _strike_pose_duration, "big": _strike_big,
+		"combo_step": _strike_combo, "strike_face": _strike_face, "strike_contact": last_strike_contact,
 		"hurt": _hit_flash / 0.35, "hit_direction": _hit_direction, "noise": noise,
 	}
 
@@ -450,6 +478,9 @@ func reset_animation() -> void:
 	_strike_pose = 0.0
 	_strike_big = false
 	_strike_combo = 0
+	_strike_face = facing
+	executed_strike_step = 0
+	last_strike_contact = &"miss"
 	_hit_flash = 0.0
 	_animation_grounded = true
 	queue_redraw()

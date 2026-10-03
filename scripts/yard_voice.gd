@@ -143,15 +143,15 @@ func _creep(speed: float, delta: float) -> void:
 	global_position.x = move_toward(global_position.x, target, speed * delta)
 	_print_stride += absf(global_position.x - previous_x) * PRINT_STRIDE_RADIANS
 
-func on_player_strike(pos: Vector2, big: bool) -> void:
+func on_player_strike(pos: Vector2, big: bool) -> StringName:
 	if state in [S.FREED, S.DOWN] or (is_inside_tree() and get_tree().paused):
-		return
+		return &"ignored"
 	if global_position.distance_to(pos) <= STRIKE_HIT_RANGE:
 		_reset_phrase()
 		_retry_delay = REST_TIME
 		_whisper = 0.0
 		_whisper_note = -1
-	super.on_player_strike(pos, big)
+	return super.on_player_strike(pos, big)
 
 func _free() -> void:
 	if state in [S.FREED, S.DOWN]:

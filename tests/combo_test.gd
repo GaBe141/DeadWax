@@ -5,6 +5,8 @@ const MainScene := preload("res://scenes/main.tscn")
 const SaveScript := preload("res://scripts/save_store.gd")
 const SkipScript := preload("res://scripts/skip.gd")
 const DummyScript := preload("res://scripts/test_pressing.gd")
+const VoiceScript := preload("res://scripts/auditioner.gd")
+const LooperScript := preload("res://scripts/street_looper.gd")
 const ProgressionScript := preload("res://scripts/progression_state.gd")
 
 class GrooveProbe extends Node2D:
@@ -41,6 +43,8 @@ func _run() -> void:
 	_main.player.struck.connect(_on_struck)
 	_main.player.on_beat.connect(func() -> void: _beats += 1)
 	await _sequence_and_expiry()
+	await _campaign_confirmation()
+	await _finisher_recovery()
 	await _fresh_edges_and_buffer()
 	await _cancellation()
 	await _launch_invariants()
@@ -50,6 +54,8 @@ func _run() -> void:
 	_main.queue_free()
 	await _frames(3)
 	paused = false
+	# Let the audio server release the finite strike playbacks after tree cleanup.
+	await create_timer(0.15).timeout
 	_check(SaveScript.new(_directory + "/checkpoint.json").delete_save(), "remove isolated combo checkpoint")
 	if FileAccess.file_exists(_directory + "/settings.cfg"):
 		DirAccess.remove_absolute(_directory + "/settings.cfg")
@@ -76,7 +82,9 @@ func _sequence_and_expiry() -> void:
 		_check(hit.big == (step == 3) and not hit.launched, "only the planted third strike is the stronger accent")
 		_check(hit.pose_step == step and hit.strike_ms >= hit.input_ms, "strike pose and parry clock describe this execution")
 		if index > 0:
-			_check(int(hit.frame) - int(_strikes[-2].frame) >= 12, "combo preserves the 200ms cooldown")
+			var preceding_step: int = _strikes[-2].step
+			var min_ticks := ceili((0.32 if preceding_step == 3 else 0.20) * Engine.physics_ticks_per_second)
+			_check(int(hit.frame) - int(_strikes[-2].frame) >= min_ticks, "a fresh press respects the preceding strike's full recovery")
 	_check(_beats == beats_before, "an accent without a hot groove never announces ON BEAT")
 	_check(_main.progression.snapshot() == initial and _main.player.shine == 0, "an empty combo grants no knowledge, Refrain or Shine")
 	await _ready_strike()
@@ -98,6 +106,104 @@ func _sequence_and_expiry() -> void:
 	_check(_main.player._animation_pose().combo_step == 3, "expired chain retains the executed accent for presentation")
 	await _tap(KEY_J)
 	_check(_strikes.back().step == 1 and not _strikes.back().big, "a press after expiry starts TAP")
+
+func _campaign_confirmation() -> void:
+	await _prepare(&"headshell", 300.0, false)
+	for attempt in range(3):
+		await _ready_strike()
+		await _tap(KEY_J)
+		_check(_strikes.back().step == 1 and not _strikes.back().big and _main.player.combo_step == 0,
+			"campaign empty swings never bank a stronger third hit")
+	await _prepare(&"headshell", 300.0, false)
+	var dummy := DummyScript.new()
+	dummy.position = _main.player.position + Vector2(100, 0)
+	_main.room.add_child(dummy)
+	dummy.set_process(false)
+	await _tap(KEY_J)
+	_check(_main.player.combo_step == 1 and dummy.hp == DummyScript.HP_MAX - 1.0,
+		"a confirmed campaign hit starts the chain")
+	await _ready_strike()
+	dummy.position = _main.player.position + Vector2(121, 0)
+	await _tap(KEY_J)
+	_check(_strikes.back().step == 2 and _main.player.combo_step == 0 and dummy.hp == DummyScript.HP_MAX - 1.0,
+		"a missed follow-up clears the chain without damage beyond 120px")
+	await _ready_strike()
+	dummy.position = _main.player.position + Vector2(100, 0)
+	await _tap(KEY_J)
+	_check(_strikes.back().step == 1 and _main.player.combo_step == 1, "the next contact after a whiff restarts Tap")
+	await _ready_strike()
+	dummy.position = _main.player.position + Vector2(300, 0)
+	var guarded := LooperScript.new()
+	guarded.position = _main.player.position + Vector2(90, 0)
+	_main.room.add_child(guarded)
+	guarded.set_process(false)
+	guarded._engaged = true
+	guarded.state = LooperScript.S.COUNTING
+	guarded._t = 0.3
+	await _tap(KEY_J)
+	_check(_main.player.combo_step == 0 and guarded.hp == LooperScript.HP_MAX and guarded._t == 0.3,
+		"a guarded follow-up resets the chain while preserving the enemy count and health")
+	await _ready_strike()
+	guarded.state = LooperScript.S.STAGGER
+	await _tap(KEY_J)
+	_check(_strikes.back().step == 1 and _main.player.combo_step == 1 and guarded.hp == LooperScript.HP_MAX - 1.0,
+		"a real guarded-enemy opening restarts the confirmed chain")
+	await _ready_strike()
+	guarded.state = LooperScript.S.COUNTING
+	dummy.position = _main.player.position + Vector2(-100, 0)
+	await _tap(KEY_J)
+	_check(_main.player.combo_step == 2 and _main.player.combo_snapshot().contact == &"hit"
+		and guarded.hp == LooperScript.HP_MAX - 1.0 and dummy.hp == DummyScript.HP_MAX - 3.0,
+		"one real hit keeps the chain when the same swing also touches a protected guard")
+
+	await _prepare(&"headshell", 300.0, false)
+	var voices: Array[Node2D] = []
+	for side in [-1.0, 1.0]:
+		var voice := VoiceScript.new()
+		voice.position = _main.player.position + Vector2(100.0 * side, 0)
+		_main.room.add_child(voice)
+		voice.set_process(false)
+		voices.append(voice)
+	var before: Dictionary = _main.progression.snapshot().duplicate(true)
+	for beat in [1, 2, 3]:
+		await _ready_strike()
+		await _tap(KEY_J)
+		_check(_strikes.back().step == beat and _main.player.combo_step == beat,
+			"two simultaneous contacts advance once on beat " + str(beat))
+		for voice in voices:
+			_check(voice.hp == 4.0 - (float(beat) if beat < 3 else 4.0),
+				"confirmed third hit gives the ordinary voice a three-hit payoff")
+	_check(voices[0].state == VoiceScript.S.DOWN and voices[1].state == VoiceScript.S.DOWN,
+		"both fatal contacts remain confirmed after their shatter signals")
+	_check(_main.progression.snapshot() == before and _main.player.shine == 0,
+		"contact chaining grants no progression or currency")
+	await _ready_strike()
+	await _tap(KEY_J)
+	_check(_strikes.back().step == 1 and _main.player.combo_step == 0,
+		"already shattered voices cannot keep an empty chain alive")
+
+func _finisher_recovery() -> void:
+	await _prepare()
+	await _prime_accent()
+	await _ready_strike()
+	await _tap(KEY_J)
+	var snapshot: Dictionary = _main.player.combo_snapshot()
+	_check(_strikes.back().step == 3 and snapshot.cooldown_duration == 0.32
+		and is_equal_approx(_main.player._strike_cd, 0.32) and is_equal_approx(_main.player._recover, 0.16),
+		"the grounded finisher carries its longer cooldown and planted recovery")
+	var previous: Dictionary = _strikes.back().duplicate(true)
+	var before_count := _strikes.size()
+	while _main.player._strike_cd > 0.055: await _physics(1)
+	var stamp: int = _main.player.last_strike_ms
+	await _tap(KEY_J)
+	_check(_main.player._strike_buffer > 0.0 and _strikes.size() == before_count
+		and _main.player.last_strike_ms == stamp, "late input queues without shortening the finisher or opening an early parry")
+	await _physics(8)
+	_check(_strikes.size() == before_count + 1 and _strikes.back().step == 1
+		and int(_strikes.back().frame) - int(previous.frame) >= ceili(0.32 * Engine.physics_ticks_per_second),
+		"a late queued Tap executes once after the full finisher cooldown")
+	_check(_main.player.combo_snapshot().cooldown_duration == 0.20,
+		"ordinary Tap immediately restores its regular 200ms cooldown report")
 
 func _fresh_edges_and_buffer() -> void:
 	await _prepare()
@@ -184,9 +290,12 @@ func _launch_invariants() -> void:
 			kind + " accent cannot duplicate or invent a hot-groove beat")
 		if kind in ["ground_foe", "pogo"]:
 			_check(is_equal_approx(ordinary.damage, DummyScript.HP_PER_HIT)
-				and is_equal_approx(accent.damage, DummyScript.HP_PER_BIG), kind + " accent uses existing big-hit damage only")
+				and is_equal_approx(accent.damage, DummyScript.HP_PER_BIG), kind + " accent deals one stronger hit without stacking damage")
 		if kind.ends_with("groove"):
 			_check(ordinary.pings == 1 and accent.pings == 1, kind + " is pinged once per strike")
+		if kind == "hot_groove":
+			_check(ordinary.damage == DummyScript.HP_PER_BIG and accent.damage == ordinary.damage,
+				"a hot groove and Accent together still apply exactly one 2HP hit")
 
 func _launch_case(kind: String, accent: bool) -> Dictionary:
 	await _prepare()
@@ -215,6 +324,11 @@ func _launch_case(kind: String, accent: bool) -> Dictionary:
 		groove.hot = kind == "hot_groove"
 		groove.position = player.position + Vector2(0, 70)
 		_main.room.add_child(groove)
+		if kind == "hot_groove":
+			foe = DummyScript.new()
+			foe.position = player.position + Vector2(100, 0)
+			_main.room.add_child(foe)
+			foe.set_process(false)
 	player.velocity = Vector2(80, -100 if kind in ["pogo", "gather"] else 0)
 	var beats_before := _beats
 	await _tap(KEY_J)
@@ -262,7 +376,7 @@ func _combat_boundaries() -> void:
 	_check(_main.progression.unlocked_refrains().is_empty() and _main.progression.discovered_techniques().is_empty()
 		and _main.player.shine == 0, "combo combat never grants progression or currency")
 
-func _prepare(id: StringName = &"headshell", x: float = 300.0) -> void:
+func _prepare(id: StringName = &"headshell", x: float = 300.0, free_combo: bool = true) -> void:
 	_release_inputs()
 	_main.progression.reset()
 	_main._load_world_room(id)
@@ -270,6 +384,9 @@ func _prepare(id: StringName = &"headshell", x: float = 300.0) -> void:
 	for actor in get_nodes_in_group("hears_strikes"):
 		if _main.room.is_ancestor_of(actor): actor.set_process(false)
 	var player: CharacterBody2D = _main.player
+	# Isolated launch, input and view cases use the empty move-practice chain.
+	# Campaign confirmation cases explicitly disable this allowance below.
+	player.free_combo_practice = free_combo
 	player.position = Vector2(x, 554 if id == &"headshell" else 574)
 	player.velocity = Vector2.ZERO
 	player._strike_cd = 0.0
@@ -285,8 +402,8 @@ func _readout_ownership() -> void:
 	var player_snapshot: Dictionary = _main.player.combo_snapshot()
 	var readout: Control = _main.combo_readout
 	readout.set_snapshot(player_snapshot)
-	_check(readout.visible and readout._headline.text == "1  TAP" and readout._window.visible,
-		"the live readout immediately presents the executed beat and remaining window")
+	_check(not readout.visible and readout.cinematic_mode and readout._headline.text == "1  TAP" and readout._window.visible,
+		"the cinematic readout stays hidden while its supplied beat and remaining window remain truthful")
 	readout.set_snapshot({"step": 3, "remaining": 0.5, "window": 0.65, "label": "ACCENT"})
 	_check(_main.player.combo_snapshot() == player_snapshot, "a supplied readout snapshot cannot mutate Skip's chain or timer")
 	_main._pause_game()
@@ -315,14 +432,14 @@ func _prime_accent() -> void:
 	await _tap(KEY_J)
 
 func _ready_strike() -> void:
-	for frame in range(20):
+	for frame in range(30):
 		if _main.player._strike_cd <= 0: return
 		await _physics(1)
 
 func _on_struck(_position: Vector2, big: bool, launched: bool) -> void:
-	var snapshot: Dictionary = _main.player.combo_snapshot()
+	var executed_step: int = _main.player._animation_pose().combo_step
 	_strikes.append({"frame": Engine.get_physics_frames(), "velocity": _main.player.velocity,
-		"big": big, "launched": launched, "step": snapshot.step, "label": snapshot.label,
+		"big": big, "launched": launched, "step": executed_step, "label": ["TAP", "SWEEP", "ACCENT"][executed_step - 1],
 		"pose_step": _main.player._animation_pose().combo_step, "breaths": _main.player.air_strikes_left,
 		"strike_ms": _main.player.last_strike_ms, "input_ms": _input_stamp})
 

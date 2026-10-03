@@ -302,6 +302,26 @@ func _opening_reed(frequency: float, duration: float) -> PackedFloat32Array:
 
 func _build_sounds() -> void:
 	_sounds["strike"] = _mix([_pluck(150.0, 0.22, 0.9), _pluck(310.0, 0.14, 0.5)])
+	# A missed swing carries air only. Main adds a separate wax contact when
+	# combat confirms the hit, so the heavy stroke cannot thump at empty space.
+	_sounds["strike_tap"] = _wav(_strike_air(0.11, 0.66, 3800.0))
+	_sounds["strike_sweep"] = _wav(_strike_air(0.15, 0.88, 2800.0))
+	_sounds["strike_accent"] = _wav(_strike_air(0.19, 1.05, 2100.0))
+	_sounds["strike_hit"] = _mix([
+		_pluck(145.0, 0.10, 0.78),
+		_pluck(340.0, 0.065, 0.28),
+		_noise_burst(0.065, 0.45, 2100.0),
+	])
+	_sounds["strike_finish"] = _mix([
+		_pluck(92.0, 0.23, 0.76),
+		_pluck(184.0, 0.14, 0.34),
+		_pluck(690.0, 0.18, 0.22),
+		_noise_burst(0.085, 0.42, 2800.0),
+	])
+	_sounds["strike_guard"] = _mix([
+		_pluck(870.0, 0.065, 0.58),
+		_noise_burst(0.035, 0.40, 4100.0),
+	])
 	_sounds["onbeat"] = _mix([_pluck(660.0, 0.30, 0.7), _pluck(990.0, 0.26, 0.5), _pluck(1320.0, 0.18, 0.3)])
 	_sounds["parry"] = _mix([_pluck(880.0, 0.34, 0.8), _pluck(2370.0, 0.20, 0.35)])
 	_sounds["tick"] = _wav(_pluck(1750.0, 0.055, 0.8))
@@ -331,6 +351,15 @@ func _build_sounds() -> void:
 		_sounds["yard_note_%d" % (note + 1)] = _wav(_yard_note(YARD_NOTES[note], YARD_CALL_SECONDS, 0.72))
 	_sounds["yard_answer"] = _wav(_yard_phrase(YARD_ANSWER_SECONDS, YARD_ANSWER_TIMING, 0.90))
 	_sounds["yard_memory"] = _wav(_yard_phrase(YARD_MEMORY_SECONDS, YARD_MEMORY_TIMING, 0.60))
+
+func _strike_air(duration: float, strength: float, tone: float) -> PackedFloat32Array:
+	var samples := _noise_burst(duration, strength, tone)
+	for frame in samples.size():
+		var seconds := float(frame) / RATE
+		var remaining := float(samples.size() - 1 - frame) / RATE
+		# Round the needle's entrance and tail without adding a pitched impact.
+		samples[frame] *= smoothstep(0.0, 0.008, seconds) * smoothstep(0.0, 0.018, remaining)
+	return samples
 
 func _yard_note(frequency: float, duration: float, strength: float) -> PackedFloat32Array:
 	var samples := _home_note(frequency, duration)

@@ -30,7 +30,7 @@ const RES_DECAY := 0.045
 
 const HP_MAX := 4.0
 const HP_PER_HIT := 1.0
-const HP_PER_BIG := 1.6
+const HP_PER_BIG := 2.0
 
 const SET_RANGE := 175.0           # how near you must kneel to be heard
 const SET_FREE_TIME := 1.2         # one bar of SET frees it
@@ -178,21 +178,24 @@ func _resolve_reach(d: float) -> void:
 			b.play("thud", -6.0)
 	_go(S.RECOVER)
 
-func on_player_strike(pos: Vector2, big: bool) -> void:
+## Contact receipts are presentation data, including the final damaging hit.
+func on_player_strike(pos: Vector2, big: bool) -> StringName:
 	if state == S.DOWN or state == S.FREED:
-		return
+		return &"ignored"
 	if global_position.distance_to(pos) <= STRIKE_HIT_RANGE:
 		_print_recoil = 1.0 if big else 0.72
 		_gain(RES_HIT * (1.6 if big else 1.0))
 		if state == S.DOWN:
-			return
+			return &"hit"
 		hp = maxf(hp - (HP_PER_BIG if big else HP_PER_HIT), 0.0)
 		if hp <= 0.0:
 			_down()
-			return
+			return &"hit"
 		if state == S.REACH:
 			# you struck the reaching arm — the reach breaks
 			_go(S.STAGGER)
+		return &"hit"
+	return &"ignored"
 
 func _gain(amount: float) -> void:
 	resonance += amount

@@ -2,7 +2,7 @@ extends "res://scripts/room_base.gd"
 ## An empty floor outside the campaign. No listeners, rewards or exits: Main
 ## owns entry from the sleeve and return through the pause menu.
 
-var objective_label := "Three fresh strikes: Tap, Sweep, Accent."
+var objective_label := "Try Tap, Sweep, then a heavier Accent."
 
 func _ready() -> void:
 	room_id = &"move_practice"
