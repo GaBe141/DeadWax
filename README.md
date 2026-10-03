@@ -482,6 +482,13 @@ The input line shows **RECOVERING**, **J / X · PRESS**, or **QUEUED** separatel
 from that chain timer. An early press briefly shows **EARLY · WAIT**; a queued
 press executes once when recovery ends.
 
+Skip's figure also carries the result: confirmed hits briefly hold the extended
+point, closed guards kick the arm back, and successful parries brace the body
+behind a raised brass point. Damage interrupts the old attack with an immediate
+directional flinch. Pogo rebounds tuck the legs and turn the point down; ordinary
+jumps and Gather retain their own poses. These short impressions pause with play
+and change no attack, parry, movement, or damage timing.
+
 High Street's **Looper** guards while counting three ticks, then swings on four.
 Strikes cannot damage or rebound from its guard. Step outside its reach, or
 parry as the swing lands, then use the one-second **OPEN** window to land a
@@ -754,7 +761,7 @@ own animation while gameplay and the HUD remain paused underneath.
 
 ## Development checks
 
-Run `.\deadwax.cmd check` before committing. It imports resources and runs 53
+Run `.\deadwax.cmd check` before committing. It imports resources and runs 58
 dependency-free native suites, including smoke, save-store, campaign, Tonearm, Overture,
 sprite-animation, residents, economy-state, economy integration, scenery,
 lighting, attack-feel, GUI-animation, and map-item suites. These cover the original combat and

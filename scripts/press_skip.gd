@@ -1,5 +1,6 @@
 extends RefCounted
 const Paint := preload("res://scripts/figure_paint.gd")
+const Combat := preload("res://scripts/press_skip_combat.gd")
 ## Skip's living ink. Only an explicit pose and palette enter the Press;
 ## deformation is confined to draw commands, with the planted feet as pivot.
 
@@ -17,15 +18,12 @@ static func draw(canvas: CanvasItem, pose: Dictionary, palette: Dictionary) -> v
 	var kneel: float = pose.set
 	var face: float = pose.face
 	var land: float = pose.land
-	var strike: float = pose.strike
 	var combo_step := clampi(int(pose.get("combo_step", 1)), 1, 3)
 	var attack_face := -1.0 if float(pose.get("strike_face", face)) < 0.0 else 1.0
 	var contact := StringName(pose.get("strike_contact", &"miss"))
-	# The full extension is already drawn at contact. A short follow-through
-	# carries its weight back to rest; none of these poses delays a strike.
-	var snap := pow(clampf(strike, 0.0, 1.0), 1.35)
-	var follow := sin(clampf(1.0 - strike, 0.0, 1.0) * PI) * snap
-	var guard_recoil := follow if contact == &"guard" else 0.0
+	var combat := Combat.sample(pose)
+	var snap: float = combat.snap
+	var parry: float = combat.parry
 	var hurt: float = pose.hurt
 	var noise: float = pose.noise
 	var breath := sin(time * 2.7)
@@ -37,13 +35,10 @@ static func draw(canvas: CanvasItem, pose: Dictionary, palette: Dictionary) -> v
 		1.0 - compression * 0.24 + rise * 0.16 - kneel * 0.30
 	)
 	stretch.y += breath * 0.018 * (1.0 - run) + cos(stride * 2.0) * run * 0.045
-	var strike_tilt: float = [0.19, -0.22, 0.25][combo_step - 1]
-	var tilt := face * (run * 0.13 + kneel * 0.08) + attack_face * (snap * strike_tilt - guard_recoil * 0.18)
-	if combo_step == 3:
-		stretch += Vector2(0.13, -0.10) * snap + Vector2(-0.07, 0.08) * follow
-	tilt -= float(pose.hit_direction) * sin(hurt * PI) * 0.23
+	stretch += Vector2(combat.body_stretch)
+	var tilt := face * (run * 0.13 + kneel * 0.08) + float(combat.body_tilt)
 	var bob := -absf(step) * run * 3.5 - sin(float(pose.launch) * PI) * 2.0
-	var offset := Vector2(attack_face * (snap * (-4.0 if combo_step == 2 else 5.0) - guard_recoil * 5.0), bob + (snap * 2.5 if combo_step == 3 else 0.0))
+	var offset := Vector2(combat.body_offset) + Vector2(0, bob)
 	var anchor := Vector2(0, 26)
 	var translation := anchor + offset - (anchor * stretch).rotated(tilt)
 
@@ -53,6 +48,7 @@ static func draw(canvas: CanvasItem, pose: Dictionary, palette: Dictionary) -> v
 		var phase := stride + (PI if index == 0 else 0.0)
 		var foot := Vector2(side * 8 + sin(phase) * run * 10, 25 - maxf(0, cos(phase)) * run * 8)
 		foot += Vector2(-face * air * 5, -air * (4 + side * 2))
+		foot += Vector2(-attack_face * 4.0, -14.0 + side * 3.0) * float(combat.foot_tuck)
 		var hip := Vector2(side * 7, 15 + kneel * 6)
 		var knee := hip.lerp(foot, 0.5) + Vector2(-face * run * 3, 0)
 		Paint.segment(canvas, hip, knee, 4.0, paint.coat, ink, paint.teal)
@@ -64,16 +60,16 @@ static func draw(canvas: CanvasItem, pose: Dictionary, palette: Dictionary) -> v
 	canvas.draw_set_transform(translation, tilt, stretch)
 	# The opposite arm counterbalances the stylus. Feet stay on their original
 	# pivots above while these joints and the coat move only in the impression.
-	if snap > 0.0:
+	if snap > 0.0 or parry > 0.0 or float(combat.hurt_strength) > 0.0:
 		var shoulder := Vector2(-attack_face * 10, 2)
-		var rear_elbow := Vector2(-attack_face * (22 + snap * 7), 7 - snap * 9)
-		var hand := Vector2(-attack_face * (19 + snap * 13), 15 + follow * 5)
+		var rear_elbow: Vector2 = combat.rear_elbow
+		var hand: Vector2 = combat.rear_hand
 		Paint.segment(canvas, shoulder, rear_elbow, 5.0, paint.coat, ink, paint.teal)
 		Paint.segment(canvas, rear_elbow, hand, 4.0, paint.brass, ink, paint.gold)
 	var body := PackedVector2Array([Vector2(0,-34), Vector2(8,-22), Vector2(17,2),
 		Vector2(19,15), Vector2(13,21), Vector2(-3,20), Vector2(-13,22),
 		Vector2(-18,14), Vector2(-15,-5), Vector2(-5,-28)])
-	var flash := hurt > 0.0 and int(hurt * 7.0) % 2 == 0
+	var flash := hurt > 0.82 or (hurt > 0.0 and int(hurt * 7.0) % 2 == 0)
 	var fill: Color = paint.light if flash else paint.coat
 	Paint.shape(canvas, body, fill, ink, 2.3)
 	# A folded petrol coat surrounds the cream wax face. Broad painted planes
@@ -91,37 +87,26 @@ static func draw(canvas: CanvasItem, pose: Dictionary, palette: Dictionary) -> v
 	canvas.draw_line(Vector2(6,6),Vector2(5,10),Color(ink,0.22),1.0,true)
 	# The short copper scarf follows the body rather than the collision node.
 	Paint.shape(canvas,PackedVector2Array([Vector2(-14,12),Vector2(12,12),Vector2(16,16),Vector2(2,19),Vector2(-13,17)]),paint.copper.lerp(paint.wood,0.24),ink,0.8)
-	canvas.draw_colored_polygon(PackedVector2Array([Vector2(-face*9,15),Vector2(-face*(26+run*6),11+sin(time*6)*2),Vector2(-face*19,20),Vector2(-face*8,19)]),paint.copper)
+	var cloth_face := attack_face if snap > 0.0 else face
+	var cloth_drag := maxf(run, maxf(snap * 0.7, float(combat.hurt_strength)))
+	canvas.draw_colored_polygon(PackedVector2Array([Vector2(-cloth_face*9,15),Vector2(-cloth_face*(26+cloth_drag*6),11+sin(time*6)*2),Vector2(-cloth_face*19,20),Vector2(-cloth_face*8,19)]),paint.copper)
 	canvas.draw_colored_polygon(PackedVector2Array([Vector2(-14,15),Vector2(7,16),Vector2(2,19),Vector2(-13,17)]),Color(paint.wood,0.55))
 	canvas.draw_line(Vector2(-10,13),Vector2(5,14),Color(paint.coral,0.65),1.0,true)
 
 	# Each stroke has a different silhouette: direct jab, low crossing sweep,
 	# then a planted downward accent. Captured facing survives a running turn.
-	var tip_face := attack_face if strike > 0.0 else face
-	var rest_tip := Vector2(tip_face * (24 - run * 6), -39 + step * run * 5 + kneel * 14)
-	var rest_elbow := Vector2(tip_face * (11 - run * 5), -43 + step * run * 3)
-	var attack_tip: Vector2
-	var attack_elbow: Vector2
-	match combo_step:
-		1:
-			attack_tip = Vector2(attack_face * (51 - follow * 15 - guard_recoil * 13), -7 + follow * 7)
-			attack_elbow = Vector2(attack_face * (17 - guard_recoil * 7), -31 + follow * 5)
-		2:
-			attack_tip = Vector2(attack_face * (54 - follow * 19 - guard_recoil * 11), 9 + follow * 19)
-			attack_elbow = Vector2(attack_face * (23 - follow * 8), -25 + follow * 9)
-		3:
-			attack_tip = Vector2(attack_face * (38 + follow * 15 - guard_recoil * 16), 20 + follow * 9)
-			attack_elbow = Vector2(attack_face * (35 - guard_recoil * 8), -30 + follow * 17)
-	var tip := rest_tip.lerp(attack_tip, snap)
-	var elbow := rest_elbow.lerp(attack_elbow, snap)
+	var tip: Vector2 = combat.tip
+	var elbow: Vector2 = combat.elbow
 	var stem := PackedVector2Array([Vector2(0, -34), elbow, tip])
 	canvas.draw_polyline(stem, Color(ink, 1.0 - hood), 5.0, true)
 	canvas.draw_polyline(stem, Color(paint.brass, 1.0 - hood), 3.2, true)
 	canvas.draw_line(elbow + Vector2(0,-1),tip + Vector2(0,-1),Color(paint.gold,1.0-hood),1.1,true)
 	canvas.draw_circle(elbow,2.4,Color(paint.gold,1.0-hood),true,-1,true)
-	if snap > 0.0:
+	if snap > 0.0 or parry > 0.0:
 		var point := (tip - elbow).normalized()
-		canvas.draw_line(tip - point * 7.0, tip + point * 3.0, Color(paint.light, snap * (1.0 - hood)), 2.6, true)
+		canvas.draw_line(tip - point * 7.0, tip + point * 3.0, Color(paint.light, maxf(snap, parry) * (1.0 - hood)), 2.6, true)
+	if parry > 0.0:
+		canvas.draw_line(elbow.lerp(tip, 0.18), tip, Color(pale, parry * 0.80), 1.4, true)
 	if noise > 0.03:
 		canvas.draw_line(elbow, tip, Color(pink, noise * (1.0 - hood)), 2.0, true)
 
@@ -165,12 +150,24 @@ static func draw(canvas: CanvasItem, pose: Dictionary, palette: Dictionary) -> v
 			canvas.draw_line(eye+Vector2(-0.9,-0.8),eye+Vector2(0.3,-0.7),Color(paint.light,0.64),0.8,true)
 			if noise > 0.03 and hood < 0.5:
 				canvas.draw_line(eye+Vector2(-2,-4),eye+Vector2(2,-3),Color(ink,noise*(1.0-hood)),1.2,true)
+			if snap > 0.0 or parry > 0.0:
+				canvas.draw_line(eye+Vector2(-2.5,-4.0-side*0.8),eye+Vector2(2.0,-3.3+side*0.8),Color(ink,maxf(snap,parry)*0.68),1.3,true)
 	canvas.draw_line(eye_center+Vector2(-2,6),eye_center+Vector2(2,6+hurt*2),ink,1.0,true)
 	canvas.draw_set_transform(Vector2.ZERO)
 
 	# Strike and landing marks are short impressions, rooted at the actual body.
 	if snap > 0.0:
 		_strike_cut(canvas, combo_step, attack_face, snap, pink, bool(pose.big), contact)
+	# Compact wax chips and a brass glint sit at Skip's real drawn stylus.
+	# The target's separate hit impression remains owned by Main.
+	var stylus_tip := translation + (tip * stretch).rotated(tilt)
+	if float(combat.impact) > 0.0:
+		_contact_mark(canvas, stylus_tip, attack_face, float(combat.impact), paint.gold, pale, combo_step == 3)
+	if float(combat.guard) > 0.0:
+		var recoil: float = combat.guard
+		canvas.draw_line(stylus_tip + Vector2(-attack_face * 5.0, -4.0), stylus_tip + Vector2(attack_face * 3.0, 2.0), Color(paint.brass, recoil * 0.72), 1.6, true)
+	if parry > 0.0:
+		_contact_mark(canvas, stylus_tip, float(combat.parry_face), parry, pale, paint.gold, false)
 	if land > 0.0 and float(pose.impact) > 0.35:
 		for side in [-1.0, 1.0]:
 			var puff := Vector2(side * (20 + (1.0 - land) * 21), 25 - sin(land * PI) * 5)
@@ -179,6 +176,12 @@ static func draw(canvas: CanvasItem, pose: Dictionary, palette: Dictionary) -> v
 		var pulse := 0.70 + sin(time * 4.0) * 0.15
 		for radius in [14.0, 23.0]:
 			canvas.draw_arc(Vector2(face * 7, 22), radius + sin(time * 3.0) * 1.5, PI, TAU, 24, Color(pink, kneel * pulse * (0.6 if radius == 14 else 0.3)), 2.0, true)
+
+static func _contact_mark(canvas: CanvasItem, center: Vector2, face: float, strength: float, brass: Color, wax: Color, heavy: bool) -> void:
+	var length := (8.0 if heavy else 5.0) * strength
+	canvas.draw_line(center + Vector2(-face * 2.0, 2.0), center + Vector2(face * length, -length), Color(wax, strength * 0.85), 1.8, true)
+	canvas.draw_line(center + Vector2(face * 2.0, 2.0), center + Vector2(face * (length + 3.0), 4.0), Color(brass, strength * 0.72), 1.4, true)
+	canvas.draw_line(center + Vector2(-face * 3.0, -2.0), center + Vector2(-face * 6.0, -length - 2.0), Color(brass, strength * 0.65), 1.2, true)
 
 static func _strike_cut(canvas: CanvasItem, step: int, face: float, snap: float, color: Color, big: bool, contact: StringName) -> void:
 	var radius := 42.0 + (1.0 - snap) * 13.0

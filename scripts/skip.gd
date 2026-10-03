@@ -121,6 +121,10 @@ const STRIDE_LENGTH := 112.0
 const STRIKE_POSE_TIME := 0.22
 const LAND_POSE_TIME := 0.24
 const LAUNCH_POSE_TIME := 0.26
+const CONTACT_POSE_TIME := 0.14
+const HIT_HOLD_TIME := 0.035
+const ACCENT_HOLD_TIME := 0.055
+const PARRY_POSE_TIME := 0.24
 var _print_time := 0.0
 var _stride := 0.0
 var _run_blend := 0.0
@@ -136,6 +140,12 @@ var _strike_big := false
 var _strike_combo := 0
 var _strike_face := 1.0
 var _strike_pose_duration := STRIKE_POSE_TIME
+var _strike_hold := 0.0
+var _contact_pose := 0.0
+var _parry_pose := 0.0
+var _parry_face := 1.0
+var _strike_launched := false
+var _strike_pogo := false
 var _hit_direction := 1.0
 var _animation_grounded := true
 
@@ -198,9 +208,29 @@ func combo_snapshot() -> Dictionary:
 ## floor and standalone mechanics figures can still rehearse all three gestures.
 func resolve_strike_contact(contact: StringName) -> void:
 	last_strike_contact = contact if contact in [&"hit", &"guard", &"miss"] else &"miss"
+	_contact_pose = CONTACT_POSE_TIME if last_strike_contact in [&"hit", &"guard"] else 0.0
+	_strike_hold = (ACCENT_HOLD_TIME if _strike_combo == COMBO_LENGTH else HIT_HOLD_TIME) if last_strike_contact == &"hit" else 0.0
 	if has_ability(&"combo") and not free_combo_practice and abilities != null and last_strike_contact != &"hit":
 		combo_step = 0
 		combo_remaining = 0.0
+
+## A confirmed enemy catch supplies its origin even in disposable Echo Trials.
+## Only the impression braces: the executed parry clock and body remain intact.
+func present_parry(from_pos: Vector2) -> void:
+	_clear_combat_impression()
+	var toward := from_pos.x - global_position.x
+	_parry_face = signf(toward) if absf(toward) > 0.01 else last_strike_facing
+	_parry_pose = PARRY_POSE_TIME
+	queue_redraw()
+
+func _clear_combat_impression() -> void:
+	_strike_pose = 0.0
+	_strike_big = false
+	_strike_hold = 0.0
+	_contact_pose = 0.0
+	_parry_pose = 0.0
+	_strike_launched = false
+	_strike_pogo = false
 
 func add_shine(amount: int) -> bool:
 	if amount <= 0 or amount > 2147483647 - shine:
@@ -326,6 +356,7 @@ func _strike() -> void:
 	if not has_ability(&"strike"):
 		cancel_pending_strike()
 		return
+	_clear_combat_impression()
 	# Consume only this input edge. Public cancellation also clears the chain,
 	# but an executed strike must carry its place into the next fresh press.
 	_strike_buffer = 0.0
@@ -383,6 +414,7 @@ func _strike() -> void:
 		# A grounded hit keeps the player's footing. Jumping into the same
 		# strike still rebounds: floor contact updates after move_and_slide.
 		if has_ability(&"pogo") and (not is_on_floor() or velocity.y < 0.0):
+			_strike_pogo = true
 			var pw: Vector2 = (global_position - foe.global_position).normalized()
 			if pw.length_squared() < 0.01:
 				pw = Vector2.UP
@@ -413,6 +445,7 @@ func _strike() -> void:
 	big = big or combo_step == COMBO_LENGTH
 	_strike_pose = _strike_pose_duration
 	_strike_big = big
+	_strike_launched = launched
 	_look_face = facing
 	if launched:
 		_launch_pose = LAUNCH_POSE_TIME
@@ -422,6 +455,7 @@ func _strike() -> void:
 
 func take_hit(from_pos: Vector2) -> void:
 	cancel_pending_strike()
+	_clear_combat_impression()
 	var away := (global_position - from_pos).normalized()
 	if away.length_squared() < 0.01:
 		away = Vector2.UP
@@ -447,7 +481,13 @@ func _process(delta: float) -> void:
 	_look_face = lerpf(_look_face, facing, 1.0 - exp(-step * 18.0))
 	_land_pose = maxf(_land_pose - step, 0.0)
 	_launch_pose = maxf(_launch_pose - step, 0.0)
-	_strike_pose = maxf(_strike_pose - step, 0.0)
+	# A few held draw frames make actual contact readable without hitstop,
+	# gameplay delay, or a suspended parry/physics clock.
+	var held := minf(step, _strike_hold)
+	_strike_hold = maxf(_strike_hold - step, 0.0)
+	_strike_pose = maxf(_strike_pose - (step - held), 0.0)
+	_contact_pose = maxf(_contact_pose - step, 0.0)
+	_parry_pose = maxf(_parry_pose - step, 0.0)
 	queue_redraw()
 
 func _draw() -> void:
@@ -465,6 +505,10 @@ func _animation_pose() -> Dictionary:
 		"launch": _launch_pose / LAUNCH_POSE_TIME,
 		"strike": _strike_pose / _strike_pose_duration, "big": _strike_big,
 		"combo_step": _strike_combo, "strike_face": _strike_face, "strike_contact": last_strike_contact,
+		"strike_hold": _strike_hold / ACCENT_HOLD_TIME, "contact_pulse": _contact_pose / CONTACT_POSE_TIME,
+		"parry": _parry_pose / PARRY_POSE_TIME, "parry_face": _parry_face,
+		"queued": 1.0 if _strike_buffer > 0.0 else 0.0,
+		"strike_launched": _strike_launched, "strike_pogo": _strike_pogo,
 		"hurt": _hit_flash / 0.35, "hit_direction": _hit_direction, "noise": noise,
 	}
 
@@ -481,10 +525,10 @@ func reset_animation() -> void:
 	_land_pose = 0.0
 	_land_strength = 0.0
 	_launch_pose = 0.0
-	_strike_pose = 0.0
-	_strike_big = false
 	_strike_combo = 0
 	_strike_face = facing
+	_clear_combat_impression()
+	_parry_face = facing
 	executed_strike_step = 0
 	last_strike_contact = &"miss"
 	_hit_flash = 0.0

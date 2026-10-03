@@ -868,8 +868,24 @@ Existing non-fatal audio ObjectDB teardown warnings remain in older suites.
 
 ## Sprite animation
 
+Combat feedback review, 3 October 2026: Godot 4.7.2's full
+`deadwax.cmd check` passed all **58 suites and 14,312 checks**, exit 0,
+without script errors. The expanded sprite suite passed 243 checks with clean
+teardown; older suites retain the existing synthesized-audio teardown warnings.
+A private native GL review passed 211 checks and captured 96 full frames plus
+eight detail sheets across campaign/Palace, both palettes and both window sizes.
+Confirmed contact, later recovery, guard, parry, damage and airborne Pogo were
+inspected under actual room lights. Physical-controller feel remains manual.
+Logs and captures are ignored `.godot/combat-sprite-*` files; checkpoints and
+settings used private paths and were removed afterward.
+
 - [ ] Skip's idle breath/blink, running feet, takeoff stretch, falling pose, and landing squash read clearly at normal game size.
 - [ ] Striking flicks the point immediately; Hood and Set transition smoothly without delaying either action.
+- [ ] Confirmed Tap, Sweep and Accent briefly brace at contact, then recover through distinct silhouettes. A whiff has no impact hold; a closed guard immediately kicks the point and torso back. Turning during recovery keeps the original attack direction.
+- [ ] Catch a voice, pressing, HUSH, Tonearm and Palace Backcutter attack: Skip raises the point and braces into the incoming side. Repeat with an Echo Trial copy. The pose follows a real successful parry, with the same 100 ms window and no extra damage or reward.
+- [ ] Take damage during an attack: Skip flinches away immediately and the previous swing disappears. A later fresh attack still reads as stagger ends. Recovery and passages remove old hit, guard and parry marks.
+- [ ] Pogo from a vulnerable foe tucks the legs and points the stylus down during rebound. Ordinary jumps, grounded hits, groove launches and dry Gather retain their own movement poses.
+- [ ] At 1280×720 and 960×540, inspect both palettes and dim rooms: face, planted feet and local needle marks remain readable without covering enemy tells. Reduced motion keeps combat reactions functional; pause holds the pose and resume finishes it.
 - [ ] Moving left and right keeps the point and eyes facing the movement direction; a hit shows recoil and recovery clears it.
 - [ ] Voices step as they creep and open their arms before contact; a freed Addie relaxes and putters beside her doorway.
 - [ ] The practice pressing, HUSH, and Tonearm windups and follow-through agree with their existing audio and parry timing.

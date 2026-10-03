@@ -202,6 +202,8 @@ func _resolve_swing(distance: float) -> void:
 		var since_strike: int = Time.get_ticks_msec() - player.last_strike_ms
 		if since_strike >= 0 and since_strike <= PARRY_WINDOW_MS and _player_strike_points_here(player.global_position):
 			_print_recoil = 0.0 if reduced_motion else 1.0
+			if player.has_method("present_parry"):
+				player.present_parry(global_position)
 			parry_count += 1
 			_enter_phase(&"open")
 			parried.emit()

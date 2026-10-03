@@ -139,6 +139,8 @@ func _resolve_swing(d: float) -> void:
 		if since_strike >= 0 and since_strike <= PARRY_WINDOW_MS:
 			# RUNG BACK — caught on the point and played back
 			_print_recoil = 1.0
+			if _player.has_method("present_parry"):
+				_player.present_parry(global_position)
 			parry_count += 1
 			state = S.STAGGER
 			_t = 0.0

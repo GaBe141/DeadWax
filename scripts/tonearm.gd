@@ -158,6 +158,8 @@ func _resolve_sweep(now_ms: int) -> void:
 	var since_strike: int = now_ms - _player.last_strike_ms
 	if since_strike >= 0 and since_strike <= PARRY_WINDOW_MS:
 		_go(S.STAGGER)
+		if _player.has_method("present_parry"):
+			_player.present_parry(global_position)
 		parried.emit()
 		_sound("parry", -3.0, 0.8)
 		return

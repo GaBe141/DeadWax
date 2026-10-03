@@ -165,6 +165,8 @@ func _resolve_reach(d: float) -> void:
 		if since_strike >= 0 and since_strike <= PARRY_WINDOW_MS:
 			# RUNG BACK — its reach caught on your point and played back
 			_print_recoil = 1.0
+			if _player.has_method("present_parry"):
+				_player.present_parry(global_position)
 			_gain(RES_PARRY)
 			parried.emit()
 			if b != null:
