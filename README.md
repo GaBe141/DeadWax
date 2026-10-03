@@ -61,7 +61,7 @@ The lightweight project commands are:
 .\deadwax.cmd play    play the campaign with a local runtime log
 .\deadwax.cmd dev     open the original mechanics rooms and planned-world tools
 .\deadwax.cmd editor  open the project in Godot
-.\deadwax.cmd check   import resources; run all fifty-five native test suites
+.\deadwax.cmd check   import resources; run all fifty-six native test suites
 .\deadwax.cmd vibe    start Mistral Vibe in this repository
 ```
 
@@ -490,6 +490,16 @@ Listening or striking can clear an Auditioner; other opponents retain their
 usual combat rules. Each clear restores needle health and gives you a breather;
 return to the dial and press **E / Y** for the next floor. Clearing floor twenty
 lets the same action start another run. There is no time limit.
+
+Floor eight introduces the **Backcutter** alone. Its front guard holds while
+it winds up; jump behind it, turn toward it and strike to break the guard.
+It alternates a frontal swing with a marked vault over Skip, then attacks
+back toward the place you occupied when it committed. The landing mark stays
+fixed, so you can evade it or turn and parry the incoming side. Its parry
+checks the direction of your executed strike as well as the usual 100 ms
+timing. Every completed swing leaves a one-second punish opening; a rear
+counter interrupts into one too. Later floors mix one Backcutter with ordinary
+foes; their existing rules remain unchanged.
 
 **R**, falling, or defeat clears the current attempt and restores Skip at the
 dial to retry that floor. **Esc / Back** pauses the run, and the Book also freezes

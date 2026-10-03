@@ -11,6 +11,7 @@ signal actor_freed(pos: Vector2)
 
 const Press := preload("res://scripts/press.gd")
 const EchoTrial := preload("res://scripts/echo_trial.gd")
+const Backcutter := preload("res://scripts/backcutter.gd")
 const INTERACT_RADIUS := 76.0
 const FLOOR_WARNING := 1.2
 const SPAWN_CLEARANCE := 220.0
@@ -24,19 +25,19 @@ const FLOOR_ROSTERS := [
 	[&"looper"],
 	[&"voice", &"looper"],
 	[&"pressing", &"pressing"],
-	[&"voice", &"voice", &"pressing"],
+	[&"backcutter"],
 	[&"pressing", &"looper"],
 	[&"voice", &"pressing", &"looper"],
-	[&"voice", &"voice", &"looper"],
+	[&"voice", &"voice", &"backcutter"],
 	[&"pressing", &"pressing", &"looper"],
 	[&"voice", &"pressing", &"looper", &"voice"],
-	[&"pressing", &"pressing", &"voice", &"voice"],
+	[&"pressing", &"pressing", &"voice", &"backcutter"],
 	[&"looper", &"looper"],
-	[&"voice", &"looper", &"looper"],
+	[&"voice", &"looper", &"backcutter"],
 	[&"pressing", &"looper", &"looper"],
-	[&"voice", &"pressing", &"looper", &"looper"],
+	[&"voice", &"pressing", &"looper", &"backcutter"],
 	[&"pressing", &"pressing", &"looper", &"looper"],
-	[&"looper", &"looper", &"looper", &"pressing"],
+	[&"looper", &"backcutter", &"looper", &"pressing"],
 ]
 
 # The room supplies spawn limits. All copies share its real floor; this node
@@ -161,6 +162,9 @@ func _spawn_floor() -> void:
 				copy.left_edge = arena_bounds.position.x + 18.0
 				copy.right_edge = arena_bounds.end.x - 18.0
 			&"looper": copy = EchoTrial.EchoLooper.new()
+			&"backcutter":
+				copy = Backcutter.new()
+				copy.arena_bounds = arena_bounds
 			_: copy = EchoTrial.EchoPressing.new()
 		copy.name = "PracticeCopy%d_%d" % [_floor, index]
 		copy.add_to_group("practice_arena_actor")

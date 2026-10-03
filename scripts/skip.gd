@@ -98,6 +98,7 @@ var shine: int:
 		else:
 			_loose_shine = clampi(value, 0, 2147483647)
 var last_strike_ms := -100000      # parry checks read this
+var last_strike_facing := 1.0      # executed input, independent of pose resets
 var _stagger := 0.0
 
 var _coyote := 0.0
@@ -166,6 +167,10 @@ func cancel_pending_strike() -> void:
 	_strike_buffer = 0.0
 	combo_step = 0
 	combo_remaining = 0.0
+
+## Direction belongs to the executed stroke, even if Skip turns during its tail.
+func executed_strike_facing() -> float:
+	return last_strike_facing
 
 func combo_snapshot() -> Dictionary:
 	var label := ""
@@ -337,6 +342,7 @@ func _strike() -> void:
 	last_strike_contact = &"pending"
 	noise = 1.0
 	last_strike_ms = Time.get_ticks_msec()
+	last_strike_facing = facing
 	var launched := false
 	var big := false
 	var thick_air := air_density > 0.0 and has_ability(&"groove")

@@ -50,6 +50,9 @@ static func draw_echo_trial(canvas: CanvasItem, state: Dictionary, ink: Color, s
 static func draw_practice_arena(canvas: CanvasItem, state: Dictionary, ink: Color, stock: Color) -> void:
 	preload("res://scripts/press_practice_arena.gd").draw(canvas, state, ink, stock, BRASS, BodyFont, SIZE_TINY)
 
+static func draw_backcutter_cue(canvas: Node2D, pose: Dictionary, ink: Color, stock: Color) -> void:
+	preload("res://scripts/press_backcutter.gd").draw(canvas, pose, ink, stock, BodyBold, SIZE_SMALL)
+
 static func draw_exploration(canvas: CanvasItem, state: Dictionary, ink: Color, stock: Color) -> void:
 	preload("res://scripts/press_exploration.gd").draw(canvas, state, ink, stock)
 

@@ -3,7 +3,7 @@
 Run `.\deadwax.cmd play` for the authored opening. Start with the chapter
 checklist, then use `.\deadwax.cmd dev` for focused mechanics regressions.
 Runtime errors are written to `.godot/deadwax-play.log`.
-Run `.\deadwax.cmd check` before handoff; the complete run contains 55 native
+Run `.\deadwax.cmd check` before handoff; the complete run contains 56 native
 suites, including arena practice, contact feedback, calibrated controllers, movement weight, cinematic presentation,
 Lost Pressings, and Book/map suites. Older review results below retain their
 original suite counts.
@@ -666,6 +666,52 @@ manual playtest items.
 - [ ] Return to title during combat, then Continue. Campaign entry, moves,
   choices, wallet, discoveries, collection, equipment and checkpoint bytes stay
   unchanged. Starting practice without a checkpoint creates no Continue.
+
+## Backcutter crossups
+
+- [ ] Reach floor 8: one distinct Backcutter arrives alone. Its front guard
+  stops raw hits. Jump behind it during a committed tell, turn toward it and
+  strike; the rear hit opens a punish opportunity. Striking while facing away
+  cannot damage it or give a free Pogo rebound.
+- [ ] Read its vault tell and fixed landing mark. It crosses over Skip along
+  a visible arc, then winds up from the opposite side. Move after commitment:
+  the destination and final attack direction stay fixed. The leap itself
+  deals no contact damage. Near an edge, an impossible vault becomes a clearly
+  frontal attack rather than a false crossup.
+- [ ] Turn and strike into the incoming side within the usual 100 ms to
+  parry. A timely strike facing away does not parry; turning after executing
+  that wrong-facing strike cannot retroactively catch it. Ordinary enemies
+  retain their existing parry rules.
+- [ ] Evade, parry or interrupt from the rear and punish the opening. An
+  interrupted airborne enemy settles along its committed arc rather than
+  teleporting or attacking. A defeated Backcutter never reforms. R/defeat
+  resets the current floor without leaving a moving elite behind.
+- [ ] On later floors, check that only one Backcutter appears at once and
+  that its guard direction, landing mark and swing remain clear among normal
+  opponents. Pause/Book freeze the attempt; Reduced motion holds decoration
+  while its real vault, tells and functional marks still work. Review both
+  palettes at 1280×720 and 960×540, then test turns/parries on the actual pad.
+
+## Crossup verification — 3 October 2026
+
+Godot 4.7.2's complete `deadwax.cmd check` passed all 56 suites and 13,754
+checks without script errors. Older synthesized-audio teardown warnings remain
+in existing suites; the focused elite, arena and native playtest logs are clean.
+
+The focused Backcutter suite passed 158 checks headless and in native GL
+Compatibility, and the updated Palace suite passed 1,317 in both modes.
+Coverage includes front/rear guards, captured strike direction independent of
+animation resets, locked takeoff/landing, both crossover directions, continuous
+airborne interrupts, corner fallbacks, inherited reach/damage, directional
+100 ms parries, actual Pogo, full punish windows, pause and campaign isolation.
+
+A separate native Main playtest passed 30 checks using real E/J/A/D/Space
+events: jump behind the guard, turn and strike its rear, rebound, and turn to
+parry a landed vault. Its fixed mark, incoming direction and elite silhouette
+were inspected at 1280×720 and 960×540, including four-opponent rounds, both
+palettes and Reduced motion. Logs/captures are ignored `.godot/backcutter-*`
+and `.godot/crossup-main-*` files. All checkpoints/settings were isolated;
+physical-controller response and perceived combat difficulty remain manual.
 
 ## Wax Palace verification — 3 October 2026
 

@@ -11,6 +11,7 @@ const Collection := preload("res://scripts/collection_state.gd")
 const Voice := preload("res://scripts/auditioner.gd")
 const Pressing := preload("res://scripts/test_pressing.gd")
 const Looper := preload("res://scripts/street_looper.gd")
+const Backcutter := preload("res://scripts/backcutter.gd")
 const Wave := preload("res://scripts/strike_wave.gd")
 
 class PlayerFixture extends CharacterBody2D:
@@ -18,7 +19,11 @@ class PlayerFixture extends CharacterBody2D:
 	var setting := false
 	var noise := 0.0
 	var last_strike_ms := -1000
+	var facing := 1.0
+	var strike_face := 1.0
 	var hits := 0
+	func executed_strike_facing() -> float:
+		return strike_face
 	func _ready() -> void:
 		add_to_group("player")
 		var shape := CollisionShape2D.new()
@@ -111,6 +116,11 @@ func _check_ladder() -> void:
 		and _arena.snapshot().floor == 0 and _arena._copies.is_empty(), "practice begins on safe floor with no automatic encounter")
 	_check(Arena.TOTAL_FLOORS == 20 and Arena.FLOOR_ROSTERS.size() == 20,
 		"the ladder has twenty authored floors")
+	_check(Arena.FLOOR_ROSTERS[7] == [&"backcutter"], "floor eight introduces one cross-up opponent in isolation")
+	for index in Arena.FLOOR_ROSTERS.size():
+		_check(Arena.FLOOR_ROSTERS[index].count(&"backcutter") <= 1
+			and (index >= 7 or not Arena.FLOOR_ROSTERS[index].has(&"backcutter")),
+			"floor %d spaces the elite introduction and never stacks cross-up opponents" % (index + 1))
 	_check(_arena.can_interact(), "the grounded center stand accepts a deliberate start")
 	var start: Vector2 = _player.position
 	_player.position.x += Arena.INTERACT_RADIUS + 1.0
@@ -193,8 +203,9 @@ func _check_ladder() -> void:
 		_arena._physics_process(4.0)
 		_check(_arena._copies.is_empty() and _arena.snapshot().floor == floor_number,
 			"floor %d downtime cannot automatically start the next floor" % floor_number)
-	_check(witnessed.size() == 3 and &"voice" in witnessed and &"pressing" in witnessed and &"looper" in witnessed,
-		"the ladder offers all three ordinary enemy playtest types")
+	_check(witnessed.size() == 4 and &"voice" in witnessed and &"pressing" in witnessed
+		and &"looper" in witnessed and &"backcutter" in witnessed,
+		"the ladder offers three ordinary enemy types and its distinct late cross-up opponent")
 	_check(_completed == 1 and _arena.snapshot().floor == 20, "the twentieth clear completes one run")
 	_check(_arena.try_interact() and _arena.snapshot().floor == 1 and _arena.snapshot().state == &"warning",
 		"a complete run can restart from the first floor")
@@ -551,13 +562,29 @@ func _check_campaign_isolation() -> void:
 		"practice moves never leak into an intentionally partial campaign moveset")
 
 func _shatter(copy: Node2D) -> void:
+	var striker: CharacterBody2D = _arena._player()
+	var previous_position := striker.global_position
+	if copy is Backcutter:
+		copy._player = striker
+		copy._begin_attack()
+		# Force a genuine miss through every committed phase, then use its
+		# normal opening. The separate elite suite exercises physical timing.
+		striker.global_position = copy.global_position + Vector2(700, -300)
+		for step in range(5):
+			if copy.encounter_snapshot().phase == &"open": break
+			copy._physics_process(Backcutter.CROSS_TELL)
+		_check(copy.encounter_snapshot().phase == &"open", "an elite's completed miss exposes its real punish opening")
+		striker.global_position = copy.global_position + Vector2(60, 0)
+		if striker is PlayerFixture: striker.strike_face = -1.0
+		else: striker.last_strike_facing = -1.0
 	if copy is Looper:
 		copy._engaged = true
 		copy.state = Pressing.S.STAGGER
 		copy._t = 0.0
 	for hit in range(8):
 		if not _arena._copies.has(copy): break
-		copy.on_player_strike(copy.global_position, true)
+		copy.on_player_strike(striker.global_position if copy is Backcutter else copy.global_position, true)
+	striker.global_position = previous_position
 	_check(not _arena._copies.has(copy), "inherited damaging strikes resolve an arena opponent")
 
 func _freeze_copies(arena: Node2D) -> void:
