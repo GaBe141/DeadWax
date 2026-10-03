@@ -13,6 +13,8 @@ const BackdropShader := preload("res://assets/shaders/backdrop.gdshader")
 const RoomAirShader := preload("res://assets/shaders/room_air.gdshader")
 const PalaceMaterialShader := preload("res://assets/shaders/palace_material.gdshader")
 const PalaceAirShader := preload("res://assets/shaders/palace_air.gdshader")
+const WorldMaterialShader := preload("res://assets/shaders/world_material.gdshader")
+const WorldLightAirShader := preload("res://assets/shaders/world_light_air.gdshader")
 
 const DisplayFont := preload("res://assets/fonts/BigShoulders-Bold.ttf")
 const DisplayLight := preload("res://assets/fonts/BigShoulders-Regular.ttf")
@@ -55,6 +57,9 @@ static func draw_practice_arena(canvas: CanvasItem, state: Dictionary, ink: Colo
 static func draw_palace_world(canvas: CanvasItem, plane: StringName, bounds: Rect2,
 		pose: Dictionary, ink: Color, stock: Color) -> void:
 	preload("res://scripts/press_palace_world.gd").draw(canvas, plane, bounds, pose, ink, stock, BRASS)
+
+static func draw_world_contacts(canvas: CanvasItem, actors: Array[Dictionary], ink: Color, stock: Color) -> void:
+	preload("res://scripts/press_world_contacts.gd").draw(canvas, actors, ink, stock)
 
 static func draw_backcutter_cue(canvas: Node2D, pose: Dictionary, ink: Color, stock: Color) -> void:
 	preload("res://scripts/press_backcutter.gd").draw(canvas, pose, ink, stock, BodyBold, SIZE_SMALL)
@@ -239,6 +244,70 @@ static func draw_pressing(canvas: CanvasItem, pose: Dictionary, ink: Color, wax:
 	preload("res://scripts/press_pressing.gd").draw_pressing(canvas, pose, ink, wax, pale, accent, grey)
 
 # -- surfaces -----------------------------------------------------------------
+
+## Campaign-only wax, cut stone and occasional brass. Like a plate, the face
+## stays centred on its existing body; light and relief never change its edge.
+static func world_surface(size: Vector2, ink: Color, stock: Color, accent := PINK,
+		seed := 0.0, style: StringName = &"stone") -> ColorRect:
+	var rect := ColorRect.new()
+	rect.size = size
+	rect.position = -size / 2.0
+	rect.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	var material := ShaderMaterial.new()
+	material.shader = WorldMaterialShader
+	material.set_shader_parameter("ink", ink)
+	material.set_shader_parameter("stock", stock)
+	material.set_shader_parameter("accent", accent)
+	material.set_shader_parameter("plate_px", size)
+	material.set_shader_parameter("plate_seed", seed)
+	material.set_shader_parameter("material_kind", 1 if style == &"wax" else (2 if style == &"brass" else 0))
+	rect.material = material
+	return rect
+
+static func reink_world_surface(rect: ColorRect, ink: Color, stock: Color, accent := PINK) -> void:
+	reink(rect, ink, stock, accent)
+
+## Transparent light-bearing air belongs to fixed authored lamp positions.
+## Only the room controller advances clock/motion or supplies source outcomes.
+static func world_light_air(size: Vector2, ink: Color, stock: Color,
+		sources: Array[Dictionary], origin := Vector2.ZERO) -> ColorRect:
+	var rect := ColorRect.new()
+	rect.size = size
+	rect.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	var material := ShaderMaterial.new()
+	material.shader = WorldLightAirShader
+	material.set_shader_parameter("field_px", size)
+	material.set_shader_parameter("field_origin", origin)
+	material.set_shader_parameter("ink", ink)
+	material.set_shader_parameter("stock", stock)
+	material.set_shader_parameter("accent", BRASS)
+	material.set_shader_parameter("clock", 0.0)
+	material.set_shader_parameter("motion", 1.0)
+	rect.material = material
+	set_world_light_sources(rect, sources)
+	return rect
+
+static func reink_world_light_air(rect: ColorRect, ink: Color, stock: Color) -> void:
+	var material := rect.material as ShaderMaterial
+	if material != null:
+		material.set_shader_parameter("ink", ink)
+		material.set_shader_parameter("stock", stock)
+		material.set_shader_parameter("accent", BRASS)
+
+static func set_world_light_sources(rect: ColorRect, sources: Array[Dictionary]) -> void:
+	var material := rect.material as ShaderMaterial
+	if material == null:
+		return
+	var count := mini(sources.size(), 4)
+	material.set_shader_parameter("source_count", count)
+	for index in range(4):
+		var source: Dictionary = sources[index] if index < count else {}
+		var position: Vector2 = source.get("position", Vector2.ZERO)
+		var radius := maxf(0.0, float(source.get("radius", 0.0)))
+		var energy := maxf(0.0, float(source.get("energy", 0.0)))
+		material.set_shader_parameter("source" + str(index), Vector4(position.x, position.y, radius, energy))
+		material.set_shader_parameter("source_color" + str(index), source.get("color", Color.WHITE))
+		material.set_shader_parameter("source_lean" + str(index), float(source.get("lean", 0.0)))
 
 ## A shaded Palace material registered to the existing surface. The factory
 ## centres its rect like a plate, so replacement never moves a walkable edge.

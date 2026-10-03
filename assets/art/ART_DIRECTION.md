@@ -26,8 +26,30 @@ carry the identity of the space. The organ impressions use five broad pipes.
 opening, delegating drawing to the new helper. Runtime distance never loads a
 painting. The far plane remains cached, with the existing middle-plane motion,
 parallax, palette restoration, pause and Reduced motion rules. The still room
-air, dim lighting and vignette continue to join the layers. There is no new
+air, dim lighting and vignette continue to join the layers. That distance pass adds no
 shader, collision, background floor, gameplay state or runtime dependency.
+
+## Materials and local light
+
+The full demo's October material pass keeps those quiet silhouettes. Existing
+platform skins use procedural wax, cut stone or aged brass, with coarse wear,
+shallow sheen and local normal relief that responds to native room lights.
+Fine grain stays subordinate to the figures; the thin, continuous walkable
+lip remains registered to the original collider. Nearby texture never becomes
+a tiled brick grid or a new background panorama.
+
+Transparent shafts and sparse dust follow the room's actual lamp positions,
+colours and effective energy. They sit behind figures and usable surfaces.
+Small contact shadows ground Skip, residents and standing enemies on the
+nearest real platform below; clipped ends keep gaps empty, and jump height
+narrows and fades the marks. Mounted machinery receives no invented feet.
+The Label, Overture and Unplayed retain their authored palettes and exposure.
+
+These are original procedural shaders and Canvas drawing, with no new
+generated paintings or external assets. Their clocks, palettes and source
+snapshots are explicit. Pause freezes them, Reduced motion holds decorative
+movement, and A/B/A restores all materials and lighting. The GL Compatibility
+renderer, collision, progression, combat tells and save data stay authoritative.
 
 ## Archived production paintings
 

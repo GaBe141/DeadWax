@@ -6,6 +6,8 @@ const Press := preload("res://scripts/press.gd")
 const Profiles := preload("res://scripts/lighting_profiles.gd")
 const UPDATE_STEP := 1.0 / 30.0
 
+signal presentation_changed(sources: Array[Dictionary])
+
 var room_id: StringName
 var bounds: Rect2
 var surfaces: Array[Rect2] = []
@@ -22,6 +24,7 @@ var _clock := 0.0
 var _update_left := 0.0
 var _authored_ink: Color
 var _authored_stock: Color
+var _presented_sources: Array[Dictionary] = []
 
 class Lamp extends Node2D:
 	var ink: Color
@@ -133,6 +136,21 @@ func _update_lights() -> void:
 			var breath := sin(_clock * 1.13 + index * 2.3) * 0.65 + sin(_clock * 0.67 + index) * 0.35
 			energy *= 1.0 + breath * float(source.get("pulse", 0.0))
 		lights[index].energy = energy
+	var sources := presentation_sources()
+	if sources != _presented_sources:
+		_presented_sources = sources.duplicate(true)
+		presentation_changed.emit(sources)
+
+## Transparent light air receives the same effective, fixed-world sources as
+## the native rig. No second lamp or outcome model belongs to the atmosphere.
+func presentation_sources() -> Array[Dictionary]:
+	var sources: Array[Dictionary] = []
+	for index in lights.size():
+		var source: Dictionary = profile.lights[index].duplicate(true)
+		source["position"] = lights[index].global_position
+		source["energy"] = lights[index].energy
+		sources.append(source)
+	return sources
 
 func set_reduced_motion(enabled: bool) -> void:
 	reduced_motion = enabled

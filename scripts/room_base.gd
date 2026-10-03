@@ -73,12 +73,16 @@ var _grooves: Array[Node2D] = []
 var _backdrop: ColorRect
 var atmosphere: Node2D
 var lighting: Node2D
+var _world_materials := false
 
 ## Authored rooms opt in after laying their real platforms. Decoration never
 ## authors collision: foreground strips inherit the existing solid rectangles.
 func setup_atmosphere(outcomes: Dictionary = {}) -> void:
 	if atmosphere != null:
 		return
+	_world_materials = true
+	for skin in _skins:
+		_apply_world_material(skin)
 	var surfaces: Array[Rect2] = []
 	for skin in _skins:
 		if skin.size.x >= 100 and skin.size.y >= 20 and skin.size.y <= 200:
@@ -93,6 +97,31 @@ func setup_atmosphere(outcomes: Dictionary = {}) -> void:
 	lighting.ink = _solid_color()
 	lighting.stock = _stock_color()
 	add_child(lighting)
+	lighting.connect("presentation_changed", Callable(atmosphere, "set_light_sources"))
+	atmosphere.call("set_light_sources", lighting.presentation_sources())
+
+## Main supplies copied feet, never gameplay actors. Atmosphere projects their
+## contact ink only onto this room's actual platform faces.
+func set_actor_impressions(impressions: Array[Dictionary]) -> void:
+	if is_instance_valid(atmosphere) and atmosphere.has_method("set_actor_impressions"):
+		var local_impressions: Array[Dictionary] = []
+		for impression in impressions:
+			var copied := impression.duplicate(true)
+			if copied.get("foot_position") is Vector2:
+				copied["foot_position"] = to_local(copied.foot_position)
+			local_impressions.append(copied)
+		atmosphere.call("set_actor_impressions", local_impressions)
+
+func _apply_world_material(skin: ColorRect) -> void:
+	var position: Vector2 = skin.get_parent().position
+	var style: StringName = &"stone"
+	if room_id in [&"headshell", &"horn_plaza", &"high_street", &"practice_room", &"the_stalls", &"groove_yard", &"label_descent"]:
+		style = &"wax"
+	elif room_id in [&"the_drop", &"the_landing", &"verse_hall", &"verse_warren_n", &"verse_warren_s", &"deep_gallery"] and skin.size.y <= 45.0:
+		style = &"brass"
+	var printed := PressScript.world_surface(skin.size, _solid_color(), _stock_color(), PressScript.PINK, position.x + position.y, style)
+	skin.material = printed.material
+	printed.free()
 
 func set_scenery_motion(reduced: bool) -> void:
 	if atmosphere != null:
@@ -130,6 +159,8 @@ func platform(pos: Vector2, size: Vector2) -> void:
 	b.add_child(cs)
 	var vis := PressScript.plate(size, _solid_color(), _stock_color(), PressScript.PINK, pos.x + pos.y, true)
 	b.add_child(vis)
+	if _world_materials:
+		_apply_world_material(vis)
 	_skins.append(vis)
 	add_child(b)
 

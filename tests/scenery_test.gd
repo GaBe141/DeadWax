@@ -39,6 +39,9 @@ var _checks := 0
 var _failures: Array[String] = []
 
 func _init() -> void:
+	if DisplayServer.get_name() != "headless":
+		DisplayServer.window_set_flag(DisplayServer.WINDOW_FLAG_NO_FOCUS, true)
+		DisplayServer.window_set_position(Vector2i(-16000, -16000))
 	call_deferred("_run")
 
 func _run() -> void:
@@ -96,7 +99,7 @@ func _check_authored_rooms() -> void:
 		previous = weakref(atmosphere)
 		_check(get_nodes_in_group("room_atmosphere").size() == 1, String(id) + " keeps one live room atmosphere")
 		_check(atmosphere.room_id == id and atmosphere.bounds == _main.room.cam_limits, String(id) + " gives the atmosphere the authored identity and bounds")
-		_check(atmosphere.get_child_count() == 4, String(id) + " has three drawing planes and one ambient color field")
+		_check(atmosphere.get_child_count() == 6, String(id) + " has three drawing planes, the still color field, transparent local light air and contact impressions")
 		for configuration in [["Far", -90], ["Middle", -55], ["Foreground", 18]]:
 			var layer := atmosphere.get_node_or_null(configuration[0]) as Node2D
 			_check(layer != null and layer.z_index == configuration[1], String(id) + " places " + configuration[0] + " in its intended visual depth")
@@ -172,7 +175,7 @@ func _check_foreground(atmosphere: Node2D, solids: Array[Rect2], label: String) 
 			if clip.get_child_count() == 1:
 				valid = valid and clip.get_child(0).position == -band.position
 	_check(valid, label + " clips foreground ink inside actual solids at least ten pixels below every playable lip")
-	_check(_descendants(atmosphere).size() == 4 + 2 * bands.size(), label + " bounds scenery node count by its existing platform count")
+	_check(_descendants(atmosphere).size() == 6 + 2 * bands.size(), label + " bounds scenery node count by its existing platform count")
 
 func _check_camera_and_pause() -> void:
 	# This scenery fixture measures camera travel after the separate Walk discovery.
@@ -206,6 +209,7 @@ func _check_camera_and_pause() -> void:
 	_check(far_travel.length() > middle_travel.length() and middle_travel.length() > 0.1, "distant layers move at different restrained rates")
 	_check(after.foreground == before.foreground and _solid_transforms(_main.room) == geometry, "foreground and platform transforms stay fixed while the camera travels")
 	_main._pause_game()
+	await _frames(2)
 	var frozen: Dictionary = atmosphere.visual_snapshot().duplicate(true)
 	var paused_player: Transform2D = _main.player.transform
 	_key(KEY_D, true)
@@ -229,7 +233,7 @@ func _check_reduced_motion() -> void:
 		return
 	_main._settings.reduced_motion = true
 	_main._apply_settings()
-	var frozen: Dictionary = atmosphere.visual_snapshot().duplicate(true)
+	var frozen: Dictionary = _decorative_snapshot(atmosphere)
 	var offsets := _offsets(atmosphere)
 	_main.player.position = Vector2(780, 574)
 	_main.player.velocity = Vector2.ZERO
@@ -240,7 +244,7 @@ func _check_reduced_motion() -> void:
 	_key(KEY_D, false)
 	await _physics(5)
 	_check(_offsets(atmosphere) == offsets, "reduced motion holds every scenery layer still while the camera moves")
-	_check(atmosphere.visual_snapshot() == frozen, "reduced motion also freezes ambient animation state")
+	_check(_decorative_snapshot(atmosphere) == frozen, "reduced motion also freezes ambient animation state while actor contacts follow actual movement")
 	var original_ink: Color = atmosphere.ink
 	var original_stock: Color = atmosphere.stock
 	atmosphere.reink(original_stock, original_ink)
@@ -252,9 +256,9 @@ func _check_reduced_motion() -> void:
 	atmosphere = _atmosphere()
 	_check(atmosphere != null, "a new room still creates its scenery with reduced motion enabled")
 	if atmosphere != null:
-		frozen = atmosphere.visual_snapshot().duplicate(true)
+		frozen = _decorative_snapshot(atmosphere)
 		await _physics(6)
-		_check(atmosphere.visual_snapshot() == frozen, "reduced-motion settings propagate to newly entered rooms")
+		_check(_decorative_snapshot(atmosphere) == frozen, "reduced-motion settings propagate to newly entered rooms")
 
 func _check_development_shell() -> void:
 	var shell := GrayboxScript.new()
@@ -360,6 +364,14 @@ func _solid_transforms(room: Node) -> Dictionary:
 func _offsets(atmosphere: Node2D) -> Dictionary:
 	return {"far": atmosphere.get_node("Far").position, "middle": atmosphere.get_node("Middle").position,
 		"foreground": atmosphere.get_node("Foreground").position}
+
+func _decorative_snapshot(atmosphere: Node2D) -> Dictionary:
+	var state: Dictionary = atmosphere.visual_snapshot().duplicate(true)
+	# Contacts follow real gameplay under reduced motion; native draw counters
+	# also settle queued palette/settings draws independently of animation.
+	for key in ["actors", "contact_revision", "far_redraws", "middle_redraws"]:
+		state.erase(key)
+	return state
 
 func _palette_matches(atmosphere: Node2D, ink: Color, stock: Color) -> bool:
 	if atmosphere.ink != ink or atmosphere.stock != stock:

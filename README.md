@@ -16,6 +16,13 @@ One nearby action cue appears at a time; deliberate E / Y conversations use
 brief subtitles. The Book and pause menu keep the full guidance, while Move
 practice and development rooms retain their detailed readouts.
 
+All 21 demo rooms use shaded wax, stone and aged metal surfaces, with soft
+light shafts and sparse dust around their local lamps. Daylight gives the
+Label streets a cooler fill; the Overture keeps warmer interiors, and the
+Unplayed carries violet and copper light. Small shadows beneath Skip and
+the standing figures follow real platforms and fade during jumps. Pause
+freezes the effects; Reduced motion holds decorative haze and parallax still.
+
 The **Lost Pressings** equipment finds add three guaranteed rewards to the
 return journey: a cabinet beyond the Stalls' groove, a high balcony in Horn
 Plaza, and a sleeve on Addie's reverse face. Existing saves can collect them.
@@ -61,7 +68,7 @@ The lightweight project commands are:
 .\deadwax.cmd play    play the campaign with a local runtime log
 .\deadwax.cmd dev     open the original mechanics rooms and planned-world tools
 .\deadwax.cmd editor  open the project in Godot
-.\deadwax.cmd check   import resources; run all fifty-seven native test suites
+.\deadwax.cmd check   import resources; run all fifty-eight native test suites
 .\deadwax.cmd vibe    start Mistral Vibe in this repository
 ```
 

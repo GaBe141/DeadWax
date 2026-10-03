@@ -43,6 +43,11 @@ const CinematicHudScript := preload("res://scripts/cinematic_hud.gd")
 const ControllerProfileScript := preload("res://scripts/controller_profile.gd")
 const ControllerRouterScript := preload("res://scripts/controller_router.gd")
 const ControllerMenuScript := preload("res://scripts/controller_menu.gd")
+const AuditionerFigure := preload("res://scripts/auditioner.gd")
+const PressingFigure := preload("res://scripts/test_pressing.gd")
+const ResidentFigure := preload("res://scripts/resident.gd")
+const HoundFigure := preload("res://scripts/hound.gd")
+const LoftFigure := preload("res://scripts/loft_voice.gd")
 const INACTIVE_PAD_DEVICE := 100000
 
 const MARGIN := 22.0
@@ -302,6 +307,7 @@ func _process(delta: float) -> void:
 	crackle_bar.size.x = 140.0 * clampf(player.noise, 0.0, 1.0)
 	crackle_bar.color = PressScript.PINK if not player.hooded else Color("719993")
 	combo_readout.set_snapshot(player.combo_snapshot())
+	_update_campaign_impressions()
 	if practice_mode:
 		_update_practice_impressions()
 		subtitle.text = _practice_objective()
@@ -944,6 +950,45 @@ func _update_practice_impressions() -> void:
 		actors.append({"foot_position": actor.global_position + Vector2(0, foot_height), "kind": kind})
 	room.call("set_actor_impressions", actors)
 
+## World presentation receives feet and widths, never live actor references.
+## The room projects each impression onto its existing platform surfaces.
+func _update_campaign_impressions() -> void:
+	if development_mode or practice_mode or room == null or not room.has_method("set_actor_impressions"):
+		return
+	var actors: Array[Dictionary] = [{"foot_position": player.global_position + Vector2(0, 26),
+		"kind": &"skip", "width": 17.0}]
+	for actor in get_tree().get_nodes_in_group("hears_strikes"):
+		if not is_instance_valid(actor) or actor.is_queued_for_deletion() or not actor is Node2D:
+			continue
+		if not room.is_ancestor_of(actor) or not actor.is_visible_in_tree():
+			continue
+		var kind: StringName
+		var foot_height := 26.0
+		var width := 22.0
+		if actor is AuditionerFigure:
+			if actor.state == AuditionerFigure.S.DOWN: continue
+			kind = &"voice"
+			foot_height = 13.0
+			width = 17.0
+		elif actor is PressingFigure:
+			if actor.state == PressingFigure.S.DOWN: continue
+			kind = &"pressing"
+			foot_height = 43.0
+			width = 28.0
+		elif actor is ResidentFigure:
+			kind = &"resident"
+		elif actor is HoundFigure:
+			kind = &"hound"
+			width = 34.0
+		elif actor is LoftFigure:
+			kind = &"loft_voice"
+		else:
+			# Mounted machinery, doors and fixtures have no standing feet.
+			continue
+		actors.append({"foot_position": actor.global_position + Vector2(0, foot_height),
+			"kind": kind, "width": width})
+	room.call("set_actor_impressions", actors)
+
 func _practice_objective() -> String:
 	if room == null or not "arena" in room or not is_instance_valid(room.arena): return ""
 	var arena: Dictionary = room.arena.snapshot()
@@ -1475,6 +1520,7 @@ func _respawn() -> void:
 		for encounter in attempts:
 			if room.is_ancestor_of(encounter) and encounter.has_method("reset_attempt"):
 				encounter.call("reset_attempt")
+	_update_campaign_impressions()
 
 # -- events -------------------------------------------------------------------
 

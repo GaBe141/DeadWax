@@ -3,7 +3,7 @@
 Run `.\deadwax.cmd play` for the authored opening. Start with the chapter
 checklist, then use `.\deadwax.cmd dev` for focused mechanics regressions.
 Runtime errors are written to `.godot/deadwax-play.log`.
-Run `.\deadwax.cmd check` before handoff; the complete run contains 57 native
+Run `.\deadwax.cmd check` before handoff; the complete run contains 58 native
 suites, including Palace shaders/lighting, arena practice, contact feedback, calibrated controllers, movement weight, cinematic presentation,
 Lost Pressings, and Book/map suites. Older review results below retain their
 original suite counts.
@@ -711,6 +711,34 @@ manual playtest items.
   while its real vault, tells and functional marks still work. Review both
   palettes at 1280×720 and 960×540, then test turns/parries on the actual pad.
 
+## Full demo materials verification — 3 October 2026
+
+Godot 4.7.2's complete `deadwax.cmd check` passed all 58 suites and 14,140
+checks without script errors. Existing synthesized-audio teardown warnings
+remain in older suites; the new presentation and native tour logs are clean.
+
+The new world presentation suite passed 302 checks headless and 309 with
+native GL Compatibility. It locks all 21 rooms' original solid/route/entry
+signatures, verifies translated world/local coordinates, A/B/A restoration,
+fixed effective lamp snapshots and native material response, and checks
+clock-driven air, frozen reduced-motion pixels and live outcome energy.
+Contact marks resolve onto the nearest actual top, clip to ledge ends, fade
+with jump height and remain absent over gaps. Pause, recovery, cached distance,
+earned surfaces, campaign models/choices/checkpoint bytes, development shells
+and Palace isolation are covered. Existing scenery (504) and lighting (381)
+also passed headless and native after updating presentation-only expectations.
+
+A separate private native Main tour passed 78 checks and produced 190
+captures across all 21 rooms at 1280×720 and 960×540, including A/B/A, wide
+rooms, Well/Drop top/middle/bottom, Reduced-motion jumps, immediate recovery,
+live Gather ledges and restored Addie/Tonearm outcomes. Thirty detail frames
+and the complete room sheet received independent visual review: silhouettes,
+landing lips, gaps and combat marks remain readable. Native lamp positions,
+counts, heights and authored exposure retain their original values. Logs and
+captures are ignored `.godot/demo-art-*` and `.godot/world-presentation-*`
+files; the player's real checkpoints and settings were untouched. Physical
+controller feel and subjective exposure remain manual checks.
+
 ## Palace art verification — 3 October 2026
 
 Godot 4.7.2's complete `deadwax.cmd check` passed all 57 suites and 13,838
@@ -783,6 +811,19 @@ controller feel and the difficulty of later mixed groups remain manual checks.
 
 ## Scenery and depth
 
+- [ ] Tour all 21 campaign rooms at 1280×720 and 960×540. Wax, stone and aged
+  metal respond to the existing local lamps without a tiled texture grid or
+  another detailed panorama. Thin landing lips, figure silhouettes and combat
+  tells remain distinct from the soft light shafts and sparse dust.
+- [ ] Jump between platforms in the Stalls and Whistlers, then climb the Well
+  and Drop. Foot shadows project only onto the nearest real surface below;
+  none hangs across a gap, extends past a platform end or appears on a ceiling.
+  Higher jumps narrow/fade the shadow. Residents and active trial figures also
+  feel planted, while mounted machinery and interaction fixtures gain no feet.
+- [ ] Recover, change rooms and reveal an earned shelf. New surfaces receive
+  the same material and atmosphere without moving their collision or resetting
+  lamps. Pause/Book freeze effects; Reduced motion holds haze and parallax but
+  still follows actual feet. A→B→A restores materials and exposure cleanly.
 - [ ] The 21 authored rooms have distinct distant architecture and a still field of paper light. The plaza reads as a town, the Stalls as a shuttered market, the Well and Drop as continuous descents, and the Unplayed as rooms waiting for an audience.
 - [ ] Walk and jump through a wide room and descend the Well: far and middle planes move gently with the camera; recovery and room changes introduce no scenery jump after the arrival settles.
 - [ ] Floor engraving stays inside real platform faces, at least 10 pixels below their tops. Check the Stalls service lane, both Whistlers return stairs, and the Well climb: landing edges, gaps, passages, and player silhouettes remain clear.

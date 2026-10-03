@@ -12,6 +12,9 @@ var _checks := 0
 var _failures: Array[String] = []
 
 func _init() -> void:
+	if DisplayServer.get_name() != "headless":
+		DisplayServer.window_set_flag(DisplayServer.WINDOW_FLAG_NO_FOCUS, true)
+		DisplayServer.window_set_position(Vector2i(-16000, -16000))
 	call_deferred("_run")
 
 func _run() -> void:
