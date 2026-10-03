@@ -11,6 +11,8 @@ const PlateShader := preload("res://assets/shaders/plate.gdshader")
 const PaperShader := preload("res://assets/shaders/paper.gdshader")
 const BackdropShader := preload("res://assets/shaders/backdrop.gdshader")
 const RoomAirShader := preload("res://assets/shaders/room_air.gdshader")
+const PalaceMaterialShader := preload("res://assets/shaders/palace_material.gdshader")
+const PalaceAirShader := preload("res://assets/shaders/palace_air.gdshader")
 
 const DisplayFont := preload("res://assets/fonts/BigShoulders-Bold.ttf")
 const DisplayLight := preload("res://assets/fonts/BigShoulders-Regular.ttf")
@@ -49,6 +51,10 @@ static func draw_echo_trial(canvas: CanvasItem, state: Dictionary, ink: Color, s
 
 static func draw_practice_arena(canvas: CanvasItem, state: Dictionary, ink: Color, stock: Color) -> void:
 	preload("res://scripts/press_practice_arena.gd").draw(canvas, state, ink, stock, BRASS, BodyFont, SIZE_TINY)
+
+static func draw_palace_world(canvas: CanvasItem, plane: StringName, bounds: Rect2,
+		pose: Dictionary, ink: Color, stock: Color) -> void:
+	preload("res://scripts/press_palace_world.gd").draw(canvas, plane, bounds, pose, ink, stock, BRASS)
 
 static func draw_backcutter_cue(canvas: Node2D, pose: Dictionary, ink: Color, stock: Color) -> void:
 	preload("res://scripts/press_backcutter.gd").draw(canvas, pose, ink, stock, BodyBold, SIZE_SMALL)
@@ -233,6 +239,54 @@ static func draw_pressing(canvas: CanvasItem, pose: Dictionary, ink: Color, wax:
 	preload("res://scripts/press_pressing.gd").draw_pressing(canvas, pose, ink, wax, pale, accent, grey)
 
 # -- surfaces -----------------------------------------------------------------
+
+## A shaded Palace material registered to the existing surface. The factory
+## centres its rect like a plate, so replacement never moves a walkable edge.
+static func palace_surface(size: Vector2, ink: Color, stock: Color, kind: StringName) -> ColorRect:
+	var rect := ColorRect.new()
+	rect.size = size
+	rect.position = -size / 2.0
+	rect.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	var material := ShaderMaterial.new()
+	material.shader = PalaceMaterialShader
+	material.set_shader_parameter("ink", ink)
+	material.set_shader_parameter("stock", stock)
+	material.set_shader_parameter("accent", BRASS)
+	material.set_shader_parameter("surface_px", size)
+	material.set_shader_parameter("material_kind", 2 if kind == &"floor" else (1 if kind == &"wax" else 0))
+	rect.material = material
+	return rect
+
+static func reink_palace_surface(rect: ColorRect, ink: Color, stock: Color) -> void:
+	var material := rect.material as ShaderMaterial
+	if material != null:
+		material.set_shader_parameter("ink", ink)
+		material.set_shader_parameter("stock", stock)
+		material.set_shader_parameter("accent", BRASS)
+
+## Transparent light-bearing air sits over the static architecture. The room
+## supplies clock/motion explicitly so pause and reduced motion stay owned there.
+static func palace_air(size: Vector2, ink: Color, stock: Color) -> ColorRect:
+	var rect := ColorRect.new()
+	rect.size = size
+	rect.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	var material := ShaderMaterial.new()
+	material.shader = PalaceAirShader
+	material.set_shader_parameter("field_px", size)
+	material.set_shader_parameter("ink", ink)
+	material.set_shader_parameter("stock", stock)
+	material.set_shader_parameter("accent", BRASS)
+	material.set_shader_parameter("clock", 0.0)
+	material.set_shader_parameter("motion", 1.0)
+	rect.material = material
+	return rect
+
+static func reink_palace_air(rect: ColorRect, ink: Color, stock: Color) -> void:
+	var material := rect.material as ShaderMaterial
+	if material != null:
+		material.set_shader_parameter("ink", ink)
+		material.set_shader_parameter("stock", stock)
+		material.set_shader_parameter("accent", BRASS)
 
 ## An inked plate of `size`, centred on the origin. Replaces a flat ColorRect
 ## anywhere a solid surface is wanted. World platforms opt into the lower

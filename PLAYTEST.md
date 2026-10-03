@@ -3,8 +3,8 @@
 Run `.\deadwax.cmd play` for the authored opening. Start with the chapter
 checklist, then use `.\deadwax.cmd dev` for focused mechanics regressions.
 Runtime errors are written to `.godot/deadwax-play.log`.
-Run `.\deadwax.cmd check` before handoff; the complete run contains 56 native
-suites, including arena practice, contact feedback, calibrated controllers, movement weight, cinematic presentation,
+Run `.\deadwax.cmd check` before handoff; the complete run contains 57 native
+suites, including Palace shaders/lighting, arena practice, contact feedback, calibrated controllers, movement weight, cinematic presentation,
 Lost Pressings, and Book/map suites. Older review results below retain their
 original suite counts.
 
@@ -667,6 +667,25 @@ manual playtest items.
   choices, wallet, discoveries, collection, equipment and checkpoint bytes stay
   unchanged. Starting practice without a checkpoint creates no Continue.
 
+## Palace materials and lighting
+
+- [ ] Enter Move practice at 1280×720 and 960×540. The large vault and pillars
+  stay quiet behind Skip; three visible lamps place warm light at the dial and
+  cool light at the sides. Floor texture and sheen stay below the real lip,
+  without suggesting another landing surface.
+- [ ] Walk from the middle toward each edge and recover with R. The distant
+  hall shifts gently, lamps stay fixed, and arrival shows no scenery jump.
+  Jump and watch the small floor shadow shrink and fade beneath the actual feet.
+- [ ] Check floor 8's vault and a four-opponent round: silhouettes, front
+  arrows, parry brackets, fixed landing marks and arrival warnings remain clear
+  through the faint shafts and dust. Airborne shadows never become fake actors.
+- [ ] Pause and open the Book: haze, shadows and lamp modulation freeze.
+  Reduced motion holds decoration and parallax still while real movement,
+  contact shadows and combat marks remain functional. HUD/menu colours stay stable.
+- [ ] In a private palette fixture, compare A→B→A: materials, vault and lamp
+  exposure restore exactly. Return to title and Continue; no Palace lamp or
+  ambient fill remains in the campaign, and the checkpoint is untouched.
+
 ## Backcutter crossups
 
 - [ ] Reach floor 8: one distinct Backcutter arrives alone. Its front guard
@@ -691,6 +710,30 @@ manual playtest items.
   opponents. Pause/Book freeze the attempt; Reduced motion holds decoration
   while its real vault, tells and functional marks still work. Review both
   palettes at 1280×720 and 960×540, then test turns/parries on the actual pad.
+
+## Palace art verification — 3 October 2026
+
+Godot 4.7.2's complete `deadwax.cmd check` passed all 57 suites and 13,838
+checks without script errors. Older synthesized-audio teardown warnings remain
+in existing suites; the new presentation and focused native logs are clean.
+
+The presentation suite passed 84 checks headless and 89 with native GL
+Compatibility. Native pixels verify that the floor material responds to an
+actual PointLight2D, supplied clock changes move the air, a held clock keeps
+Reduced-motion air identical, and contact shadows shrink/fade during jumps.
+Main fixtures preserve the three original solids, all eight campaign model
+objects and snapshots, choices, gear, and both primary/backup checkpoint bytes.
+Pause, camera travel, immediate recovery, cached far artwork, A/B/A exposure,
+elite foot positions and title→Continue lighting cleanup are covered.
+
+Move practice (63), the twenty-floor arena (1,317) and Backcutter (158) also
+passed in both headless and native modes. A separate private native Main probe
+passed 24 checks and captured 1280×720 and 960×540 views: crowded floor twenty,
+fixed arrival warnings, crossup tell/air/landing, both palettes, pause and
+Reduced motion. Visual review found silhouettes and combat marks clear behind
+the quiet arch, lamps and sparse haze. Logs/captures are ignored
+`.godot/palace-art-*` files. Real checkpoints/settings were untouched;
+physical-controller feel and subjective exposure remain manual checks.
 
 ## Crossup verification — 3 October 2026
 

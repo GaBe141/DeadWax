@@ -303,6 +303,7 @@ func _process(delta: float) -> void:
 	crackle_bar.color = PressScript.PINK if not player.hooded else Color("719993")
 	combo_readout.set_snapshot(player.combo_snapshot())
 	if practice_mode:
+		_update_practice_impressions()
 		subtitle.text = _practice_objective()
 		status.text = "NEEDLE %d/%d     %s" % [_health, _max_health(), _controller_text("J / X · STRIKE     SPACE / A · JUMP     L / LB · SET")]
 		controls_note.text = _controls_text()
@@ -930,6 +931,19 @@ func _clear_practice_impressions() -> void:
 			remove_child(effect)
 			effect.queue_free()
 
+## Contact shadows consume positions only; the presentation owns no actors.
+func _update_practice_impressions() -> void:
+	if not practice_mode or room == null or not room.has_method("set_actor_impressions"):
+		return
+	var actors: Array[Dictionary] = [{"foot_position": player.global_position + Vector2(0, 26), "kind": &"skip"}]
+	for actor in get_tree().get_nodes_in_group("practice_arena_actor"):
+		if not is_instance_valid(actor) or actor.is_queued_for_deletion() or not room.is_ancestor_of(actor):
+			continue
+		var kind: StringName = actor.get_meta("practice_species", &"pressing")
+		var foot_height := 13.0 if kind == &"voice" else 43.0
+		actors.append({"foot_position": actor.global_position + Vector2(0, foot_height), "kind": kind})
+	room.call("set_actor_impressions", actors)
+
 func _practice_objective() -> String:
 	if room == null or not "arena" in room or not is_instance_valid(room.arena): return ""
 	var arena: Dictionary = room.arena.snapshot()
@@ -1453,6 +1467,7 @@ func _respawn() -> void:
 	camera.reset_smoothing()
 	camera.force_update_scroll()
 	room.call("sync_scenery_camera")
+	_update_practice_impressions()
 	if not development_mode:
 		var attempts := get_tree().get_nodes_in_group("chapter_boss")
 		for encounter in get_tree().get_nodes_in_group("reset_on_recovery"):

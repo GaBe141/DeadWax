@@ -17,6 +17,15 @@ const LAMP_ENERGY_SCALE := 0.86
 
 static func get_profile(room_id: StringName) -> Dictionary:
 	match room_id:
+		&"move_practice":
+			# The Palace is an explicitly authored practice rig. Its broad steady
+			# combat fill leaves guards, spawn warnings and landing marks legible.
+			return _profile(Color(0.77, 0.79, 0.82), [
+				_light(&"palace_west", Vector2(900, 285), 570, Vector2(1.15, 1.2), WELL_LIGHT, 0.32, true),
+				_light(&"palace_crown", Vector2(1280, 225), 660, Vector2(1.2, 1.25), BRASS_LIGHT, 0.44, true, 0.008),
+				_light(&"palace_east", Vector2(1660, 285), 570, Vector2(1.15, 1.2), WELL_LIGHT, 0.32, true),
+				_light(&"palace_combat_fill", Vector2(1280, 525), 880, Vector2(1.5, 0.6), STAGE_LIGHT, 0.15),
+			])
 		&"headshell":
 			return _profile(Color(0.84, 0.82, 0.78), [
 				# The tall window and the small hanging brass eye already exist.

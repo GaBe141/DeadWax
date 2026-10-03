@@ -61,7 +61,7 @@ The lightweight project commands are:
 .\deadwax.cmd play    play the campaign with a local runtime log
 .\deadwax.cmd dev     open the original mechanics rooms and planned-world tools
 .\deadwax.cmd editor  open the project in Godot
-.\deadwax.cmd check   import resources; run all fifty-six native test suites
+.\deadwax.cmd check   import resources; run all fifty-seven native test suites
 .\deadwax.cmd vibe    start Mistral Vibe in this repository
 ```
 
@@ -500,6 +500,13 @@ checks the direction of your executed strike as well as the usual 100 ms
 timing. Every completed swing leaves a one-second punish opening; a rear
 counter interrupts into one too. Later floors mix one Backcutter with ordinary
 foes; their existing rules remain unchanged.
+
+The Palace is a dim vaulted hall, with warm light at the central dial and
+cooler lamps on either side. Stone and wax surfaces catch subtle light;
+soft shafts, sparse dust and grounded contact shadows give the chamber
+depth without obscuring guards or arrival marks. Shadows shrink and fade
+as figures jump. Pause freezes the room, and Reduced motion holds the haze
+and scenery still while combat and foot shadows continue to follow play.
 
 **R**, falling, or defeat clears the current attempt and restores Skip at the
 dial to retry that floor. **Esc / Back** pauses the run, and the Book also freezes
