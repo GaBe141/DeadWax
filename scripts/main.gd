@@ -303,8 +303,8 @@ func _process(delta: float) -> void:
 	crackle_bar.color = PressScript.PINK if not player.hooded else Color("719993")
 	combo_readout.set_snapshot(player.combo_snapshot())
 	if practice_mode:
-		subtitle.text = room.objective_label
-		status.text = _controller_text("J / X · STRIKE     SPACE / A · JUMP     K / B · HOOD     L / LB · SET")
+		subtitle.text = _practice_objective()
+		status.text = "NEEDLE %d/%d     %s" % [_health, _max_health(), _controller_text("J / X · STRIKE     SPACE / A · JUMP     L / LB · SET")]
 		controls_note.text = _controls_text()
 	elif development_mode:
 		status.text = "crackle   shine %d   hits taken %d   %s\n%s" % [player.shine, _hits_taken, _pressing_text(), progression.call("hud_text")]
@@ -382,7 +382,7 @@ func _controls_text() -> String:
 	var gamecube := _gamecube_connected()
 	var pause_button := "START" if gamecube else "BACK"
 	if practice_mode:
-		return "A / D / STICK · MOVE     R · RESET     ESC / %s · PAUSE" % pause_button
+		return "E / Y · NEXT FLOOR     R · RETRY FLOOR     I / %s · BOOK     ESC / %s · PAUSE" % ["Z" if gamecube else "START", pause_button]
 	var note := "I / %s · THE BOOK     ESC / %s · PAUSE" % ["Z" if gamecube else "START", pause_button]
 	return "M / D-PAD DOWN · MAP     " + note if map_state.owned else note
 
@@ -527,7 +527,7 @@ func _wire_room() -> void:
 	for n in get_tree().get_nodes_in_group("hears_strikes"):
 		if not room.is_ancestor_of(n):
 			continue
-		if n.is_in_group("echo_trial_actor"):
+		if n.is_in_group("echo_trial_actor") or n.is_in_group("practice_arena_actor"):
 			continue
 		if n is Node and n.has_signal("parried") and not n.parried.is_connected(_on_parried):
 			n.parried.connect(_on_parried)
@@ -866,6 +866,12 @@ func _start_practice() -> void:
 	_reset_player()
 	combo_readout.practice_mode = true
 	_swap_room(PracticeScript.new(), &"default")
+	room.arena.floor_started.connect(_on_practice_floor_started)
+	room.arena.floor_cleared.connect(_on_practice_floor_cleared)
+	room.arena.run_completed.connect(_on_practice_run_completed)
+	room.arena.actor_parried.connect(_on_parried)
+	room.arena.actor_shattered.connect(_on_shattered)
+	room.arena.actor_freed.connect(_on_freed)
 	# The title's confirming Space/A belongs to the menu, not the first jump.
 	call_deferred("_finish_practice_entry")
 
@@ -885,9 +891,11 @@ func _finish_practice_entry() -> void:
 func _leave_practice() -> void:
 	if not practice_mode:
 		return
+	_clear_practice_impressions()
 	if inventory.is_open():
 		inventory.close_inventory()
 	if room != null:
+		if "arena" in room and is_instance_valid(room.arena): room.arena.cancel_arena()
 		remove_child(room)
 		room.queue_free()
 		room = null
@@ -915,6 +923,45 @@ func _leave_practice() -> void:
 	combo_readout.practice_mode = false
 	combo_readout.set_snapshot(player.combo_snapshot())
 	audio.set_home_song(false)
+
+func _clear_practice_impressions() -> void:
+	for effect in get_children():
+		if effect.get_script() == WaveScript:
+			remove_child(effect)
+			effect.queue_free()
+
+func _practice_objective() -> String:
+	if room == null or not "arena" in room or not is_instance_valid(room.arena): return ""
+	var arena: Dictionary = room.arena.snapshot()
+	match StringName(arena.state):
+		&"warning": return "FLOOR %02d / %02d · get ready." % [arena.floor, arena.total_floors]
+		&"active": return "FLOOR %02d / %02d · %d remain." % [arena.floor, arena.total_floors, arena.alive]
+		&"rest": return "FLOOR %02d CLEAR · health restored. E / Y at the dial · continue." % arena.floor
+		&"complete": return "TWENTY FLOORS CLEAR · E / Y at the dial · play again."
+	return "E / Y at the dial · %s floor %d of %d." % ["retry" if arena.floor > 0 else "begin", maxi(arena.floor, 1), arena.total_floors]
+
+func _on_practice_floor_started(_floor: int) -> void:
+	if not practice_mode or room == null or _respawn_pending: return
+	_health = _max_health()
+	player.refill_air_strikes()
+	player.cancel_pending_strike()
+	_fb_t = 0.0
+	feedback.modulate.a = 0.0
+	hud_motion.present_status()
+
+func _on_practice_floor_cleared(_floor: int) -> void:
+	if not practice_mode: return
+	if _respawn_pending or _health <= 0:
+		if room != null and "arena" in room and is_instance_valid(room.arena): room.arena.reset_current_floor()
+		return
+	_health = _max_health()
+	player.refill_air_strikes()
+	player.cancel_pending_strike()
+	hud_motion.present_status()
+	audio.play("onbeat", -10.0, 0.86)
+
+func _on_practice_run_completed() -> void:
+	if practice_mode and not _respawn_pending: _flash("THE WAX PALACE IS QUIET.")
 
 func _bind_session_models() -> void:
 	map_menu.exploration = exploration
@@ -1389,7 +1436,9 @@ func _respawn() -> void:
 	player.cancel_pending_strike()
 	combo_readout.set_snapshot(player.combo_snapshot())
 	if practice_mode:
+		_clear_practice_impressions()
 		player.set("_strike_cd", 0.0)
+		if "arena" in room and is_instance_valid(room.arena): room.arena.reset_current_floor()
 	hud_motion.reset_transients()
 	cinematic_hud.reset_transients()
 	for source in room.get_children():
@@ -1503,7 +1552,7 @@ func _on_player_hit() -> void:
 
 func _recover_needle() -> void:
 	_respawn()
-	_flash("the needle lifts. what you learned stays.")
+	_flash("E / Y at the dial · retry this floor." if practice_mode else "the needle lifts. what you learned stays.")
 
 func _on_refrain_collected(refrain: int) -> void:
 	progression.call("unlock_refrain", refrain)
@@ -1925,7 +1974,7 @@ func _on_technique_discovered(technique: int) -> void:
 	_queue_save()
 
 func _word_splatter(pos: Vector2) -> void:
-	if _cinematic_campaign(): return
+	if _cinematic_campaign() or practice_mode: return
 	var words := ["BRIGHT", "LY", "OH", "!!"]
 	for i in words.size():
 		var l := Label.new()

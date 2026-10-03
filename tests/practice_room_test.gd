@@ -1,5 +1,6 @@
 extends SceneTree
-## The empty movement room is a separate, unsaved title-screen activity.
+## Practice is a separate, unsaved title-screen activity. Its combat ladder
+## stays dormant until a fresh grounded interaction at the center dial.
 ## All checkpoint writes and physical input belong to this private fixture.
 const MainScene := preload("res://scenes/main.tscn")
 const Practice := preload("res://scripts/room_move_practice.gd")
@@ -107,14 +108,16 @@ func _enter_from_title() -> void:
 		"player and read-only Book use the isolated models")
 	_check(_main.encounters.is_empty() and not _main.chapter_complete, "campaign choices and ending state stay outside practice")
 	_check(_main.room._grooves.is_empty() and _main.room.entry_points.size() <= 1,
-		"the empty room contains no grooves or destination arrivals")
+		"the practice room contains no grooves or destination arrivals")
 	var forbidden := false
 	for node in _descendants(_main.room):
 		for group in ["hears_strikes", "strikable", "room_exit", "live_groove", "map_pickup"]:
 			forbidden = forbidden or node.is_in_group(group)
 		forbidden = forbidden or node.has_meta("chapter_state_id")
 		forbidden = forbidden or node.get_script() in [load("res://scripts/refrain_pickup.gd"), load("res://scripts/chapter_marker.gd")]
-	_check(not forbidden, "practice contains no enemies, dummies, pickups, passages, or completion point")
+	_check(not forbidden and _main.room.arena.snapshot().state == &"idle"
+		and _main.room.arena.snapshot().remaining == 0,
+		"entering practice leaves the arena idle without enemies, pickups, passages or a completion point")
 	_check(_disk_bytes() == _disk, "entering practice leaves primary and recovery checkpoint bytes untouched")
 	_check(_campaign_snapshots() == _snapshots, "campaign model values remain unchanged behind practice")
 
@@ -123,7 +126,7 @@ func _movement_and_menus() -> void:
 	_key(KEY_D, true)
 	await _physics(20)
 	_key(KEY_D, false)
-	_check(_main.player.position.x > start.x + 30 and _main.player.is_on_floor(), "real movement crosses the safe empty floor")
+	_check(_main.player.position.x > start.x + 30 and _main.player.is_on_floor(), "real movement crosses the safe idle practice floor")
 	_key(KEY_SPACE, true)
 	await _physics(4)
 	_key(KEY_SPACE, false)

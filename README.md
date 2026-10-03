@@ -61,7 +61,7 @@ The lightweight project commands are:
 .\deadwax.cmd play    play the campaign with a local runtime log
 .\deadwax.cmd dev     open the original mechanics rooms and planned-world tools
 .\deadwax.cmd editor  open the project in Godot
-.\deadwax.cmd check   import resources; run all fifty-four native test suites
+.\deadwax.cmd check   import resources; run all fifty-five native test suites
 .\deadwax.cmd vibe    start Mistral Vibe in this repository
 ```
 
@@ -481,15 +481,26 @@ parry as the swing lands, then use the one-second **OPEN** window to land a
 strike. Its first unguarded hit starts the count. The upper route still passes
 without fighting, and recovery resets an unfinished encounter.
 
-Choose **Move practice** on the title screen for a wide, empty floor to try
-movement, jumping, Hood, Set, and combos. It supplies all seven moves and
-has no enemies, pickups, or exits. **R** resets Skip and the chain; **Esc / Back**
-opens pause, where **Return to title** takes you back to the sleeve. Practice
-uses temporary models and never writes your campaign checkpoint, unlocks
+Choose **Move practice** on the title screen to enter **The Wax Palace**, a
+twenty-floor combat arena with all seven moves and stock equipment. The floor
+stays empty until a fresh grounded **E / Y** at its central dial starts a run.
+Auditioners, Test Pressings and guarded Loopers arrive in increasingly mixed
+groups of one to four, with marked arrival warnings and room to move.
+Listening or striking can clear an Auditioner; other opponents retain their
+usual combat rules. Each clear restores needle health and gives you a breather;
+return to the dial and press **E / Y** for the next floor. Clearing floor twenty
+lets the same action start another run. There is no time limit.
+
+**R**, falling, or defeat clears the current attempt and restores Skip at the
+dial to retry that floor. **Esc / Back** pauses the run, and the Book also freezes
+it; **Return to title** takes you back to the sleeve. Before starting, the open
+floor still supports empty-air movement and combo drills. Practice has no
+pickups, campaign exits or collection rewards. It uses temporary models and
+never writes your campaign checkpoint, unlocks
 progression, spends Shine, or records map visits. Continue resumes your journey.
 Abilities, carried discoveries, and collections use disposable practice state, leaving
 the campaign's recovered moves, spool, slip, equipment, materials, trial records, and bestiary
-untouched. Equipment effects return to stock for the empty practice floor.
+untouched. Equipment effects return to stock throughout practice.
 
 Faint perimeter cuts acknowledge the immediate 120 px enemy-hit reach; the
 forward gesture and actual contact marks carry the emphasis. Fainter echoes

@@ -3,8 +3,8 @@
 Run `.\deadwax.cmd play` for the authored opening. Start with the chapter
 checklist, then use `.\deadwax.cmd dev` for focused mechanics regressions.
 Runtime errors are written to `.godot/deadwax-play.log`.
-Run `.\deadwax.cmd check` before handoff; the complete run contains 54 native
-suites, including contact feedback, calibrated controllers, movement weight, cinematic presentation,
+Run `.\deadwax.cmd check` before handoff; the complete run contains 55 native
+suites, including arena practice, contact feedback, calibrated controllers, movement weight, cinematic presentation,
 Lost Pressings, and Book/map suites. Older review results below retain their
 original suite counts.
 
@@ -638,6 +638,59 @@ renderer errors. Logs and captures are ignored `.godot/attack-*` files. All
 checkpoints/settings were isolated; the player's save and running game were
 untouched. Physical controller feel, perceived sound weight and latency remain
 manual playtest items.
+
+## The Wax Palace
+
+- [ ] Choose Move practice with mouse, keyboard and controller. Enter grounded
+  beside the central dial with no enemies yet; the confirming input does not
+  jump, strike or start a floor. The empty floor still supports movement drills.
+- [ ] Press fresh grounded E / Y at the dial. Floor 1 is announced, then a
+  marked 1.2-second arrival warning precedes an ordinary Auditioner. Walk
+  toward a warning just before it expires: unsafe arrivals relocate and show
+  a fresh full warning, rather than appearing beside Skip.
+- [ ] Clear opponents with the same strikes, parries, Pogo or Set rules used in
+  the campaign. A closed Looper guard still blocks damage without rewinding its
+  count. Freed and shattered opponents leave immediately and never revive.
+- [ ] A clear restores health and waits for deliberate E / Y at the dial. Later
+  floors mix one to four opponents; floor 20 finishes the run and offers replay.
+  There are no automatic next waves or time limit.
+- [ ] Take damage, then press R or lose all health: the current floor remains
+  retryable, its copies disappear, health refills and the next fresh E / Y starts
+  that same floor. No stale combo or attack fires after recovery.
+- [ ] Pause or open the Book during a warning and a fight. Resume continues the
+  same attempt; menu input cannot begin a new floor. Reduced motion freezes
+  decoration while arrival progress and enemy tells stay functional.
+- [ ] Inspect health, floor/remaining cues, combo guidance and arrivals at
+  1280×720 and 960×540. Physical GameCube Y begins/continues, X strikes, A jumps,
+  L Sets, Z opens the Book and Start pauses; controller neutrality is preserved.
+- [ ] Return to title during combat, then Continue. Campaign entry, moves,
+  choices, wallet, discoveries, collection, equipment and checkpoint bytes stay
+  unchanged. Starting practice without a checkpoint creates no Continue.
+
+## Wax Palace verification — 3 October 2026
+
+Godot 4.7.2's complete `deadwax.cmd check` passed all 55 suites and 13,543
+checks without script errors. After the final cleanup and defeat/clear fixes,
+the expanded arena suite passed 1,304 checks both headless and in native GL
+Compatibility; attack feedback (102) and Move practice (63) also passed again.
+Older suites retain their existing synthesized-audio ObjectDB teardown warnings;
+the focused arena and feedback runs exit cleanly.
+
+Arena regressions cover all twenty floors, inherited enemy resolutions, safe
+fixed warnings, guard openings, duplicate callbacks, full health, current-floor
+retries, pause/Book freezes, and unchanged campaign models/checkpoint bytes.
+They also cover a final kill during fatal recovery on floors 2 and 20: it
+cannot advance the floor or announce a completed run. Recovery and exiting
+practice remove remaining strike impressions before another room is loaded.
+
+A separate native Main playtest passed 75 checks, using actual E/Y starts,
+movement and J attacks against the first voice and a guarded Looper, then
+exercising all twenty floors through inherited combat resolution. Renders were
+reviewed at 1280×720 and 960×540, including four-enemy rounds, both supplied
+palettes, reduced motion and menus. All checkpoints/settings were private;
+the player's save and running game were untouched. Logs and captures are
+ignored `.godot/palace-*` and `.godot/practice-arena-*` files. Physical
+controller feel and the difficulty of later mixed groups remain manual checks.
 
 ## Scenery and depth
 
