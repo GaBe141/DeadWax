@@ -356,7 +356,7 @@ func _impression(kind: StringName, pos: Vector2, size: Vector2) -> void:
 	add_child(picture)
 
 func _note(pos: Vector2, heading: String, body: String) -> Control:
-	var note := PressScript.card(body, _solid_color(), _stock_color(), PressScript.PINK, PressScript.SIZE_BODY, heading)
+	var note := PressScript.card(body, _solid_color(), _stock_color(), PressScript.ACCENT, PressScript.SIZE_BODY, heading)
 	note.position = pos
 	_notes.append(note)
 	add_child(note)

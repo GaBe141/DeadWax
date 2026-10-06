@@ -194,7 +194,6 @@ var _takeoff_dust := false
 const INK := Color(0.13, 0.12, 0.11)
 const IRON := Color(0.36, 0.35, 0.37)
 const PALE := Color(0.92, 0.90, 0.85)
-const PINK := Color(0.90, 0.25, 0.50)
 const HOODGREY := Color(0.55, 0.52, 0.58)
 const IRON_REVERSED := Color(0.62, 0.60, 0.63)
 const DUST := Color(0.80, 0.72, 0.56)  # kicked-up wax: reads on dark and pale pages
@@ -665,7 +664,7 @@ func _tap_phase() -> float:
 
 func _draw() -> void:
 	PressScript.draw_skip(self, _animation_pose(), {
-		"ink": INK, "body": _body, "pale": PALE, "pink": PINK, "hood": HOODGREY,
+		"ink": INK, "body": _body, "pale": PALE, "pink": PressScript.PINK, "hood": HOODGREY,
 		"warm_thread": warm_thread,
 	})
 	# Dust stays where it was kicked up, in front of the feet that raised it.

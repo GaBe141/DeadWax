@@ -78,7 +78,7 @@ func _draw() -> void:
 	var half := SIZE / 2.0
 	var brass := PrintPress.BRASS
 	var cream := PrintPress.CREAM
-	var coral := PrintPress.PINK
+	var heard := PrintPress.PINK  # the door marks each strike it hears
 	var shadow := PrintPress.DEEP
 
 	if is_open:
@@ -87,7 +87,7 @@ func _draw() -> void:
 		if a > 0.0:
 			for i in range(4):
 				var y := -half.y + 20 + i * 36
-				draw_line(Vector2(-half.x - 14, y), Vector2(half.x + 14, y + rng.randf_range(-2, 2)), Color(coral, a * 0.7), 3.0)
+				draw_line(Vector2(-half.x - 14, y), Vector2(half.x + 14, y + rng.randf_range(-2, 2)), Color(heard, a * 0.7), 3.0)
 		draw_line(Vector2(0, -half.y), Vector2(0, -half.y + 12), brass, 3.0)
 		draw_line(Vector2(0, half.y - 12), Vector2(0, half.y), brass, 3.0)
 		return
@@ -106,7 +106,7 @@ func _draw() -> void:
 		var p := Vector2(0, -half.y - 18 - 0)
 		p.x = -27 + i * 18
 		if i < got:
-			draw_circle(p, 5.0, coral)
+			draw_circle(p, 5.0, heard)
 			draw_circle(p + Vector2(-1, -1), 1.5, cream)
 		else:
 			draw_circle(p, 4.2, shadow)

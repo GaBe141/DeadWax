@@ -26,7 +26,7 @@ func _ready() -> void:
 	if _is_unlocked():
 		_retire()
 		return
-	_label = Press.card(ProgressionScript.refrain_label(refrain).to_upper(), ink, stock, Press.PINK, Press.SIZE_HEADING, "REFRAIN")
+	_label = Press.card(ProgressionScript.refrain_label(refrain).to_upper(), ink, stock, Press.ACCENT, Press.SIZE_HEADING, "REFRAIN")
 	_label.position = Vector2(-_label.size.x * 0.5, -118)
 	_label.visible = not cinematic_mode
 	add_child(_label)
@@ -74,7 +74,7 @@ func reink(next_ink: Color, next_stock: Color) -> void:
 	ink = next_ink
 	stock = next_stock
 	if _label != null:
-		Press.recard(_label, ink, stock, Press.PINK)
+		Press.recard(_label, ink, stock, Press.ACCENT)
 	queue_redraw()
 
 func animation_pose() -> Dictionary:

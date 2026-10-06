@@ -174,7 +174,7 @@ func _refresh_card() -> void:
 		if _card != null:
 			remove_child(_card)
 			_card.queue_free()
-		_card = Press.card(text, ink, stock, Press.PINK, Press.SIZE_BODY, "THE LOST PHRASE")
+		_card = Press.card(text, ink, stock, Press.ACCENT, Press.SIZE_BODY, "THE LOST PHRASE")
 		_card.position = Vector2(-_card.size.x / 2.0, -_card.size.y) + card_offset
 		_card.material = Press.unshaded_material()
 		add_child(_card)

@@ -18,7 +18,7 @@ var _card: Control
 
 func _ready() -> void:
 	add_to_group("chapter_endpoint")
-	_card = PressScript.card(prompt, ink, stock, PressScript.PINK, PressScript.SIZE_BODY, heading)
+	_card = PressScript.card(prompt, ink, stock, PressScript.ACCENT, PressScript.SIZE_BODY, heading)
 	_card.position = Vector2(-_card.size.x / 2.0, -124.0)
 	_card.visible = false
 	add_child(_card)

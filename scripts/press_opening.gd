@@ -6,8 +6,8 @@ const DESIGN := Vector2(1280, 720)
 const PaintedWorld := preload("res://scripts/press_painted_world.gd")
 const Paint := preload("res://scripts/figure_paint.gd")
 const INK := Color("142c34")
-const PINK := Color("e3af6c")
-const GOLD := Color("cda565")
+const ACCENT := Color("e3af6c")
+const BRASS := Color("cda565")
 const STOCKS := [Color("b3c5b4"), Color("99b0ac"), Color("b6c7b5"), Color("c2cdb6")]
 
 static func draw(c: CanvasItem, size: Vector2, pose: Dictionary) -> void:
@@ -43,14 +43,14 @@ static func draw(c: CanvasItem, size: Vector2, pose: Dictionary) -> void:
 
 static func _paper(c: CanvasItem, stock: Color) -> void:
 	for row in range(30):
-		var shade := Color(stock.lerp(GOLD, sin(float(row) / 29.0 * PI) * 0.16), 0.05)
+		var shade := Color(stock.lerp(BRASS, sin(float(row) / 29.0 * PI) * 0.16), 0.05)
 		c.draw_rect(Rect2(0, row * 24, 1280, 24), shade)
 	for ring in range(18, 0, -1):
 		_ellipse_fill(c, Vector2(640, 302), Vector2(420 + ring * 10, 125 + ring * 7), Color(stock, 0.026))
 	for index in range(260):
 		var x := fposmod(index * 83.719 + sin(index * 0.7) * 49.0, 1280.0)
 		var y := fposmod(index * 59.137 + cos(index * 1.7) * 31.0, 720.0)
-		c.draw_line(Vector2(x, y), Vector2(x + 2.0 + float(index % 9), y - 0.6), Color(GOLD, 0.045), 0.9, true)
+		c.draw_line(Vector2(x, y), Vector2(x + 2.0 + float(index % 9), y - 0.6), Color(BRASS, 0.045), 0.9, true)
 
 static func _living_record(c: CanvasItem, p: float, t: float, stock: Color) -> void:
 	var center := Vector2(642, 350)
@@ -67,13 +67,13 @@ static func _living_record(c: CanvasItem, p: float, t: float, stock: Color) -> v
 	_ellipse_fill(c, center, Vector2(462, 145), INK)
 	for index in range(19):
 		_ellipse(c, center + Vector2(0, 5), Vector2(453 - index * 2, 139 - index * 0.55), 0.08, PI - 0.08,
-			Color(GOLD, 0.05 + index % 3 * 0.016), 1.5)
+			Color(BRASS, 0.05 + index % 3 * 0.016), 1.5)
 	for index in range(25):
 		var radius := 453.0 - index * 11.0
 		_ellipse(c, center, Vector2(radius, radius * 0.315), 0, TAU,
 			Color(stock, 0.18 + float(index % 4) * 0.06), 1.0 if index % 4 else 1.65)
 	_ellipse(c, center + Vector2(1, -2), Vector2(457, 142), PI + 0.05, TAU - 0.05, Color(stock, 0.76), 2.5)
-	_ellipse_fill(c, center, Vector2(139, 44), GOLD.lerp(stock, 0.25))
+	_ellipse_fill(c, center, Vector2(139, 44), BRASS.lerp(stock, 0.25))
 	for index in range(11):
 		_ellipse(c, center + Vector2(0, index - 5), Vector2(122 - index * 2, 28), 0.2, 3.0,
 			Color(stock, 0.07), 2)
@@ -85,7 +85,7 @@ static func _living_record(c: CanvasItem, p: float, t: float, stock: Color) -> v
 		var phase := t * 0.25 + index * 2.12
 		var radius := 245.0 + index * 63.0
 		_ellipse(c, center, Vector2(radius, radius * 0.315), phase, phase + 0.16 + rise * 0.07,
-			PINK.lerp(stock, float(index) * 0.16), 2.6)
+			ACCENT.lerp(stock, float(index) * 0.16), 2.6)
 		var point := center + Vector2(cos(phase), sin(phase) * 0.315) * radius
 		c.draw_circle(point, 2.3, stock, true, -1, true)
 	# Front-bank roofs make this a place, rather than a decorative record icon.
@@ -156,13 +156,13 @@ static func _last_windows(c: CanvasItem, p: float, t: float, stock: Color) -> vo
 		var point := lip + (Vector2(cos(angle) * 153, sin(angle) * 45)).rotated(-0.08)
 		c.draw_line(point, point + Vector2(1, 2), Color("f1d496", 0.44), 1.5, true)
 	var neck := [Vector2(766, 365), Vector2(762, 394), Vector2(721, 414), Vector2(721, 449)]
-	for index in range(3): Paint.segment(c, neck[index], neck[index + 1], 14, Color("8a7348"), INK, GOLD)
+	for index in range(3): Paint.segment(c, neck[index], neck[index + 1], 14, Color("8a7348"), INK, BRASS)
 	_ellipse_fill(c, Vector2(736, 454), Vector2(73, 9), Color("0d252c"))
-	_ellipse(c, Vector2(736, 451), Vector2(67, 6), 0, PI, GOLD.lerp(INK, 0.45), 4)
+	_ellipse(c, Vector2(736, 451), Vector2(67, 6), 0, PI, BRASS.lerp(INK, 0.45), 4)
 	for index in range(5):
 		var fade := 1.0 - _ease(p, 0.20 + index * 0.07, 0.64 + index * 0.07)
 		var point := Vector2(551 + index * 63, 147 - sin(index * 1.3) * 21 - p * 18)
-		_note(c, point, Color(PINK, 0.62 * fade), 0.74)
+		_note(c, point, Color(ACCENT, 0.62 * fade), 0.74)
 	# The sound goes, but faint, patient impressions remain in the street.
 	for index in range(3):
 		var point := Vector2(467 + index * 197, 433 + index % 2 * 23)
@@ -208,7 +208,7 @@ static func _first_feet(c: CanvasItem, p: float, t: float, stock: Color) -> void
 		var elbow := Vector2(640 + side * (67 + open * 95), 297 - open * 21)
 		var tip := Vector2(640 + side * (21 + open * 159), 315 - open * 30)
 		c.draw_polyline(PackedVector2Array([pivot, elbow, tip]), INK.lerp(stock, 0.22), 14, true)
-		c.draw_polyline(PackedVector2Array([pivot + Vector2(-2, -4), elbow + Vector2(-2, -4), tip + Vector2(-2, -4)]), GOLD.lerp(stock, 0.33), 3, true)
+		c.draw_polyline(PackedVector2Array([pivot + Vector2(-2, -4), elbow + Vector2(-2, -4), tip + Vector2(-2, -4)]), BRASS.lerp(stock, 0.33), 3, true)
 		c.draw_circle(pivot, 11, stock.lerp(INK, 0.50), true, -1, true)
 	# Falling is a committed arc; the impact compresses once, then feet settle.
 	var drop := falling * falling
@@ -257,12 +257,12 @@ static func _open_way(c: CanvasItem, p: float, t: float, stock: Color) -> void:
 		var angle := PI + index * PI / 12.0
 		c.draw_line(crown+Vector2.from_angle(angle)*114,crown+Vector2.from_angle(angle)*136,Color("1d3739",0.54),2,true)
 	for side in [-1.0, 1.0]:
-		Paint.segment(c,crown+Vector2(side*123,0),Vector2(921+side*123,461),27,Color("756e49"),Color("213b3c"),GOLD)
+		Paint.segment(c,crown+Vector2(side*123,0),Vector2(921+side*123,461),27,Color("756e49"),Color("213b3c"),BRASS)
 		c.draw_line(crown+Vector2(side*109,0),Vector2(921+side*109,457),Color("f1d49b"),2.5,true)
 		for index in range(5):
 			var y := 271.0 + index * 39.0
 			c.draw_line(Vector2(921 + side * 137, y), Vector2(921 + side * 111, y + 2), Color("172f33",0.62),2,true)
-			c.draw_line(Vector2(921 + side * 133,y+3),Vector2(921+side*115,y+4),Color(GOLD,0.40),1,true)
+			c.draw_line(Vector2(921 + side * 133,y+3),Vector2(921+side*115,y+4),Color(BRASS,0.40),1,true)
 	var groove := PackedVector2Array()
 	for index in range(81):
 		var q := index / 80.0
@@ -271,7 +271,7 @@ static func _open_way(c: CanvasItem, p: float, t: float, stock: Color) -> void:
 		var echo := PackedVector2Array()
 		for point in groove: echo.append(point + Vector2(0, offset))
 		c.draw_polyline(echo, Color(INK, 0.15), 1.2, true)
-	c.draw_polyline(groove, PINK, 2.8, true)
+	c.draw_polyline(groove, ACCENT, 2.8, true)
 	var moving := _ease(p, 0.16, 0.83)
 	var x := 481.0 + moving * 176.0
 	var grounded := 1.0 if p > 0.16 and p < 0.83 else 0.0
@@ -280,7 +280,7 @@ static func _open_way(c: CanvasItem, p: float, t: float, stock: Color) -> void:
 	var glint := fposmod(t * 0.065 + 0.57, 1.0)
 	var glint_point := groove[clampi(int(glint * 80), 0, 80)]
 	c.draw_circle(glint_point, 4.0, stock, true, -1, true)
-	c.draw_circle(glint_point, 1.8, PINK, true, -1, true)
+	c.draw_circle(glint_point, 1.8, ACCENT, true, -1, true)
 	for index in range(11):
 		var point := Vector2(850 + index % 4 * 41, 172 + index * 23)
 		point += Vector2(sin(t * 0.24 + index) * 2, cos(t * 0.34 + index) * 2)
@@ -318,7 +318,7 @@ static func _house(c: CanvasItem, rect: Rect2, variant: int, fill: Color, line: 
 			var lit := clampf(warmth * (0.86 + sin(t * 0.55 + row + column * 3) * 0.05), 0.0, 1.0)
 			if lit > 0.01:
 				for glow in range(3,0,-1):
-					c.draw_rect(Rect2(point-Vector2.ONE*glow*2,Vector2(w,h)+Vector2.ONE*glow*4),Color(GOLD,lit*0.035))
+					c.draw_rect(Rect2(point-Vector2.ONE*glow*2,Vector2(w,h)+Vector2.ONE*glow*4),Color(BRASS,lit*0.035))
 			c.draw_rect(Rect2(point-Vector2.ONE*1.5,Vector2(w,h)+Vector2.ONE*3),shadow)
 			c.draw_rect(Rect2(point, Vector2(w, h)),Color("243b3b").lerp(Color("e7c68b"),lit))
 			c.draw_line(point+Vector2(-2,h+1),point+Vector2(w+3,h+1),Color(stone,0.67),1.5,true)
@@ -329,7 +329,7 @@ static func _house(c: CanvasItem, rect: Rect2, variant: int, fill: Color, line: 
 	c.draw_rect(door,shadow.lerp(INK,0.4))
 	c.draw_line(door.position,Vector2(door.position.x,door.end.y),Color(stone,0.48),1.5,true)
 	c.draw_line(door.position+Vector2(door.size.x*0.5,2),door.end-Vector2(door.size.x*0.5,2),Color(stone,0.18),1,true)
-	c.draw_circle(door.position+Vector2(door.size.x*0.78,door.size.y*0.52),maxf(1.0,rect.size.x*0.006),GOLD,true,-1,true)
+	c.draw_circle(door.position+Vector2(door.size.x*0.78,door.size.y*0.52),maxf(1.0,rect.size.x*0.006),BRASS,true,-1,true)
 	if rect.size.x > 100:
 		# A shuttered shopfront, its cloth now quieter than the windows above.
 		var awning := Vector2(rect.position.x + rect.size.x * 0.49, rect.end.y - rect.size.y * 0.25)
@@ -364,7 +364,7 @@ static func _stylus(c: CanvasItem, origin: Vector2, scale: float, t: float, run:
 		var phase := stride + (PI if side < 0 else 0.0)
 		var hip := origin + Vector2(side * 7, 14) * scale
 		var foot := origin + Vector2(side * 8 + sin(phase) * 9 * run, 31 - maxf(cos(phase), 0) * 5 * run - air * 9) * scale
-		Paint.segment(c,hip,foot,3.2*scale,Color("967a48"),ink,GOLD)
+		Paint.segment(c,hip,foot,3.2*scale,Color("967a48"),ink,BRASS)
 		c.draw_line(foot, foot + Vector2(5, 0) * scale, ink, 2.3 * scale, true)
 	c.draw_colored_polygon(body, Color("28565b"))
 	_outline(c, body, ink, 2.0 * scale)
@@ -389,7 +389,7 @@ static func _stylus(c: CanvasItem, origin: Vector2, scale: float, t: float, run:
 		body_origin + Vector2(24 - run * 4, -39 + sin(stride) * run * 3) * compression * scale]), ink, 4.0 * scale, true)
 	c.draw_polyline(PackedVector2Array([body_origin + Vector2(0, -34) * compression * scale,
 		body_origin + Vector2(11 - run * 3, -43) * compression * scale,
-		body_origin + Vector2(24 - run * 4, -39 + sin(stride) * run * 3) * compression * scale]), GOLD, 2.2 * scale, true)
+		body_origin + Vector2(24 - run * 4, -39 + sin(stride) * run * 3) * compression * scale]), BRASS, 2.2 * scale, true)
 	for side in [-1.0, 1.0]:
 		c.draw_circle(body_origin + Vector2(2 + side * 5, 0) * scale, 2.6 * scale, ink, true, -1, true)
 		c.draw_circle(body_origin + Vector2(1 + side * 5, -1) * scale, 0.65 * scale, stock, true, -1, true)

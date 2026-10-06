@@ -2298,7 +2298,7 @@ func _word_splatter(pos: Vector2) -> void:
 	for i in words.size():
 		var l := Label.new()
 		l.text = words[i]
-		PressScript.set_display(l, 24, Color(0.9, 0.25, 0.5), Color(PressScript.DEEP, 0.85))
+		PressScript.set_display(l, 24, PressScript.PINK, Color(PressScript.DEEP, 0.85))
 		l.z_index = 21
 		l.position = pos + Vector2(randf_range(-30, 30), randf_range(-60, -10))
 		add_child(l)
@@ -2356,7 +2356,7 @@ func _build_hud() -> void:
 	title_rule = ColorRect.new()
 	title_rule.position = Vector2(MARGIN, 47)
 	title_rule.size = Vector2(0, 2)
-	title_rule.color = PressScript.PINK
+	title_rule.color = PressScript.ACCENT
 	layer.add_child(title_rule)
 
 	subtitle = Label.new()
@@ -2369,7 +2369,7 @@ func _build_hud() -> void:
 	feedback.position = Vector2(0, 236)
 	feedback.size = Vector2(1280, 60)
 	feedback.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	PressScript.set_display(feedback, PressScript.SIZE_BANNER, PressScript.PINK, Color(PressScript.DEEP, 0.85))
+	PressScript.set_display(feedback, PressScript.SIZE_BANNER, PressScript.ACCENT, Color(PressScript.DEEP, 0.85))
 	feedback.add_theme_constant_override("font_spacing_glyph", PressScript.TRACKING_DISPLAY)
 	feedback.modulate.a = 0.0
 	layer.add_child(feedback)
@@ -2416,7 +2416,7 @@ func _build_hud() -> void:
 	shine_notice.name = "ShineReceipt"
 	shine_notice.position = Vector2(MARGIN, 618.0 if development_mode else 674.0)
 	shine_notice.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	PressScript.set_body(shine_notice, PressScript.SIZE_SMALL, PressScript.PINK)
+	PressScript.set_body(shine_notice, PressScript.SIZE_SMALL, PressScript.ACCENT)
 	layer.add_child(shine_notice)
 	# HUD controls never intercept the world. These impressions are cosmetic.
 	for control in [masthead, title, title_rule, subtitle, feedback, status, crackle_bar, controls_note]:

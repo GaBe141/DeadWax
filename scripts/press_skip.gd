@@ -9,7 +9,7 @@ static func draw(canvas: CanvasItem, pose: Dictionary, palette: Dictionary) -> v
 	var paint := Paint.palette(palette.ink, palette.pale)
 	var ink: Color = paint.edge
 	var pale: Color = paint.cream
-	var pink: Color = paint.coral
+	var pink: Color = palette.get("pink", paint.coral)  # the crackle meter: pink only while heard
 	var hood_ink: Color = paint.teal
 	var time: float = pose.time
 	var stride: float = pose.stride

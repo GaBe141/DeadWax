@@ -105,14 +105,14 @@ func _draw() -> void:
 		var pose := {"phase": "down", "face": _face, "clock": _print_time,
 			"stride": _print_stride, "recoil": 0.0, "reach": 0.0,
 			"jitter": Vector2.ZERO, "burst": clampf(_print_defeat_elapsed / BURST_TIME, 0.0, 1.0)}
-		PrintPress.draw_auditioner(self, pose, INK, BODY, PALE, PINK, GREY, WARM)
+		PrintPress.draw_auditioner(self, pose, INK, BODY, PALE, PrintPress.PINK, GREY, WARM)
 		return
 	if _resolved == "freed":
 		var pose := {"phase": "freed", "face": _face, "clock": _print_time,
 			"stride": _print_stride, "recoil": 0.0, "reach": 0.0,
 			"jitter": Vector2.ZERO, "held": true, "leave": 0.0,
 			"resident": resident_pose()}
-		PrintPress.draw_auditioner(self, pose, INK, BODY, PALE, PINK, GREY, WARM)
+		PrintPress.draw_auditioner(self, pose, INK, BODY, PALE, PrintPress.PINK, GREY, WARM)
 		return
 	super._draw()
 

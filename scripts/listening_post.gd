@@ -83,7 +83,7 @@ func _rebuild_card() -> void:
 		text = lines[_line] + "\n\n[E / Y]  Listen on"
 	if not extra_hint.is_empty():
 		text += "\n" + extra_hint
-	_card = PressScript.card(text, ink, stock, PressScript.PINK, PressScript.SIZE_BODY, heading)
+	_card = PressScript.card(text, ink, stock, PressScript.ACCENT, PressScript.SIZE_BODY, heading)
 	_card.position = Vector2(-_card.size.x / 2.0, -_card.size.y - card_clearance)
 	_card.visible = _near and not cinematic_mode
 	z_index = 35

@@ -122,7 +122,7 @@ func _apply_world_material(skin: ColorRect) -> void:
 		style = &"wax"
 	elif room_id in [&"the_drop", &"the_landing", &"verse_hall", &"verse_warren_n", &"verse_warren_s", &"deep_gallery"] and skin.size.y <= 45.0:
 		style = &"brass"
-	var printed := PressScript.world_surface(skin.size, _solid_color(), _stock_color(), PressScript.PINK, position.x + position.y, style)
+	var printed := PressScript.world_surface(skin.size, _solid_color(), _stock_color(), PressScript.ACCENT, position.x + position.y, style)
 	skin.material = printed.material
 	printed.free()
 
@@ -160,7 +160,7 @@ func platform(pos: Vector2, size: Vector2) -> void:
 	sh.size = size
 	cs.shape = sh
 	b.add_child(cs)
-	var vis := PressScript.plate(size, _solid_color(), _stock_color(), PressScript.PINK, pos.x + pos.y, true)
+	var vis := PressScript.plate(size, _solid_color(), _stock_color(), PressScript.ACCENT, pos.x + pos.y, true)
 	b.add_child(vis)
 	if _world_materials:
 		_apply_world_material(vis)
@@ -195,10 +195,10 @@ func apply_side(next_side: int) -> void:
 	var stock := _stock_color()
 	for skin in _skins:
 		if is_instance_valid(skin):
-			PressScript.reink(skin, solid, stock, PressScript.PINK)
+			PressScript.reink(skin, solid, stock, PressScript.ACCENT)
 	for note in _notes:
 		if is_instance_valid(note):
-			PressScript.recard(note, solid, stock, PressScript.PINK)
+			PressScript.recard(note, solid, stock, PressScript.ACCENT)
 	if _backdrop != null:
 		PressScript.retint_backdrop(_backdrop, solid)
 	if atmosphere != null:
@@ -307,7 +307,7 @@ func sign_label(pos: Vector2, text: String) -> void:
 			heading = first.strip_edges()
 			body = text.substr(break_at + 1)
 	var note := PressScript.card(
-		body, _solid_color(), _stock_color(), PressScript.PINK, PressScript.SIZE_BODY, heading
+		body, _solid_color(), _stock_color(), PressScript.ACCENT, PressScript.SIZE_BODY, heading
 	)
 	note.position = pos
 	note.visible = not cinematic_mode

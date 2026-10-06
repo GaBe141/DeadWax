@@ -242,7 +242,6 @@ func _down(spill: bool) -> void:
 const INK := Color(0.15, 0.13, 0.14)
 const WAX := Color(0.22, 0.19, 0.23)
 const PALE := Color(0.92, 0.90, 0.86)
-const PINK := Color(0.90, 0.25, 0.50)
 const GREY := Color(0.55, 0.52, 0.58)
 
 func _draw() -> void:
@@ -255,4 +254,4 @@ func _draw() -> void:
 		"state_time": _t, "reform": clampf(_t / REFORM_TIME, 0.0, 1.0),
 		"resonance": resonance, "hp": hp, "hp_total": int(HP_MAX),
 	}
-	PrintPress.draw_pressing(self, pose, INK, WAX, PALE, PINK, GREY)
+	PrintPress.draw_pressing(self, pose, INK, WAX, PALE, PrintPress.PINK, GREY)

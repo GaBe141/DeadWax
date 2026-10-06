@@ -20,7 +20,7 @@ const PAPER := Color("102c35")
 const STOCK := Color("081b23")
 const INK := Color("f2e1bc")
 const FADED := Color("c2ae87")
-const PINK := PressScript.PINK
+const ACCENT := PressScript.ACCENT
 const NARROW_AT := 900.0
 
 var is_open := false
@@ -407,7 +407,7 @@ func _build_art() -> void:
 	_record = record
 	record.ink = INK
 	record.paper = PAPER
-	record.accent = PINK
+	record.accent = ACCENT
 	record.reduced_motion = bool(settings.get("reduced_motion", false))
 	_art.add_child(record)
 	record.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
@@ -496,7 +496,7 @@ func _button(text: String, action: Callable, default_focus := false) -> Button:
 
 
 func _style_button(button: Button) -> void:
-	_motion.bind_button(button, PINK)
+	_motion.bind_button(button, ACCENT)
 	button.add_theme_font_override("font", PressScript.BodyFont)
 	button.add_theme_font_size_override("font_size", PressScript.SIZE_BODY)
 	for color_key in ["font_color", "font_focus_color"]:

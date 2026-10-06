@@ -4,12 +4,11 @@ extends RefCounted
 
 const CONTACT_TIME := 0.14
 const BURST_TIME := 0.085
-const PINK := Color("ed987b")
 const BRASS := Color("e5bd70")
 const LIGHT := Color("fff0ce")
 const SHADOW := Color("183137")
 
-static func draw(canvas: CanvasItem, pose: Dictionary, ink: Color, stock: Color) -> void:
+static func draw(canvas: CanvasItem, pose: Dictionary, ink: Color, stock: Color, heard: Color) -> void:
 	var age := maxf(float(pose.get("age", 0.0)), 0.0)
 	var life := maxf(float(pose.get("life", 0.3)), 0.001)
 	var hit_radius := maxf(float(pose.get("hit_radius", 120.0)), 1.0)
@@ -19,7 +18,7 @@ static func draw(canvas: CanvasItem, pose: Dictionary, ink: Color, stock: Color)
 	var facing := -1.0 if float(pose.get("facing", 1.0)) < 0.0 else 1.0
 	var phase := float(int(pose.get("seed", 0)) % 997) * 0.013
 	var contact := StringName(pose.get("contact", &"miss"))
-	var color := ink.lerp(PINK, 0.65) if big else ink.lerp(BRASS, 0.20)
+	var color := ink.lerp(heard, 0.65) if big else ink.lerp(BRASS, 0.20)
 	var progress := clampf(age / CONTACT_TIME, 0.0, 1.0)
 	var strength := pow(1.0 - progress, 1.5)
 	if strength > 0.0:

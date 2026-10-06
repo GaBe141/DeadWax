@@ -1,7 +1,7 @@
 extends RefCounted
 ## Small hand-painted objects. Geometry and clocks arrive from their owners.
 
-static func draw_groove(canvas: CanvasItem, pose: Dictionary, ink: Color, wax: Color, brass: Color, accent: Color) -> void:
+static func draw_groove(canvas: CanvasItem, pose: Dictionary, ink: Color, wax: Color, brass: Color, accent: Color, heard: Color) -> void:
 	var live: bool = pose.live
 	var rim := brass if live else brass.lerp(ink, 0.55)
 	var body := wax if live else wax.lerp(ink, 0.40)
@@ -19,11 +19,11 @@ static func draw_groove(canvas: CanvasItem, pose: Dictionary, ink: Color, wax: C
 	for point in [Vector2(-23,-23), Vector2(23,-23), Vector2(-23,23), Vector2(23,23)]:
 		canvas.draw_circle(point, 1.6, ink, true, -1.0, true)
 	if bool(pose.hot):
-		canvas.draw_rect(Rect2(-28,-28,56,56), accent, false, 3.5)
+		canvas.draw_rect(Rect2(-28,-28,56,56), heard, false, 3.5)
 	if float(pose.echo) >= 0.0:
 		var progress: float = pose.echo
 		var radius := 36.0 + (1.0 - progress) * 150.0
-		canvas.draw_arc(Vector2.ZERO, radius, 0, TAU, 72, Color(accent, 0.25 + 0.75 * progress), 2.0 + 2.0 * progress, true)
+		canvas.draw_arc(Vector2.ZERO, radius, 0, TAU, 72, Color(heard, 0.25 + 0.75 * progress), 2.0 + 2.0 * progress, true)
 
 static func draw_polish(canvas: CanvasItem, pose: Dictionary, ink: Color, brass: Color, wax: Color, accent: Color) -> void:
 	var done: bool = pose.done

@@ -10,7 +10,6 @@ const PressScript := preload("res://scripts/press.gd")
 const ACTIVATE_RADIUS := 74.0
 const INK := Color(0.10, 0.085, 0.115)
 const CHALK := Color(0.95, 0.92, 0.86)
-const PINK := Color(0.90, 0.25, 0.50)
 
 var progression: RefCounted
 var target_room: StringName

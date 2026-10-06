@@ -307,7 +307,7 @@ func _build_room_notes() -> void:
 		"\n".join(lines.slice(2)),
 		_solid_color(),
 		_stock_color(),
-		PressScript.PINK,
+		PressScript.ACCENT,
 		PressScript.SIZE_SMALL,
 		heading
 	)

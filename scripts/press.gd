@@ -37,7 +37,15 @@ const TRACKING_DISPLAY := 2
 const LINE_SPACING := 2
 
 # -- the ink ------------------------------------------------------------------
-const PINK := Color("e68b73") # The live note: warm copper against cool wax.
+## Pink is semantic (docs/art/direction.html): sound being heard right now —
+## strikes, your own noise, a ringing groove, the shatter's words. Never
+## decoration; use ACCENT for that. Only this file defines PINK.
+const PINK := Color("e5407f")
+## Etch gold is her, and only her: about six appearances in the whole game.
+## tests/canon_test.gd counts the uses. Only this file defines GOLD.
+const GOLD := Color("d9a441")
+## The warm copper accent for plates, cards, focus rings and print.
+const ACCENT := Color("e68b73")
 const BRASS := Color("d6b77c")
 const DEEP := Color("122d37")
 const CREAM := Color("f1dfb8")
@@ -74,7 +82,7 @@ static func draw_ability_pickup(canvas: CanvasItem, state: Dictionary, ink: Colo
 	preload("res://scripts/press_ability.gd").draw(canvas, state, ink, stock)
 
 static func draw_cinematic(canvas: CanvasItem, extent: Vector2, state: Dictionary, ink: Color, accent: Color) -> void:
-	preload("res://scripts/press_cinematic.gd").draw(canvas, extent, state, ink, accent)
+	preload("res://scripts/press_cinematic.gd").draw(canvas, extent, state, ink, accent, PINK)
 
 # -- plate defaults -----------------------------------------------------------
 const PLATE_BITE := 2.4
@@ -125,10 +133,10 @@ static func draw_lamp(canvas: CanvasItem, ink: Color, stock: Color, tint: Color)
 	preload("res://scripts/press_props.gd").draw_lamp(canvas, ink, stock, tint, BRASS)
 
 static func draw_live_groove(canvas: CanvasItem, pose: Dictionary) -> void:
-	preload("res://scripts/press_props.gd").draw_groove(canvas, pose, DEEP, CREAM, BRASS, PINK)
+	preload("res://scripts/press_props.gd").draw_groove(canvas, pose, DEEP, CREAM, BRASS, ACCENT, PINK)
 
 static func draw_polish(canvas: CanvasItem, pose: Dictionary) -> void:
-	preload("res://scripts/press_props.gd").draw_polish(canvas, pose, DEEP, BRASS, CREAM, PINK)
+	preload("res://scripts/press_props.gd").draw_polish(canvas, pose, DEEP, BRASS, CREAM, ACCENT)
 
 static func draw_passage(canvas: CanvasItem, pose: Dictionary, ink: Color, stock: Color) -> void:
 	preload("res://scripts/press_passage.gd").draw(canvas, pose, ink, stock)
@@ -136,7 +144,7 @@ static func draw_passage(canvas: CanvasItem, pose: Dictionary, ink: Color, stock
 static func menu_button_style(ink: Color, stock: Color, highlighted := false, focused := false) -> StyleBoxFlat:
 	var style := StyleBoxFlat.new()
 	style.bg_color = ink if highlighted else stock.lerp(ink, 0.07)
-	style.border_color = PINK if focused else BRASS.lerp(stock, 0.54)
+	style.border_color = ACCENT if focused else BRASS.lerp(stock, 0.54)
 	style.set_border_width_all(2 if focused else 1)
 	style.set_corner_radius_all(5)
 	style.shadow_color = Color(DEEP, 0.30)
@@ -191,7 +199,7 @@ static func draw_skip_dust(canvas: CanvasItem, puffs: Array, color: Color) -> vo
 	preload("res://scripts/press_skip_gesture.gd").draw_dust(canvas, puffs, color)
 
 static func draw_strike_wave(canvas: CanvasItem, pose: Dictionary, ink: Color, stock: Color) -> void:
-	preload("res://scripts/press_strike.gd").draw(canvas, pose, ink, stock)
+	preload("res://scripts/press_strike.gd").draw(canvas, pose, ink, stock, PINK)
 
 static func draw_looper_cue(canvas: Node2D, pose: Dictionary, ink: Color, stock: Color) -> void:
 	preload("res://scripts/press_looper.gd").draw(canvas, pose, ink, stock, BodyBold, SIZE_SMALL)
@@ -268,7 +276,7 @@ static func draw_pressing(canvas: CanvasItem, pose: Dictionary, ink: Color, wax:
 
 ## Campaign-only wax, cut stone and occasional brass. Like a plate, the face
 ## stays centred on its existing body; light and relief never change its edge.
-static func world_surface(size: Vector2, ink: Color, stock: Color, accent := PINK,
+static func world_surface(size: Vector2, ink: Color, stock: Color, accent := ACCENT,
 		seed := 0.0, style: StringName = &"stone") -> ColorRect:
 	var rect := ColorRect.new()
 	rect.size = size
@@ -285,7 +293,7 @@ static func world_surface(size: Vector2, ink: Color, stock: Color, accent := PIN
 	rect.material = material
 	return rect
 
-static func reink_world_surface(rect: ColorRect, ink: Color, stock: Color, accent := PINK) -> void:
+static func reink_world_surface(rect: ColorRect, ink: Color, stock: Color, accent := ACCENT) -> void:
 	reink(rect, ink, stock, accent)
 
 ## Transparent light-bearing air belongs to fixed authored lamp positions.
@@ -381,7 +389,7 @@ static func reink_palace_air(rect: ColorRect, ink: Color, stock: Color) -> void:
 ## An inked plate of `size`, centred on the origin. Replaces a flat ColorRect
 ## anywhere a solid surface is wanted. World platforms opt into the lower
 ## edge fade; the same material keeps menu backings opaque by default.
-static func plate(size: Vector2, ink: Color, stock: Color, accent := PINK, seed := 0.0, blend_lower_edge := false) -> ColorRect:
+static func plate(size: Vector2, ink: Color, stock: Color, accent := ACCENT, seed := 0.0, blend_lower_edge := false) -> ColorRect:
 	var rect := ColorRect.new()
 	rect.size = size
 	rect.position = -size / 2.0
@@ -403,7 +411,7 @@ static func plate(size: Vector2, ink: Color, stock: Color, accent := PINK, seed 
 
 ## Re-inks a plate in place. Used when the pressing turns over: same platform,
 ## other face, no rebuild.
-static func reink(rect: ColorRect, ink: Color, stock: Color, accent := PINK) -> void:
+static func reink(rect: ColorRect, ink: Color, stock: Color, accent := ACCENT) -> void:
 	var mat := rect.material as ShaderMaterial
 	if mat == null:
 		rect.color = ink
@@ -498,7 +506,7 @@ static func card(
 	text: String,
 	ink: Color,
 	stock: Color,
-	accent := PINK,
+	accent := ACCENT,
 	size := SIZE_BODY,
 	heading := ""
 ) -> Control:
@@ -570,7 +578,7 @@ static func _card_text_size(text: String, font: Font, size: int) -> Vector2:
 	return measured.ceil()
 
 ## Re-inks a card built above, in the order its children were added.
-static func recard(root: Control, ink: Color, stock: Color, accent := PINK) -> void:
+static func recard(root: Control, ink: Color, stock: Color, accent := ACCENT) -> void:
 	for child in root.get_children():
 		if child is ColorRect:
 			var rect := child as ColorRect
@@ -586,7 +594,7 @@ static func recard(root: Control, ink: Color, stock: Color, accent := PINK) -> v
 
 
 ## Only groove glints turn; the label and its type stay upright on the sleeve.
-static func draw_record(canvas: CanvasItem, size: Vector2, ink: Color, paper: Color, accent := PINK, phase: float = 0.0) -> void:
+static func draw_record(canvas: CanvasItem, size: Vector2, ink: Color, paper: Color, accent := ACCENT, phase: float = 0.0) -> void:
 	var radius := minf(size.x, size.y) * 0.47
 	var center := size * 0.5
 	canvas.draw_circle(center + Vector2(5.0, 7.0), radius, Color(ink, 0.12))
@@ -619,7 +627,7 @@ static func draw_ui_focus(canvas: CanvasItem, size: Vector2, accent: Color, leve
 static func menu_slider_style(focused := false) -> StyleBoxFlat:
 	var style := StyleBoxFlat.new()
 	style.bg_color = Color.TRANSPARENT
-	style.border_color = PINK if focused else Color.TRANSPARENT
+	style.border_color = ACCENT if focused else Color.TRANSPARENT
 	style.set_border_width_all(2)
 	style.content_margin_left = 10.0
 	style.content_margin_right = 10.0

@@ -2,7 +2,7 @@ extends RefCounted
 ## Quiet canvas marks. All health, noise, timing and palette values arrive
 ## explicitly from Main; these marks own no gameplay state.
 
-static func draw(canvas: CanvasItem, extent: Vector2, state: Dictionary, ink: Color, accent: Color) -> void:
+static func draw(canvas: CanvasItem, extent: Vector2, state: Dictionary, ink: Color, accent: Color, heard: Color) -> void:
 	var edge := minf(12.0, extent.y * 0.018)
 	canvas.draw_rect(Rect2(0, 0, extent.x, edge), Color(0.015, 0.022, 0.028, 0.7))
 	canvas.draw_rect(Rect2(0, extent.y - edge, extent.x, edge), Color(0.015, 0.022, 0.028, 0.7))
@@ -37,7 +37,7 @@ static func draw(canvas: CanvasItem, extent: Vector2, state: Dictionary, ink: Co
 	var noise := clampf(float(state.get("noise", 0.0)), 0.0, 1.0)
 	if noise > 0.03:
 		canvas.draw_line(Vector2(26, 55), Vector2(106, 55), Color(ink, 0.12), 2.0)
-		canvas.draw_line(Vector2(26, 55), Vector2(26 + noise * 80, 55), Color(accent, 0.65), 2.0)
+		canvas.draw_line(Vector2(26, 55), Vector2(26 + noise * 80, 55), Color(heard, 0.65), 2.0)
 	# Experience: a hairline toward the next level beneath the noise line, and
 	# a small accent mark while a level's choice waits in the Book.
 	var xp: Dictionary = state.get("xp", {}) if state.get("xp", {}) is Dictionary else {}

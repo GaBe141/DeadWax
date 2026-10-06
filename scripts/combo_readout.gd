@@ -120,7 +120,7 @@ func set_palette(ink: Color, stock: Color) -> void:
 	Press.set_body(_input_hint, Press.SIZE_SMALL, ink, Color.TRANSPARENT, true)
 	Press.set_body(_link_label, Press.SIZE_TINY, ink.lerp(stock, 0.30))
 	_rail.color = ink.lerp(stock, 0.82)
-	_window.color = Press.PINK
+	_window.color = Press.ACCENT
 	_apply_snapshot()
 
 func set_reduced_motion(enabled: bool) -> void:
@@ -158,7 +158,7 @@ func _apply_snapshot() -> void:
 		_headline.text = "%d  %s" % [step, _snapshot.label] if step > 0 else "J / X · THREE BEATS"
 	_input_hint.visible = true
 	_input_hint.text = _input_text()
-	_input_hint.add_theme_color_override("font_color", Press.PINK if _early_t > 0.0 or String(_snapshot.input_state) == "queued" else _ink)
+	_input_hint.add_theme_color_override("font_color", Press.ACCENT if _early_t > 0.0 or String(_snapshot.input_state) == "queued" else _ink)
 	var inner := maxf(size.x - 24.0, 1.0)
 	_headline.position = Vector2(12, 4)
 	_headline.size = Vector2(inner, 30)
@@ -170,7 +170,7 @@ func _apply_snapshot() -> void:
 		label.position = Vector2(12 + inner * index / 3.0, 55)
 		label.size = Vector2(inner / 3.0, 19)
 		var color := _ink if index < step else _ink.lerp(_stock, 0.55)
-		if index == step - 1: color = Press.PINK
+		if index == step - 1: color = Press.ACCENT
 		Press.set_body(label, Press.SIZE_SMALL, color, Color.TRANSPARENT, index == step - 1)
 	_link_label.visible = chain_unlocked
 	_rail.visible = chain_unlocked

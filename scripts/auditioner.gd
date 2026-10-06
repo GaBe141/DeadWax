@@ -240,7 +240,6 @@ func _free() -> void:
 const INK := Color(0.15, 0.13, 0.14)
 const BODY := Color(0.24, 0.21, 0.26)
 const PALE := Color(0.92, 0.90, 0.86)
-const PINK := Color(0.90, 0.25, 0.50)
 const GREY := Color(0.55, 0.52, 0.58)
 const WARM := Color(0.96, 0.80, 0.42)      # the "heard" glow
 
@@ -257,4 +256,4 @@ func _draw() -> void:
 		"resonance": resonance, "listening": clampf(_set / SET_FREE_TIME, 0.0, 1.0),
 		"hp": hp, "hp_total": int(HP_MAX),
 	}
-	PrintPress.draw_auditioner(self, pose, INK, BODY, PALE, PINK, GREY, WARM)
+	PrintPress.draw_auditioner(self, pose, INK, BODY, PALE, PrintPress.PINK, GREY, WARM)

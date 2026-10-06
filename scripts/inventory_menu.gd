@@ -31,7 +31,7 @@ const REFINEMENT_SLOTS := [&"combo", &"groove", &"pogo"]
 const PAPER := Color("f2e1bc")
 const PAPER_DARK := Color("c2ae87")
 const DEEP := Color("102c35")
-const PINK := Color("d6a968")
+const ACCENT := Color("d6a968")
 const VIOLET := Color("52716d")
 const FADED := Color("78928d")
 
@@ -348,7 +348,7 @@ func _build_menu() -> void:
 	scenery.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 
 	var edge := ColorRect.new()
-	edge.color = PINK
+	edge.color = ACCENT
 	edge.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	edge.set_anchors_and_offsets_preset(Control.PRESET_TOP_WIDE)
 	edge.offset_bottom = 5.0
@@ -385,7 +385,7 @@ func _build_menu() -> void:
 	var count_stack := VBoxContainer.new()
 	count_stack.alignment = BoxContainer.ALIGNMENT_CENTER
 	header.add_child(count_stack)
-	_progress_label = _make_label("", 18, PINK)
+	_progress_label = _make_label("", 18, ACCENT)
 	_progress_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
 	count_stack.add_child(_progress_label)
 	_shine_label = _make_label("", 14, PAPER_DARK)
@@ -410,11 +410,11 @@ func _build_menu() -> void:
 		button.add_theme_font_size_override("font_size", PressScript.SIZE_SMALL)
 		button.add_theme_color_override("font_color", PAPER)
 		button.add_theme_color_override("font_hover_color", PAPER)
-		button.add_theme_color_override("font_pressed_color", PINK)
+		button.add_theme_color_override("font_pressed_color", ACCENT)
 		button.pressed.connect(select_page.bind(page_id, false))
 		tabs.add_child(button)
 		_page_buttons[page_id] = button
-		_motion.bind_button(button, PINK)
+		_motion.bind_button(button, ACCENT)
 	_journey = ScrollContainer.new()
 	_journey.name = "Journey"
 	_journey.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
@@ -446,7 +446,7 @@ func _build_menu() -> void:
 		carried_row.add_child(button)
 		_discovery_buttons[slot] = button
 		_slot_buttons[slot] = button
-		_motion.bind_button(button, PINK)
+		_motion.bind_button(button, ACCENT)
 	var map_row := HBoxContainer.new()
 	map_row.add_theme_constant_override("separation", 18)
 	journey_page.add_child(map_row)
@@ -470,7 +470,7 @@ func _build_menu() -> void:
 	_map_button.add_theme_color_override("font_disabled_color", PAPER_DARK)
 	_map_button.pressed.connect(_request_map)
 	map_row.add_child(_map_button)
-	_motion.bind_button(_map_button, PINK)
+	_motion.bind_button(_map_button, ACCENT)
 	_place_button = Button.new()
 	_place_button.name = "ThisPlace"
 	_place_button.text = "This Place"
@@ -485,7 +485,7 @@ func _build_menu() -> void:
 	map_row.add_child(_place_button)
 	_slot_buttons[&"this_place"] = _place_button
 	_apply_card_style(_place_button, true)
-	_motion.bind_button(_place_button, PINK)
+	_motion.bind_button(_place_button, ACCENT)
 
 	var content := HBoxContainer.new()
 	content.add_theme_constant_override("separation", 18)
@@ -535,7 +535,7 @@ func _build_menu() -> void:
 	_detail_stack.add_theme_constant_override("separation", 12)
 	_journey_notes.add_child(_detail_stack)
 	_entrance_parts.append(_detail_stack)
-	_detail_kind = _make_label("", 13, PINK)
+	_detail_kind = _make_label("", 13, ACCENT)
 	_detail_stack.add_child(_detail_kind)
 	_detail_title = _make_label("", 30, PAPER)
 	_detail_title.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
@@ -605,7 +605,7 @@ func _add_shelf(parent: VBoxContainer, title: String, slots: Array) -> Label:
 		button.pressed.connect(_select_slot.bind(slot))
 		row.add_child(button)
 		_slot_buttons[slot] = button
-		_motion.bind_button(button, PINK)
+		_motion.bind_button(button, ACCENT)
 	return heading
 
 func _refresh() -> void:
@@ -671,7 +671,7 @@ func _select_slot(slot: StringName, animate := true) -> void:
 	_detail_kind.text = _slot_kind(slot)
 	_detail_title.text = _slot_name(slot) if filled or _is_ability_slot(slot) else "EMPTY GROOVE"
 	_detail_state.text = _slot_state(slot, filled)
-	_detail_state.modulate = PINK if filled else FADED
+	_detail_state.modulate = ACCENT if filled else FADED
 	_detail_description.text = _slot_description(slot) if filled else _locked_description(slot)
 	if changed and _journey_notes != null:
 		_journey_notes.scroll_vertical = 0
@@ -957,7 +957,7 @@ func _card_style(filled: bool, highlighted: bool, focused: bool) -> StyleBoxFlat
 	)
 	if highlighted:
 		style.bg_color = style.bg_color.lightened(0.10)
-	style.border_color = PINK if focused else (Color("947d59") if filled else Color("405c5c"))
+	style.border_color = ACCENT if focused else (Color("947d59") if filled else Color("405c5c"))
 	style.border_width_left = 3 if focused else 1
 	style.border_width_top = 3 if focused else 1
 	style.border_width_right = 3 if focused else 1

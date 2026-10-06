@@ -3,7 +3,7 @@ extends RefCounted
 ## marks follow the supplied stage even when decorative motion is disabled.
 
 const AuditionerPrint := preload("res://scripts/press_auditioner.gd")
-const PINK := Color("d7a66b")
+const ACCENT := Color("d7a66b")
 
 static func draw_voice(c: CanvasItem, pose: Dictionary, ink: Color, stock: Color) -> void:
 	var stage := String(pose.get("stage", "waiting"))
@@ -15,7 +15,7 @@ static func draw_voice(c: CanvasItem, pose: Dictionary, ink: Color, stock: Color
 		base.stride = 0.0
 		base.jitter = Vector2.ZERO
 	var warm := _warm(stock)
-	AuditionerPrint.draw_auditioner(c, base, ink, ink.lerp(stock, 0.18), stock, PINK,
+	AuditionerPrint.draw_auditioner(c, base, ink, ink.lerp(stock, 0.18), stock, ACCENT,
 		ink.lerp(stock, 0.53), warm)
 	if stage == "down" or String(base.phase) == "down":
 		c.draw_set_transform(Vector2.ZERO)

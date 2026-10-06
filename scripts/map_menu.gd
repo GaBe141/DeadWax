@@ -391,7 +391,7 @@ func _build() -> void:
 		_style_button(tab)
 		pages.add_child(tab)
 		_tabs.append(tab)
-		_motion.bind_button(tab, Press.PINK)
+		_motion.bind_button(tab, Press.ACCENT)
 		tab.pressed.connect(_select_region.bind(region.id))
 	_lost_status = _label("", Press.SIZE_SMALL, FADED)
 	_lost_status.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
@@ -421,7 +421,7 @@ func _build() -> void:
 	_close.custom_minimum_size = Vector2(160, 46)
 	_style_button(_close)
 	_footer.add_child(_close)
-	_motion.bind_button(_close, Press.PINK)
+	_motion.bind_button(_close, Press.ACCENT)
 	_close.pressed.connect(_request_close)
 	var tooth := Press.paper_overlay(INK)
 	overlay.add_child(tooth)

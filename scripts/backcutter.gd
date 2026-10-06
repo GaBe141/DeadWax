@@ -309,7 +309,7 @@ func _draw() -> void:
 		"state_time": _phase_time, "reform": 0.0,
 		"resonance": resonance, "hp": hp, "hp_total": int(HP_MAX),
 	}
-	PrintPress.draw_pressing(self, pose, ink, stock, stock, PINK, PrintPress.BRASS)
+	PrintPress.draw_pressing(self, pose, ink, stock, stock, PrintPress.PINK, PrintPress.BRASS)
 	var cue := encounter_snapshot()
 	cue["body_pose"] = pose
 	PrintPress.draw_backcutter_cue(self, cue, ink, stock)
