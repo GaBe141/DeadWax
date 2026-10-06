@@ -56,6 +56,9 @@ jobs:
             godot --headless --path . --check-only --script "res://$script"
           done < <(find scripts -type f -name '*.gd' -print0)
 
+      - name: Check the design canon
+        run: godot --headless --path . --script res://tests/canon_test.gd
+
       - name: Run native smoke suite
         run: godot --headless --path . --script res://tests/smoke_test.gd
 

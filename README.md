@@ -68,7 +68,7 @@ The lightweight project commands are:
 .\deadwax.cmd play    play the campaign with a local runtime log
 .\deadwax.cmd dev     open the original mechanics rooms and planned-world tools
 .\deadwax.cmd editor  open the project in Godot
-.\deadwax.cmd check   import resources; run all sixty-one native test suites
+.\deadwax.cmd check   import resources; run all sixty-two native test suites
 .\deadwax.cmd vibe    start Mistral Vibe in this repository
 ```
 
@@ -859,8 +859,15 @@ own animation while gameplay and the HUD remain paused underneath.
 
 ## Development checks
 
-Run `.\deadwax.cmd check` before committing. It imports resources and runs 58
-dependency-free native suites, including smoke, save-store, campaign, Tonearm, Overture,
+The design canon lives in `docs/`; `docs/README.md` says which document is
+truth for what. The canon suite (`tests/canon_test.gd`) checks the laws a
+script can verify: nothing the player reads says "needle" or "stylus", every
+enemy that rings pays +0.40 resonance for a parry inside 100 ms, pink and gold
+are each defined once and gold stays rationed, equipment never carries a move,
+and a shatter speaks its last words in pink.
+
+Run `.\deadwax.cmd check` before committing. It imports resources and runs 59
+dependency-free native suites, starting with the canon suite, then smoke, save-store, campaign, Tonearm, Overture,
 sprite-animation, residents, economy-state, economy integration, scenery,
 lighting, attack-feel, GUI-animation, and map-item suites. These cover the original combat and
 progression invariants, all planned-room routes, validated
