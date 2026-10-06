@@ -2288,20 +2288,25 @@ func _on_technique_discovered(technique: int) -> void:
 	_flash("%s — a rhythm remembered." % progression.call("technique_label", technique))
 	_queue_save()
 
+## The shatter speaks: its last words scatter from where it broke. Canon keeps
+## these in every fight (docs/COMBAT_FEEL.md); only Move practice drills skip
+## them. Reduced motion lets the words fade where they land instead of flying.
 func _word_splatter(pos: Vector2) -> void:
-	if _cinematic_campaign() or practice_mode: return
+	if practice_mode: return
+	var still := bool(_settings.reduced_motion)
 	var words := ["BRIGHT", "LY", "OH", "!!"]
 	for i in words.size():
 		var l := Label.new()
 		l.text = words[i]
-		l.add_theme_font_size_override("font_size", 22)
-		l.add_theme_color_override("font_color", Color(0.9, 0.25, 0.5))
+		PressScript.set_display(l, 24, Color(0.9, 0.25, 0.5), Color(PressScript.DEEP, 0.85))
+		l.z_index = 21
 		l.position = pos + Vector2(randf_range(-30, 30), randf_range(-60, -10))
 		add_child(l)
 		var tw := create_tween()
 		tw.set_parallel(true)
-		tw.tween_property(l, "position", l.position + Vector2(randf_range(-90, 90), randf_range(-140, -40)), 0.9)
-		tw.tween_property(l, "modulate:a", 0.0, 0.9)
+		if not still:
+			tw.tween_property(l, "position", l.position + Vector2(randf_range(-90, 90), randf_range(-140, -40)), 0.9)
+		tw.tween_property(l, "modulate:a", 0.0, 1.2 if still else 0.9)
 		tw.chain().tween_callback(l.queue_free)
 
 func _flash(text: String) -> void:

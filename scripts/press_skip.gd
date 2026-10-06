@@ -164,7 +164,7 @@ static func draw(canvas: CanvasItem, pose: Dictionary, palette: Dictionary) -> v
 				canvas.draw_line(eye+Vector2(-2,-4),eye+Vector2(2,-3),Color(ink,noise*(1.0-hood)),1.2,true)
 			if snap > 0.0 or parry > 0.0:
 				canvas.draw_line(eye+Vector2(-2.5,-4.0-side*0.8),eye+Vector2(2.0,-3.3+side*0.8),Color(ink,maxf(snap,parry)*0.68),1.3,true)
-	canvas.draw_line(eye_center+Vector2(-2,6),eye_center+Vector2(2,6+hurt*2),ink,1.0,true)
+	# No mouth, ever (docs/CAST.md). Hurt reads through the lids and brows.
 	canvas.draw_set_transform(Vector2.ZERO)
 	Gesture.draw_marks(canvas, pose, body_xform, paint, quiet)
 

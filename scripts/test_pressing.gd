@@ -19,7 +19,7 @@ const STRIKE_HIT_RANGE := 120.0
 
 const RES_HIT := 0.14
 const RES_HIT_BIG := 0.24
-const RES_PARRY := 0.35
+const RES_PARRY := 0.40           # canon: the parry pays +0.40 on every enemy that rings
 const RES_DECAY := 0.045
 
 # -- HP: the slow, patient bar (M2 delta #1 — the two-bar Sekiro model) --------
