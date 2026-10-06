@@ -7,6 +7,12 @@ agents actually read (Codex reads the first 32 KiB of `AGENTS.md` by default).
 They are verbatim; the only line removed is the obsolete note that
 `ENEMIES.md` was missing, since the design canon now lives beside this file.
 
+Player-facing names here predate the 2026-10-06 canon pass: the equipment
+slots now read Point, Sleeve and Charm, and Glass Needle, Blunt Stylus, Spring
+Stylus and Copper Stylus now read Glass Tip, Blunt Tip, Spring Tip and Copper
+Tip. The ids these notes cite (`needle`, `glass_needle`, `copper_stylus`, …)
+are unchanged save keys.
+
 Read the section for a system before you change it. Design intent lives in
 `docs/README.md` and the canon documents next to it. Where a note here
 describes the current look or progression and the canon disagrees, the canon

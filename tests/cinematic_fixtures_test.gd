@@ -93,7 +93,7 @@ func _run() -> void:
 	_check(ability.cinematic_snapshot().text == "E / Y · Recover Walk", "missing move has concise acquisition action")
 	_check(lost.cinematic_snapshot().text == "Sealed sleeve", "equipment gate remains truthful")
 	abilities.unlock_ability(&"groove")
-	_check(lost.cinematic_snapshot().text == "E / Y · Take Copper Stylus", "earned equipment action names item")
+	_check(lost.cinematic_snapshot().text == "E / Y · Take Copper Tip", "earned equipment action names item")
 	collection.claim_exploration_item("copper_stylus")
 	_check(lost.cinematic_snapshot().is_empty(), "collected equipment yields no prompt")
 	discoveries.apply(&"collect_spool")

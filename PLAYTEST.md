@@ -173,7 +173,7 @@ move already earned. Avoid replacing a valued campaign checkpoint for a test.
 - [ ] The first Practice visit concentrates on Tick and Count-In. There is no
   Echo Trial post, grinding cue, or proximity hunt discovery. Groove Riding
   remains a separate fresh E/Y pickup after opening the door. Enter from Horn
-  without Strike: the Book points back to the plaza needle and the return exit
+  without Strike: the Book points back to the plaza point and the return exit
   remains usable.
 - [ ] Stalls introduces no further ability; practise the recovered launch and
   its western recovery route. In the Yard, collect Set at (610,574), before the
@@ -354,7 +354,7 @@ matched all 45 local suites at the time of this review.
   story choices should remain intact. Open Book → Equipment for three new
   Lost Pressings leads, separately counted from the twelve trial pieces.
 - Ride the Stalls' groove to the eastern shutter. With Groove Riding, use
-  fresh grounded E / Y at the Copper Stylus cabinet. It should add the piece
+  fresh grounded E / Y at the Copper Tip cabinet. It should add the piece
   without fitting it or altering the trial ledger.
 - Return to Horn Plaza with Gather. The new balcony above the homeward door
   should need an airborne strike lift; ordinary jumping and fast equipment
@@ -551,13 +551,13 @@ fixture as a measurement of completionist playtime.
   unavailable even with enough material. After one clear, 40 Offcuts binds a
   chosen missing piece; it does not automatically equip or alter future rolls.
   Already-owned pieces and insufficient balances cannot charge again.
-- [ ] Fit and replace a Needle, Lining, and Charm. Test faster running with
+- [ ] Fit and replace a Point, Sleeve, and Charm. Test faster running with
   weaker braking, quieter noise with slower Hood movement, and stronger air
   steering with reduced health. Each drawback is present along with its
   benefit; removing equipment restores stock behavior. Combined handling is
   bounded at 65–140%, and equipment adds at most one maximum health slot.
 - [ ] Add health capacity while injured: the new slot remains empty until
-  recovery. Removing and refitting it cannot heal. Glass Needle reduces the
+  recovery. Removing and refitting it cannot heal. Glass Tip reduces the
   maximum immediately. Spare Groove still combines correctly, and Continue
   restores the fitted loadout with full derived health. Strike/parry clocks,
   jump height, reach, Gather, and route permissions remain unchanged.
@@ -1026,8 +1026,8 @@ settings used private paths and were removed afterward.
 - [ ] Confirmed Tap, Sweep and Accent briefly brace at contact, then recover through distinct silhouettes. A whiff has no impact hold; a closed guard immediately kicks the point and torso back. Turning during recovery keeps the original attack direction.
 - [ ] Catch a voice, pressing, HUSH, Tonearm and Palace Backcutter attack: Skip raises the point and braces into the incoming side. Repeat with an Echo Trial copy. The pose follows a real successful parry, with the same 100 ms window and no extra damage or reward.
 - [ ] Take damage during an attack: Skip flinches away immediately and the previous swing disappears. A later fresh attack still reads as stagger ends. Recovery and passages remove old hit, guard and parry marks.
-- [ ] Pogo from a vulnerable foe tucks the legs and points the stylus down during rebound. Ordinary jumps, grounded hits, groove launches and dry Gather retain their own movement poses.
-- [ ] At 1280×720 and 960×540, inspect both palettes and dim rooms: face, planted feet and local needle marks remain readable without covering enemy tells. Reduced motion keeps combat reactions functional; pause holds the pose and resume finishes it.
+- [ ] Pogo from a vulnerable foe tucks the legs and turns the point down during rebound. Ordinary jumps, grounded hits, groove launches and dry Gather retain their own movement poses.
+- [ ] At 1280×720 and 960×540, inspect both palettes and dim rooms: face, planted feet and local strike marks remain readable without covering enemy tells. Reduced motion keeps combat reactions functional; pause holds the pose and resume finishes it.
 - [ ] Moving left and right keeps the point and eyes facing the movement direction; a hit shows recoil and recovery clears it.
 - [ ] Voices step as they creep and open their arms before contact; a freed Addie relaxes and putters beside her doorway.
 - [ ] The practice pressing, HUSH, and Tonearm windups and follow-through agree with their existing audio and parry timing.
@@ -1050,7 +1050,7 @@ settings used private paths and were removed afterward.
 - [ ] Polishing a fresh patch shows a short `+1 Shine` receipt and increments the Book/stall balance once. Leaving, returning, recovery, and Continue cannot pay that patch twice.
 - [ ] Grounded B/D-pad Up beside the Bootlegger opens the stall; remote or airborne input does nothing. E/Y still advances his conversation.
 - [ ] The counter clearly shows balance, prices, item effects, and owned or insufficient-funds states. Merely opening, holding the opening button, or selecting an item never buys it.
-- [ ] Buy Spare Groove for 4 Shine: balance falls by 4, the needle gains a filled fourth slot, and a fourth hit is required to recover. Soft Lining costs 3 and visibly speeds Hood walking; ordinary walking/jumping and silence stay the same. Warm Thread costs 2 and gives the Hood an amber stitched edge.
+- [ ] Buy Spare Groove for 4 Shine: balance falls by 4, Skip gains a filled fourth health slot, and a fourth hit is required to recover. Soft Lining costs 3 and visibly speeds Hood walking; ordinary walking/jumping and silence stay the same. Warm Thread costs 2 and gives the Hood an amber stitched edge.
 - [ ] Bought items appear in the Book, cannot be bought again, and survive passages, recovery, quitting, and Continue. Starting a new game clears purchases and balance.
 - [ ] The shop pauses the world and prevents attacks, passages, recovery, or the Book behind it. Mouse, arrows/stick, and D-pad reach the products and Buy/Leave controls. D-pad Up navigates within the shop; Escape/controller B/Back closes it without a jump or passage.
 - [ ] Item descriptions, Buy/Leave controls, and notices remain readable at 1280×720 and 900×600. Returning with less than the price clearly shows how much more Shine is needed.
@@ -1063,7 +1063,7 @@ settings used private paths and were removed afterward.
 - [ ] Passage, lock, encounter, polishing, Book, pause, title, and quit save without a visible hitch or repeated reward.
 - [ ] Leave a polished patch and opened door, return, then quit and Continue: the patch stays spent, the door stays open, and Shine/Count-In match the prior session.
 - [ ] Freed and shattered Yard voices stay gone after returning and after Continue.
-- [ ] Continue resumes at the saved room entry with full needle health, rather than at a mid-air position.
+- [ ] Continue resumes at the saved room entry with full health, rather than at a mid-air position.
 - [ ] Opening the Book pauses play, shows the correct Shine and learned Count-In, and keeps unknown entries unnamed.
 - [ ] I/Start closes the Book; Escape closes it without immediately opening pause.
 - [ ] Escape/gamepad Back pauses the chapter. Resume does not also jump or enter a passage with the confirming input.
@@ -1166,7 +1166,7 @@ over. This is the feel pass that matters most — twelve seconds is a guess.
 - [ ] Dry wax now answers a strike: two breaths, and you fall more slowly.
 - [ ] The HUD stays readable on the dark face.
 - [ ] The runtime counts down and the readout warns in the last three seconds.
-- [ ] When the side runs out the needle lifts wherever you are — including mid-air.
+- [ ] When the side runs out you drop back to the A-side wherever you are — including mid-air.
 - [ ] Being dropped out of thick air by the timer reads as fair, not cheap.
 - [ ] The A-side rewinds the far face; a nearly spent side refuses to flip.
 - [ ] Flipping on The Smoothed Floor lets resonance build and raw hits land.

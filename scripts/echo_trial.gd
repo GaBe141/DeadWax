@@ -306,7 +306,7 @@ func _prompt() -> String:
 		if _warning > 0.0: return "WAVE %d / 3  —  GET READY\nThe next impression is forming." % _wave
 		return "WAVE %d / 3  —  %d REMAIN\nClear every copy. Leaving ends the trial." % [_wave, _copies.size()]
 	if not _has_trial_move():
-		return "Recover your needle in the Horn Plaza.\nThese recordings need an answer before they can play."
+		return "Recover your point in the Horn Plaza.\nThese recordings need an answer before they can play."
 	var receipt := ""
 	if not _receipt.is_empty():
 		receipt = String(_receipt.get("message", "Pressing collected. Check your Book.")) + "\n"
@@ -349,7 +349,7 @@ func cinematic_snapshot() -> Dictionary:
 	elif _has_trial_move():
 		text = "E / Y · Begin Echo Trial"
 	else:
-		text = "A needle is needed"
+		text = "Find your point first"
 	return {"text": text, "radius": INTERACT_RADIUS, "priority": priority}
 
 func snapshot() -> Dictionary:

@@ -1,41 +1,45 @@
 extends RefCounted
 ## Printed facts and equipment values only. No rooms, actors or save ownership.
 
+# Slot and item ids are save keys and are never shown. What the player reads
+# comes from the names below and from SLOT_LABELS: nobody in-world says
+# "needle" or "stylus" (docs/CAST.md). tests/canon_test.gd checks both.
 const SLOTS: Array[String] = ["needle", "lining", "charm"]
+const SLOT_LABELS := {"needle": "Point", "lining": "Sleeve", "charm": "Charm"}
 const CRAFT_COST := 40
 const PITY_WINS := 20
 const MASTERY_WINS := 100
 const ITEMS: Array[Dictionary] = [
 	{"id": "quicksilver_tip", "name": "Quicksilver Tip", "slot": "needle", "source": "label", "rarity": "Uncommon", "drop_chance": 4,
-		"description": "A light stylus that likes the long straight streets.", "tradeoff": "+12% running speed; 20% less braking.", "modifiers": {"speed": 1.12, "friction": 0.8}},
-	{"id": "blunt_stylus", "name": "Blunt Stylus", "slot": "needle", "source": "label", "rarity": "Rare", "drop_chance": 3,
+		"description": "A light point that likes the long straight streets.", "tradeoff": "+12% running speed; 20% less braking.", "modifiers": {"speed": 1.12, "friction": 0.8}},
+	{"id": "blunt_stylus", "name": "Blunt Tip", "slot": "needle", "source": "label", "rarity": "Rare", "drop_chance": 3,
 		"description": "A short point that finds its footing quickly.", "tradeoff": "+20% ground acceleration; 8% less running speed.", "modifiers": {"accel": 1.2, "speed": 0.92}},
 	{"id": "felt_cuff", "name": "Felt Cuff", "slot": "lining", "source": "label", "rarity": "Scarce", "drop_chance": 2,
 		"description": "Soft lining that swallows the noise you leave behind.", "tradeoff": "+30% noise fading; 10% slower movement under the Hood.", "modifiers": {"noise_decay": 1.3, "hood_speed": 0.9}},
 	{"id": "counterweight", "name": "Counterweight", "slot": "charm", "source": "label", "rarity": "Singular", "drop_chance": 1,
 		"description": "A brass weight for a player who likes to stop on a mark.", "tradeoff": "+30% braking; 15% less steering in the air.", "modifiers": {"friction": 1.3, "air_control": 0.85}},
-	{"id": "spring_stylus", "name": "Spring Stylus", "slot": "needle", "source": "overture", "rarity": "Uncommon", "drop_chance": 4,
+	{"id": "spring_stylus", "name": "Spring Tip", "slot": "needle", "source": "overture", "rarity": "Uncommon", "drop_chance": 4,
 		"description": "A sprung stem, eager to move and reluctant to settle.", "tradeoff": "+25% ground acceleration; 15% less braking.", "modifiers": {"accel": 1.25, "friction": 0.85}},
 	{"id": "silk_hood", "name": "Silk Hood", "slot": "lining", "source": "overture", "rarity": "Rare", "drop_chance": 3,
 		"description": "Fine cloth that slips along the quiet road.", "tradeoff": "+18% movement under the Hood; noise fades 20% slower.", "modifiers": {"hood_speed": 1.18, "noise_decay": 0.8}},
 	{"id": "padded_sleeve", "name": "Padded Sleeve", "slot": "lining", "source": "overture", "rarity": "Scarce", "drop_chance": 2,
-		"description": "Thick packing from a record that survived the journey.", "tradeoff": "+1 maximum needle health; 8% less running speed.", "modifiers": {"health": 1, "speed": 0.92}},
+		"description": "Thick packing from a record that survived the journey.", "tradeoff": "+1 maximum health; 8% less running speed.", "modifiers": {"health": 1, "speed": 0.92}},
 	{"id": "metronome", "name": "Pocket Metronome", "slot": "charm", "source": "overture", "rarity": "Singular", "drop_chance": 1,
 		"description": "It carries momentum better than it starts it.", "tradeoff": "+10% running speed; 20% less ground acceleration.", "modifiers": {"speed": 1.1, "accel": 0.8}},
-	{"id": "glass_needle", "name": "Glass Needle", "slot": "needle", "source": "unplayed", "rarity": "Uncommon", "drop_chance": 4,
-		"description": "A clear, fragile point that follows the smallest turn.", "tradeoff": "+25% steering in the air; -1 maximum needle health.", "modifiers": {"air_control": 1.25, "health": -1}},
+	{"id": "glass_needle", "name": "Glass Tip", "slot": "needle", "source": "unplayed", "rarity": "Uncommon", "drop_chance": 4,
+		"description": "A clear, fragile point that follows the smallest turn.", "tradeoff": "+25% steering in the air; -1 maximum health.", "modifiers": {"air_control": 1.25, "health": -1}},
 	{"id": "stillwater_wrap", "name": "Stillwater Wrap", "slot": "lining", "source": "unplayed", "rarity": "Rare", "drop_chance": 3,
 		"description": "Heavy quiet cloth from the rooms below the record.", "tradeoff": "+25% noise fading; 15% less ground acceleration.", "modifiers": {"noise_decay": 1.25, "accel": 0.85}},
 	{"id": "feather_seal", "name": "Feather Seal", "slot": "charm", "source": "unplayed", "rarity": "Scarce", "drop_chance": 2,
 		"description": "An almost weightless seal with a stubborn drift.", "tradeoff": "+20% steering in the air; 20% less braking.", "modifiers": {"air_control": 1.2, "friction": 0.8}},
 	{"id": "ballast_seal", "name": "Ballast Seal", "slot": "charm", "source": "unplayed", "rarity": "Singular", "drop_chance": 1,
-		"description": "A dense wax seal, kept whole through years of pressure.", "tradeoff": "+1 maximum needle health; 20% less steering in the air.", "modifiers": {"health": 1, "air_control": 0.8}},
-	{"id": "copper_stylus", "name": "Copper Stylus", "slot": "needle", "source": "exploration", "rarity": "Lost Pressing", "drop_chance": 0,
+		"description": "A dense wax seal, kept whole through years of pressure.", "tradeoff": "+1 maximum health; 20% less steering in the air.", "modifiers": {"health": 1, "air_control": 0.8}},
+	{"id": "copper_stylus", "name": "Copper Tip", "slot": "needle", "source": "exploration", "rarity": "Lost Pressing", "drop_chance": 0,
 		"description": "A warm copper point, forgotten where the first grooves turn back on themselves.", "tradeoff": "+15% ground acceleration; 10% less braking.", "modifiers": {"accel": 1.15, "friction": 0.9}},
 	{"id": "seam_lining", "name": "Seam Lining", "slot": "lining", "source": "exploration", "rarity": "Lost Pressing", "drop_chance": 0,
 		"description": "Cloth lifted from an unopened sleeve. Its folded seams hold a little quiet.", "tradeoff": "+20% movement under the Hood; 10% less steering in the air.", "modifiers": {"hood_speed": 1.2, "air_control": 0.9}},
 	{"id": "dusk_seal", "name": "Dusk Seal", "slot": "charm", "source": "exploration", "rarity": "Lost Pressing", "drop_chance": 0,
-		"description": "The last wax seal of a side never played, heavy with its unspent evening.", "tradeoff": "+1 maximum needle health; 10% less running speed.", "modifiers": {"health": 1, "speed": 0.9}},
+		"description": "The last wax seal of a side never played, heavy with its unspent evening.", "tradeoff": "+1 maximum health; 10% less running speed.", "modifiers": {"health": 1, "speed": 0.9}},
 ]
 const HUNTS: Array[Dictionary] = [
 	{"id": "label", "name": "Label Echo Trial", "room_id": "practice_room", "position": Vector2(850, 574), "description": "Return to Tick's Practice after opening the Descent Gate. Hear or shatter four echo copies across three waves.", "mastery_wins": MASTERY_WINS},
@@ -63,6 +67,9 @@ const ENCOUNTER_SPECIES := {
 	"verse_warren_n/north_voice": "auditioner", "verse_warren_n/lower_voice": "auditioner",
 	"verse_warren_s/warren_pressing": "test_pressing",
 }
+
+static func slot_label(slot: String) -> String:
+	return String(SLOT_LABELS.get(slot, slot.capitalize()))
 
 static func items() -> Array[Dictionary]:
 	return ITEMS.duplicate(true)

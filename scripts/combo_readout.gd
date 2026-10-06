@@ -151,7 +151,7 @@ func _apply_snapshot() -> void:
 	var chain_unlocked := bool(_snapshot.chain_unlocked)
 	visible = not cinematic_mode and (practice_mode or (strike_unlocked and step > 0))
 	if not strike_unlocked:
-		_headline.text = "FIND YOUR NEEDLE"
+		_headline.text = "FIND YOUR POINT"
 	elif not chain_unlocked:
 		_headline.text = "TAP" if step > 0 else "J / X · STRIKE"
 	else:

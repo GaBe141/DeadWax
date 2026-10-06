@@ -284,7 +284,7 @@ func _build_title() -> void:
 
 
 func _build_pause() -> void:
-	_page.add_child(_label("THE NEEDLE IS LIFTED", PressScript.SIZE_SMALL, FADED))
+	_page.add_child(_label("BETWEEN BARS", PressScript.SIZE_SMALL, FADED))
 	_page.add_child(_label("TAKE A BREATH.", PressScript.SIZE_MENU_TITLE, INK, true))
 	_page.add_child(_paragraph("The Wax Palace waits. Nothing here is saved." if _practice_pause else "The record will wait."))
 	_space(22.0)

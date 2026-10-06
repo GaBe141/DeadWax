@@ -514,14 +514,14 @@ func _refresh_ability_objective() -> void:
 			elif arm_outcome == "shattered":
 				objective_label = "The street keeps going. Follow its light."
 			elif not _has_ability(&"strike"):
-				objective_label = "Recover your needle beneath the horn. [E / Y] beside it."
+				objective_label = "Recover your point beneath the horn. [E / Y] beside it."
 			elif not _has_ability(&"hood"):
 				objective_label = "The upper walk of High Street keeps a quiet way forward."
 			else:
 				objective_label = "Tick keeps time in Practice. The market waits east."
 		&"practice_room":
 			if not _has_ability(&"strike"):
-				objective_label = "The door can wait. Your needle rests beneath Horn Plaza's horn."
+				objective_label = "The door can wait. Your point rests beneath Horn Plaza's horn."
 			elif not _has_ability(&"groove"):
 				objective_label = "Give the door four even strikes, then recover the Groove in its sleeve."
 			elif abilities != null:

@@ -10,10 +10,10 @@ const SHOT_DURATIONS := [5.5, 6.0, 5.5, 6.0]
 const CAPTIONS := [
 	"Once, every groove held a voice.",
 	"The song wore thin. The voices stayed.",
-	"One small needle found its feet.",
+	"One little point found its feet.",
 	"Somewhere below, something is still playing.",
 ]
-const IMPRINTS := ["THE RECORD", "THE WORN SONG", "THE NEEDLE", "SIDE ONE"]
+const IMPRINTS := ["THE RECORD", "THE WORN SONG", "THE PLAYER", "SIDE ONE"]
 const INK := Color("f2e1bc")
 const STOCK := Color("102c35")
 const EXIT_TIME := 0.35

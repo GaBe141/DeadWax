@@ -318,7 +318,7 @@ func _process(delta: float) -> void:
 		_respawn()
 	if player.global_position.y > room.death_y:
 		_respawn()
-		_flash("the needle finds you again.")
+		_flash("the Hound found you.")
 
 	if _fb_t > 0.0:
 		_fb_t -= delta
@@ -342,7 +342,7 @@ func _process(delta: float) -> void:
 	if practice_mode:
 		_update_practice_impressions()
 		subtitle.text = _practice_objective()
-		status.text = "NEEDLE %d/%d     %s" % [_health, _max_health(), _controller_text("J / X · STRIKE     SPACE / A · JUMP     L / LB · SET")]
+		status.text = "HEALTH %d/%d     %s" % [_health, _max_health(), _controller_text("J / X · STRIKE     SPACE / A · JUMP     L / LB · SET")]
 		controls_note.text = _controls_text()
 	elif development_mode:
 		status.text = "crackle   shine %d   hits taken %d   %s\n%s" % [player.shine, _hits_taken, _pressing_text(), progression.call("hud_text")]
@@ -350,7 +350,7 @@ func _process(delta: float) -> void:
 		_save_message_time = maxf(0, _save_message_time - delta)
 		var objective := String(room.get("objective_label")) if "objective_label" in room else ""
 		subtitle.text = objective
-		status.text = "NEEDLE %d/%d     %s   SHINE %02d%s" % [_health, _max_health(), "HUSH" if player.hooded else "CRACKLE", player.shine, "   " + _pressing_text() if not _pressing_text().is_empty() else ""]
+		status.text = "HEALTH %d/%d     %s   SHINE %02d%s" % [_health, _max_health(), "HUSH" if player.hooded else "CRACKLE", player.shine, "   " + _pressing_text() if not _pressing_text().is_empty() else ""]
 		controls_note.text = _save_message if _save_message_time > 0 else _controls_text()
 		if player.shine != _last_saved_shine:
 			_queue_save()
@@ -1671,7 +1671,7 @@ func _on_side_changed(side: int) -> void:
 		_flash("back to the side that got played.")
 
 func _on_side_ended() -> void:
-	_flash("the side ran out. the needle lifts.")
+	_flash("the side ran out. back to the A-side.")
 
 # -- debug traversal ----------------------------------------------------------
 
@@ -1853,7 +1853,7 @@ func _on_player_hit() -> void:
 
 func _recover_needle() -> void:
 	_respawn()
-	_flash("E / Y at the dial · retry this floor." if practice_mode else "the needle lifts. what you learned stays.")
+	_flash("E / Y at the dial · retry this floor." if practice_mode else "the Hound carried you back. what you learned stays.")
 
 func _on_refrain_collected(refrain: int) -> void:
 	progression.call("unlock_refrain", refrain)
@@ -2211,7 +2211,7 @@ func _change_collection(action: String, id: String) -> bool:
 	# Changing linings cannot heal by repeatedly adding and removing capacity.
 	_health = mini(_health, _max_health())
 	player.cancel_pending_strike()
-	inventory.refresh_collection("Piece pressed. Select it to equip." if action == "craft" else "Equipment saved. Extra needle capacity fills on recovery.")
+	inventory.refresh_collection("Piece pressed. Select it to equip." if action == "craft" else "Equipment saved. Extra health fills on recovery.")
 	audio.play("tick", -15.0, 0.9)
 	_collection_busy = false
 	return true

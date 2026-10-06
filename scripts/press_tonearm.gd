@@ -157,7 +157,7 @@ static func draw_tonearm(canvas: CanvasItem, pose: Dictionary, ink: Color, stock
 	var label := "THE TONEARM"
 	var prompt := "It waits for your answer."
 	if phase == "gesture":
-		prompt = "Above. Beyond the needle."
+		prompt = "Above. Where it once held you."
 	elif phase == "waiting":
 		prompt = "Kneel close. Let it hear you."
 	elif phase == "counting":

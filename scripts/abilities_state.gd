@@ -11,7 +11,7 @@ const CATALOG: Array[Dictionary] = [
 	{"id": &"walk", "name": "WALK", "description": "Hold A / D or the left stick to walk. Your feet finally agree to keep going.",
 		"lead": "Find the soles behind the Headshell cradle.", "room_id": &"headshell", "position": Vector2(60, 554), "outcome_key": ""},
 	{"id": &"strike", "name": "STRIKE", "description": "Press J / X to strike or parry. A basic strike is ready again in 0.2 seconds; meet an incoming attack within the first 0.1 seconds to parry. Your first strike is a single Tap.",
-		"lead": "A needle waits beneath the horn in Horn Plaza.", "room_id": &"horn_plaza", "position": Vector2(650, 574), "outcome_key": ""},
+		"lead": "Your point waits beneath the horn in Horn Plaza.", "room_id": &"horn_plaza", "position": Vector2(650, 574), "outcome_key": ""},
 	{"id": &"set", "name": "SET", "description": "Hold L / LB to kneel and Set. Answer a listening voice in its silence and resolve encounters through patient responses.",
 		"lead": "Find the listening weight on the Groove Yard's west path.", "room_id": &"groove_yard", "position": Vector2(610, 574), "outcome_key": ""},
 	{"id": &"hood", "name": "HOOD", "description": "Hold K or C / B to raise the Hood. Move quietly, damp your noise, listen to voices before answering with Set, and polish marked wax for Shine.",

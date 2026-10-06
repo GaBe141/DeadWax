@@ -9,7 +9,7 @@ const LINED_HOOD_SPEED := 0.75
 const CATALOG: Array[Dictionary] = [
 	{
 		"id": &"spare_groove", "name": "Spare Groove", "price": 4,
-		"description": "One more notch for your needle.\nMaximum needle health: 3 → 4.",
+		"description": "One more notch before you shatter.\nMaximum health: 3 → 4.",
 	},
 	{
 		"id": &"soft_lining", "name": "Soft Lining", "price": 3,

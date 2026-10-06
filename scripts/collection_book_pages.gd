@@ -120,7 +120,7 @@ func refresh(model: RefCounted, notice := "") -> void:
 	_notice.text = notice
 	_notice.visible = not notice.is_empty()
 	var modifiers: Dictionary = model.modifiers() if model != null else {"speed": 1.0, "accel": 1.0, "friction": 1.0, "air_control": 1.0, "hood_speed": 1.0, "noise_decay": 1.0, "health": 0}
-	_fit_summary.text = "CURRENT FIT · Combined equipment effects\nRun %d%% / Acceleration %d%% / Braking %d%%\nAir steering %d%% / Hood %d%% / Noise fading %d%%\nNeedle capacity %+d. Combined health changes stop at ±1; handling at 65–140%% of normal. Recover to fill added health." % [roundi(modifiers.speed * 100), roundi(modifiers.accel * 100), roundi(modifiers.friction * 100), roundi(modifiers.air_control * 100), roundi(modifiers.hood_speed * 100), roundi(modifiers.noise_decay * 100), int(modifiers.health)]
+	_fit_summary.text = "CURRENT FIT · Combined equipment effects\nRun %d%% / Acceleration %d%% / Braking %d%%\nAir steering %d%% / Hood %d%% / Noise fading %d%%\nHealth capacity %+d. Combined health changes stop at ±1; handling at 65–140%% of normal. Recover to fill added health." % [roundi(modifiers.speed * 100), roundi(modifiers.accel * 100), roundi(modifiers.friction * 100), roundi(modifiers.air_control * 100), roundi(modifiers.hood_speed * 100), roundi(modifiers.noise_decay * 100), int(modifiers.health)]
 	for slot in SLOTS:
 		var item_id := String(equipped.get(slot, ""))
 		var item: Dictionary = Catalog.item(item_id)
@@ -128,12 +128,12 @@ func refresh(model: RefCounted, notice := "") -> void:
 		title.text = String(item.get("name", "Nothing fitted"))
 		var clear: Button = _clear_buttons[slot]
 		clear.disabled = item_id.is_empty()
-		clear.tooltip_text = "Remove this %s. Its benefits and its cost both end." % slot
+		clear.tooltip_text = "Remove this %s. Its benefits and its cost both end." % Catalog.slot_label(slot).to_lower()
 	for id in _gear_buttons:
 		var item: Dictionary = Catalog.item(id)
 		var button: Button = _gear_buttons[id]
 		var fitted: bool = String(equipped.get(item.slot, "")) == String(id)
-		button.text = "%s%s\n%s / %s" % ["● " if fitted else ("+ " if id in owned else "· "), item.name, String(item.slot).to_upper(), "FITTED" if fitted else ("CARRIED" if id in owned else String(item.rarity).to_upper())]
+		button.text = "%s%s\n%s / %s" % ["● " if fitted else ("+ " if id in owned else "· "), item.name, Catalog.slot_label(item.slot).to_upper(), "FITTED" if fitted else ("CARRIED" if id in owned else String(item.rarity).to_upper())]
 		book._apply_card_style(button, id in owned)
 		button.tooltip_text = String(item.tradeoff)
 	var hunt_lines: Array[String] = []
@@ -204,7 +204,7 @@ func _build_equipment() -> void:
 		var body := _inset(panel, 10)
 		var heading := HBoxContainer.new()
 		body.add_child(heading)
-		var kind := _label(String(slot).to_upper(), Press.SIZE_SMALL, ACCENT)
+		var kind := _label(Catalog.slot_label(slot).to_upper(), Press.SIZE_SMALL, ACCENT)
 		kind.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		heading.add_child(kind)
 		var clear := _button("Remove", _request_unequip.bind(slot))
@@ -345,7 +345,7 @@ func _select_item(id: String, animate := true) -> void:
 	var equipped: Dictionary = _snapshot.get("equipped", {})
 	var fitted := String(equipped.get(item.slot, "")) == id
 	var exploration_piece: bool = item.source == "exploration"
-	_gear_kind.text = "%s / %s / %s" % [String(item.slot).to_upper(), String(item.rarity).to_upper(), "FITTED" if fitted else ("CARRIED" if id in owned else "NOT FOUND")]
+	_gear_kind.text = "%s / %s / %s" % [Catalog.slot_label(item.slot).to_upper(), String(item.rarity).to_upper(), "FITTED" if fitted else ("CARRIED" if id in owned else "NOT FOUND")]
 	_gear_title.text = String(item.name)
 	_gear_description.text = String(item.description)
 	_gear_tradeoff.text = String(item.tradeoff)
@@ -359,8 +359,8 @@ func _select_item(id: String, animate := true) -> void:
 		_gear_source.text = "%s\n%s" % [hunt.name, hunt.description]
 		_gear_odds.text = "%d%% per clear. Any gear: 10%%.\nGuaranteed gear within 20 clears without a drop; missing pieces take priority. %d clears remain." % [int(item.drop_chance), maxi(1, 20 - dry)]
 	if id in owned:
-		_recipe.text = "One piece per slot. Fitting another %s replaces the current one." % String(item.slot)
-		_gear_action.text = "Remove %s" % String(item.slot) if fitted else "Fit %s" % String(item.slot)
+		_recipe.text = "One piece per slot. Fitting another %s replaces the current one." % Catalog.slot_label(item.slot).to_lower()
+		_gear_action.text = "Remove %s" % Catalog.slot_label(item.slot).to_lower() if fitted else "Fit %s" % Catalog.slot_label(item.slot).to_lower()
 		_gear_action.disabled = _model == null
 	elif exploration_piece:
 		_recipe.text = "Recover the pressing with E / Y when you reach its sleeve."

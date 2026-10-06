@@ -2,7 +2,7 @@
 
 [![Godot checks](https://github.com/GaBe141/DeadWax/actions/workflows/godot-checks.yml/badge.svg)](https://github.com/GaBe141/DeadWax/actions/workflows/godot-checks.yml)
 
-A playable journey through 21 authored rooms about a stylus, a street of worn records,
+A playable journey through 21 authored rooms about a small Player, a street of worn records,
 and the song still playing underneath it. Start at the Headshell, count in
 the Descent Gate, then follow the Overture through wind-played grooves,
 Addie's doorway, HUSH's duel, and the Tonearm. How you answer the Tonearm
@@ -31,7 +31,7 @@ The Book carries their leads, and the folded map counts finds by region.
 Open this folder in **Godot 4.7.x** and press **F5**, or run
 `.\deadwax.cmd play`. The title screen offers **New Game** and **Continue**.
 New Game opens with a 23-second illustrated prologue: a town in the grooves,
-its fading song, and a little needle taking its first steps. **Space / A**
+its fading song, and a little point taking its first steps. **Space / A**
 advances a scene; **Escape / B** skips to the Headshell. **Watch opening**
 on the title screen replays it without replacing your save. Continue goes
 straight to your saved entry. Reduced motion presents still illustrations;
@@ -250,7 +250,7 @@ game. Escape, controller B/Back, or Leave closes the stall.
 
 | Piece | Shine | What it does |
 | --- | ---: | --- |
-| Spare Groove | 4 | Adds one permanent needle-health slot, taking the maximum from 3 to 4. Fills the added slot when bought. |
+| Spare Groove | 4 | Adds one permanent health slot, taking the maximum from 3 to 4. Fills the added slot when bought. |
 | Soft Lining | 3 | Raises Hood walking speed from 62% to 75% of ordinary walking speed. |
 | Warm Thread | 2 | Stitches an amber trim around Skip's Hood. Cosmetic. |
 
@@ -281,10 +281,10 @@ equipment and Offcuts; they do not grant story choices, Refrains, routes, or
 Shine. Ordinary nearby wax and Count-In interactions still work during play.
 
 There are **12 trial pieces**, four in each regional pool, fitted into
-three slots: **Needle**, **Lining**, and **Charm**. Every piece has a benefit
+three slots: **Point**, **Sleeve**, and **Charm**. Every piece has a benefit
 and a cost. Quicksilver Tip runs faster but brakes more slowly; Felt Cuff
-quiets lingering noise faster but slows Hood movement; Glass Needle improves
-air steering at the cost of one maximum needle-health slot. Select a piece in
+quiets lingering noise faster but slows Hood movement; Glass Tip improves
+air steering at the cost of one maximum health slot. Select a piece in
 the Book to read its exact trade-off and source, then fit or remove it.
 
 A claimed clear has a **10% chance of equipment**: the four regional pieces
@@ -318,9 +318,9 @@ finds reward exploration with earned moves; each has a benefit and a cost.
 
 | Pressing | Return route | Benefit and cost |
 | --- | --- | --- |
-| Copper Stylus — Needle | Ride the Stalls' groove to the first eastern shutter. Requires Groove Riding. | +15% ground acceleration; 10% less braking. |
-| Seam Lining — Lining | Return to Horn Plaza with Gather and climb the high balcony above the homeward door. | +20% Hood movement speed; 10% less air steering. |
-| Dusk Seal — Charm | Return beyond Addie's door with Jump-Cut and turn to the B-side. | +1 maximum needle health; 10% less running speed. |
+| Copper Tip — Point | Ride the Stalls' groove to the first eastern shutter. Requires Groove Riding. | +15% ground acceleration; 10% less braking. |
+| Seam Lining — Sleeve | Return to Horn Plaza with Gather and climb the high balcony above the homeward door. | +20% Hood movement speed; 10% less air steering. |
+| Dusk Seal — Charm | Return beyond Addie's door with Jump-Cut and turn to the B-side. | +1 maximum health; 10% less running speed. |
 
 Stand beside a sleeve and use a fresh **E / Y** to collect it. Collection saves
 before showing success and leaves an empty sleeve behind. Fit it separately
@@ -460,7 +460,7 @@ reduced camera motion, and calibrated controller layouts are saved separately in
 and shake, and freezes decorative ambient motion, parallax, and slow lamp
 modulation. A standard gamepad uses Back to pause and Start for the Book;
 a calibrated GameCube controller uses Start to pause and Z for the Book.
-The needle has three health slots, or four with Spare Groove;
+Skip has three health slots, or four with Spare Groove;
 fitted equipment can adjust that capacity by one in either direction. Losing
 them recovers Skip at the active room entry with full health and preserved progress.
 Continue also starts there at full health.
@@ -589,7 +589,7 @@ stays empty until a fresh grounded **E / Y** at its central dial starts a run.
 Auditioners, Test Pressings and guarded Loopers arrive in increasingly mixed
 groups of one to four, with marked arrival warnings and room to move.
 Listening or striking can clear an Auditioner; other opponents retain their
-usual combat rules. Each clear restores needle health and gives you a breather;
+usual combat rules. Each clear restores health and gives you a breather;
 return to the dial and press **E / Y** for the next floor. Clearing floor twenty
 lets the same action start another run. There is no time limit.
 
@@ -694,12 +694,12 @@ over, and the far face is the same room read from the side nobody played:
 - **Grooves belong to a side.** Everything pressed loud on the A-side falls
   quiet when you flip. The trade is legible in one room: lose your launches,
   gain the air.
-- **The ink inverts.** Paper and print trade places; the world goes
-  scratchboard. Rooms are not duplicated — a room authors its A-side only.
+- **The ink inverts.** Paper and print trade places, so the dark A-side
+  turns to paper. Rooms are not duplicated — a room authors its A-side only.
 - **Burnishing is one-sided.** HUSH smoothed the face that was up. The B-side
   of The Smoothed Floor still rings, so resonance works there.
 - **A side has a runtime.** The B-side plays down in about twelve seconds, then
-  the needle lifts and drops you back wherever you are standing. It rewinds
+  drops you back to the A-side wherever you are standing. It rewinds
   slowly while you are on the A-side. Every flip is a round trip you have to
   plan — and the air holding you up is on a timer.
 

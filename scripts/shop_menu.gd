@@ -295,7 +295,7 @@ func _resize() -> void:
 func _refresh_view() -> void:
 	var shine := maxi(int(_snapshot.get("shine", 0)), 0)
 	_balance.text = "SHINE %03d" % shine
-	_needle.text = "%d NEEDLE HITS" % maxi(int(_snapshot.get("max_health", 3)), 1)
+	_needle.text = "HEALTH %d" % maxi(int(_snapshot.get("max_health", 3)), 1)
 	var purchases: Array = _snapshot.get("purchases", [])
 	for entry in _catalog:
 		var id := StringName(entry.id)

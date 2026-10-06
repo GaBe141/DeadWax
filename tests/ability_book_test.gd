@@ -170,7 +170,7 @@ func _readout_permissions() -> void:
 		_check(not beat.visible, "movement-only presentation hides every attack beat")
 	_check(not view._rail.visible and not view._link_label.visible, "locked chain does not show a link timer")
 	view.practice_mode = true
-	_check(view._headline.text == "FIND YOUR NEEDLE", "explicitly displayed locked receipt gives a truthful exploration hint")
+	_check(view._headline.text == "FIND YOUR POINT", "explicitly displayed locked receipt gives a truthful exploration hint")
 	supplied.strike_unlocked = true
 	supplied.step = 1
 	supplied.label = "TAP"
