@@ -1,0 +1,529 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>DEAD WAX — art direction v1</title>
+<style>
+  :root{
+    --paper:#e8e0cc; --paperink:#1c1712; --dust:#c9bfa8;
+    --wax:#0e0c10; --groove:#f2eee4; --crackle:#e5407f;
+    --undersong:#7b4e8e; --etch:#d9a441;
+  }
+  html,body{margin:0;background:#181519;color:var(--paper);font-family:Georgia,serif;}
+  .wrap{max-width:1240px;margin:0 auto;padding:28px 20px 80px;}
+  h1{font-size:40px;margin:10px 0 0;letter-spacing:1px;}
+  h1 .pink{color:var(--crackle);}
+  .sub{color:#9b8fa0;font-size:15px;margin:6px 0 30px;font-style:italic;}
+  h2{font-size:15px;letter-spacing:3px;text-transform:uppercase;color:var(--crackle);margin:48px 0 6px;font-family:Verdana,sans-serif;}
+  .note{color:#b7ab9e;font-size:14px;max-width:880px;line-height:1.55;margin:0 0 14px;}
+  svg{display:block;width:100%;height:auto;background:var(--wax);border:1px solid #2c2630;}
+  .scrawl{font-family:'Segoe Print','Comic Sans MS',cursive;}
+  .swatches{display:flex;flex-wrap:wrap;gap:10px;margin:10px 0;}
+  .sw{width:150px;padding:10px;border:1px solid #2c2630;font-family:Verdana,sans-serif;font-size:11px;color:#0e0c10;}
+  .sw b{display:block;font-size:12px;margin-bottom:16px;}
+  .sw.dk{color:#e8e0cc;}
+  .rules{columns:2;gap:34px;max-width:1000px;color:#b7ab9e;font-size:14px;line-height:1.55;}
+  .rules p{break-inside:avoid;margin:0 0 12px;}
+  .rules b{color:var(--paper);}
+  .boilrow{display:flex;gap:22px;align-items:flex-end;margin:12px 0;}
+  .boilbox{width:170px;text-align:center;font-family:Verdana,sans-serif;font-size:11px;color:#9b8fa0;}
+  .boilbox svg{border:1px solid #2c2630;}
+  .f{animation-timing-function:steps(1);animation-iteration-count:infinite;}
+  .b2a{animation:b2a .22s steps(1) infinite;} .b2b{animation:b2b .22s steps(1) infinite;}
+  @keyframes b2a{0%{opacity:1}50%{opacity:0}100%{opacity:1}}
+  @keyframes b2b{0%{opacity:0}50%{opacity:1}100%{opacity:0}}
+  .b4a{animation:b4a .4s steps(1) infinite;} .b4b{animation:b4b .4s steps(1) infinite;}
+  .b4c{animation:b4c .4s steps(1) infinite;} .b4d{animation:b4d .4s steps(1) infinite;}
+  @keyframes b4a{0%{opacity:1}25%{opacity:0}100%{opacity:0}}
+  @keyframes b4b{0%{opacity:0}25%{opacity:1}50%{opacity:0}100%{opacity:0}}
+  @keyframes b4c{0%{opacity:0}50%{opacity:1}75%{opacity:0}100%{opacity:0}}
+  @keyframes b4d{0%{opacity:0}75%{opacity:1}100%{opacity:0}}
+  .refs{max-width:1000px;color:#b7ab9e;font-size:14px;line-height:1.6;}
+  .refs h3{color:var(--paper);font-size:14px;margin:18px 0 4px;font-family:Verdana,sans-serif;letter-spacing:1px;}
+  .refs code{background:#221d26;color:#e8b8cc;padding:1px 7px;border-radius:4px;font-size:12.5px;}
+  a{color:#e8b8cc;}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<h1>DEAD WAX <span class="pink">— art direction v1</span></h1>
+<div class="sub">two worlds, one scratch. if it looks like it took too long, redraw it faster.</div>
+
+<div style="background:#1c1622;border:1px solid #3a2c42;border-left:4px solid #e5407f;padding:12px 16px;margin:14px 0 8px;font-size:14px;line-height:1.55;color:#cdbfc9;">
+<b style="color:#f2eee4;">FIDELITY LOCKED (2026-08-08): scratchy hand-drawn boil.</b> Not pixel — the decision is settled (see <b>art/style_compare.html</b> for the four-way test and the mechanics table). House rules: characters are hand-drawn line art with <b>2–4 frame boil</b> (freed 4f ≈ 10fps · Stuck 2f · machines 0f — boil IS the state readout). One line, two worlds: recolor, don't redraw — <b>black ink on paper above the Scratch, white scratchboard line on black below</b>. <b>Sketchbook-rough (construction lines showing) is reserved for Soon only.</b> A whisper of clean-vector polish is allowed on paper-world UI chrome and print, nowhere else. Pixel art is set aside; if it ever returns it means re-planning boil-is-state and the scratchboard world from scratch.
+</div>
+
+<div style="background:#171320;border:1px solid #2c2630;border-left:4px solid #d9a441;padding:12px 16px;margin:10px 0 8px;font-size:14px;line-height:1.55;color:#cdbfc9;">
+<b style="color:#f2eee4;">DENSITY TARGET (2026-08-08): dense &amp; grungy, not minimal.</b> Reference energy: Pizza Tower / Castle Crashers hand-drawn busyness, in our idiom. The placeholder line-art was reading too clean — the bar is <b>art/cutaway.html</b>. The recipe (the "detail language"): <b>(1) thick tapering ink outlines</b> — chunky black, heavier at joints, tapering to points (fill shapes, don't just stroke lines). <b>(2) Interior hatching on every solid</b> — parallel-line shading in the shadowed third of each form; cross-hatch the deep shadows. <b>(3) Grime everywhere</b> — flecks, water-streaks, wall-stains, scuffs; nothing is a clean flat fill. <b>(4) Prop density / environmental storytelling</b> — crates, tapes, bones, pipes, chains, lanterns, hanging flyers; every corner does a job. <b>(5) Cutaway interiors</b> — buildings and the world show their insides (a bed in the inn, the press in the print shop, rooms inside the walls). <b>(6) Saturated flats UNDER the texture</b> — rich base colors, then grime/hatch on top. <b>Silhouette-first, always</b> — density must never cost readability (critical now that combat is hard and tells must land in a frame). The two-world ink still holds: black ink + grime on paper above the Scratch, white scratchboard line + white grime out of black below.
+</div>
+
+<div style="background:#1c1622;border:1px solid #3a2c42;border-left:4px solid #e5407f;padding:12px 16px;margin:10px 0 8px;font-size:13.5px;line-height:1.55;color:#cdbfc9;">
+<b style="color:#f2eee4;">THE TWO-TIER RULE (animation-cost honesty).</b> Pizza-Tower density is glorious and <b>frame-expensive</b> — full hyper-detailed animation on every gameplay sprite is unaffordable at our scope. Resolution: <b>Tier A — DETAILED</b> (this density, few or no frames): key art, cutaways, character/boss portraits, cutscene stills, shop screens, the map. <b>Tier B — READABLE</b> (mid-detail + boil, built to move): in-combat gameplay sprites, where hyper-detail becomes visual noise at speed AND at hard-combat readability. Detail on Tier B comes from <b>texture and thick silhouette, not frame-count</b>. This is the standard prestige-2D split (gorgeous portraits, clean fighters). <b style="color:#7fc99a;">LOCKED 2026-08-08</b> — see the proof render <b>art/tier_compare.html</b> (the same Auditioner at 48px, dense vs readable, on a grimy floor). Density resolved UP, not down: the house look is dense-and-grungy, with a deliberate readability tier for anything the player fights.
+</div>
+
+<h2>01 · Key art study — the Scratch</h2>
+<p class="note">The whole visual thesis in one frame: the played world is <b>print on paper</b> (aged label stock, misregistered inks, typography as architecture), the unplayed world is <b>scratchboard</b> (white line dug out of black wax, hatched, boiling). The Scratch is the only thing that belongs to both.</p>
+
+<svg viewBox="0 0 1200 540" role="img" aria-label="Key art: paper town above, wax deep below, split by the scratch">
+  <rect width="1200" height="540" fill="#0e0c10"/>
+
+  <!-- PAPER WORLD (upper-left of the scratch) -->
+  <polygon points="0,0 300,0 860,540 0,540" fill="#e8e0cc"/>
+  <!-- paper grain -->
+  <g stroke="#d5cab0" stroke-width="1" opacity="0.55">
+    <path d="M0,90 L560,90 M0,180 L650,180 M0,270 L740,270 M0,360 L830,360 M0,450 L900,450"/>
+  </g>
+
+  <!-- the great horn, misregistered print -->
+  <g opacity="0.28" transform="translate(6,4)">
+    <path d="M120,150 C170,120 250,100 300,96 L300,120 C255,124 185,140 140,168 L150,330 h-44 z" fill="#e5407f"/>
+  </g>
+  <g fill="#1c1712">
+    <path d="M114,146 C164,116 244,96 294,92 L294,116 C249,120 179,136 134,164 L144,326 h-44 z"/>
+    <rect x="86" y="326" width="120" height="14"/>
+  </g>
+  <!-- the Hound waiting by the horn: ink scribble -->
+  <g stroke="#1c1712" fill="none" stroke-width="2.4" stroke-linecap="round">
+    <path d="M236,318 q10,-16 26,-14 q18,2 20,16 q14,-2 12,10 q-2,10 -14,8 l-4,4 q-16,6 -32,0 q-12,-6 -8,-24 z"/>
+    <path d="M278,312 q6,-12 -2,-18"/>
+    <path d="M240,342 v8 M264,342 v8"/>
+  </g>
+  <text x="222" y="368" font-size="11" fill="#8a7a68" class="scrawl">still waiting.</text>
+
+  <!-- typography-block rooftops (paper side only) -->
+  <g fill="#1c1712">
+    <rect x="330" y="200" width="150" height="120"/>
+    <rect x="354" y="174" width="34" height="26"/>
+    <rect x="452" y="300" width="120" height="140"/>
+    <rect x="306" y="384" width="120" height="90"/>
+  </g>
+  <g fill="#e8e0cc" font-family="Georgia,serif">
+    <text x="344" y="232" font-size="21" letter-spacing="2">SLOW AIRS</text>
+    <text x="344" y="256" font-size="11" letter-spacing="1">&amp; LULLABIES</text>
+    <rect x="344" y="270" width="118" height="3"/>
+    <rect x="344" y="280" width="98" height="3"/>
+    <rect x="344" y="290" width="110" height="3"/>
+    <text x="458" y="332" font-size="12" letter-spacing="1">ROOMS TO LET</text>
+    <rect x="464" y="342" width="92" height="3"/>
+    <rect x="464" y="352" width="80" height="3"/>
+    <text x="464" y="382" font-size="10">12:04–15:33</text>
+    <text x="318" y="412" font-size="12" letter-spacing="2">DRY GOODS</text>
+    <rect x="318" y="422" width="90" height="3"/>
+  </g>
+  <!-- faded flyers on a wall -->
+  <g transform="translate(120,420)">
+    <rect x="0" y="0" width="54" height="66" fill="#f4eddb" stroke="#b8a98c" transform="rotate(-4)"/>
+    <rect x="64" y="4" width="54" height="66" fill="#f4eddb" stroke="#b8a98c" transform="rotate(3 91 37)"/>
+    <g stroke="#8a7a68" stroke-width="2">
+      <path d="M8,14 h36 M8,24 h28 M8,34 h33 M72,20 h36 M72,30 h30"/>
+    </g>
+    <text x="66" y="62" font-size="9" fill="#b8503c" class="scrawl" transform="rotate(3 91 37)">cancelled</text>
+  </g>
+  <text x="30" y="44" font-size="26" fill="#1c1712" font-family="Georgia,serif" letter-spacing="4">THE LABEL</text>
+  <g opacity="0.3"><text x="32" y="46" font-size="26" fill="#e5407f" font-family="Georgia,serif" letter-spacing="4">THE LABEL</text></g>
+
+  <!-- THE SCRATCH -->
+  <g>
+    <path d="M300,-10 L870,550" stroke="#f2eee4" stroke-width="30" opacity="0.14"/>
+    <path d="M298,-10 L866,550" stroke="#e5407f" stroke-width="7" stroke-linecap="round"/>
+    <path d="M302,-8 L357,40 L392,88 L455,136 L490,184 L553,232 L588,280 L651,328 L686,376 L749,424 L784,472 L846,520 L867,548" stroke="#f2eee4" stroke-width="2.6" fill="none" stroke-linejoin="round"/>
+    <g stroke="#e5407f" stroke-width="2" opacity="0.85">
+      <path d="M363,52 l-18,10 M428,116 l-20,8 M493,180 l-18,10 M558,244 l-20,8 M625,310 l-18,10 M691,374 l-20,8 M756,438 l-18,10 M819,500 l-20,8"/>
+    </g>
+  </g>
+  <text x="612" y="88" font-size="15" fill="#e5407f" class="scrawl" transform="rotate(45 612 88)">this part is mine</text>
+
+  <!-- WAX WORLD (lower-right): groove terraces -->
+  <g stroke="#f2eee4" stroke-width="3" fill="none" stroke-linecap="round">
+    <path d="M700,180 q60,-10 120,0 t120,0 t120,0 t120,0"/>
+    <path d="M760,265 q55,10 110,0 t110,0 t110,0 t110,0"/>
+    <path d="M830,352 q50,-8 100,0 t100,0 t100,0"/>
+    <path d="M900,440 q45,8 90,0 t90,0 t90,0"/>
+  </g>
+  <g stroke="#f2eee4" stroke-width="1" opacity="0.4">
+    <path d="M705,192 q120,14 240,4 M765,277 q120,-10 230,2 M836,362 q100,10 200,2 M906,452 q90,-8 180,2"/>
+  </g>
+  <!-- hatching -->
+  <g stroke="#f2eee4" stroke-width="1" opacity="0.25">
+    <path d="M980,200 l14,-14 M1010,206 l14,-14 M1040,210 l14,-14 M1070,206 l14,-14 M1100,210 l14,-14"/>
+    <path d="M1000,372 l12,-12 M1030,376 l12,-12 M1060,372 l12,-12"/>
+  </g>
+
+  <!-- the Needle, small, on the second terrace -->
+  <g transform="translate(985,232)">
+    <path d="M0,22 l30,-34" stroke="#f2eee4" stroke-width="3.4" stroke-linecap="round"/>
+    <path d="M0,22 l6,8" stroke="#e5407f" stroke-width="3" stroke-linecap="round"/>
+    <path d="M22,-4 l12,-8 10,7 -3,12 -13,3 z" fill="#0e0c10" stroke="#f2eee4" stroke-width="2.4"/>
+    <circle cx="31" cy="-3" r="1.6" fill="#f2eee4"/><circle cx="37" cy="-1" r="1.6" fill="#f2eee4"/>
+    <path d="M24,10 q4,6 2,12 M30,10 q2,7 6,11" stroke="#f2eee4" stroke-width="2.2" fill="none" stroke-linecap="round"/>
+    <path d="M18,6 q-6,3 -8,8" stroke="#f2eee4" stroke-width="2" fill="none" stroke-linecap="round"/>
+  </g>
+
+  <!-- unplayed eyes in the dark -->
+  <g fill="#f2eee4">
+    <circle cx="1076" cy="308" r="2.2"/><circle cx="1090" cy="308" r="2.2"/>
+    <circle cx="948" cy="398" r="2"/><circle cx="960" cy="400" r="2"/>
+    <circle cx="1130" cy="472" r="2.4"/><circle cx="1146" cy="470" r="2.4"/>
+  </g>
+  <text x="1060" y="330" font-size="10.5" fill="#8d8593" class="scrawl">us too?</text>
+
+  <!-- crackle + the far gold fleck -->
+  <g fill="#e5407f" opacity="0.85">
+    <circle cx="880" cy="120" r="1.8"/><circle cx="912" cy="96" r="1.4"/><circle cx="852" cy="210" r="1.6"/>
+    <circle cx="932" cy="300" r="1.4"/><circle cx="1002" cy="150" r="1.5"/><circle cx="872" cy="330" r="1.3"/>
+  </g>
+  <circle cx="1168" cy="516" r="2.6" fill="#d9a441"/>
+  <text x="1064" y="520" font-size="10" fill="#d9a441" opacity="0.85" class="scrawl">she signed it →</text>
+</svg>
+<div class="note" style="margin-top:8px;font-style:italic;">Print misregistration on paper; white line out of black below; pink is always <b>noise being heard</b>; the one gold fleck is her. Runtime plates instead of street numbers.</div>
+
+<h2>02 · SKIP — character sheet v2 (Zim × Nomura pass)</h2>
+<p class="note"><b>Working name — the true name is reserved for a late reveal.</b> Rules that survived the restyle: <b>no mouth, ever</b>; the lance always touching something; readable at 16px. New rules: the <b>45-sleeve hood</b> — hood up IS the LIFT verb; <b>pink accents are the crackle meter</b>, glowing when loud and draining grey under the hood; cassette tape trails on fast moves. Jagged, not symmetrical — if the head looks balanced, redraw it.</p>
+
+<svg viewBox="0 0 1200 560" role="img" aria-label="Skip poses: idle, strike, lift with hood up, set — plus head detail and glow states">
+  <rect width="1200" height="560" fill="#0e0c10"/>
+  <g stroke="#2c2630" stroke-width="1"><path d="M240,0 V430 M480,0 V430 M720,0 V430 M960,0 V560"/></g>
+  <path d="M0,352 H960" stroke="#f2eee4" stroke-width="2.4" opacity="0.8"/>
+  <text x="16" y="28" font-size="15" fill="#9b8fa0" font-family="Verdana,sans-serif">SKIP <tspan fill="#6f6478">(working name — true name reserved for the reveal)</tspan></text>
+
+  <!-- POSE 1: IDLE -->
+  <g transform="translate(110,352)">
+    <path d="M-36,-46 L-10,-98 L32,-90 L28,-42 Z" fill="#0e0c10" stroke="#f2eee4" stroke-width="2.6"/>
+    <circle cx="-2,-68" r="0"/>
+    <circle cx="-2" cy="-68" r="11" fill="none" stroke="#f2eee4" stroke-width="1.6" opacity="0.6"/>
+    <path d="M-36,-46 l-6,10" stroke="#f2eee4" stroke-width="1.6" opacity="0.6"/>
+    <path d="M-26,-16 h22 v16 h-24 q-6,-8 2,-16 z" fill="#0e0c10" stroke="#f2eee4" stroke-width="4"/>
+    <path d="M-15,-16 L-21,-34 L-8,-40 L-6,-52" stroke="#f2eee4" stroke-width="4.5" fill="none" stroke-linecap="round"/>
+    <path d="M14,-2 L19,-20 L8,-36 L10,-52" stroke="#f2eee4" stroke-width="3" fill="none" stroke-linecap="round"/>
+    <path d="M8,-8 h12 M6,-14 h13" stroke="#f2eee4" stroke-width="1.6"/>
+    <path d="M-14,-52 L16,-52 L9,-92 L-7,-92 Z" fill="#0e0c10" stroke="#f2eee4" stroke-width="3.4"/>
+    <path d="M-38,-92 L-31,-134 L2,-149 L40,-139 L46,-105 L25,-88 L-10,-86 Z" fill="#0e0c10" stroke="#f2eee4" stroke-width="4"/>
+    <path d="M46,-105 l-7,-4 6,-7" stroke="#e5407f" stroke-width="2.4" fill="none"/>
+    <path d="M-31,-134 l6,5 -7,6" stroke="#e5407f" stroke-width="2" fill="none" opacity="0.8"/>
+    <path d="M-20,-116 q10,-13 26,-7 q-9,13 -26,7 z" fill="#07060a" stroke="#f2eee4" stroke-width="2.6"/>
+    <path d="M12,-112 q11,-11 24,-4 q-8,12 -24,4 z" fill="#07060a" stroke="#f2eee4" stroke-width="2.6"/>
+    <circle cx="-5" cy="-113" r="1.9" fill="#f2eee4"/><circle cx="25" cy="-109" r="1.9" fill="#f2eee4"/>
+    <path d="M-8,-78 L-24,-66 L-14,-58" stroke="#f2eee4" stroke-width="3" fill="none" stroke-linecap="round"/>
+    <path d="M12,-78 L30,-70" stroke="#f2eee4" stroke-width="3" fill="none" stroke-linecap="round"/>
+    <path d="M30,-70 L98,4" stroke="#f2eee4" stroke-width="6" stroke-linecap="round"/>
+    <path d="M40,-62 l8,-8 M52,-50 l8,-8 M64,-38 l8,-8 M76,-26 l8,-8" stroke="#f2eee4" stroke-width="2"/>
+    <path d="M58,-40 q14,4 12,18 q-2,10 -14,10" stroke="#f2eee4" stroke-width="1.6" fill="none" opacity="0.75"/>
+    <path d="M98,4 l7,8" stroke="#e5407f" stroke-width="4" stroke-linecap="round"/>
+    <path d="M108,2 l7,-4 M110,12 l8,0" stroke="#e5407f" stroke-width="2"/>
+    <text x="-84" y="66" font-size="13" fill="#9b8fa0" font-family="Verdana,sans-serif">IDLE — drag. one big boot.</text>
+  </g>
+
+  <!-- POSE 2: STRIKE -->
+  <g transform="translate(355,290)">
+    <g transform="rotate(16)">
+      <path d="M-34,-40 L-8,-88 L30,-80 L26,-36 Z" fill="#0e0c10" stroke="#f2eee4" stroke-width="2.4"/>
+      <path d="M-12,-14 L-18,-30 L-6,-36 L-4,-46" stroke="#f2eee4" stroke-width="4.5" fill="none" stroke-linecap="round"/>
+      <path d="M16,-10 L20,-26 L10,-34 L12,-46" stroke="#f2eee4" stroke-width="3" fill="none" stroke-linecap="round"/>
+      <path d="M-12,-46 L18,-46 L11,-84 L-5,-84 Z" fill="#0e0c10" stroke="#f2eee4" stroke-width="3.2"/>
+      <path d="M-36,-84 L-29,-124 L4,-139 L42,-129 L48,-95 L27,-78 L-8,-76 Z" fill="#0e0c10" stroke="#f2eee4" stroke-width="4"/>
+      <path d="M48,-95 l-7,-4 6,-7" stroke="#e5407f" stroke-width="2.4" fill="none"/>
+      <path d="M-18,-106 q10,-13 26,-7 q-9,13 -26,7 z" fill="#07060a" stroke="#f2eee4" stroke-width="2.4"/>
+      <path d="M14,-102 q11,-11 24,-4 q-8,12 -24,4 z" fill="#07060a" stroke="#f2eee4" stroke-width="2.4"/>
+      <circle cx="-3" cy="-103" r="1.9" fill="#f2eee4"/><circle cx="27" cy="-99" r="1.9" fill="#f2eee4"/>
+      <path d="M-6,-70 L-20,-56 M14,-70 L24,-56" stroke="#f2eee4" stroke-width="3" stroke-linecap="round"/>
+      <path d="M2,-56 L2,58" stroke="#f2eee4" stroke-width="6" stroke-linecap="round"/>
+      <path d="M-6,-40 l8,-6 M-6,-24 l8,-6 M-6,-8 l8,-6 M-6,8 l8,-6 M-6,24 l8,-6" stroke="#f2eee4" stroke-width="2"/>
+      <path d="M2,58 l0,10" stroke="#e5407f" stroke-width="4" stroke-linecap="round"/>
+    </g>
+    <path d="M-40,-96 q-22,10 -26,34 q-2,18 12,28" stroke="#f2eee4" stroke-width="1.8" fill="none" opacity="0.7"/>
+    <path d="M-52,-38 q-10,14 -2,26" stroke="#f2eee4" stroke-width="1.4" fill="none" opacity="0.5"/>
+    <g stroke="#e5407f" stroke-width="3" fill="none" stroke-linecap="round">
+      <path d="M-24,84 q-14,-4 -20,-16 M32,88 q14,-2 22,-14 M-6,94 q-6,10 -18,12 M18,96 q8,10 20,10"/>
+    </g>
+    <text x="46" y="64" font-size="19" fill="#e5407f" class="scrawl" transform="rotate(-10 46 64)">BRIGHT—</text>
+    <text x="-58" y="128" font-size="13" fill="#9b8fa0" font-family="Verdana,sans-serif">STRIKE — flip-slam.</text>
+  </g>
+
+  <!-- POSE 3: LIFT (HOOD UP) -->
+  <g transform="translate(598,352)" stroke="#8d8593">
+    <path d="M-46,0 L-8,-146 Q0,-158 8,-146 L46,0 Z" fill="#0e0c10" stroke="#8d8593" stroke-width="3.4"/>
+    <path d="M-30,-44 l18,-8 M-22,-92 l14,-6 M18,-70 l14,8" stroke-width="1.6" opacity="0.7" fill="none"/>
+    <circle cx="0" cy="-102" r="19" fill="#07060a" stroke="#8d8593" stroke-width="2.6"/>
+    <circle cx="-6" cy="-104" r="1.7" fill="#8d8593"/><circle cx="7" cy="-102" r="1.7" fill="#8d8593"/>
+    <path d="M-46,0 l-6,-8 M46,0 l7,-9" stroke-width="2" opacity="0.7"/>
+    <path d="M30,-30 L30,-118" stroke="#8d8593" stroke-width="5" stroke-linecap="round"/>
+    <path d="M26,-48 l8,-5 M26,-72 l8,-5 M26,-96 l8,-5" stroke-width="1.8"/>
+    <text x="-76" y="66" font-size="13" fill="#9b8fa0" font-family="Verdana,sans-serif">LIFT — hood up = silence.</text>
+    <text x="-56" y="88" font-size="11.5" fill="#6f6478" font-family="Verdana,sans-serif">the sleeve's center hole is the face</text>
+  </g>
+
+  <!-- POSE 4: SET -->
+  <g transform="translate(842,352)">
+    <path d="M-40,-30 L-16,-74 L20,-68 L16,-26 Z" fill="#0e0c10" stroke="#f2eee4" stroke-width="2.4"/>
+    <path d="M-22,0 L-26,-14 L-12,-22 M10,0 L12,-14 L2,-22" stroke="#f2eee4" stroke-width="4" fill="none" stroke-linecap="round"/>
+    <path d="M-12,-22 L14,-22 L8,-56 L-6,-56 Z" fill="#0e0c10" stroke="#f2eee4" stroke-width="3"/>
+    <g transform="rotate(14 4 -84)">
+      <path d="M-26,-58 L-20,-92 L8,-105 L40,-96 L45,-67 L26,-53 L-4,-51 Z" fill="#0e0c10" stroke="#f2eee4" stroke-width="3.6"/>
+      <path d="M45,-67 l-6,-4 5,-6" stroke="#e5407f" stroke-width="2.2" fill="none"/>
+      <path d="M-12,-80 q9,-11 22,-6 q-8,11 -22,6 z" fill="#07060a" stroke="#f2eee4" stroke-width="2.2"/>
+      <path d="M14,-77 q9,-9 20,-3 q-7,10 -20,3 z" fill="#07060a" stroke="#f2eee4" stroke-width="2.2"/>
+      <circle cx="0" cy="-77" r="1.7" fill="#f2eee4"/><circle cx="25" cy="-74" r="1.7" fill="#f2eee4"/>
+    </g>
+    <path d="M6,-46 L34,-30" stroke="#f2eee4" stroke-width="3" stroke-linecap="round"/>
+    <path d="M34,-30 L66,2" stroke="#f2eee4" stroke-width="5" stroke-linecap="round"/>
+    <path d="M42,-24 l6,-6 M52,-14 l6,-6" stroke="#f2eee4" stroke-width="1.8"/>
+    <path d="M66,2 l3,4" stroke="#e5407f" stroke-width="3.4" stroke-linecap="round"/>
+    <g stroke="#f2eee4" stroke-width="1.8" fill="none" opacity="0.8">
+      <path d="M80,-12 q5,-10 0,-19 M91,-7 q8,-14 2,-29 M102,-2 q11,-18 3,-38"/>
+    </g>
+    <text x="58" y="-62" font-size="11.5" fill="#8d8593" class="scrawl">she's there</text>
+    <text x="-60" y="66" font-size="13" fill="#9b8fa0" font-family="Verdana,sans-serif">SET — kneel. listen.</text>
+  </g>
+
+  <!-- RIGHT: HEAD DETAIL -->
+  <g transform="translate(1058,150)">
+    <path d="M-64,10 L-52,-58 L4,-84 L68,-66 L78,-10 L42,20 L-16,24 Z" fill="#0e0c10" stroke="#f2eee4" stroke-width="4.5"/>
+    <path d="M78,-10 l-12,-6 10,-12" stroke="#e5407f" stroke-width="3" fill="none"/>
+    <path d="M-52,-58 l10,8 -12,10" stroke="#e5407f" stroke-width="2.6" fill="none" opacity="0.85"/>
+    <path d="M-34,-30 q17,-22 44,-12 q-15,22 -44,12 z" fill="#07060a" stroke="#f2eee4" stroke-width="3.4"/>
+    <path d="M20,-24 q18,-18 40,-7 q-13,20 -40,7 z" fill="#07060a" stroke="#f2eee4" stroke-width="3.4"/>
+    <circle cx="-8" cy="-25" r="2.8" fill="#f2eee4"/><circle cx="42" cy="-19" r="2.8" fill="#f2eee4"/>
+    <text x="-64" y="66" font-size="12" fill="#9b8fa0" font-family="Verdana,sans-serif">crack chips glow pink when loud</text>
+    <text x="-64" y="86" font-size="12" fill="#9b8fa0" font-family="Verdana,sans-serif">void eyes · pinprick pupils</text>
+    <text x="-64" y="106" font-size="12" fill="#e5407f" font-family="Verdana,sans-serif">NO MOUTH. EVER.</text>
+    <text x="-64" y="126" font-size="12" fill="#6f6478" font-family="Verdana,sans-serif">3–5 jags. if it's symmetrical, redraw.</text>
+  </g>
+
+  <!-- RIGHT: GLOW STATES -->
+  <g font-family="Verdana,sans-serif" font-size="11" fill="#9b8fa0">
+    <text x="984" y="332">GLOW = CRACKLE METER</text>
+    <g transform="translate(1010,392)">
+      <path d="M-16,10 L-12,-14 L8,-22 L26,-14 L28,4 L10,12 Z" fill="#0e0c10" stroke="#f2eee4" stroke-width="2.6"/>
+      <circle cx="0" cy="-4" r="1.5" fill="#f2eee4"/><circle cx="14" cy="-2" r="1.5" fill="#f2eee4"/>
+      <path d="M28,4 l-5,-3 4,-5" stroke="#e5407f" stroke-width="2.2" fill="none"/>
+      <g fill="#e5407f"><circle cx="-26" cy="-16" r="1.6"/><circle cx="38" cy="-20" r="1.6"/><circle cx="34" cy="16" r="1.4"/></g>
+      <text x="52" y="4" fill="#e5407f">LOUD</text>
+    </g>
+    <g transform="translate(1010,462)">
+      <path d="M-16,10 L-12,-14 L8,-22 L26,-14 L28,4 L10,12 Z" fill="#0e0c10" stroke="#f2eee4" stroke-width="2.4"/>
+      <circle cx="0" cy="-4" r="1.5" fill="#f2eee4"/><circle cx="14" cy="-2" r="1.5" fill="#f2eee4"/>
+      <path d="M28,4 l-5,-3 4,-5" stroke="#8d8593" stroke-width="2" fill="none"/>
+      <text x="52" y="4">quiet</text>
+    </g>
+    <g transform="translate(1010,530)">
+      <path d="M-20,12 L0,-26 L20,12 Z" fill="#0e0c10" stroke="#8d8593" stroke-width="2.4"/>
+      <circle cx="0" cy="-8" r="6.5" fill="#07060a" stroke="#8d8593" stroke-width="1.8"/>
+      <circle cx="-2" cy="-9" r="1.1" fill="#8d8593"/><circle cx="3" cy="-8" r="1.1" fill="#8d8593"/>
+      <text x="52" y="4" fill="#6f6478">hooded — gone</text>
+    </g>
+  </g>
+</svg>
+
+<h2>03 · Cast lineup v2 — new faces &amp; the enemy line</h2>
+<p class="note">Angular pass on the friendlies (only Skip is mouthless — freed people get mouths), plus the first enemy studies. Everyone still wears their <b>waveform signature</b> somewhere. Boil rule holds: freed 4f, Stuck 2f, machines 0. Boss sheets live in CAST.md until they earn their own page.</p>
+
+<svg viewBox="0 0 1200 620" role="img" aria-label="Cast lineup: Addie, Hush, Matron, Hound; enemies: dust bunny, Auditioner, Earworm, Looper">
+  <rect width="1200" height="620" fill="#0e0c10"/>
+  <g stroke="#2c2630" stroke-width="1"><path d="M300,0 V620 M600,0 V620 M900,0 V620 M0,310 H1200"/></g>
+
+  <!-- ADDIE v2 -->
+  <g transform="translate(88,92)">
+    <path d="M18,-4 L38,-22 L66,-18 L78,4 L70,26 L44,32 L22,20 Z" fill="#0e0c10" stroke="#f2eee4" stroke-width="3"/>
+    <path d="M30,-2 q7,-9 17,-4 q-6,9 -17,4 z" fill="#07060a" stroke="#f2eee4" stroke-width="2"/>
+    <path d="M52,2 q7,-7 15,-2 q-5,8 -15,2 z" fill="#07060a" stroke="#f2eee4" stroke-width="2"/>
+    <circle cx="39" cy="-2" r="1.4" fill="#f2eee4"/><circle cx="60" cy="3" r="1.4" fill="#f2eee4"/>
+    <path d="M40,18 q8,6 16,0" stroke="#f2eee4" stroke-width="2.2" fill="none" stroke-linecap="round"/>
+    <path d="M22,34 L74,34 L86,96 L54,108 L12,98 Z" fill="#0e0c10" stroke="#f2eee4" stroke-width="3"/>
+    <path d="M16,84 q7,-9 14,0 q7,9 14,0 q7,-9 14,0 q7,9 14,0 q5,-7 10,-1" stroke="#e5407f" stroke-width="2.4" fill="none"/>
+    <path d="M30,108 v12 M62,110 v12" stroke="#f2eee4" stroke-width="3" stroke-linecap="round"/>
+  </g>
+  <text x="76" y="252" font-size="13" fill="#9b8fa0" font-family="Verdana,sans-serif">ADDIE v2 (freed)</text>
+  <text x="60" y="272" font-size="11" fill="#6f6478" font-family="Verdana,sans-serif">jagged shawl, kept the smile</text>
+
+  <!-- HUSH -->
+  <g transform="translate(392,66)">
+    <path d="M44,-14 Q64,-22 82,-12 L96,140 Q66,154 32,142 Z" fill="#0e0c10" stroke="#f2eee4" stroke-width="3"/>
+    <path d="M46,4 q18,-8 32,0 M42,34 q20,-8 38,2 M40,66 q22,-8 42,2" stroke="#f2eee4" stroke-width="1.4" fill="none" opacity="0.55"/>
+    <path d="M96,58 L128,64 L126,150 L112,148 Z" fill="#0e0c10" stroke="#8d8593" stroke-width="2.6"/>
+    <path d="M100,70 h24 M100,86 h24 M100,102 h23" stroke="#8d8593" stroke-width="1.4" opacity="0.7"/>
+    <path d="M32,142 l-4,10 M96,140 l5,10" stroke="#f2eee4" stroke-width="2"/>
+  </g>
+  <text x="380" y="252" font-size="13" fill="#9b8fa0" font-family="Verdana,sans-serif">HUSH, THE BURNISHER</text>
+  <text x="368" y="272" font-size="11" fill="#6f6478" font-family="Verdana,sans-serif">no face, no pink, ever. leaves notes.</text>
+
+  <!-- MATRON 33 1/3 -->
+  <g transform="translate(688,74)">
+    <ellipse cx="46" cy="-10" rx="26" ry="7" fill="#0e0c10" stroke="#f2eee4" stroke-width="2.4"/>
+    <ellipse cx="46" cy="-22" rx="20" ry="6" fill="#0e0c10" stroke="#f2eee4" stroke-width="2.2"/>
+    <ellipse cx="46" cy="-33" rx="13" ry="5" fill="#0e0c10" stroke="#f2eee4" stroke-width="2"/>
+    <circle cx="46" cy="-33" r="1.6" fill="#f2eee4"/>
+    <path d="M18,0 L74,0 L80,34 L58,44 L30,42 L12,30 Z" fill="#0e0c10" stroke="#f2eee4" stroke-width="3"/>
+    <path d="M28,14 q6,-7 13,-3 q-5,8 -13,3 z M52,16 q6,-6 12,-2 q-4,7 -12,2 z" fill="#07060a" stroke="#f2eee4" stroke-width="1.8"/>
+    <circle cx="35" cy="13" r="1.3" fill="#f2eee4"/><circle cx="59" cy="15" r="1.3" fill="#f2eee4"/>
+    <path d="M38,32 q8,5 16,0" stroke="#f2eee4" stroke-width="2" fill="none" stroke-linecap="round"/>
+    <path d="M14,46 L80,46 L92,120 L46,134 L2,122 Z" fill="#0e0c10" stroke="#f2eee4" stroke-width="3"/>
+    <path d="M20,86 q26,16 54,0" stroke="#f2eee4" stroke-width="1.6" fill="none" opacity="0.6"/>
+    <path d="M64,96 q14,-2 16,-14 q10,4 6,14 q12,2 8,12" stroke="#e5407f" stroke-width="2" fill="none"/>
+    <circle cx="94" cy="110" r="4" fill="none" stroke="#e5407f" stroke-width="1.8"/>
+  </g>
+  <text x="672" y="252" font-size="13" fill="#9b8fa0" font-family="Verdana,sans-serif">MATRON 33⅓</text>
+  <text x="646" y="272" font-size="11" fill="#6f6478" font-family="Verdana,sans-serif">hair = stacked 45s · crochets your armor</text>
+
+  <!-- HOUND v2 -->
+  <g transform="translate(980,116)" stroke="#f2eee4" fill="none" stroke-width="3" stroke-linecap="round">
+    <path d="M20,60 L14,32 L36,22 L62,26 L74,40 L92,38 L94,52 L78,58 L72,66 L44,72 L24,66 Z"/>
+    <path d="M62,26 L58,6 L70,12"/>
+    <path d="M86,44 q12,0 20,8"/>
+    <path d="M26,72 v14 M56,74 v14"/>
+    <path d="M0,96 h130" stroke-width="2" opacity="0.6"/>
+    <circle cx="52" cy="42" r="1.8" fill="#f2eee4" stroke="none"/>
+    <circle cx="99" cy="55" r="3.2" stroke="#d9a441" stroke-width="2"/>
+  </g>
+  <text x="988" y="252" font-size="13" fill="#9b8fa0" font-family="Verdana,sans-serif">THE HOUND v2</text>
+  <text x="964" y="272" font-size="11" fill="#6f6478" font-family="Verdana,sans-serif">angular now. tag stays gold. still best.</text>
+
+  <!-- ROW 2: ENEMIES -->
+  <!-- DUST BUNNY -->
+  <g transform="translate(96,420)">
+    <path d="M12,44 q-16,-8 -6,-26 q-14,-2 -4,-16 q6,-12 20,-8 q6,-14 20,-8 q14,-6 20,6 q16,-2 14,14 q12,10 0,22 q4,16 -14,16 q-8,12 -22,6 q-16,8 -28,-6 z" fill="#0e0c10" stroke="#f2eee4" stroke-width="2.6"/>
+    <circle cx="34" cy="14" r="2" fill="#f2eee4"/><circle cx="52" cy="14" r="2" fill="#f2eee4"/>
+    <path d="M8,52 q4,6 10,2 M78,50 q-2,6 -8,4" stroke="#f2eee4" stroke-width="1.6" fill="none" opacity="0.6"/>
+  </g>
+  <text x="92" y="556" font-size="13" fill="#9b8fa0" font-family="Verdana,sans-serif">DUST BUNNY</text>
+  <text x="66" y="576" font-size="11" fill="#6f6478" font-family="Verdana,sans-serif">it killed the world. it hops. sorry.</text>
+
+  <!-- AUDITIONER -->
+  <g transform="translate(408,392)">
+    <path d="M20,10 L44,-6 L70,8 L74,66 L48,84 L18,70 Z" fill="#0e0c10" stroke="#f2eee4" stroke-width="2.8"/>
+    <circle cx="38" cy="26" r="2.2" fill="#f2eee4"/><circle cx="56" cy="26" r="2.2" fill="#f2eee4"/>
+    <path d="M18,34 q-18,4 -28,18" stroke="#f2eee4" stroke-width="2.4" fill="none" stroke-dasharray="5 5" stroke-linecap="round"/>
+    <path d="M74,34 q18,4 28,18" stroke="#f2eee4" stroke-width="2.4" fill="none" stroke-dasharray="5 5" stroke-linecap="round"/>
+    <path d="M-14,56 q-3,4 -8,4 M106,56 q3,4 8,4" stroke="#f2eee4" stroke-width="2" fill="none" stroke-dasharray="3 4"/>
+    <path d="M28,84 v16 M62,86 v16" stroke="#f2eee4" stroke-width="2.6" stroke-dasharray="5 4" stroke-linecap="round"/>
+    <text x="20" y="132" font-size="10.5" fill="#8d8593" class="scrawl">us too?</text>
+  </g>
+  <text x="404" y="556" font-size="13" fill="#9b8fa0" font-family="Verdana,sans-serif">AUDITIONER</text>
+  <text x="366" y="576" font-size="11" fill="#6f6478" font-family="Verdana,sans-serif">dotted = never played. SET-play it: it leaves happy.</text>
+
+  <!-- EARWORM -->
+  <g transform="translate(712,404)">
+    <path d="M70,60 q-40,10 -46,-20 q-4,-24 20,-28 q18,-2 22,12 q3,12 -10,14 q-9,1 -11,-7" stroke="#f2eee4" stroke-width="3.4" fill="none" stroke-linecap="round"/>
+    <circle cx="72" cy="58" r="7" fill="#0e0c10" stroke="#f2eee4" stroke-width="2.6"/>
+    <circle cx="70" cy="56" r="1.5" fill="#f2eee4"/><circle cx="76" cy="57" r="1.5" fill="#f2eee4"/>
+    <path d="M84,52 q10,-4 12,-12 l2,-16" stroke="#e5407f" stroke-width="2.2" fill="none"/>
+    <ellipse cx="99" cy="20" rx="4.5" ry="3.4" fill="#e5407f"/>
+    <path d="M20,86 q8,-6 16,0 q8,6 16,0" stroke="#e5407f" stroke-width="1.6" fill="none" opacity="0.7"/>
+  </g>
+  <text x="716" y="556" font-size="13" fill="#9b8fa0" font-family="Verdana,sans-serif">EARWORM</text>
+  <text x="668" y="576" font-size="11" fill="#6f6478" font-family="Verdana,sans-serif">infects your audio. strike ON BEAT to shake it.</text>
+
+  <!-- LOOPER -->
+  <g transform="translate(1006,396)">
+    <g opacity="0.35">
+      <path d="M6,16 L26,2 L48,14 L44,56 L20,64 L4,52 Z" fill="none" stroke="#f2eee4" stroke-width="2"/>
+    </g>
+    <g transform="translate(14,4)">
+      <path d="M6,16 L26,2 L48,14 L44,56 L20,64 L4,52 Z" fill="#0e0c10" stroke="#f2eee4" stroke-width="2.8"/>
+      <circle cx="22" cy="28" r="2" fill="#f2eee4"/><circle cx="36" cy="28" r="2" fill="#f2eee4"/>
+      <path d="M14,64 l-4,18 M36,64 l6,16" stroke="#f2eee4" stroke-width="2.8" stroke-linecap="round"/>
+      <path d="M48,26 l22,10 M70,36 l-8,-2 m8,2 l-3,-7" stroke="#f2eee4" stroke-width="2.6" fill="none" stroke-linecap="round"/>
+    </g>
+    <path d="M88,10 a26,26 0 1 1 -6,44" stroke="#8d8593" stroke-width="1.8" fill="none" stroke-dasharray="4 5"/>
+    <path d="M82,54 l-8,2 3,-8" stroke="#8d8593" stroke-width="1.8" fill="none"/>
+  </g>
+  <text x="1012" y="556" font-size="13" fill="#9b8fa0" font-family="Verdana,sans-serif">LOOPER</text>
+  <text x="972" y="576" font-size="11" fill="#6f6478" font-family="Verdana,sans-serif">2 frames. the telegraph never lies.</text>
+</svg>
+
+<h2>04 · Boil is state — live spec</h2>
+<p class="note">Line boil isn't decoration here, it's <b>diegesis</b>: a soul's framerate. Freed people boil at 4 frames (~10fps). The Stuck boil at 2 — trapped between the same two drawings forever. The Changer doesn't boil at all, and it should be the most unsettling thing on screen <i>because</i> it's the cleanest.</p>
+<div class="boilrow">
+  <div class="boilbox">
+    <svg viewBox="0 0 160 130">
+      <rect width="160" height="130" fill="#0e0c10"/>
+      <g class="b4a"><path d="M50,96 q-8,-34 16,-44 q28,-10 42,10 q12,20 -6,34 q-26,14 -52,0" stroke="#f2eee4" stroke-width="3" fill="none" stroke-linecap="round"/><circle cx="76" cy="72" r="2.4" fill="#f2eee4"/><circle cx="92" cy="72" r="2.4" fill="#f2eee4"/></g>
+      <g class="b4b"><path d="M52,94 q-10,-32 14,-44 q30,-8 44,12 q10,18 -8,32 q-24,16 -50,0" stroke="#f2eee4" stroke-width="3" fill="none" stroke-linecap="round"/><circle cx="77" cy="71" r="2.4" fill="#f2eee4"/><circle cx="93" cy="73" r="2.4" fill="#f2eee4"/></g>
+      <g class="b4c"><path d="M48,95 q-6,-36 18,-45 q26,-9 40,9 q14,22 -4,36 q-28,12 -54,0" stroke="#f2eee4" stroke-width="3" fill="none" stroke-linecap="round"/><circle cx="75" cy="73" r="2.4" fill="#f2eee4"/><circle cx="91" cy="71" r="2.4" fill="#f2eee4"/></g>
+      <g class="b4d"><path d="M51,97 q-9,-33 15,-43 q29,-11 43,11 q11,19 -7,33 q-25,15 -51,-1" stroke="#f2eee4" stroke-width="3" fill="none" stroke-linecap="round"/><circle cx="76" cy="73" r="2.4" fill="#f2eee4"/><circle cx="92" cy="72" r="2.4" fill="#f2eee4"/></g>
+    </svg>
+    FREED — 4 frames
+  </div>
+  <div class="boilbox">
+    <svg viewBox="0 0 160 130">
+      <rect width="160" height="130" fill="#0e0c10"/>
+      <g class="b2a"><path d="M50,96 q-8,-34 16,-44 q28,-10 42,10 q12,20 -6,34 q-26,14 -52,0" stroke="#f2eee4" stroke-width="3" fill="none" stroke-linecap="round"/><circle cx="76" cy="72" r="2.4" fill="#f2eee4"/><circle cx="92" cy="72" r="2.4" fill="#f2eee4"/></g>
+      <g class="b2b"><path d="M52,94 q-10,-32 14,-44 q30,-8 44,12 q10,18 -8,32 q-24,16 -50,0" stroke="#f2eee4" stroke-width="3" fill="none" stroke-linecap="round"/><circle cx="77" cy="71" r="2.4" fill="#f2eee4"/><circle cx="93" cy="73" r="2.4" fill="#f2eee4"/></g>
+    </svg>
+    STUCK — 2 frames
+  </div>
+  <div class="boilbox">
+    <svg viewBox="0 0 160 130">
+      <rect width="160" height="130" fill="#0e0c10"/>
+      <path d="M50,96 q-8,-34 16,-44 q28,-10 42,10 q12,20 -6,34 q-26,14 -52,0" stroke="#f2eee4" stroke-width="3" fill="none" stroke-linecap="round"/>
+      <circle cx="76" cy="72" r="2.4" fill="#f2eee4"/><circle cx="92" cy="72" r="2.4" fill="#f2eee4"/>
+    </svg>
+    MACHINE — 0 frames
+  </div>
+</div>
+
+<h2>05 · Palette — the strata</h2>
+<div class="swatches">
+  <div class="sw" style="background:#e8e0cc"><b>LABEL PAPER #E8E0CC</b>aged stock. the played past.</div>
+  <div class="sw" style="background:#c9bfa8"><b>DUST #C9BFA8</b>the Overture. worn thin.</div>
+  <div class="sw dk" style="background:#0e0c10;border-color:#4a4152"><b>WAX #0E0C10</b>the unplayed field. never pure black in shipping art — always a hair of violet.</div>
+  <div class="sw dk" style="background:#7b4e8e"><b>UNDERSONG #7B4E8E</b>liquid depth. use big, late.</div>
+  <div class="sw" style="background:#f2eee4"><b>GROOVE #F2EEE4</b>the white line. unplayed matter.</div>
+  <div class="sw dk" style="background:#e5407f"><b>CRACKLE #E5407F</b>noise being heard. never decorative.</div>
+  <div class="sw" style="background:#d9a441"><b>ETCH GOLD #D9A441</b>her, and only her. appears maybe six times in the whole game.</div>
+  <div class="sw" style="background:#b8503c;color:#f4eddb"><b>CANCEL RED #B8503C</b>stamps, refusals, the Label's one loud ink.</div>
+</div>
+<div class="rules">
+  <p><b>Pink is semantic.</b> Crackle pink appears only where sound is being heard right now — strikes, aggro ripples, your own noise. If a screenshot has pink in it, something is loud in it.</p>
+  <p><b>Gold is rationed.</b> Etch gold belongs to the Engineer: the etching, her lathe, the Hound's tag, the last bar. Six appearances, game-wide. Budget enforced in review.</p>
+  <p><b>Paper never appears below the Scratch</b> except: the liner-book UI, the Bootlegger's tape labels, and flyers that fell. Each one should feel like litter from a lost world.</p>
+  <p><b>White line weight = matter.</b> Thick outline: solid wax. Thin + hatched: worn. Dotted: missing, unplayed elsewhere, or remembered.</p>
+</div>
+
+<h2>06 · UI — the liner-notes book</h2>
+<svg viewBox="0 0 1200 310" role="img" aria-label="Liner book spread mock">
+  <rect width="1200" height="310" fill="#181519"/>
+  <rect x="70" y="20" width="1060" height="266" rx="6" fill="#e8e0cc" stroke="#0e0c10" stroke-width="3"/>
+  <path d="M600,20 V286" stroke="#b8a98c" stroke-width="2"/>
+  <g class="scrawl" fill="#1c1712">
+    <text x="110" y="62" font-size="17">refrain: THE PICKUP (from bootleg "addie's lullaby")</text>
+    <text x="110" y="100" font-size="15" font-family="monospace">e|—3———3———5———|</text>
+    <text x="110" y="124" font-size="15" font-family="monospace">B|————1———————1|</text>
+    <text x="110" y="160" font-size="13" fill="#8a4a3a">↑ strike on beat or it's just noise, which, fair</text>
+    <text x="110" y="216" font-size="14">deaths so far: |||| |||| ||</text>
+    <text x="110" y="248" font-size="13">the dog carried me back EVERY time. best dog.</text>
+    <text x="640" y="66" font-size="15">the Verse: do not answer the singing. it is not</text>
+    <text x="640" y="90" font-size="15">asking YOU. (it is asking someone specific.)</text>
+    <text x="640" y="140" font-size="14" fill="#8a4a3a">TO DO: find vess's answer. it exists. it EXISTS.</text>
+    <text x="640" y="196" font-size="13">crackle meter, self-audit:</text>
+  </g>
+  <g stroke="#1c1712" stroke-width="2">
+    <path d="M640,214 h6 M652,214 h6 M664,214 h6 M676,214 h6"/>
+    <path d="M688,210 h6 M700,208 h8 M712,206 h8" stroke="#b8503c" stroke-width="3"/>
+    <path d="M724,202 h10 M738,198 h12" stroke="#e5407f" stroke-width="4"/>
+  </g>
+  <text x="760" y="218" font-size="12" fill="#8a4a3a" class="scrawl">← LOUD. hide.</text>
+  <g transform="translate(980,180)" stroke="#1c1712" fill="none" stroke-width="2" stroke-linecap="round">
+    <path d="M10,40 q-2,-14 10,-18 q14,-4 18,6 q10,-2 10,8 q0,8 -10,7 l-3,3 q-11,4 -20,0 q-8,-4 -5,-16"/>
+    <path d="M14,54 v6 M32,54 v6"/>
+  </g>
+  <text x="964" y="262" font-size="12" fill="#1c1712" class="scrawl">(not to scale. emotionally to scale.)</text>
+</svg>
+
+<h2>07 · Reference kit — go hunting</h2>
+<div class="refs">
+  <h3>SCRATCHBOARD (the below-Scratch look)</h3>
+  <p>Study how real scratchboard artists build tone from white-line density — it's engraving in reverse, which is thematically free for us. Technique overviews: <a href="https://en.wikipedia.org/wiki/Scratchboard">Wikipedia</a>, <a href="https://www.britannica.com/art/scratchboard">Britannica</a>, <a href="https://www.gnsi.org/scratchboard-illustration-techniques">GNSI</a>. Search: <code>scratchboard texture</code> · <code>scratchboard illustration white line</code> · <code>clawboard black</code></p>
+  <h3>LABEL / PRINT (the above-Scratch look)</h3>
+  <p>Early phonograph label design is the Label district's entire architecture language — borders, lockups, all-type layouts: <a href="https://www.tnt-audio.com/vintage/vinyl78_2_e.html">Edison cylinder guide</a>, <a href="https://78-records.com/category/edison-records-2/">78rpm label gallery</a>. Search: <code>edison gold moulded cylinder label</code> · <code>78 rpm record label typography</code> · <code>dead wax runout etching macro</code> · <code>punk gig flyer xerox</code></p>
+  <h3>MOTION / LINE (the register)</h3>
+  <p>Your era, your people: David Firth's Salad Fingers for deadpan dread, Krinkels' Madness Combat for economy of violence, Dan Paladin for chunky readable silhouettes, and Klei's Don't Starve as the proof that scratchy-ink ships commercially. Search: <code>newgrounds 2006 art style</code> · <code>boil animation 3 frames</code> · <code>don't starve concept art</code> · <code>flash animation 2005 aesthetic</code></p>
+  <h3>ODD-DUCK BOARDS (trust me)</h3>
+  <p><code>waveform embroidery</code> (character hems) · <code>vinyl crackle texture</code> (noise VFX) · <code>locked groove vinyl</code> (gravestones) · <code>phonograph tonearm patent drawing</code> (B1's anatomy — patent linework is basically our style already)</p>
+  <h3>How to board it</h3>
+  <p>One board per stratum + one per character, 15–30 pins each, then <b>cull to 9</b>. A mood board you can't fit on one screen is a mood, not a board. Anti-references matter too: if a pin looks like Hollow Knight's filigree or anything expensive, it's off-model — this game's beauty is that it looks like it was made by one feral kid with a lightbox, at 2am, out of love.</p>
+</div>
+
+</div>
+</body>
+</html>

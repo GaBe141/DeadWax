@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>DEAD WAX — character style comparison</title>
+<style>
+  :root{--wax:#100d13;--paper:#e8e0cc;--groove:#f2eee4;--pink:#e5407f;--grey:#8d8593;--gold:#d9a441;}
+  html,body{margin:0;background:#0b090d;color:var(--paper);font-family:Verdana,sans-serif;}
+  .wrap{max-width:1280px;margin:0 auto;padding:26px 20px 70px;}
+  h1{font-size:30px;margin:0;letter-spacing:1px;}
+  h1 .pink{color:var(--pink);}
+  .sub{color:var(--grey);font-size:14px;margin:6px 0 22px;font-style:italic;}
+  .rec{background:#1c1622;border:1px solid #3a2c42;border-left:4px solid var(--pink);padding:12px 16px;margin:0 0 24px;font-size:14px;line-height:1.55;color:#cdbfc9;}
+  .rec b{color:var(--groove);}
+  .row{display:flex;gap:14px;flex-wrap:wrap;}
+  .cell{flex:1;min-width:250px;background:var(--wax);border:1px solid #2c2630;border-radius:4px;overflow:hidden;}
+  .cell.win{border-color:var(--pink);box-shadow:0 0 0 1px var(--pink);}
+  .cell h2{font-size:14px;letter-spacing:2px;margin:0;padding:10px 12px 4px;text-transform:uppercase;}
+  .cell .tag{font-size:11px;color:var(--grey);padding:0 12px 8px;}
+  .cell.win .tag{color:var(--pink);}
+  svg,.pixwrap{display:block;width:100%;height:230px;background:var(--wax);}
+  .pixwrap{display:flex;align-items:center;justify-content:center;}
+  .verdict{font-size:12px;line-height:1.5;color:#b7ab9e;padding:12px;border-top:1px solid #2c2630;}
+  .verdict .good{color:#7fc99a;} .verdict .bad{color:#e0798a;}
+  .scratch line, .scratch path{stroke-linecap:round;}
+  /* boil */
+  .b2a{animation:b2a .2s steps(1) infinite;} .b2b{animation:b2b .2s steps(1) infinite;}
+  @keyframes b2a{0%{opacity:1}50%{opacity:0}100%{opacity:1}}
+  @keyframes b2b{0%{opacity:0}50%{opacity:1}100%{opacity:0}}
+  .pixjit{animation:pixjit .18s steps(1) infinite;}
+  @keyframes pixjit{0%{transform:translate(0,0)}33%{transform:translate(1px,0)}66%{transform:translate(0,1px)}100%{transform:translate(0,0)}}
+  table{border-collapse:collapse;width:100%;margin-top:26px;font-size:12.5px;}
+  th,td{border:1px solid #2c2630;padding:7px 9px;text-align:center;}
+  th{background:#1c1622;color:var(--groove);font-weight:normal;letter-spacing:1px;}
+  td:first-child{text-align:left;color:#b7ab9e;}
+  .y{color:#7fc99a;font-weight:bold;} .n{color:#e0798a;font-weight:bold;} .m{color:var(--gold);}
+  .foot{color:var(--grey);font-size:12px;margin-top:18px;line-height:1.55;}
+</style>
+</head>
+<body>
+<div class="wrap">
+<h1>DEAD WAX <span class="pink">— character style comparison</span></h1>
+<div class="sub">the same kid, four ways. pick with your eyes; the verdicts are my read on what each one costs us.</div>
+
+<div class="rec">
+<b>My recommendation up front:</b> the scratchy hand-drawn boil (column 3) — it's the one style that's <b>native to mechanics we already built</b>: boil-is-state (a soul's framerate tells you if it's freed/stuck/machine), the scratchboard below-Scratch world, and the two-world ink trick (the same line just recolors, black-on-paper above → white-on-black below). Pixel isn't just a different look — it quietly <b>breaks four things</b> (see the table). Sketchbook-rough (column 4) is already canon, but only for Soon. Cartoon-clean (column 2) is gorgeous and wrong: it looks like a 2024 mobile game, not a 2006 Newgrounds fever dream.
+</div>
+
+<div class="row">
+
+  <!-- 1. PIXEL -->
+  <div class="cell">
+    <h2>1 · Pixel</h2>
+    <div class="tag">SNES-indie retro · chunky</div>
+    <div class="pixwrap"><canvas id="pix" width="132" height="200"></canvas></div>
+    <div class="verdict">
+      <span class="good">+ cheap frames, rock-solid at 16px, stable pipeline.</span><br>
+      <span class="bad">− boil reads as a "broken sprite," not a trembling soul. needs 2 full palettes for the two worlds. no line-character for scratchboard. fights the whole Newgrounds premise.</span>
+    </div>
+  </div>
+
+  <!-- 2. CLEAN VECTOR -->
+  <div class="cell">
+    <h2>2 · Cartoon-clean</h2>
+    <div class="tag">Flash-tween · polished vector</div>
+    <svg viewBox="0 0 160 200">
+      <!-- lance -->
+      <line x1="104" y1="70" x2="150" y2="176" stroke="#f2eee4" stroke-width="7" stroke-linecap="round"/>
+      <line x1="150" y1="176" x2="156" y2="188" stroke="#e5407f" stroke-width="5" stroke-linecap="round"/>
+      <!-- hood/head: one clean shape, flat fill, single-weight outline -->
+      <path d="M52,116 L44,54 Q78,30 116,50 L120,104 L96,124 L64,124 Z" fill="#171320" stroke="#f2eee4" stroke-width="3.2"/>
+      <path d="M60,74 Q76,60 92,70 Q80,86 60,74 Z" fill="#0a0810" stroke="#f2eee4" stroke-width="2.6"/>
+      <path d="M96,72 Q110,60 122,70 Q112,84 96,72 Z" fill="#0a0810" stroke="#f2eee4" stroke-width="2.6"/>
+      <circle cx="74" cy="72" r="2.4" fill="#f2eee4"/><circle cx="108" cy="70" r="2.4" fill="#f2eee4"/>
+      <!-- body -->
+      <path d="M62,124 L112,124 L120,180 L86,192 L54,180 Z" fill="#171320" stroke="#f2eee4" stroke-width="3.2"/>
+      <!-- one boot -->
+      <path d="M54,180 L48,196 L78,196 L82,180 Z" fill="#0a0810" stroke="#f2eee4" stroke-width="3"/>
+      <!-- pink accents, crisp -->
+      <path d="M116,50 l-6,-3 5,-6" stroke="#e5407f" stroke-width="2.6" fill="none"/>
+      <line x1="104" y1="70" x2="112" y2="66" stroke="#e5407f" stroke-width="2.4"/>
+    </svg>
+    <div class="verdict">
+      <span class="good">+ crisp, readable, "expensive"-looking.</span><br>
+      <span class="bad">− reads as a modern mobile/console indie. loses the 2006-scrappy soul. hardest to keep consistent frame-to-frame. the "feral kid at 2am" is gone.</span>
+    </div>
+  </div>
+
+  <!-- 3. SCRATCHY BOIL (RECOMMENDED) -->
+  <div class="cell win">
+    <h2>3 · Scratchy boil</h2>
+    <div class="tag">the house style · hand-drawn, 2-frame boil</div>
+    <svg viewBox="0 0 160 200" class="scratch">
+      <!-- lance -->
+      <path d="M104,70 L150,176" stroke="#f2eee4" stroke-width="6"/>
+      <path d="M150,176 l6,12" stroke="#e5407f" stroke-width="4.5"/>
+      <!-- FRAME A -->
+      <g class="b2a">
+        <path d="M53,116 L45,54 L78,31 L116,50 L121,104 L96,124 L64,124 Z" fill="#171320" stroke="#f2eee4" stroke-width="3"/>
+        <path d="M59,74 q16,-15 33,-4 q-14,15 -33,4 z" fill="#0a0810" stroke="#f2eee4" stroke-width="2.6"/>
+        <path d="M95,72 q15,-13 27,-3 q-12,14 -27,3 z" fill="#0a0810" stroke="#f2eee4" stroke-width="2.6"/>
+        <circle cx="74" cy="72" r="2.4" fill="#f2eee4"/><circle cx="108" cy="70" r="2.4" fill="#f2eee4"/>
+        <path d="M62,124 L112,125 L120,180 L86,192 L54,179 Z" fill="#171320" stroke="#f2eee4" stroke-width="3"/>
+        <path d="M54,180 L47,196 L79,197 L82,180 Z" fill="#0a0810" stroke="#f2eee4" stroke-width="2.8"/>
+        <path d="M116,50 l-6,-3 5,-6" stroke="#e5407f" stroke-width="2.4" fill="none"/>
+      </g>
+      <!-- FRAME B: same shapes, slightly re-drawn (the boil) -->
+      <g class="b2b">
+        <path d="M52,117 L46,53 L79,32 L115,49 L122,105 L95,125 L65,123 Z" fill="#171320" stroke="#f2eee4" stroke-width="3"/>
+        <path d="M60,75 q15,-16 33,-5 q-15,16 -33,5 z" fill="#0a0810" stroke="#f2eee4" stroke-width="2.6"/>
+        <path d="M96,73 q14,-14 27,-4 q-13,15 -27,4 z" fill="#0a0810" stroke="#f2eee4" stroke-width="2.6"/>
+        <circle cx="75" cy="73" r="2.4" fill="#f2eee4"/><circle cx="107" cy="71" r="2.4" fill="#f2eee4"/>
+        <path d="M63,123 L111,126 L121,181 L85,193 L53,180 Z" fill="#171320" stroke="#f2eee4" stroke-width="3"/>
+        <path d="M53,181 L48,197 L80,196 L81,179 Z" fill="#0a0810" stroke="#f2eee4" stroke-width="2.8"/>
+        <path d="M115,49 l-6,-2 4,-7" stroke="#e5407f" stroke-width="2.4" fill="none"/>
+      </g>
+    </svg>
+    <div class="verdict">
+      <span class="good">+ boil IS the mechanic (4f freed / 2f stuck / 0f machine). scratchboard-native. one line, two worlds. cheap BECAUSE it's meant to look rough. it IS the 2006 aesthetic.</span><br>
+      <span class="bad">− needs silhouette discipline so tells stay readable in hard combat (solvable — that's what the 16px rule is for).</span>
+    </div>
+  </div>
+
+  <!-- 4. SKETCHBOOK ROUGH -->
+  <div class="cell">
+    <h2>4 · Sketchbook-rough</h2>
+    <div class="tag">construction lines showing · Soon's look</div>
+    <svg viewBox="0 0 160 200" class="scratch">
+      <!-- construction scaffolding, left visible -->
+      <g stroke="#6a6470" stroke-width="1" fill="none" opacity="0.6">
+        <circle cx="82" cy="72" r="40"/><line x1="42" y1="72" x2="122" y2="72"/><line x1="82" y1="32" x2="82" y2="150"/>
+        <rect x="54" y="120" width="60" height="70"/>
+      </g>
+      <path d="M104,70 L150,176" stroke="#d8d2c4" stroke-width="5"/>
+      <!-- loose double-stroked head -->
+      <path d="M53,116 L45,54 L78,31 L116,50 L121,104 L96,124 L64,124 Z" fill="none" stroke="#f2eee4" stroke-width="2.4"/>
+      <path d="M55,114 L47,56 L77,34 L114,52 L119,102" fill="none" stroke="#f2eee4" stroke-width="1.2" opacity="0.7"/>
+      <path d="M59,74 q16,-15 33,-4 q-14,15 -33,4 z" fill="none" stroke="#f2eee4" stroke-width="2.2"/>
+      <path d="M95,72 q15,-13 27,-3 q-12,14 -27,3 z" fill="none" stroke="#f2eee4" stroke-width="2.2"/>
+      <circle cx="74" cy="72" r="2.2" fill="#f2eee4"/><circle cx="108" cy="70" r="2.2" fill="#f2eee4"/>
+      <path d="M62,124 L112,124 L120,180 L86,192 L54,180 Z" fill="none" stroke="#f2eee4" stroke-width="2.4"/>
+      <path d="M116,50 l-6,-3 5,-6" stroke="#e5407f" stroke-width="2.2" fill="none"/>
+    </svg>
+    <div class="verdict">
+      <span class="good">+ perfect for Soon (unfinished-on-purpose; hides in wall hatching). raw, alive.</span><br>
+      <span class="bad">− too noisy for the whole cast. hurts instant readability — bad for a hard combat game where every tell must land in a frame. keep it as Soon's signature, not the house.</span>
+    </div>
+  </div>
+
+</div>
+
+<table>
+  <tr><th style="text-align:left">does it support…</th><th>1 Pixel</th><th>2 Clean</th><th>3 Boil ★</th><th>4 Rough</th></tr>
+  <tr><td>boil-is-state (framerate = a soul's status)</td><td class="n">breaks</td><td class="m">stiff</td><td class="y">native</td><td class="y">native</td></tr>
+  <tr><td>scratchboard below the Scratch (white line out of black)</td><td class="n">no line</td><td class="m">flat</td><td class="y">native</td><td class="y">native</td></tr>
+  <tr><td>two-world ink (recolor one line, don't redraw)</td><td class="n">2 palettes</td><td class="m">ok</td><td class="y">native</td><td class="y">native</td></tr>
+  <tr><td>Soon's construction-line concept</td><td class="n">no</td><td class="n">no</td><td class="m">adjacent</td><td class="y">this IS it</td></tr>
+  <tr><td>instant readability for hard combat tells</td><td class="y">great</td><td class="y">great</td><td class="y">w/ discipline</td><td class="n">noisy</td></tr>
+  <tr><td>production cost at 2-4hr scope</td><td class="y">low</td><td class="n">high</td><td class="m">low-mid</td><td class="m">low-mid</td></tr>
+  <tr><td>"2006 Newgrounds" cultural fit (our exact target)</td><td class="n">wrong era</td><td class="n">too clean</td><td class="y">bullseye</td><td class="y">bullseye</td></tr>
+</table>
+
+<div class="foot">
+The honest read: this isn't really "cartoon vs pixel" — it's "do we keep the four mechanics we designed around a drawn line, or trade them for pixel's cheaper frames." My vote is <b>column 3 as the house style, column 4 reserved for Soon, a whisper of column 2's polish only on the paper-world UI chrome, and pixel set aside</b> — because pixel would make us re-invent boil-is-state and the scratchboard world from scratch. But it's your call: if you want pixel badly enough, we re-plan those mechanics and I'll draw you a pixel bible instead. Say the word.
+</div>
+</div>
+
+<script>
+// pixel Skip, drawn from an ASCII map so it reads authentically blocky
+const P = 6;
+const map = [
+ "......ppp.....",
+ ".....p###p....",
+ "....p#####p...",
+ "....#WW#WW#...",
+ "....#WW#WW#...",  // void-almond eyes, no mouth
+ "....p#####/...",
+ ".....#####/...",
+ "......###/....",
+ ".....p###p....",
+ "....p#####p...",
+ "....#######/..",
+ "....#######/..",
+ "....#######/..",
+ ".....#####/...",
+ ".....##.##....",
+ "....p##.##....",
+ "....BB..BB....",  // one chunky boot region
+ "....BBB.......",
+];
+const cols = {'#':'#171320','p':'#f2eee4','W':'#f2eee4','B':'#0a0810','/':'#8d8593'};
+const edge = '#f2eee4';
+const c = document.getElementById('pix'), g = c.getContext('2d');
+g.imageSmoothingEnabled = false;
+function draw(){
+  g.clearRect(0,0,c.width,c.height);
+  for(let y=0;y<map.length;y++)for(let x=0;x<map[y].length;x++){
+    const ch = map[y][x]; if(ch==='.')continue;
+    // outline: if this is a '#' next to empty, it's already bordered by 'p'
+    g.fillStyle = cols[ch]||'#171320';
+    g.fillRect(x*P, y*P+8, P, P);
+    if(ch==='W'){ g.fillStyle='#f2eee4'; g.fillRect(x*P+1, y*P+9, P-2, P-2); }
+  }
+  // pink accent pixels (crackle meter on the body)
+  g.fillStyle = '#e5407f';
+  g.fillRect(9*P, 5*P+8, P, P);
+  g.fillRect(4*P, 3*P+8, 2, 2);
+  g.fillRect(9*P, 3*P+8, 2, 2);
+}
+draw();
+</script>
+</body>
+</html>

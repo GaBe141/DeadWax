@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>DEAD WAX — detail tier readability test</title>
+<style>
+  :root{--wax:#100d13;--paper:#e8e0cc;--groove:#f2eee4;--pink:#e5407f;--grey:#8d8593;--gold:#d9a441;--rose:#e0b9af;}
+  html,body{margin:0;background:#0a080c;color:var(--paper);font-family:Verdana,sans-serif;}
+  .wrap{max-width:1180px;margin:0 auto;padding:24px 20px 64px;}
+  h1{font-size:26px;margin:0;letter-spacing:1px;} h1 .pink{color:var(--pink);}
+  .sub{color:var(--grey);font-size:14px;margin:6px 0 20px;font-style:italic;}
+  .rec{background:#1c1622;border:1px solid #3a2c42;border-left:4px solid var(--pink);padding:12px 16px;margin:0 0 22px;font-size:14px;line-height:1.55;color:#cdbfc9;}
+  .rec b{color:var(--groove);}
+  .grid{display:flex;gap:16px;}
+  .col{flex:1;background:var(--wax);border:1px solid #2c2630;border-radius:4px;overflow:hidden;}
+  .col.win{border-color:var(--pink);box-shadow:0 0 0 1px var(--pink);}
+  .col h2{font-size:14px;letter-spacing:2px;text-transform:uppercase;margin:0;padding:10px 12px 2px;}
+  .col.win h2{color:var(--pink);} .tag{font-size:11px;color:var(--grey);padding:0 12px 8px;}
+  .big{height:210px;background:#0d0b10;} .big svg{display:block;height:210px;margin:0 auto;}
+  .stripwrap{padding:0;}
+  .striplabel{font-size:10px;color:var(--grey);padding:6px 12px 2px;letter-spacing:1px;}
+  svg.strip{display:block;width:100%;height:96px;}
+  .verdict{font-size:12px;line-height:1.5;color:#b7ab9e;padding:11px 12px;border-top:1px solid #2c2630;}
+  .verdict .g{color:#7fc99a;} .verdict .b{color:#e0798a;}
+  h3{font-size:13px;letter-spacing:2px;color:var(--groove);margin:26px 0 6px;text-transform:uppercase;}
+  .zoomnote{font-size:12px;color:var(--grey);margin:0 0 8px;line-height:1.5;}
+  .zoom{width:100%;border:1px solid #2c2630;border-radius:4px;display:block;image-rendering:pixelated;}
+  .foot{color:var(--grey);font-size:12px;margin-top:18px;line-height:1.55;}
+  /* boil */
+  .a1{animation:a1 .22s steps(1) infinite;} .a2{animation:a2 .22s steps(1) infinite;}
+  @keyframes a1{0%{opacity:1}50%{opacity:0}100%{opacity:1}} @keyframes a2{0%{opacity:0}50%{opacity:1}100%{opacity:0}}
+</style>
+</head>
+<body>
+<div class="wrap">
+<h1>DEAD WAX <span class="pink">— detail tier readability test</span></h1>
+<div class="sub">the same enemy (an Auditioner) both ways. big to inspect, then at real 48px on a grimy floor — where the fight actually happens.</div>
+
+<div class="rec">
+<b>The question isn't "which looks better big" — both do.</b> It's "which one can you still read at 48px, mid-combat, against a background drawn at the density you asked for." Watch the gameplay strips (they're at true in-game size, with boil). The dense one starts to <b>fight the floor</b> — its internal hatching blends into the grime and the silhouette softens. The readable one stays a <b>clean bold shape</b> you can track. Scroll down for the same two rendered at 48px and zoomed 4× — that's what the screen actually draws.
+</div>
+
+<div class="grid">
+
+  <!-- TIER A: DENSE -->
+  <div class="col">
+    <h2>Tier A · Dense</h2>
+    <div class="tag">full cutaway density — every inch textured</div>
+    <div class="big">
+      <svg viewBox="0 0 120 150">
+        <g id="audA" transform="translate(60,74)">
+          <!-- reaching arms, detailed with tendrils -->
+          <path d="M-30,-14 q-26,-6 -44,10" fill="none" stroke="#241f1a" stroke-width="5"/>
+          <path d="M-30,-14 q-26,-6 -44,10" fill="none" stroke="#f2eee4" stroke-width="2" stroke-dasharray="4 4"/>
+          <path d="M-74,-4 l-6,-4 m6,4 l-7,2 m7,-2 l-2,7" stroke="#f2eee4" stroke-width="1.4"/>
+          <path d="M30,-14 q26,-6 44,10" fill="none" stroke="#241f1a" stroke-width="5"/>
+          <path d="M30,-14 q26,-6 44,10" fill="none" stroke="#f2eee4" stroke-width="2" stroke-dasharray="4 4"/>
+          <path d="M74,-4 l6,-4 m-6,4 l7,2 m-7,-2 l2,7" stroke="#f2eee4" stroke-width="1.4"/>
+          <!-- body: thick ink + fill -->
+          <polygon points="-26,-34 0,-48 26,-34 30,40 0,54 -30,40" fill="#241f1a"/>
+          <polygon points="-22,-31 0,-43 22,-31 25,37 0,49 -26,37" fill="#171320"/>
+          <!-- interior crosshatch -->
+          <g stroke="#f2eee4" stroke-width="0.8" opacity="0.22">
+            <line x1="-20" y1="-20" x2="20" y2="10"/><line x1="-20" y1="-8" x2="20" y2="22"/>
+            <line x1="-20" y1="4" x2="18" y2="34"/><line x1="-20" y1="16" x2="10" y2="40"/>
+            <line x1="20" y1="-20" x2="-20" y2="10"/><line x1="20" y1="-8" x2="-20" y2="22"/>
+            <line x1="20" y1="4" x2="-18" y2="34"/>
+          </g>
+          <!-- grime flecks -->
+          <g fill="#f2eee4" opacity="0.3">
+            <circle cx="-8" cy="-10" r="1"/><circle cx="12" cy="0" r="0.8"/><circle cx="-2" cy="20" r="1.1"/>
+            <circle cx="8" cy="30" r="0.7"/><circle cx="-14" cy="6" r="0.9"/><circle cx="16" cy="18" r="0.8"/>
+            <rect x="-6" y="24" width="1" height="2"/><rect x="10" y="-4" width="1" height="2"/>
+          </g>
+          <!-- cracks -->
+          <path d="M-4,-40 l4,14 -6,10 5,12" fill="none" stroke="#f2eee4" stroke-width="0.9" opacity="0.5"/>
+          <!-- eyes -->
+          <circle cx="-9" cy="-24" r="2.6" fill="#f2eee4"/><circle cx="11" cy="-24" r="2.6" fill="#f2eee4"/>
+          <!-- dotted legs -->
+          <path d="M-12,54 v14 M12,54 v14" stroke="#f2eee4" stroke-width="2.4" stroke-dasharray="4 3"/>
+        </g>
+      </svg>
+    </div>
+    <div class="stripwrap">
+      <div class="striplabel">AT 48PX ON A GRIMY FLOOR · with boil</div>
+      <svg class="strip" viewBox="0 0 480 96" id="stripA"></svg>
+    </div>
+    <div class="verdict">
+      <span class="g">+ jaw-dropping in a portrait, a shop screen, a codex.</span><br>
+      <span class="b">− at 48px the hatch+grime melt into the floor; the silhouette goes soft; boil makes the internal noise shimmer. harder to track mid-fight, worse against a busy bg.</span>
+    </div>
+  </div>
+
+  <!-- TIER B: READABLE -->
+  <div class="col win">
+    <h2>Tier B · Readable</h2>
+    <div class="tag">mid-detail + boil — built to move &amp; read</div>
+    <div class="big">
+      <svg viewBox="0 0 120 150">
+        <g id="audB" transform="translate(60,74)">
+          <path d="M-28,-14 q-24,-4 -40,12" fill="none" stroke="#f2eee4" stroke-width="3" stroke-dasharray="5 5"/>
+          <path d="M28,-14 q24,-4 40,12" fill="none" stroke="#f2eee4" stroke-width="3" stroke-dasharray="5 5"/>
+          <!-- bold single silhouette, high contrast -->
+          <polygon points="-26,-34 0,-48 26,-34 30,40 0,54 -30,40" fill="#f2eee4"/>
+          <polygon points="-20,-30 0,-41 20,-30 24,37 0,49 -24,37" fill="#14101a"/>
+          <!-- just the essentials: void eyes + one pink reach-tick -->
+          <circle cx="-9" cy="-22" r="3" fill="#f2eee4"/><circle cx="11" cy="-22" r="3" fill="#f2eee4"/>
+          <path d="M0,4 q0,10 0,16" stroke="#e5407f" stroke-width="2.4" fill="none" opacity="0.9"/>
+          <path d="M-12,54 v14 M12,54 v14" stroke="#f2eee4" stroke-width="3" stroke-dasharray="5 4"/>
+        </g>
+      </svg>
+    </div>
+    <div class="stripwrap">
+      <div class="striplabel">AT 48PX ON A GRIMY FLOOR · with boil</div>
+      <svg class="strip" viewBox="0 0 480 96" id="stripB"></svg>
+    </div>
+    <div class="verdict">
+      <span class="g">+ reads instantly at 48px, pops off the grimy floor, silhouette holds while moving. detail comes from the bold shape + one pink accent, not internal noise. cheap to animate (boil).</span><br>
+      <span class="b">− less to gawk at up close — which is exactly why the DETAILED tier exists for portraits &amp; cutscenes.</span>
+    </div>
+  </div>
+</div>
+
+<h3>What the screen actually draws at 48px (zoomed 4×)</h3>
+<div class="zoomnote">Rendered at real gameplay height, then blown up nearest-neighbor so you can see the pixels the GPU commits. Left = dense (muddy, low contrast with the floor). Right = readable (clean, high contrast).</div>
+<img id="zoom" class="zoom" alt="48px render comparison">
+
+<div class="foot">
+So the two-tier split isn't a compromise — it's using each style where it wins: <b>full density where the player stops to look</b> (portraits, cutaways, cutscenes, shops, the map) and <b>bold readability where the player is fighting for their life</b> (gameplay sprites). Same art direction, same hand, same grime vocabulary — just dialed for the distance. If after seeing this you still want full density in combat too, we can — but I'd want to prove one enemy stays readable against a finished background before we commit the roster to it.
+</div>
+</div>
+
+<script>
+// build the gameplay strips: 3 copies of each Auditioner at ~48px on a grimy floor, with boil
+function grimeFloor(svg){
+  const NS="http://www.w3.org/2000/svg";
+  // rose-dark floor
+  let bg=document.createElementNS(NS,'rect'); bg.setAttribute('width',480); bg.setAttribute('height',96); bg.setAttribute('fill','#171320'); svg.appendChild(bg);
+  // hatch
+  for(let i=-10;i<60;i++){let l=document.createElementNS(NS,'line');l.setAttribute('x1',i*10);l.setAttribute('y1',0);l.setAttribute('x2',i*10-96);l.setAttribute('y2',96);l.setAttribute('stroke','#f2eee4');l.setAttribute('stroke-width','0.7');l.setAttribute('opacity','0.10');svg.appendChild(l);}
+  // groove lines
+  for(let g=0;g<4;g++){let l=document.createElementNS(NS,'path');l.setAttribute('d',`M0,${24+g*22} q120,-8 240,0 t240,0`);l.setAttribute('fill','none');l.setAttribute('stroke','#f2eee4');l.setAttribute('stroke-width','2');l.setAttribute('opacity','0.5');svg.appendChild(l);}
+  // grime flecks
+  let seed=7; function rnd(){seed=(1103515245*seed+12345)&0x7fffffff;return seed/0x7fffffff;}
+  for(let i=0;i<160;i++){let c=document.createElementNS(NS,'circle');c.setAttribute('cx',rnd()*480);c.setAttribute('cy',rnd()*96);c.setAttribute('r',rnd()*1.4+0.3);c.setAttribute('fill','#f2eee4');c.setAttribute('opacity','0.12');svg.appendChild(c);}
+  // a drifting dust bunny for company
+  let db=document.createElementNS(NS,'path'); db.setAttribute('d','M300,70 q-8,-4 -3,-12 q4,-7 11,-4 q4,-7 11,-3 q8,-3 7,7 q7,5 0,11 q2,8 -7,8 q-5,5 -12,1 q-8,4 -14,-4 z'); db.setAttribute('fill','#0d0b10'); db.setAttribute('stroke','#f2eee4'); db.setAttribute('stroke-width','1'); svg.appendChild(db);
+}
+function placeCopies(svg, srcId, ys){
+  const src=document.getElementById(srcId);
+  const xs=[70,240,410];
+  xs.forEach((x,i)=>{
+    const g=src.cloneNode(true); g.removeAttribute('id');
+    // scale the ~150-tall art down to ~52 tall (0.35) and place
+    g.setAttribute('transform',`translate(${x-60*0.35},${18}) scale(0.35)`);
+    // wrap in a boil frame group
+    const frame=document.createElementNS('http://www.w3.org/2000/svg','g');
+    frame.setAttribute('class', i%2? 'a2':'a1');
+    frame.appendChild(g); svg.appendChild(frame);
+    // second boil frame (nudged)
+    const g2=src.cloneNode(true); g2.removeAttribute('id');
+    g2.setAttribute('transform',`translate(${x-60*0.35+1},${17.4}) scale(0.35)`);
+    const frame2=document.createElementNS('http://www.w3.org/2000/svg','g');
+    frame2.setAttribute('class', i%2? 'a1':'a2');
+    frame2.appendChild(g2); svg.appendChild(frame2);
+  });
+}
+const sA=document.getElementById('stripA'), sB=document.getElementById('stripB');
+grimeFloor(sA); grimeFloor(sB);
+placeCopies(sA,'audA'); placeCopies(sB,'audB');
+
+// zoom demo: draw each big char to a 48px canvas, upscale 4x nearest-neighbor
+function svgToImg(svgEl, cb){
+  const clone=svgEl.cloneNode(true);
+  const s=new XMLSerializer().serializeToString(clone);
+  const img=new Image();
+  img.onload=()=>cb(img);
+  img.src='data:image/svg+xml;base64,'+btoa(unescape(encodeURIComponent(s)));
+}
+window.addEventListener('load',()=>{
+  const big=document.querySelectorAll('.big svg');
+  const outW=480,outH=200, cell=240;
+  const canv=document.createElement('canvas'); canv.width=outW; canv.height=outH;
+  const cx=canv.getContext('2d');
+  cx.fillStyle='#171320'; cx.fillRect(0,0,outW,outH);
+  // grimy floor under both
+  cx.strokeStyle='rgba(242,238,228,0.5)'; cx.lineWidth=2;
+  for(let g=0;g<4;g++){cx.beginPath();cx.moveTo(0,50+g*40);cx.lineTo(outW,50+g*40);cx.stroke();}
+  let done=0;
+  const small=document.createElement('canvas'); small.width=40; small.height=50;
+  const sc=small.getContext('2d');
+  big.forEach((svg,idx)=>{
+    svgToImg(svg,(img)=>{
+      sc.clearRect(0,0,40,50); sc.imageSmoothingEnabled=true;
+      sc.drawImage(img,0,0,40,50);            // render tiny (true ~48px)
+      cx.imageSmoothingEnabled=false;
+      cx.drawImage(small, idx*cell+40, 30, 160, 200); // upscale 4x nearest
+      cx.fillStyle='#8d8593'; cx.font='12px Verdana';
+      cx.fillText(idx?'READABLE @48px':'DENSE @48px', idx*cell+52, 24);
+      done++;
+      if(done===2){ document.getElementById('zoom').src=canv.toDataURL(); }
+    });
+  });
+});
+</script>
+</body>
+</html>
