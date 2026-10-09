@@ -7,6 +7,7 @@ const AudioScript := preload("res://scripts/audio_bank.gd")
 const ProgressionScript := preload("res://scripts/progression_state.gd")
 const AbilitiesScript := preload("res://scripts/abilities_state.gd")
 const InventoryMenuScript := preload("res://scripts/inventory_menu.gd")
+const GrooveScript := preload("res://scripts/groove_clock.gd")
 const ROOM_SCRIPTS := [
 	preload("res://scripts/room_label.gd"),
 	preload("res://scripts/room_dojo.gd"),
@@ -52,6 +53,11 @@ const INACTIVE_PAD_DEVICE := 100000
 
 const MARGIN := 22.0
 const NEEDLE_HEALTH := 3
+# -- Groove pressure (Settings) ------------------------------------------------
+const PULSE_DB := -17.0            # each beat while something in the room is roused
+const POCKET_DB := -13.0           # the bright bite of a strike that lands in the pocket
+const FLAT_AIR_DB := -11.0         # an off-beat stroke is quieter...
+const FLAT_PITCH := 0.9            # ...and pitched down
 
 var player: CharacterBody2D
 var camera: Camera2D
@@ -103,7 +109,9 @@ var _save_message := ""
 var _save_message_time := 0.0
 var _health := NEEDLE_HEALTH
 var _respawn_pending := false
-var _settings := {"volume": 0.8, "reduced_motion": false, "fullscreen": false}
+var _settings := {"volume": 0.8, "reduced_motion": false, "fullscreen": false, "groove_pressure": false}
+## The room's beat. Main keeps it; Skip holds it only while Groove pressure is on.
+var groove: RefCounted
 var controller_router: Node
 var controller_menu: CanvasLayer
 var controller_profiles: Dictionary = {}
@@ -120,6 +128,7 @@ var feedback: Label
 var status: Label
 var paper: ColorRect
 var crackle_bar: ColorRect
+var beat_mark: ColorRect
 var hud_motion: Node
 var combo_readout: Control
 var cinematic_hud: Control
@@ -163,6 +172,7 @@ func _ready() -> void:
 	audio = AudioScript.new()
 	add_child(audio)
 
+	groove = GrooveScript.new()
 	player = SkipScript.new()
 	player.progression = progression
 	player.abilities = abilities
@@ -273,6 +283,7 @@ func _process(delta: float) -> void:
 		_observe_collection()
 	if room == null:
 		return
+	_advance_groove(delta)
 	if development_mode and OS.is_debug_build() and not _transition_pending:
 		if Input.is_action_just_pressed("switch_room"):
 			_debug_cycle_room()
@@ -372,17 +383,26 @@ func _controller_text(text: String) -> String:
 	if game_menu == null or game_menu.controller_labels.is_empty(): return text
 	return text.replace("L / LB", "L").replace("F / RB", "F / R")
 
+func _update_beat_mark(cinematic: bool) -> void:
+	if beat_mark == null:
+		return
+	var beat := _beat_status()
+	beat_mark.visible = not cinematic and bool(beat.live)
+	if beat_mark.visible:
+		beat_mark.color = PressScript.PINK if bool(beat.lit) else Color(0.1, 0.09, 0.09, 0.22)
+
 func _update_cinematic_presentation() -> void:
 	var cinematic := _cinematic_campaign()
 	for control in [masthead, title, title_rule, subtitle, footer_stock, status, controls_note, crackle_bar, feedback, hud_motion.shine_notice]:
 		control.visible = not cinematic
+	_update_beat_mark(cinematic)
 	combo_readout.cinematic_mode = cinematic
 	combo_readout.visible = not cinematic
 	cinematic_hud.visible = cinematic and _has_session
 	_update_place_notes()
 	if not cinematic or not _has_session: return
 	cinematic_hud.set_status({"health": _health, "max_health": _max_health(), "noise": player.noise,
-		"b_side": pressing.on_b_side(), "runtime": pressing.runtime_ratio()})
+		"b_side": pressing.on_b_side(), "runtime": pressing.runtime_ratio(), "beat": _beat_status()})
 	cinematic_hud.set_focus(_cinematic_focus())
 
 func _controls_text() -> String:
@@ -445,6 +465,8 @@ func _swap_room(next_room: Node2D, entry_id: StringName) -> void:
 		room.queue_free()
 	room = next_room
 	player.free_combo_practice = practice_mode or development_mode
+	var beat := float(room.get("beat_period")) if "beat_period" in room else 0.0
+	groove.call("set_period", beat if beat > 0.0 else GrooveScript.DEFAULT_PERIOD)
 	room.progression = progression
 	room.abilities = abilities
 	if "session_outcomes" in room:
@@ -617,7 +639,7 @@ func _persist_session() -> bool:
 		"progression": progression.call("snapshot"), "shine": player.shine,
 		"abilities": abilities.snapshot(),
 		"completed": chapter_complete, "encounters": encounters.duplicate(true),
-		"settings": _settings.duplicate(true),
+		"settings": _checkpoint_settings(),
 		"purchases": economy.call("snapshot").purchases,
 		"map": map_state.snapshot(),
 		"discoveries": discoveries.snapshot(),
@@ -1219,6 +1241,9 @@ func _load_settings() -> void:
 			var value: Variant = config.get_value("display", key, false)
 			if value is bool:
 				_settings[key] = value
+		var groove_pressure: Variant = config.get_value("gameplay", "groove_pressure", false)
+		if groove_pressure is bool:
+			_settings.groove_pressure = groove_pressure
 		var profiles: Variant = config.get_value("controllers", "profiles", {})
 		if profiles is Dictionary:
 			for key in profiles:
@@ -1242,6 +1267,7 @@ func _save_settings_file(profiles: Dictionary) -> bool:
 	config.set_value("audio", "volume", _settings.volume)
 	config.set_value("display", "reduced_motion", _settings.reduced_motion)
 	config.set_value("display", "fullscreen", _settings.fullscreen)
+	config.set_value("gameplay", "groove_pressure", _groove_pressure())
 	config.set_value("controllers", "profiles", profiles)
 	var temporary := settings_path + ".tmp"
 	if config.save(temporary) != OK:
@@ -1355,7 +1381,52 @@ func _finish_controller_setup_close() -> void:
 	if game_menu.is_open and is_instance_valid(game_menu._first_focus):
 		game_menu._first_focus.grab_focus()
 
+# -- Groove pressure ----------------------------------------------------------
+# One setting decides whether the world keeps time. Off, nobody holds the
+# clock: the Accent hits big and every foe keeps its own count, exactly as
+# before. On, Skip carries Main's clock, counting foes tick on the room's beat,
+# and while something is roused a strike in the pocket is the one that hits
+# big. The parry window, launches and traversal never read the beat.
+
+func _groove_pressure() -> bool:
+	return bool(_settings.get("groove_pressure", false))
+
+func _apply_groove() -> void:
+	if player == null:
+		return
+	player.groove = groove if _groove_pressure() else null
+	if player.groove == null:
+		groove.live = false
+
+func _advance_groove(delta: float) -> void:
+	if player.groove == null:
+		return
+	var began := int(groove.call("advance", delta))
+	groove.live = _groove_listening()
+	# One even pulse: the foes' own ticks carry the phrase (three and a swing).
+	if began > 0 and groove.live and not player.hooded:
+		audio.play("pulse", PULSE_DB)
+
+## A muted foe (HUSH's floor) and a quiet exchange never report themselves.
+func _groove_listening() -> bool:
+	for foe in get_tree().get_nodes_in_group("strikable"):
+		if is_instance_valid(foe) and not foe.is_queued_for_deletion() and foe.has_method("is_roused") and bool(foe.call("is_roused")):
+			return true
+	return false
+
+## The quiet HUD mark: hidden in a quiet room, dim between beats, lit in the pocket.
+func _beat_status() -> Dictionary:
+	if player.groove == null or not bool(groove.get("live")):
+		return {"live": false, "lit": false}
+	return {"live": true, "lit": bool(groove.call("in_pocket"))}
+
+## The checkpoint keeps its original three fields; Groove pressure lives only
+## in the settings file, like controller layouts.
+func _checkpoint_settings() -> Dictionary:
+	return {"volume": _settings.volume, "reduced_motion": _settings.reduced_motion, "fullscreen": _settings.fullscreen}
+
 func _apply_settings() -> void:
+	_apply_groove()
 	AudioServer.set_bus_volume_db(0, linear_to_db(maxf(0.001, float(_settings.volume))))
 	AudioServer.set_bus_mute(0, float(_settings.volume) <= 0.0)
 	camera.position_smoothing_enabled = not bool(_settings.reduced_motion)
@@ -1532,7 +1603,15 @@ func _on_struck(pos: Vector2, big: bool, launched: bool) -> void:
 	var contact: StringName = &"miss"
 	var impacts: Array[Dictionary] = []
 	var pitch: float = [1.0, 1.04, 0.94][clampi(step - 1, 0, 2)]
-	audio.play(["strike_tap", "strike_sweep", "strike_accent"][clampi(step - 1, 0, 2)], -7.0, pitch)
+	# A live groove judged this stroke: the pocket bites, an off-beat one is
+	# quieter and pitched down. Without a groove the Accent alone is heavy.
+	var judged: StringName = player.last_strike_groove
+	var heavy := big if not judged.is_empty() else (step == 3 or big)
+	var flat := judged == &"flat"
+	audio.play(["strike_tap", "strike_sweep", "strike_accent"][clampi(step - 1, 0, 2)],
+		FLAT_AIR_DB if flat else -7.0, pitch * (FLAT_PITCH if flat else 1.0))
+	if judged == &"pocket":
+		audio.play("pocket", POCKET_DB, pitch)
 	# Combat listeners acknowledge actual contact. A closed guard or an empty
 	# swing must sound different from wax giving way; doors and residents never
 	# claim a hit. Capture origins before fatal signals retire the actor.
@@ -1561,8 +1640,13 @@ func _on_struck(pos: Vector2, big: bool, launched: bool) -> void:
 	add_child(w)
 	w.global_position = pos
 	if contact == &"hit":
-		audio.play("strike_finish" if step == 3 or big else "strike_hit", -6.0 if step == 3 or big else -8.0)
-		_shake = maxf(_shake, 5.0 if step == 3 or big else 2.0)
+		if heavy:
+			audio.play("strike_finish", -6.0)
+		elif flat:
+			audio.play("strike_hit", -10.0, FLAT_PITCH)
+		else:
+			audio.play("strike_hit", -8.0)
+		_shake = maxf(_shake, 5.0 if heavy else 2.0)
 	elif contact == &"guard":
 		audio.play("strike_guard", -10.0)
 	combo_readout.set_snapshot(player.combo_snapshot())
@@ -2133,6 +2217,16 @@ func _build_hud() -> void:
 	crackle_bar.size = Vector2(0, 6)
 	crackle_bar.color = PressScript.PINK
 	layer.add_child(crackle_bar)
+
+	# Groove pressure's beat, a square of ink beside the smear: dim between
+	# beats, pink in the pocket, absent while nothing in the room is listening.
+	beat_mark = ColorRect.new()
+	beat_mark.name = "BeatMark"
+	beat_mark.position = Vector2(MARGIN + 150.0, 697)
+	beat_mark.size = Vector2(12, 12)
+	beat_mark.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	beat_mark.visible = false
+	layer.add_child(beat_mark)
 
 	# The control list is a contact sheet note, not part of the game's page.
 	controls_note = Label.new()

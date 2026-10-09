@@ -142,3 +142,6 @@ jobs:
           godot --headless --path . --script res://tests/cinematic_fixtures_test.gd
           godot --headless --path . --script res://tests/cinematic_actors_test.gd
           godot --headless --path . --script res://tests/cinematic_book_test.gd
+
+      - name: Validate Groove pressure
+        run: godot --headless --path . --script res://tests/groove_test.gd

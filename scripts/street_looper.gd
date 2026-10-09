@@ -56,8 +56,8 @@ func _process(delta: float) -> void:
 				_t = 0.0
 		S.COUNTING:
 			# Leaving range is a useful dodge, not a way to cancel the count.
-			if _t >= TICK_GAP:
-				_t = 0.0
+			if _t >= _tick_gap():
+				_t = _tick_carry()
 				_count += 1
 				var bank := _bank()
 				if _count <= 3:
@@ -81,7 +81,7 @@ func _begin_count() -> void:
 	_engaged = true
 	state = S.COUNTING
 	_count = 0
-	_t = 0.0
+	_t = _count_start()
 
 func on_player_strike(pos: Vector2, big: bool) -> StringName:
 	if state == S.DOWN or global_position.distance_to(pos) > STRIKE_HIT_RANGE:
@@ -144,7 +144,7 @@ func encounter_snapshot() -> Dictionary:
 		S.DOWN: phase = "down"
 	return {
 		"phase": phase, "count": 0 if state in [S.CALM, S.ALERT] else _count,
-		"beat": clampf(_t / TICK_GAP, 0.0, 1.0) if state == S.COUNTING else 0.0,
+		"beat": clampf(_t / _tick_gap(), 0.0, 1.0) if state == S.COUNTING else 0.0,
 		"opening_remaining": maxf(OPENING_DURATION - _t, 0.0) if state == S.STAGGER else 0.0,
 		"opening_duration": OPENING_DURATION,
 		"blocked": _blocked_time / BLOCKED_FLASH_TIME,

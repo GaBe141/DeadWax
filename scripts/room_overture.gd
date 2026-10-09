@@ -100,6 +100,7 @@ func configure(id: StringName) -> void:
 			objective_label = "It points home. It will not swing first."
 			bg_color = Color("302c42")
 			ink = Color("d8bd91")
+			beat_period = TonearmScript.TICK_GAP # the room keeps the keeper's count
 			cam_limits = Rect2(0, 0, 2250, 850)
 			register_entry(&"from_smoothed_floor", Vector2(185, 574))
 			register_entry(&"from_worn_gallery", Vector2(2020, 574))

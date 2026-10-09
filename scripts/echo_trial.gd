@@ -55,7 +55,7 @@ class EchoPressing extends "res://scripts/test_pressing.gd":
 	func _draw() -> void:
 		var pose := {"phase": S.keys()[state].to_lower(), "clock": _print_time, "seed": _sid,
 			"face": _face, "muted": muted, "recoil": _print_recoil, "follow_through": _print_swing_tail,
-			"count": _count, "beat": clampf(_t / TICK_GAP, 0.0, 1.0),
+			"count": _count, "beat": clampf(_t / _tick_gap(), 0.0, 1.0),
 			"swing": clampf(_t / 0.12, 0.0, 1.0), "state_time": _t, "reform": 0.0,
 			"resonance": resonance, "hp": hp, "hp_total": int(HP_MAX)}
 		PrintPress.draw_pressing(self, pose, trial_ink, trial_stock.lerp(trial_ink, 0.17), trial_ink,
@@ -77,7 +77,7 @@ class EchoLooper extends "res://scripts/street_looper.gd":
 	func _draw() -> void:
 		var pose := {"phase": S.keys()[state].to_lower(), "clock": _print_time, "seed": _sid,
 			"face": _face, "muted": muted, "recoil": _print_recoil, "follow_through": _print_swing_tail,
-			"count": _count, "beat": clampf(_t / TICK_GAP, 0.0, 1.0),
+			"count": _count, "beat": clampf(_t / _tick_gap(), 0.0, 1.0),
 			"swing": clampf(_t / 0.12, 0.0, 1.0), "state_time": _t, "reform": 0.0,
 			"resonance": resonance, "hp": hp, "hp_total": int(HP_MAX)}
 		PrintPress.draw_pressing(self, pose, ink, stock.lerp(ink, 0.17), ink, PrintPress.BRASS, ink.lerp(stock, 0.40))

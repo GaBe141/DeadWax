@@ -69,6 +69,9 @@ var air_strikes_max := 0           # room-provided baseline; progression derives
 var progression: RefCounted
 var abilities: RefCounted
 var economy: RefCounted
+## Main's room beat, held only while Groove pressure is on. A live groove
+## decides which strikes hit big; without one the Accent keeps that role.
+var groove: RefCounted
 var hood_speed_mult := HOOD_SPEED_MULT
 var warm_thread := false
 ## Optional equipment affects handling, never strike/parry clocks or jump height.
@@ -112,6 +115,9 @@ var combo_remaining := 0.0
 var free_combo_practice := false # only Main's disposable practice/development rooms
 var executed_strike_step := 0
 var last_strike_contact: StringName = &"miss"
+## How a live groove judged the executed strike: &"pocket", &"flat", or empty
+## when no groove was listening and the classic Accent rule applied.
+var last_strike_groove: StringName = &""
 var _strike_duration := STRIKE_COOLDOWN
 var _recover_accel := STRIKE_RECOVER_ACCEL
 
@@ -125,6 +131,7 @@ const CONTACT_POSE_TIME := 0.14
 const HIT_HOLD_TIME := 0.035
 const ACCENT_HOLD_TIME := 0.055
 const PARRY_POSE_TIME := 0.24
+const FLAT_POSE_TIME := 0.32      # an off-beat stroke's accent stays grey this long
 var _print_time := 0.0
 var _stride := 0.0
 var _run_blend := 0.0
@@ -146,6 +153,7 @@ var _parry_pose := 0.0
 var _parry_face := 1.0
 var _strike_launched := false
 var _strike_pogo := false
+var _flat_pose := 0.0
 var _hit_direction := 1.0
 var _animation_grounded := true
 
@@ -231,6 +239,7 @@ func _clear_combat_impression() -> void:
 	_parry_pose = 0.0
 	_strike_launched = false
 	_strike_pogo = false
+	_flat_pose = 0.0
 
 func add_shine(amount: int) -> bool:
 	if amount <= 0 or amount > 2147483647 - shine:
@@ -442,7 +451,22 @@ func _strike() -> void:
 
 	# The accent strengthens the existing hit only after traversal resolves.
 	# A hot groove can already be big; it receives no second beat or impulse.
-	big = big or combo_step == COMBO_LENGTH
+	# While a live groove is listening, landing in its pocket is what hits big:
+	# the Accent keeps its gesture and follow-through but must find the beat.
+	# Launches, reach, breaths and the parry clock never read the beat.
+	if groove != null and bool(groove.get("live")):
+		var pocket := bool(groove.call("in_pocket"))
+		if pocket:
+			last_strike_groove = &"pocket"
+		elif big:
+			last_strike_groove = &"" # a hot groove's own echo already answered
+		else:
+			last_strike_groove = &"flat"
+		big = big or pocket
+		_flat_pose = FLAT_POSE_TIME if last_strike_groove == &"flat" else 0.0
+	else:
+		last_strike_groove = &""
+		big = big or combo_step == COMBO_LENGTH
 	_strike_pose = _strike_pose_duration
 	_strike_big = big
 	_strike_launched = launched
@@ -488,6 +512,7 @@ func _process(delta: float) -> void:
 	_strike_pose = maxf(_strike_pose - (step - held), 0.0)
 	_contact_pose = maxf(_contact_pose - step, 0.0)
 	_parry_pose = maxf(_parry_pose - step, 0.0)
+	_flat_pose = maxf(_flat_pose - step, 0.0)
 	queue_redraw()
 
 func _draw() -> void:
@@ -510,6 +535,7 @@ func _animation_pose() -> Dictionary:
 		"queued": 1.0 if _strike_buffer > 0.0 else 0.0,
 		"strike_launched": _strike_launched, "strike_pogo": _strike_pogo,
 		"hurt": _hit_flash / 0.35, "hit_direction": _hit_direction, "noise": noise,
+		"flat": _flat_pose / FLAT_POSE_TIME,
 	}
 
 ## Recovery and passages move the body instantly; the impression starts at rest
@@ -531,6 +557,7 @@ func reset_animation() -> void:
 	_parry_face = facing
 	executed_strike_step = 0
 	last_strike_contact = &"miss"
+	last_strike_groove = &""
 	_hit_flash = 0.0
 	_animation_grounded = true
 	queue_redraw()

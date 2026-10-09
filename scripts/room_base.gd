@@ -33,6 +33,9 @@ var fall_cap_mult := 1.0
 var groove_mult := 1.0
 var air_strikes_max := 0
 var muted := false                 # HUSH rules: resonance systems off
+## Seconds per beat while Groove pressure is on; 0 keeps Tick's count
+## (groove_clock.gd DEFAULT_PERIOD). Counting foes here tick on this beat.
+var beat_period := 0.0
 var progression: RefCounted
 var abilities: RefCounted
 

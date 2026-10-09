@@ -68,6 +68,10 @@ func _ready() -> void:
 func is_pogoable() -> bool:
 	return state != S.DOWN and state != S.FREED
 
+## While it reaches for you, Main sounds the room's beat (Groove pressure on).
+func is_roused() -> bool:
+	return state in [S.PURSUE, S.REACH, S.STAGGER, S.RECOVER]
+
 func _bank() -> Node:
 	return get_tree().get_first_node_in_group("audio_bank")
 

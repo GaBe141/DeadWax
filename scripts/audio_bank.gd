@@ -323,6 +323,10 @@ func _build_sounds() -> void:
 		_noise_burst(0.035, 0.40, 4100.0),
 	])
 	_sounds["onbeat"] = _mix([_pluck(660.0, 0.30, 0.7), _pluck(990.0, 0.26, 0.5), _pluck(1320.0, 0.18, 0.3)])
+	# Groove pressure: a felt-mallet pulse under the foes' own ticks, and a
+	# bright bite when a strike finds the beat.
+	_sounds["pulse"] = _mix([_pluck(98.0, 0.11, 0.55), _noise_burst(0.025, 0.16, 900.0)])
+	_sounds["pocket"] = _mix([_pluck(1318.5, 0.07, 0.42), _pluck(2637.0, 0.04, 0.16)])
 	_sounds["parry"] = _mix([_pluck(880.0, 0.34, 0.8), _pluck(2370.0, 0.20, 0.35)])
 	_sounds["tick"] = _wav(_pluck(1750.0, 0.055, 0.8))
 	_sounds["swing"] = _wav(_noise_burst(0.14, 0.8, 1500.0))

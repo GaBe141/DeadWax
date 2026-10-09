@@ -30,6 +30,7 @@ var settings: Dictionary = {
 	"volume": 0.8,
 	"reduced_motion": false,
 	"fullscreen": false,
+	"groove_pressure": false,
 }
 
 var overlay: Control
@@ -356,6 +357,8 @@ func _build_settings() -> void:
 	_checkbox("Fullscreen", "fullscreen")
 	_checkbox("Reduced motion", "reduced_motion")
 	_page.add_child(_label("Steadies the camera, scenery, and interface.", PressScript.SIZE_TINY, FADED))
+	_checkbox("Groove pressure", "groove_pressure")
+	_page.add_child(_label("Foes keep the room's beat; strikes on it land heavy.", PressScript.SIZE_TINY, FADED))
 	_space(10.0)
 	_button("Controller setup", controller_requested.emit)
 	if String(controller_labels.get("inventory", "Start")) == "Z":

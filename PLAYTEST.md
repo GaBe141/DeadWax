@@ -3,8 +3,8 @@
 Run `.\deadwax.cmd play` for the authored opening. Start with the chapter
 checklist, then use `.\deadwax.cmd dev` for focused mechanics regressions.
 Runtime errors are written to `.godot/deadwax-play.log`.
-Run `.\deadwax.cmd check` before handoff; the complete run contains 58 native
-suites, including Palace shaders/lighting, arena practice, contact feedback, calibrated controllers, movement weight, cinematic presentation,
+Run `.\deadwax.cmd check` before handoff; the complete run contains 59 native
+suites, including Groove pressure, Palace shaders/lighting, arena practice, contact feedback, calibrated controllers, movement weight, cinematic presentation,
 Lost Pressings, and Book/map suites. Older review results below retain their
 original suite counts.
 
@@ -16,6 +16,58 @@ original suite counts.
 - Input device:
 - Overall frame pacing: smooth / occasional hitch / frequent hitch
 - Audio clarity and latency:
+
+## Groove pressure
+
+An A/B comparison. Play each item with **Settings → Groove pressure** on, then
+repeat the fight with it off. Note audio latency in the Session block: the
+pocket runs from 60 ms before each beat to 140 ms after it. If on-beat strikes
+feel judged late or early, note it: `POCKET_LATENCY_MS` in
+`scripts/groove_clock.gd` moves the pocket's centre.
+
+- [ ] With it off, nothing has changed: the Accent alone hits big, foes keep
+  their own counts, no pulse sounds and no beat mark appears.
+- [ ] Turn it on from the title and from pause (mouse, keyboard and
+  controller). Quit and relaunch: the setting returns. Continue still loads
+  the same checkpoint, with no save warning.
+- [ ] Walk past calm foes: the room stays quiet. Rouse one: a soft, even
+  pulse starts on the beat, under the foe's own ticks, and the small ring
+  beside the health diamonds fills in the pocket. Raise the Hood: the pulse
+  goes silent. Resolve the last roused foe: the room falls quiet again.
+- [ ] Strike along with the pulse: each stroke rings a bright bite, prints in
+  colour and lands the two-HP hit. Strike between beats: quieter, lower air,
+  grey ink, a light hit. Tap–Sweep–Accent off the beat lands three light
+  hits; on the beat, each lands big.
+- [ ] The Tonearm: after the first strike, its count falls on the room's beat
+  (tick, tick, tick, sweep) and continues through each opening. Parry the
+  sweep as before (the 100 ms window is unchanged), then find the beat inside
+  the opening for a big hit. It still never swings first, and kneeling still
+  frees it.
+- [ ] High Street's looper and the Wax Palace floors: ticks and swings land on
+  the pulse; the first tick never comes too soon after a count begins.
+  Auditioners still reach on their own; Backcutters keep their own rhythm.
+- [ ] HUSH's floor stays silent; three rung-backs still win. In the Yard, the
+  first voice's call and answer are never covered by a pulse.
+- [ ] Launch off live grooves on and off the beat: the same throw either way.
+  Jump height, reach, breaths and parries feel unchanged.
+- [ ] Pause, the Book and the stall freeze the beat; it resumes in place.
+  Reduced motion keeps the beat mark and grey/colour strokes.
+- [ ] Which do you want to keep: on, off, or something in between?
+
+## Groove pressure verification — 9 October 2026
+
+Godot 4.7.1's complete suite run passed all 59 suites and 14,417 checks with
+the setting at its default (off); the 58 existing suites kept their 14,312
+checks unchanged. With the default forced on, 56 of the 58 existing suites
+still passed; the other two fail only where they assert the classic rule
+(exact Accent damage, a count clock read without advancing the room's beat).
+A scripted Tonearm fight through Main at 60 fps put every tick and sweep within
+one frame of the Arm's beat. Parrying each sweep and striking only in the
+pocket shattered it in three big hits (13.3 s). Striking the instant it opened,
+which falls 0.16 s after a beat, took six light hits (27.0 s), against 26.2 s
+with the setting off. Rendered frames confirmed the settings toggle, the HUD
+ring (filled in the pocket, hollow between beats), the practice beat mark, and
+pink versus grey strokes. Audio balance and latency remain manual.
 
 ## Opening pace
 

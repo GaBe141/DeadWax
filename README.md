@@ -68,7 +68,7 @@ The lightweight project commands are:
 .\deadwax.cmd play    play the campaign with a local runtime log
 .\deadwax.cmd dev     open the original mechanics rooms and planned-world tools
 .\deadwax.cmd editor  open the project in Godot
-.\deadwax.cmd check   import resources; run all fifty-eight native test suites
+.\deadwax.cmd check   import resources; run all fifty-nine native test suites
 .\deadwax.cmd vibe    start Mistral Vibe in this repository
 ```
 
@@ -328,6 +328,32 @@ in **Book → Equipment**; finding gear neither auto-equips nor heals. These
 pieces have their own Book group and regional map counts. They cannot drop
 from trials or be bound with Offcuts, and leave trial odds and pity unchanged.
 All 21 campaign rooms and 26 passage pairs remain intact.
+
+## Groove pressure
+
+**Settings → Groove pressure** (off by default) makes the world keep time.
+Each room has one beat: Tick's count (0.42 s) everywhere except the Arm,
+which keeps the Tonearm's own count (0.46 s). While something in the room
+is roused, a soft, even pulse marks every beat (the foes' own ticks carry the
+phrase), and a small ring beside the health diamonds fills in the pocket.
+
+- The pocket runs from 60 ms before a beat to 140 ms after it: 100 ms either
+  side of a centre set 40 ms late, because the pulse, the screen and the pad
+  all reach you late. A strike in the pocket hits big (the two-HP hit and the
+  heavier resonance), rings a bright bite, and prints in colour.
+- Off the beat, a strike is quieter, pitched down, and printed grey. The
+  Accent keeps its gesture and follow-through but hits big only on the beat.
+- Counting foes (Test Pressings, the High Street looper, HUSH and the
+  Tonearm) begin each count on the room's beat, half a beat to a beat and a
+  half after they decide to, so every tick and swing falls on it.
+- The parry window, launches, breaths, reach and jumps never read the beat.
+  The Hood silences the pulse; HUSH's muted floor and the Yard's quiet call
+  never sound it.
+
+Turn it off and everything returns to the classic rules at once: the Accent
+alone hits big and every foe keeps its own count. The choice is stored in the
+settings file beside volume and controller layouts, never in a checkpoint.
+To compare, fight the Tonearm or a few Wax Palace floors with it on, then off.
 
 ## Saving and settings
 
@@ -699,11 +725,16 @@ unchanged for topology checks. See `ROUTING.md` for both loaders.
 - Is the count-in door forgiving enough at fast and slow tempos?
 - Does bringing one breath back to The Label feel like a meaningful return?
 - Is the muted room fun with everything subtracted, or just empty?
+- With Groove pressure on, does playing on the beat feel better than mashing? Does the
+  Tonearm fight feel like music or like a metronome? Which way do you want it?
 
 ## Tuning knobs
 
 - Movement/strike/noise: constants at the top of `scripts/skip.gd`
 - Dummy timing/windows: constants atop `scripts/test_pressing.gd`
+- Groove pressure: pocket width and count lead atop `scripts/groove_clock.gd`;
+  pulse, bite and off-beat volumes atop `scripts/main.gd`; a room's tempo is
+  its `beat_period` (0 keeps Tick's count), set where the room is configured
 - Door strictness: `GAP_MIN/GAP_MAX/EVENNESS` in `scripts/refrain_door.gd`
 - B-side length and rewind: constants atop `scripts/pressing_state.gd`
 - Type, ink, plates and paper: `scripts/press.gd` and `assets/shaders/`

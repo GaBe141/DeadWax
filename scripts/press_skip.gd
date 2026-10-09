@@ -157,7 +157,10 @@ static func draw(canvas: CanvasItem, pose: Dictionary, palette: Dictionary) -> v
 
 	# Strike and landing marks are short impressions, rooted at the actual body.
 	if snap > 0.0:
-		_strike_cut(canvas, combo_step, attack_face, snap, pink, bool(pose.big), contact)
+		# An off-beat stroke under a live groove prints grey: heard, not rung.
+		var flat := clampf(float(pose.get("flat", 0.0)), 0.0, 1.0)
+		var cut := pink.lerp(ink.lerp(pale, 0.55), flat)
+		_strike_cut(canvas, combo_step, attack_face, snap, cut, bool(pose.big), contact, flat > 0.0)
 	# Compact wax chips and a brass glint sit at Skip's real drawn stylus.
 	# The target's separate hit impression remains owned by Main.
 	var stylus_tip := translation + (tip * stretch).rotated(tilt)
@@ -183,7 +186,7 @@ static func _contact_mark(canvas: CanvasItem, center: Vector2, face: float, stre
 	canvas.draw_line(center + Vector2(face * 2.0, 2.0), center + Vector2(face * (length + 3.0), 4.0), Color(brass, strength * 0.72), 1.4, true)
 	canvas.draw_line(center + Vector2(-face * 3.0, -2.0), center + Vector2(-face * 6.0, -length - 2.0), Color(brass, strength * 0.65), 1.2, true)
 
-static func _strike_cut(canvas: CanvasItem, step: int, face: float, snap: float, color: Color, big: bool, contact: StringName) -> void:
+static func _strike_cut(canvas: CanvasItem, step: int, face: float, snap: float, color: Color, big: bool, contact: StringName, flat := false) -> void:
 	var radius := 42.0 + (1.0 - snap) * 13.0
 	var start := -1.15 if step == 1 else (-2.5 if step == 2 else -1.0)
 	var sweep := 1.65 if step == 1 else (3.35 if step == 2 else 1.90)
@@ -193,7 +196,7 @@ static func _strike_cut(canvas: CanvasItem, step: int, face: float, snap: float,
 		point.x *= -1.0 if face < 0.0 else 1.0
 		points.append(point + Vector2(0, -7))
 	var strength := 0.28 if contact == &"miss" else (0.55 if contact == &"guard" else 0.80)
-	canvas.draw_polyline(points, Color(color, snap * strength), 2.8 if big or step == 3 else 1.8, true)
+	canvas.draw_polyline(points, Color(color, snap * strength), 2.8 if big or (step == 3 and not flat) else 1.8, true)
 	if step == 3:
 		var direction := -1.0 if face < 0.0 else 1.0
 		for side in [-1.0, 1.0]:

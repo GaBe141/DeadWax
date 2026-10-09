@@ -69,6 +69,10 @@ func _process(delta: float) -> void:
 	_refresh_card()
 	queue_redraw()
 
+## The quiet exchange owns its silence; no room beat sounds over the call.
+func is_roused() -> bool:
+	return not (stage != Stage.WAITING and _near) and super.is_roused()
+
 func advance_phrase(delta: float, nearby: bool, hood: bool, set_pressed: bool, kneeling: bool) -> void:
 	if delta <= 0.0 or state in [S.FREED, S.DOWN] or (is_inside_tree() and get_tree().paused):
 		return

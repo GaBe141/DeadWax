@@ -57,6 +57,22 @@ func _ready() -> void:
 func is_pogoable() -> bool:
 	return outcome.is_empty() and not _opening_hit and (state == S.RECOVERY or state == S.STAGGER)
 
+## The room's beat sounds once the keeper has been struck, until it is resolved.
+## Its first gesture and its peaceful wait stay quiet: it never swings first.
+func is_roused() -> bool:
+	return _engaged and outcome.is_empty()
+
+## Skip carries Main's room clock while Groove pressure is on.
+func _groove() -> RefCounted:
+	if not is_instance_valid(_player):
+		return null
+	var clock: Variant = _player.get("groove")
+	return clock if clock is RefCounted else null
+
+func _tick_gap() -> float:
+	var clock := _groove()
+	return float(clock.get("period")) if clock != null else TICK_GAP
+
 func _bank() -> Node:
 	return get_tree().get_first_node_in_group("audio_bank") if is_inside_tree() else null
 
@@ -105,11 +121,12 @@ func _process(delta: float) -> void:
 				else:
 					_go(S.WAITING)
 		S.COUNTING:
-			var beat := mini(int(_t / TICK_GAP), COUNT_BEATS)
+			var gap := _tick_gap()
+			var beat := mini(int(_t / gap), COUNT_BEATS) if _t >= 0.0 else 0
 			if beat > _count:
 				_count = beat
 				_sound("tick", -6.0, 0.76 + _count * 0.09)
-			if _t >= TICK_GAP * (COUNT_BEATS + 1):
+			if _t >= gap * (COUNT_BEATS + 1):
 				_go(S.SWEEP)
 				_sound("swing", -5.0, 0.75)
 		S.SWEEP:
@@ -137,6 +154,11 @@ func _begin_count() -> void:
 	_count = 0
 	_opening_hit = false
 	_go(S.COUNTING)
+	# With Groove pressure on, the arm waits for the room's beat to begin:
+	# every tick and the sweep then fall on it. Its own count is unchanged.
+	var clock := _groove()
+	if clock != null:
+		_t = _tick_gap() - float(clock.call("next_tick_wait"))
 	if is_instance_valid(_player):
 		_face = -1.0 if _player.global_position.x < global_position.x else 1.0
 
@@ -248,7 +270,7 @@ func _draw() -> void:
 		"count": _count, "health": hp / HP_MAX, "health_total": int(HP_MAX),
 		"listening": clampf(_listening / SET_FREE_TIME, 0.0, 1.0),
 		"open": is_pogoable(), "engaged": _engaged,
-		"windup": clampf(_t / (TICK_GAP * (COUNT_BEATS + 1)), 0.0, 1.0),
+		"windup": clampf(_t / (_tick_gap() * (COUNT_BEATS + 1)), 0.0, 1.0),
 		"gesture": clampf(_t / GESTURE_TIME, 0.0, 1.0),
 		"sweep": clampf(_t / SWEEP_TIME, 0.0, 1.0),
 		"recovery": clampf(_t / (PARRY_RECOVER_TIME if state == S.STAGGER else RECOVER_TIME), 0.0, 1.0),

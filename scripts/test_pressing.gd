@@ -60,6 +60,36 @@ func _ready() -> void:
 func is_pogoable() -> bool:
 	return not muted and state != S.DOWN
 
+## Main sounds the room's beat while something is listening. A muted stand
+## (HUSH's rules) never asks for it: his floor stays quiet.
+func is_roused() -> bool:
+	return not muted and state in [S.ALERT, S.COUNTING, S.SWING, S.STAGGER]
+
+# -- the room's beat ------------------------------------------------------------
+# With Groove pressure on, Skip carries Main's clock and the count keeps the
+# room's tempo: its first tick waits for a beat, and each tick re-seats on the
+# nearest one. Without a clock every value below is the stand's own count.
+
+func _groove() -> RefCounted:
+	if not is_instance_valid(_player):
+		return null
+	var clock: Variant = _player.get("groove")
+	return clock if clock is RefCounted else null
+
+func _tick_gap() -> float:
+	var clock := _groove()
+	return float(clock.get("period")) if clock != null else TICK_GAP
+
+## The count clock's starting value, so its first tick lands on a room beat.
+func _count_start() -> float:
+	var clock := _groove()
+	return _tick_gap() - float(clock.call("next_tick_wait")) if clock != null else 0.0
+
+## Where the count clock resumes after a tick: on the beat it just struck.
+func _tick_carry() -> float:
+	var clock := _groove()
+	return float(clock.call("offset")) if clock != null else 0.0
+
 func _bank() -> Node:
 	return get_tree().get_first_node_in_group("audio_bank")
 
@@ -89,14 +119,14 @@ func _process(delta: float) -> void:
 				state = S.CALM
 			elif d < ATTACK_RANGE:
 				state = S.COUNTING
-				_t = 0.0
+				_t = _count_start()
 				_count = 0
 		S.COUNTING:
 			if d > ATTACK_RANGE * 1.6:
 				state = S.ALERT
 				_t = 0.0
-			elif _t >= TICK_GAP:
-				_t = 0.0
+			elif _t >= _tick_gap():
+				_t = _tick_carry()
 				_count += 1
 				var b := _bank()
 				if _count <= 3:
@@ -211,7 +241,7 @@ func _draw() -> void:
 		"phase": S.keys()[state].to_lower(), "clock": _print_time,
 		"seed": _sid, "face": _face, "muted": muted,
 		"recoil": _print_recoil, "follow_through": _print_swing_tail,
-		"count": _count, "beat": clampf(_t / TICK_GAP, 0.0, 1.0),
+		"count": _count, "beat": clampf(_t / _tick_gap(), 0.0, 1.0),
 		"swing": clampf(_t / 0.12, 0.0, 1.0),
 		"state_time": _t, "reform": clampf(_t / REFORM_TIME, 0.0, 1.0),
 		"resonance": resonance, "hp": hp, "hp_total": int(HP_MAX),

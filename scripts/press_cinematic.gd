@@ -14,6 +14,16 @@ static func draw(canvas: CanvasItem, extent: Vector2, state: Dictionary, ink: Co
 		var diamond := PackedVector2Array([center + Vector2(0, -6), center + Vector2(4, 0), center + Vector2(0, 6), center + Vector2(-4, 0)])
 		canvas.draw_colored_polygon(diamond, Color(ink, 0.85 if index < health else 0.12))
 		canvas.draw_polyline(PackedVector2Array([diamond[0], diamond[1], diamond[2], diamond[3], diamond[0]]), Color(ink, 0.42), 1.0, true)
+	# Groove pressure: a quiet ring after the diamonds while something in the
+	# room is listening, filled with the accent in the pocket. A functional
+	# cue: it holds under Reduced motion.
+	var beat: Dictionary = state.get("beat", {}) if state.get("beat", {}) is Dictionary else {}
+	if bool(beat.get("live", false)):
+		var mark := origin + Vector2(maximum * 18 + 8, 0)
+		if bool(beat.get("lit", false)):
+			canvas.draw_circle(mark, 4.5, Color(accent, 0.9), true, -1, true)
+		else:
+			canvas.draw_arc(mark, 4.0, 0.0, TAU, 20, Color(ink, 0.32), 1.2, true)
 	var noise := clampf(float(state.get("noise", 0.0)), 0.0, 1.0)
 	if noise > 0.03:
 		canvas.draw_line(Vector2(26, 55), Vector2(106, 55), Color(ink, 0.12), 2.0)
