@@ -68,7 +68,7 @@ The lightweight project commands are:
 .\deadwax.cmd play    play the campaign with a local runtime log
 .\deadwax.cmd dev     open the original mechanics rooms and planned-world tools
 .\deadwax.cmd editor  open the project in Godot
-.\deadwax.cmd check   import resources; run all fifty-nine native test suites
+.\deadwax.cmd check   import resources; run all sixty native test suites
 .\deadwax.cmd vibe    start Mistral Vibe in this repository
 ```
 
@@ -354,6 +354,42 @@ Turn it off and everything returns to the classic rules at once: the Accent
 alone hits big and every foe keeps its own count. The choice is stored in the
 settings file beside volume and controller layouts, never in a checkpoint.
 To compare, fight the Tonearm or a few Wax Palace floors with it on, then off.
+
+## Levels and XP
+
+Every confirmed hit, rung-back parry and kill earns XP. Freeing a voice earns
+none.
+
+| Earns | XP |
+| --- | --- |
+| A light hit | 2 |
+| An Accent, hot-groove or pocket hit | 4 |
+| A rung-back parry | 5 |
+| Shattering a voice or a Test Pressing | 15 |
+| Shattering the High Street looper | 20 |
+| Winning HUSH's bout | 40 |
+| Shattering the Tonearm | 80 |
+
+A story foe's hits and parries pay at most 40 XP over its whole life, and its
+kill pays once, so you can't farm a fight by striking and then recovering or
+leaving the room. Echo Trial copies are new foes every time, so the trials
+are the place to grind. Move practice earns nothing and always uses a stock
+needle.
+
+Level 2 takes 40 XP, and each level after asks 20 more than the last; level
+12 (1,540 XP) is the cap. Each level gives one choice, made on the Book's
+**Level** page:
+
+- **Ring** (5 ranks): +15% resonance from your strikes and rung-backs, so
+  voices and stands peak and shatter sooner. The Tonearm has no resonance.
+- **Body** (4 ranks): one more needle notch, arriving filled.
+- **Bite** (4 ranks): +25% health damage per hit, on every foe.
+
+The caps add up to more than the eleven choices, so a build has to pick. The
+parry window, reach, timing, launches and jumps never change. A choice is
+saved before it applies; if the save fails, nothing changes. XP is saved with
+the next checkpoint (passages, outcomes, the Book, pause, quit). An older
+checkpoint without XP continues at level 1.
 
 ## Saving and settings
 
@@ -647,8 +683,8 @@ announced before it is found. The Bootlegger has an opinion about this:
 
 ## The Book
 
-The Book pauses the room and has **Journey**, **Equipment**, and **Bestiary**
-pages. Journey records found and missing moves, discovered knowledge,
+The Book pauses the room and has **Journey**, **Equipment**, **Bestiary** and
+**Level** pages. Journey records found and missing moves, discovered knowledge,
 carried Refrains, current Shine, permanent purchases, and discoveries. The
 Echo Spool and Surveyor's Slip have separate item buttons; they do not add to
 the eight groove slots for core moves, techniques, and Refrains. A separate
@@ -669,6 +705,10 @@ listening note; unseen entries remain unnamed. Saved freed and shattered
 outcomes fill their counters without repeating them. A won HUSH bout records
 his entry without calling it a shattering, and trial copies never add story
 counts. The catalog can gain further entries while older saves keep working.
+
+The Level page shows your level, XP toward the next one, and the three gains.
+Each card gives its rank, what the next rank changes, and what that means in a
+fight. Its tab reads **LEVEL •** while a choice waits.
 
 Use arrows, D-pad, or the left stick to select an entry. Change pages with
 Tab / Shift+Tab or LB / RB; scroll long notes with the mouse wheel, PgUp / PgDn,
@@ -732,6 +772,7 @@ unchanged for topology checks. See `ROUTING.md` for both loaders.
 
 - Movement/strike/noise: constants at the top of `scripts/skip.gd`
 - Dummy timing/windows: constants atop `scripts/test_pressing.gd`
+- XP, the level curve and Ring/Body/Bite steps and caps: atop `scripts/xp_state.gd`
 - Groove pressure: pocket width and count lead atop `scripts/groove_clock.gd`;
   pulse, bite and off-beat volumes atop `scripts/main.gd`; a room's tempo is
   its `beat_period` (0 keeps Tick's count), set where the room is configured

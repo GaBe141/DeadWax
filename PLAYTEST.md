@@ -3,8 +3,8 @@
 Run `.\deadwax.cmd play` for the authored opening. Start with the chapter
 checklist, then use `.\deadwax.cmd dev` for focused mechanics regressions.
 Runtime errors are written to `.godot/deadwax-play.log`.
-Run `.\deadwax.cmd check` before handoff; the complete run contains 59 native
-suites, including Groove pressure, Palace shaders/lighting, arena practice, contact feedback, calibrated controllers, movement weight, cinematic presentation,
+Run `.\deadwax.cmd check` before handoff; the complete run contains 60 native
+suites, including XP and levels, Groove pressure, Palace shaders/lighting, arena practice, contact feedback, calibrated controllers, movement weight, cinematic presentation,
 Lost Pressings, and Book/map suites. Older review results below retain their
 original suite counts.
 
@@ -16,6 +16,47 @@ original suite counts.
 - Input device:
 - Overall frame pacing: smooth / occasional hitch / frequent hitch
 - Audio clarity and latency:
+
+## Levels and XP
+
+- [ ] New Game starts at level 1: three needle diamonds, an empty hairline
+  under the noise line, no waiting mark.
+- [ ] Hit a foe: a small "+2 XP" receipt appears under the status marks and the
+  hairline grows. Quick hits read as one running total. Guards and whiffs earn
+  nothing. A rung-back adds 5; an Accent (or a pocket hit with Groove pressure
+  on) adds 4.
+- [ ] Shatter the High Street looper: about 20 XP from the kill. Level 2
+  arrives around the first real fight, with "LEVEL 2 · choose a gain in the
+  Book", a small accent mark after the hairline, and the Book tab
+  reading LEVEL •.
+- [ ] Free a voice: no XP. Shatter one: 15.
+- [ ] Hit the Tonearm, recover with R and hit it again: after 40 XP from its
+  hits and parries it pays nothing more, and shattering it still pays 80 once.
+  Leave and re-enter a room with an unresolved foe: its budget does not refill.
+- [ ] Open the Book → Level. At 1280×720 and 960×540, every card, button and
+  the rules line are visible. Choose with mouse, keyboard and controller.
+  Body adds a filled notch at once; Ring and Bite apply immediately.
+- [ ] Ring: a parry-heavy fight against a voice ends sooner (two rung-backs at
+  Ring 2). Bite: the Tonearm goes down in fewer light hits (5 at Bite 1).
+  The parry window, reach, jump height and strike timing feel unchanged.
+- [ ] Clear an Echo Trial twice: both clears pay XP.
+- [ ] Move practice: no receipts, no level, stock damage. Returning to the
+  title and continuing restores your level and gains.
+- [ ] Quit and Continue: level, XP, gains and spent budgets return.
+- [ ] Does levelling make the campaign too easy by the Unplayed? Note your
+  level at the Tonearm and at the Deep Gallery.
+
+## Levels and XP verification — 9 October 2026
+
+Godot 4.7.1's complete suite run passed all 60 suites and 14,542 checks; the
+59 earlier suites kept their 14,417 checks unchanged, because every foe reads
+a stock 1.0 from a level-1 needle. The new XP suite drove the real Main
+through the Tonearm (guard, hits, a parry, the 40 XP budget across recovery,
+then the 80 XP kill), a freed Yard voice (no XP), HUSH's bout, an Overture
+trial copy, Move practice, Book choices with a blocked save, Continue, an older
+checkpoint and New Game. Rendered frames confirmed the Level page at 1280×720
+and 960×540 and the HUD receipt, hairline and waiting mark. Balance, pacing
+and the level-up sound remain manual.
 
 ## Groove pressure
 
@@ -476,7 +517,7 @@ fixture as a measurement of completionist playtime.
   random state. Restore saving and retry: exactly that roll commits once.
   Failed fitting or binding applies no movement/health change and spends no
   material. Feedback makes the retry clear.
-- [ ] Open Journey, Equipment, and Bestiary by clicking and by Tab / Shift+Tab
+- [ ] Open Journey, Equipment, Bestiary, and Level by clicking and by Tab / Shift+Tab
   or LB / RB. Arrows, D-pad, and left stick select entries. Mouse wheel,
   PgUp / PgDn, and right stick scroll long notes. All action buttons and text
   remain reachable at both window sizes; rapid navigation and Reduced motion

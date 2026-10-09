@@ -193,7 +193,7 @@ func on_player_strike(pos: Vector2, big: bool) -> StringName:
 		_gain(RES_HIT * (1.6 if big else 1.0))
 		if state == S.DOWN:
 			return &"hit"
-		hp = maxf(hp - (HP_PER_BIG if big else HP_PER_HIT), 0.0)
+		hp = maxf(hp - (HP_PER_BIG if big else HP_PER_HIT) * _growth("damage_mult"), 0.0)
 		if hp <= 0.0:
 			_down()
 			return &"hit"
@@ -204,9 +204,18 @@ func on_player_strike(pos: Vector2, big: bool) -> StringName:
 	return &"ignored"
 
 func _gain(amount: float) -> void:
-	resonance += amount
+	resonance += amount * _growth("resonance_mult")
 	if resonance >= 1.0:
 		_down()
+
+## Skip's saved level gains (xp_state.gd): Ring scales the resonance a strike or
+## parry builds, Bite the health a strike takes. Standalone figures stay stock.
+func _growth(stat: String) -> float:
+	var skip: Node = _player if is_instance_valid(_player) else (get_tree().get_first_node_in_group("player") if is_inside_tree() else null)
+	if skip == null:
+		return 1.0
+	var value: Variant = skip.get(stat)
+	return float(value) if value is float or value is int else 1.0
 
 func _down() -> void:
 	state = S.DOWN

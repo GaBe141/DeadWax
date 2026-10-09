@@ -82,6 +82,11 @@ var equipment_friction := 1.0
 var equipment_air_control := 1.0
 var equipment_hood_speed := 1.0
 var equipment_noise_decay := 1.0
+## Saved level gains (xp_state.gd). Foes read these when Skip's strike or
+## parry lands: Ring scales the resonance it builds, Bite the health it takes.
+## They never touch reach, timing, launches, jumps or the parry window.
+var resonance_mult := 1.0
+var damage_mult := 1.0
 
 # -- state --------------------------------------------------------------------
 var air_strikes_left := 0
@@ -259,6 +264,11 @@ func apply_equipment(profile: Dictionary) -> void:
 	equipment_air_control = float(profile.get("air_control", 1.0))
 	equipment_hood_speed = float(profile.get("hood_speed", 1.0))
 	equipment_noise_decay = float(profile.get("noise_decay", 1.0))
+
+## Main installs the complete level profile only after a saved choice.
+func apply_growth(profile: Dictionary) -> void:
+	resonance_mult = float(profile.get("resonance", 1.0))
+	damage_mult = float(profile.get("damage", 1.0))
 
 func air_strike_capacity() -> int:
 	var capacity := air_strikes_max if has_ability(&"groove") else 0

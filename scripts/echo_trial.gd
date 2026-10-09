@@ -4,6 +4,9 @@ extends Node2D
 
 signal start_requested(source: Node)
 signal completed(source: Node)
+## A copy has entered the trial. Main listens to it for XP only; the trial
+## alone owns its waves, outcomes and claim.
+signal copy_spawned(copy: Node2D)
 
 const Press := preload("res://scripts/press.gd")
 const INTERACT_RADIUS := 76.0
@@ -224,6 +227,7 @@ func _spawn_wave() -> void:
 		add_child(copy)
 		copy.z_index = 5
 		_copies.append(copy)
+		copy_spawned.emit(copy)
 	_refresh_card()
 
 func _resolve_copy(copy: Node2D) -> void:

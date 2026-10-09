@@ -8,6 +8,7 @@ signal map_requested
 signal equip_requested(item_id: String)
 signal unequip_requested(slot: String)
 signal craft_requested(item_id: String)
+signal growth_requested(stat: String)
 
 const AbilitiesScript := preload("res://scripts/abilities_state.gd")
 const ProgressionScript := preload("res://scripts/progression_state.gd")
@@ -15,6 +16,8 @@ const PressScript := preload("res://scripts/press.gd")
 const EconomyScript := preload("res://scripts/economy_state.gd")
 const UiMotionScript := preload("res://scripts/ui_motion.gd")
 const CollectionPages := preload("res://scripts/collection_book_pages.gd")
+const GrowthPage := preload("res://scripts/growth_book_page.gd")
+const PAGE_ORDER := ["journey", "equipment", "bestiary", "level"]
 const WorldBackdrop := preload("res://scripts/ui_world_backdrop.gd")
 
 ## Above this size The Book is shouting, and shouting is set in wood type.
@@ -39,6 +42,9 @@ var map_state: RefCounted
 var discoveries: RefCounted
 var collection: RefCounted
 var exploration: RefCounted
+var experience: RefCounted
+## Needle capacity before level gains; Main supplies it with the profile.
+var needle_base := 3
 ## Main supplies the current room's printed notes when The Book opens.
 ## These are presentation snapshots, never persistent discoveries or permissions.
 var place_name := ""
@@ -69,6 +75,7 @@ var _map_note: Label
 var _discovery_buttons: Dictionary = {}
 var _journey: ScrollContainer
 var _collection_pages: Control
+var _growth_page: Control
 var _page_buttons: Dictionary = {}
 var _current_page := "journey"
 var _page_margin: MarginContainer
@@ -118,8 +125,7 @@ func _input(event: InputEvent) -> void:
 		elif InputMap.has_action("book_next") and event.is_action_pressed("book_next", false, true):
 			step = 1
 		if step != 0:
-			var order := ["journey", "equipment", "bestiary"]
-			select_page(order[posmod(order.find(_current_page) + step, order.size())], true)
+			select_page(PAGE_ORDER[posmod(PAGE_ORDER.find(_current_page) + step, PAGE_ORDER.size())], true)
 			get_viewport().set_input_as_handled()
 			return
 	if _open and event is InputEventKey and event.is_action_pressed("map") and map_state != null and bool(map_state.get("owned")):
@@ -205,8 +211,10 @@ func select_page(page_id: String, focus_content := false) -> void:
 	_settle_motion()
 	_current_page = page_id
 	_journey.visible = page_id == "journey"
-	_collection_pages.visible = page_id != "journey"
+	_collection_pages.visible = page_id in ["equipment", "bestiary"]
 	_collection_pages.show_page(page_id)
+	if _growth_page != null:
+		_growth_page.visible = page_id == "level"
 	for id in _page_buttons:
 		var button: Button = _page_buttons[id]
 		button.button_pressed = id == page_id
@@ -217,6 +225,22 @@ func select_page(page_id: String, focus_content := false) -> void:
 func refresh_collection(notice := "") -> void:
 	if _collection_pages != null:
 		_collection_pages.refresh(collection, notice)
+
+func refresh_growth(notice := "") -> void:
+	if _growth_page != null:
+		_growth_page.needle_base = needle_base
+		_growth_page.refresh(experience, notice)
+	_refresh_level_tab()
+
+func level_page() -> Control:
+	return _growth_page
+
+func _refresh_level_tab() -> void:
+	var tab := _page_buttons.get("level") as Button
+	if tab == null:
+		return
+	var waiting := experience != null and int(experience.call("picks_available")) > 0
+	tab.text = "LEVEL •" if waiting else "LEVEL"
 
 func refresh_abilities() -> void:
 	_refresh()
@@ -334,7 +358,7 @@ func _build_menu() -> void:
 	var tabs := HBoxContainer.new()
 	tabs.add_theme_constant_override("separation", 10)
 	page.add_child(tabs)
-	for page_id in ["journey", "equipment", "bestiary"]:
+	for page_id in PAGE_ORDER:
 		var button := Button.new()
 		button.name = page_id.to_pascal_case() + "Tab"
 		button.text = page_id.to_upper()
@@ -495,6 +519,13 @@ func _build_menu() -> void:
 	_collection_pages.equip_requested.connect(func(id: String) -> void: equip_requested.emit(id))
 	_collection_pages.unequip_requested.connect(func(slot: String) -> void: unequip_requested.emit(slot))
 	_collection_pages.craft_requested.connect(func(id: String) -> void: craft_requested.emit(id))
+	_growth_page = GrowthPage.new()
+	_growth_page.name = "LevelPage"
+	_growth_page.book = self
+	_growth_page.motion = _motion
+	_growth_page.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	page.add_child(_growth_page)
+	_growth_page.growth_requested.connect(func(stat: String) -> void: growth_requested.emit(stat))
 	select_page("journey")
 	_controls_footer = _make_label("", PressScript.SIZE_SMALL, PAPER_DARK)
 	_controls_footer.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
@@ -575,6 +606,7 @@ func _refresh() -> void:
 	if _selected_slot == &"this_place":
 		_journey_notes.scroll_vertical = 0
 	refresh_collection()
+	refresh_growth()
 
 func _refresh_map() -> void:
 	var owned := map_state != null and bool(map_state.get("owned"))
@@ -628,6 +660,9 @@ func _settle_motion() -> void:
 
 func _focus_selected() -> void:
 	if not _open:
+		return
+	if _current_page == "level":
+		_growth_page.focus_selected()
 		return
 	if _current_page != "journey":
 		_collection_pages.focus_selected()

@@ -28,6 +28,16 @@ static func draw(canvas: CanvasItem, extent: Vector2, state: Dictionary, ink: Co
 	if noise > 0.03:
 		canvas.draw_line(Vector2(26, 55), Vector2(106, 55), Color(ink, 0.12), 2.0)
 		canvas.draw_line(Vector2(26, 55), Vector2(26 + noise * 80, 55), Color(accent, 0.65), 2.0)
+	# Experience: a hairline toward the next level beneath the noise line, and
+	# a small accent mark while a level's choice waits in the Book.
+	var xp: Dictionary = state.get("xp", {}) if state.get("xp", {}) is Dictionary else {}
+	if not xp.is_empty():
+		var progress := clampf(float(xp.get("ratio", 0.0)), 0.0, 1.0)
+		canvas.draw_line(Vector2(26, 62), Vector2(106, 62), Color(ink, 0.10), 1.0)
+		canvas.draw_line(Vector2(26, 62), Vector2(26 + progress * 80, 62), Color(ink, 0.55), 1.0)
+		if int(xp.get("picks", 0)) > 0:
+			var mark := Vector2(114, 62)
+			canvas.draw_colored_polygon(PackedVector2Array([mark + Vector2(0, -4), mark + Vector2(3, 0), mark + Vector2(0, 4), mark + Vector2(-3, 0)]), Color(accent, 0.9))
 	if bool(state.get("b_side", false)):
 		var ratio := clampf(float(state.get("runtime", 0.0)), 0.0, 1.0)
 		var center := Vector2(extent.x - 37, 37)

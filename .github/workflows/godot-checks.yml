@@ -145,3 +145,6 @@ jobs:
 
       - name: Validate Groove pressure
         run: godot --headless --path . --script res://tests/groove_test.gd
+
+      - name: Validate XP and levels
+        run: godot --headless --path . --script res://tests/xp_test.gd

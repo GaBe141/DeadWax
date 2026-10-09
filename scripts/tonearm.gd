@@ -73,6 +73,15 @@ func _tick_gap() -> float:
 	var clock := _groove()
 	return float(clock.get("period")) if clock != null else TICK_GAP
 
+## Skip's saved level gains (xp_state.gd): Bite scales the health a strike takes
+## (the keeper has no resonance to Ring). Standalone figures stay stock.
+func _growth(stat: String) -> float:
+	var skip: Node = _player if is_instance_valid(_player) else (get_tree().get_first_node_in_group("player") if is_inside_tree() else null)
+	if skip == null:
+		return 1.0
+	var value: Variant = skip.get(stat)
+	return float(value) if value is float or value is int else 1.0
+
 func _bank() -> Node:
 	return get_tree().get_first_node_in_group("audio_bank") if is_inside_tree() else null
 
@@ -205,7 +214,7 @@ func on_player_strike(pos: Vector2, big: bool) -> StringName:
 		return &"guard"
 	_opening_hit = true
 	_listening = 0.0
-	hp = maxf(hp - (HP_PER_BIG if big else HP_PER_HIT), 0.0)
+	hp = maxf(hp - (HP_PER_BIG if big else HP_PER_HIT) * _growth("damage_mult"), 0.0)
 	_hit_recoil = 1.0
 	if hp <= 0.0:
 		_resolve_outcome("shattered")

@@ -4,7 +4,8 @@ extends RefCounted
 ## The last valid checkpoint remains in .bak when a new checkpoint is installed.
 ## Required v1 fields: version, room_id, entry_id, progression.snapshot(), shine.
 ## Optional fields: abilities, purchases, map, discoveries, collection, exploration,
-## completed, encounters, settings. Missing exploration leaves shortcuts closed.
+## xp, completed, encounters, settings. Missing exploration leaves shortcuts closed.
+## Missing xp is level 1 with no history, and stays absent when normalized.
 ## Absent abilities retain all seven moves. Internal abilities v1 retains Walk
 ## plus its listed older moves; v2 keeps an exact empty or earned snapshot.
 ## The root checkpoint remains v1; normalized abilities always use internal v2.
@@ -21,9 +22,10 @@ const MapStateScript := preload("res://scripts/map_state.gd")
 const DiscoveriesScript := preload("res://scripts/discoveries_state.gd")
 const CollectionScript := preload("res://scripts/collection_state.gd")
 const ExplorationScript := preload("res://scripts/exploration_state.gd")
+const XpScript := preload("res://scripts/xp_state.gd")
 const ENCOUNTER_STATES := ["opened", "freed", "shattered", "polished", "won"]
 const DEFAULT_SETTINGS := {"volume": 1.0, "reduced_motion": false, "fullscreen": false}
-const ROOT_KEYS := ["version", "room_id", "entry_id", "progression", "abilities", "shine", "purchases", "map", "discoveries", "collection", "exploration", "completed", "encounters", "settings"]
+const ROOT_KEYS := ["version", "room_id", "entry_id", "progression", "abilities", "shine", "purchases", "map", "discoveries", "collection", "exploration", "xp", "completed", "encounters", "settings"]
 
 var last_error := ""
 var _path: String
@@ -151,6 +153,13 @@ func _normalise(data: Dictionary) -> Dictionary:
 		return _invalid("The checkpoint exploration is invalid.")
 	var exploration_model := ExplorationScript.new()
 	exploration_model.restore_snapshot(exploration)
+	var xp_snapshot := {}
+	if data.has("xp"):
+		if not XpScript.valid_snapshot(data.xp):
+			return _invalid("The checkpoint experience is invalid.")
+		var xp_model := XpScript.new()
+		xp_model.restore_snapshot(data.xp)
+		xp_snapshot = xp_model.snapshot()
 	var progression: Variant = data.get("progression")
 	if not (progression is Dictionary) or not _known_keys(progression, ["version", "refrains", "techniques"]):
 		return _invalid("The checkpoint progression is invalid.")
@@ -178,7 +187,7 @@ func _normalise(data: Dictionary) -> Dictionary:
 	for key in ["reduced_motion", "fullscreen"]:
 		if not (settings.get(key, DEFAULT_SETTINGS[key]) is bool):
 			return _invalid("The checkpoint display settings are invalid.")
-	return {
+	var clean := {
 		"version": SAVE_VERSION,
 		"room_id": data.room_id,
 		"entry_id": data.entry_id,
@@ -202,6 +211,9 @@ func _normalise(data: Dictionary) -> Dictionary:
 			"fullscreen": settings.get("fullscreen", false),
 		},
 	}
+	if data.has("xp"):
+		clean["xp"] = xp_snapshot
+	return clean
 
 func _known_keys(data: Dictionary, allowed: Array) -> bool:
 	for key in data:

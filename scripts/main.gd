@@ -8,6 +8,7 @@ const ProgressionScript := preload("res://scripts/progression_state.gd")
 const AbilitiesScript := preload("res://scripts/abilities_state.gd")
 const InventoryMenuScript := preload("res://scripts/inventory_menu.gd")
 const GrooveScript := preload("res://scripts/groove_clock.gd")
+const XpScript := preload("res://scripts/xp_state.gd")
 const ROOM_SCRIPTS := [
 	preload("res://scripts/room_label.gd"),
 	preload("res://scripts/room_dojo.gd"),
@@ -49,10 +50,19 @@ const PressingFigure := preload("res://scripts/test_pressing.gd")
 const ResidentFigure := preload("res://scripts/resident.gd")
 const HoundFigure := preload("res://scripts/hound.gd")
 const LoftFigure := preload("res://scripts/loft_voice.gd")
+const TonearmFigure := preload("res://scripts/tonearm.gd")
+const HushFigure := preload("res://scripts/hush.gd")
+const LooperFigure := preload("res://scripts/street_looper.gd")
 const INACTIVE_PAD_DEVICE := 100000
 
 const MARGIN := 22.0
 const NEEDLE_HEALTH := 3
+const MAX_NEEDLE := 9              # 3 + Spare Groove + four Body levels + equipment's +1
+const GROWTH_RECEIPTS := {
+	"ring": "RING chosen. Your strikes and rung-backs ring harder.",
+	"body": "BODY chosen. A new notch, already filled.",
+	"bite": "BITE chosen. Every hit takes more from a foe.",
+}
 # -- Groove pressure (Settings) ------------------------------------------------
 const PULSE_DB := -17.0            # each beat while something in the room is roused
 const POCKET_DB := -13.0           # the bright bite of a strike that lands in the pocket
@@ -77,6 +87,9 @@ var discoveries: RefCounted
 var exploration: RefCounted
 var collection: RefCounted
 var _collection_busy := false
+## Skip's XP and level gains (xp_state.gd), saved with the checkpoint.
+var experience: RefCounted
+var _growth_busy := false
 var _observation_clock := 0.0
 var map_menu: CanvasLayer
 var _map_closing := false
@@ -158,6 +171,7 @@ func _ready() -> void:
 	discoveries = DiscoveriesScript.new()
 	exploration = ExplorationScript.new()
 	collection = CollectionScript.new()
+	experience = XpScript.new()
 	progression.connect("refrain_unlocked", _on_refrain_unlocked)
 	progression.connect("technique_discovered", _on_technique_discovered)
 
@@ -200,6 +214,7 @@ func _ready() -> void:
 	inventory.discoveries = discoveries
 	inventory.exploration = exploration
 	inventory.collection = collection
+	inventory.experience = experience
 	inventory.can_open = _can_open_inventory
 	add_child(inventory)
 	inventory.opened.connect(_on_inventory_opened)
@@ -208,6 +223,7 @@ func _ready() -> void:
 	inventory.equip_requested.connect(_equip_collection_item)
 	inventory.unequip_requested.connect(_unequip_collection_slot)
 	inventory.craft_requested.connect(_craft_collection_item)
+	inventory.growth_requested.connect(_choose_growth)
 	shop = ShopScript.new()
 	add_child(shop)
 	shop.purchase_requested.connect(_purchase_item)
@@ -402,7 +418,8 @@ func _update_cinematic_presentation() -> void:
 	_update_place_notes()
 	if not cinematic or not _has_session: return
 	cinematic_hud.set_status({"health": _health, "max_health": _max_health(), "noise": player.noise,
-		"b_side": pressing.on_b_side(), "runtime": pressing.runtime_ratio(), "beat": _beat_status()})
+		"b_side": pressing.on_b_side(), "runtime": pressing.runtime_ratio(), "beat": _beat_status(),
+		"xp": _xp_status()})
 	cinematic_hud.set_focus(_cinematic_focus())
 
 func _controls_text() -> String:
@@ -562,6 +579,10 @@ func _wire_room() -> void:
 			n.parried.connect(_on_parried)
 			n.shattered.connect(_on_shattered)
 			n.bout_won.connect(_on_bout_won)
+			# XP before the outcome is remembered, so its checkpoint carries both.
+			n.parried.connect(_on_xp_parried.bind(n))
+			n.shattered.connect(_on_xp_shattered.bind(n))
+			n.bout_won.connect(_on_xp_won.bind(n))
 		if n.has_signal("opened") and not n.opened.is_connected(_on_door_opened):
 			n.opened.connect(_on_door_opened)
 		if n.has_signal("freed") and not n.freed.is_connected(_on_freed):
@@ -645,6 +666,7 @@ func _persist_session() -> bool:
 		"discoveries": discoveries.snapshot(),
 		"exploration": exploration.snapshot(),
 		"collection": collection.snapshot(),
+		"xp": experience.snapshot(),
 	}
 	var saved := bool(save_store.call("save_game", data))
 	if saved:
@@ -686,6 +708,7 @@ func _new_game(play_opening: bool = true) -> void:
 	discoveries.reset()
 	exploration.reset()
 	collection.reset()
+	experience.reset()
 	_apply_purchases()
 	_reset_player()
 	_load_world_room(ChapterScript.START_ROOM)
@@ -728,6 +751,7 @@ func _continue_game() -> void:
 	exploration.restore_snapshot(data.get("exploration", ExplorationScript.default_snapshot()))
 	collection.restore_snapshot(data.get("collection", CollectionScript.default_snapshot()))
 	collection.backfill(encounters)
+	experience.restore_snapshot(data.get("xp", XpScript.default_snapshot()))
 	_apply_purchases()
 	_last_saved_shine = player.shine
 	_reset_player()
@@ -869,6 +893,7 @@ func _start_practice() -> void:
 		"discoveries": discoveries,
 		"exploration": exploration,
 		"collection": collection,
+		"experience": experience,
 		"pressing": pressing, "encounters": encounters, "completed": chapter_complete,
 		"room_id": world_room_id, "entry_id": room_entry_id, "room_idx": room_idx,
 	}
@@ -886,6 +911,7 @@ func _start_practice() -> void:
 	discoveries = DiscoveriesScript.new()
 	exploration = ExplorationScript.new()
 	collection = CollectionScript.new()
+	experience = XpScript.new()
 	pressing = PressingScript.new()
 	encounters = {}
 	chapter_complete = false
@@ -935,6 +961,7 @@ func _leave_practice() -> void:
 	discoveries = _practice_campaign.discoveries
 	exploration = _practice_campaign.exploration
 	collection = _practice_campaign.collection
+	experience = _practice_campaign.experience
 	pressing = _practice_campaign.pressing
 	encounters = _practice_campaign.encounters
 	chapter_complete = bool(_practice_campaign.completed)
@@ -1057,6 +1084,7 @@ func _bind_session_models() -> void:
 	inventory.discoveries = discoveries
 	inventory.exploration = exploration
 	inventory.collection = collection
+	inventory.experience = experience
 	if not progression.is_connected("refrain_unlocked", _on_refrain_unlocked):
 		progression.connect("refrain_unlocked", _on_refrain_unlocked)
 		progression.connect("technique_discovered", _on_technique_discovered)
@@ -1151,12 +1179,17 @@ func _finish_map_close() -> void:
 
 func _max_health() -> int:
 	var base := int(economy.call("max_health")) if economy != null else NEEDLE_HEALTH
-	return clampi(base + (int(collection.modifiers().get("health", 0)) if collection != null else 0), 1, 5)
+	var gear := int(collection.modifiers().get("health", 0)) if collection != null else 0
+	var body := int(experience.health_bonus()) if experience != null else 0
+	return clampi(base + gear + body, 1, MAX_NEEDLE)
 
 func _apply_purchases() -> void:
 	player.hood_speed_mult = float(economy.call("hood_speed_multiplier"))
 	player.warm_thread = bool(economy.call("has_item", &"warm_thread"))
 	player.apply_equipment(collection.modifiers() if collection != null else {})
+	player.apply_growth(experience.profile() if experience != null else {})
+	if inventory != null and experience != null:
+		inventory.needle_base = _max_health() - int(experience.health_bonus())
 	player.queue_redraw()
 
 func _shop_snapshot() -> Dictionary:
@@ -1224,6 +1257,101 @@ func _purchase_item(item_id: StringName) -> bool:
 	shop.call("refresh_shop", _shop_snapshot(), "Yours now. Worn in, and made to last.")
 	audio.play("polish", -7.0, 0.85)
 	_purchasing = false
+	return true
+
+# -- experience ----------------------------------------------------------------
+# Every confirmed hit, rung-back parry and kill adds XP; freeing adds none.
+# Story foes are keyed by their saved encounter id, so each pays its hit and
+# parry XP from one lifetime budget and its kill once (xp_state.gd); recovery
+# and room changes cannot refill them. Echo Trial copies are fresh foes every
+# clear. Move practice earns nothing. XP is saved with the next checkpoint;
+# a level waits as a choice in the Book, applied only after that choice saves.
+
+func _xp_open() -> bool:
+	return _has_session and not practice_mode and experience != null
+
+func _xp_key(actor: Node) -> String:
+	if room == null or not is_instance_valid(actor) or not actor.has_meta("chapter_state_id") or actor.is_in_group("echo_trial_actor"):
+		return ""
+	return "%s/%s" % [room.room_id, actor.get_meta("chapter_state_id")]
+
+func _xp_kind(actor: Node) -> StringName:
+	if actor is TonearmFigure: return &"tonearm"
+	if actor is HushFigure: return &"hush"
+	if actor is LooperFigure: return &"looper"
+	if actor is PressingFigure: return &"pressing"
+	if actor is AuditionerFigure: return &"voice"
+	return &""
+
+func _award_xp(amount: int, actor: Node, kill := false) -> void:
+	if not _xp_open() or amount <= 0:
+		return
+	var before := int(experience.level())
+	var key := _xp_key(actor)
+	var granted := int(experience.award_kill(amount, key)) if kill else int(experience.award(amount, key))
+	if granted <= 0:
+		return
+	cinematic_hud.present_xp(granted)
+	var after := int(experience.level())
+	if after > before:
+		# After the strike resolves: its contact sounds stay its own.
+		call_deferred("_present_level_up", after)
+
+func _present_level_up(level: int) -> void:
+	if not _xp_open():
+		return
+	cinematic_hud.present_level(level, int(experience.picks_available()), "Z" if _gamecube_connected() else "I / Start")
+	audio.play("freed", -12.0, 1.3)
+	inventory.refresh_growth()
+
+func _on_xp_parried(actor: Node) -> void:
+	_award_xp(XpScript.PARRY_XP, actor)
+
+func _on_xp_shattered(_pos: Vector2, actor: Node) -> void:
+	_award_xp(XpScript.kill_xp(_xp_kind(actor)), actor, true)
+
+func _on_xp_won(actor: Node) -> void:
+	_award_xp(XpScript.kill_xp(_xp_kind(actor)), actor, true)
+
+## Main hears each Echo Trial copy for XP only; the trial owns its waves.
+func _on_trial_copy_spawned(copy: Node2D) -> void:
+	if not is_instance_valid(copy) or not copy.has_signal("parried"):
+		return
+	copy.parried.connect(_on_xp_parried.bind(copy))
+	copy.shattered.connect(_on_xp_shattered.bind(copy))
+	copy.bout_won.connect(_on_xp_won.bind(copy))
+
+func _xp_status() -> Dictionary:
+	if experience == null:
+		return {}
+	var progress: Dictionary = experience.progress()
+	var span := int(progress.span)
+	return {"level": int(progress.level), "ratio": float(progress.into) / float(span) if span > 0 else 1.0,
+		"picks": int(progress.picks), "max": bool(progress.max)}
+
+## The Book's LEVEL page asks; Main validates, saves, then applies the gain.
+func _choose_growth(stat: String) -> bool:
+	if _growth_busy or practice_mode or not _has_session or not inventory.is_open() or not _can_open_inventory():
+		return false
+	if not bool(experience.can_choose(stat)):
+		inventory.refresh_growth("No level is waiting, or that gain is already full.")
+		return false
+	_growth_busy = true
+	var before: Dictionary = experience.snapshot()
+	var previous_cap := _max_health()
+	experience.choose(stat)
+	if not _persist_session():
+		experience.restore_snapshot(before)
+		inventory.refresh_growth("Could not save. Your level is unchanged. Try again.")
+		_growth_busy = false
+		return false
+	_apply_purchases()
+	# Body's new notch arrives filled, like the Bootlegger's Spare Groove.
+	_health = mini(_health + _max_health() - previous_cap, _max_health())
+	player.cancel_pending_strike()
+	inventory.refresh_growth(String(GROWTH_RECEIPTS.get(stat, "")))
+	audio.play("polish", -9.0, 1.15)
+	_growth_busy = false
 	return true
 
 func _on_shine_earned(amount: int) -> void:
@@ -1624,6 +1752,8 @@ func _on_struck(pos: Vector2, big: bool, launched: bool) -> void:
 			impacts.append({"offset": origin - pos, "kind": receipt})
 			if receipt == &"hit" or contact != &"hit":
 				contact = receipt
+		if receipt is StringName and receipt == &"hit":
+			_award_xp(XpScript.BIG_HIT_XP if big else XpScript.HIT_XP, n)
 	player.resolve_strike_contact(contact)
 	var w := WaveScript.new()
 	w.big = big
@@ -1942,6 +2072,7 @@ func _install_echo_trial() -> void:
 		trial.position = definition.position
 		trial.start_requested.connect(_on_trial_start)
 		trial.completed.connect(_on_trial_claim)
+		trial.copy_spawned.connect(_on_trial_copy_spawned)
 		room.add_child(trial)
 		break
 

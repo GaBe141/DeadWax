@@ -4,6 +4,8 @@ extends Control
 
 const Press := preload("res://scripts/press.gd")
 const TITLE_TIME := 3.6
+const XP_RECEIPT_TIME := 1.6       # gains inside this window add up to one receipt
+const LEVEL_RECEIPT_TIME := 4.5
 var _state: Dictionary = {}
 var _focus: Dictionary = {}
 var _title_time := 0.0
@@ -17,7 +19,13 @@ var action_prompt: Label
 var dialogue: Label
 var speaker: Label
 var notice: Label
+## XP receipts sit under the status marks, apart from notices and dialogue.
+var xp_receipt: Label
 var _title_alpha := 0.0
+var _xp_time := 0.0
+var _xp_amount := 0
+var _level_time := 0.0
+var _level_text := ""
 
 func _ready() -> void:
 	mouse_filter = Control.MOUSE_FILTER_IGNORE
@@ -27,6 +35,8 @@ func _ready() -> void:
 	dialogue.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	speaker = _label(Press.SIZE_SMALL, true)
 	notice = _label(Press.SIZE_BODY)
+	xp_receipt = _label(Press.SIZE_SMALL)
+	xp_receipt.horizontal_alignment = HORIZONTAL_ALIGNMENT_LEFT
 	resized.connect(_layout)
 	_layout()
 	_update_labels()
@@ -48,7 +58,7 @@ func _label(font_size: int, display := false) -> Label:
 func set_palette(ink: Color, accent: Color) -> void:
 	_ink = ink
 	_accent = accent
-	for label in [area_title, action_prompt, dialogue, speaker, notice]:
+	for label in [area_title, action_prompt, dialogue, speaker, notice, xp_receipt]:
 		if label != null: label.add_theme_color_override("font_color", ink)
 	queue_redraw()
 
@@ -78,6 +88,22 @@ func present_notice(text: String, lifetime := 3.0) -> void:
 	_notice_time = maxf(lifetime, 6.0) if _notice_is_error else lifetime
 	_update_labels()
 
+## Main reports XP actually granted. Quick gains read as one running total.
+func present_xp(amount: int) -> void:
+	if amount <= 0:
+		return
+	_xp_amount = _xp_amount + amount if _xp_time > 0.0 else amount
+	_xp_time = XP_RECEIPT_TIME
+	_update_labels()
+
+func present_level(level: int, picks: int, book_key := "I / Start") -> void:
+	_level_text = "LEVEL %d  ·  %s" % [level, "choose a gain in the Book (%s)" % book_key if picks > 0 else "every gain chosen"]
+	_level_time = LEVEL_RECEIPT_TIME
+	_update_labels()
+
+func xp_text() -> String:
+	return xp_receipt.text if xp_receipt != null and xp_receipt.visible else ""
+
 func clear_save_error() -> void:
 	if _notice_is_error:
 		_notice_time = 0.0
@@ -88,6 +114,9 @@ func reset_transients() -> void:
 	_title_time = 0.0
 	_notice_time = 0.0
 	_notice_is_error = false
+	_xp_time = 0.0
+	_xp_amount = 0
+	_level_time = 0.0
 	_focus.clear()
 	if area_title != null: _update_labels()
 
@@ -98,6 +127,8 @@ func set_reduced_motion(enabled: bool) -> void:
 func _process(delta: float) -> void:
 	_title_time = maxf(0.0, _title_time - delta)
 	_notice_time = maxf(0.0, _notice_time - delta)
+	_xp_time = maxf(0.0, _xp_time - delta)
+	_level_time = maxf(0.0, _level_time - delta)
 	_update_labels()
 
 func _update_labels() -> void:
@@ -114,6 +145,12 @@ func _update_labels() -> void:
 	speaker.visible = speaking and not speaker.text.is_empty()
 	notice.visible = _notice_time > 0 and not speaking
 	notice.modulate.a = 1.0 if _reduced_motion else clampf(_notice_time / 0.35, 0.0, 1.0)
+	# A level outranks a running total; both fade on their own clocks.
+	var leveling := _level_time > 0.0
+	xp_receipt.text = _level_text if leveling else "+%d XP" % _xp_amount
+	xp_receipt.visible = leveling or _xp_time > 0.0
+	var remaining := _level_time if leveling else _xp_time
+	xp_receipt.modulate.a = 1.0 if _reduced_motion else clampf(remaining / 0.35, 0.0, 1.0)
 	queue_redraw()
 
 func _layout() -> void:
@@ -130,6 +167,8 @@ func _layout() -> void:
 	notice.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	notice.position = Vector2((size.x - width) * 0.5, size.y - 104)
 	notice.size = Vector2(width, 48)
+	xp_receipt.position = Vector2(24, 70)
+	xp_receipt.size = Vector2(minf(460, maxf(size.x - 48, 1)), 22)
 
 func _draw() -> void:
 	var pose := _state.duplicate(true)
