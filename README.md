@@ -373,8 +373,8 @@ none.
 A story foe's hits and parries pay at most 40 XP over its whole life, and its
 kill pays once, so you can't farm a fight by striking and then recovering or
 leaving the room. Echo Trial copies are new foes every time, so the trials
-are the place to grind. Move practice earns nothing and always uses a stock
-needle.
+are the place to grind. Move practice earns nothing and always plays at
+level 1.
 
 Level 2 takes 40 XP, and each level after asks 20 more than the last; level
 12 (1,540 XP) is the cap. Each level gives one choice, made on the Book's
@@ -382,7 +382,7 @@ Level 2 takes 40 XP, and each level after asks 20 more than the last; level
 
 - **Ring** (5 ranks): +15% resonance from your strikes and rung-backs, so
   voices and stands peak and shatter sooner. The Tonearm has no resonance.
-- **Body** (4 ranks): one more needle notch, arriving filled.
+- **Body** (4 ranks): one more health notch, arriving filled.
 - **Bite** (4 ranks): +25% health damage per hit, on every foe.
 
 The caps add up to more than the eleven choices, so a build has to pick. The
@@ -402,7 +402,7 @@ Skip and the interface now move in the small places between fights:
   the surveyor's slip, trial gear — are raised overhead once they are yours.
   A find whose save fails is never raised.
 - **Left alone**, Skip taps along (to the room's beat when Groove pressure is
-  playing), looks around, and polishes his stylus. Hard turns skid up dust and
+  playing), looks around, and polishes his point. Hard turns skid up dust and
   jumps kick up puffs.
 - **Talking**: Skip turns to face Tick, the Bootlegger and listening posts, and
   nods as each line arrives.

@@ -30,7 +30,7 @@ original suite counts.
   overhead once its save succeeds (a failed save raises nothing). Running
   lowers it early.
 - [ ] Stand still for five seconds: Skip taps along (on the beat with Groove
-  pressure near a foe), looks around, then polishes his stylus. Any input
+  pressure near a foe), looks around, then polishes his point. Any input
   ends it at once.
 - [ ] Turn hard at a run and jump: a skid of dust at the planted foot, puffs at
   take-off. Dust stays where it was kicked up.
@@ -68,7 +68,7 @@ moment overstays its welcome remain manual.
 
 ## Levels and XP
 
-- [ ] New Game starts at level 1: three needle diamonds, an empty hairline
+- [ ] New Game starts at level 1: three health diamonds, an empty hairline
   under the noise line, no waiting mark.
 - [ ] Hit a foe: a small "+2 XP" receipt appears under the status marks and the
   hairline grows. Quick hits read as one running total. Guards and whiffs earn
@@ -99,7 +99,7 @@ moment overstays its welcome remain manual.
 
 Godot 4.7.1's complete suite run passed all 60 suites and 14,542 checks; the
 59 earlier suites kept their 14,417 checks unchanged, because every foe reads
-a stock 1.0 from a level-1 needle. The new XP suite drove the real Main
+a stock 1.0 from a level-1 Skip. The new XP suite drove the real Main
 through the Tonearm (guard, hits, a parry, the 40 XP budget across recovery,
 then the 80 XP kill), a freed Yard voice (no XP), HUSH's bout, an Overture
 trial copy, Move practice, Book choices with a blocked save, Continue, an older

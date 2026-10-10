@@ -15,12 +15,12 @@ const ACCENT := Color("d6a968")
 const TITLES := {"ring": "RING", "body": "BODY", "bite": "BITE"}
 const FIGHT_LABELS := {
 	"ring": "A rung-back rings a voice",
-	"body": "Hits your needle can take",
+	"body": "Hits you can take",
 	"bite": "Light hits to down the Tonearm",
 }
 const BLURBS := {
 	"ring": "Strikes and rung-back parries ring harder, so a voice peaks and shatters sooner.",
-	"body": "One more notch on your needle. It arrives filled.",
+	"body": "One more notch of health. It arrives filled.",
 	"bite": "Every hit takes more from a foe's health, the Tonearm's included.",
 }
 
@@ -193,7 +193,7 @@ func _effect_text(stat: String, rank: int, cap: int) -> String:
 func _value(stat: String, rank: int) -> String:
 	match stat:
 		"ring": return "Resonance ×%.2f" % (1.0 + XpScript.RING_STEP * rank)
-		"body": return "Needle %+d" % (XpScript.BODY_STEP * rank)
+		"body": return "Health %+d" % (XpScript.BODY_STEP * rank)
 		_: return "Damage ×%.2f" % (1.0 + XpScript.BITE_STEP * rank)
 
 func focus_selected() -> void:
