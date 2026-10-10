@@ -42,6 +42,8 @@ const OpeningScript := preload("res://scripts/opening_cutscene.gd")
 const PracticeScript := preload("res://scripts/room_move_practice.gd")
 const ComboReadoutScript := preload("res://scripts/combo_readout.gd")
 const CinematicHudScript := preload("res://scripts/cinematic_hud.gd")
+const ScreenWipeScript := preload("res://scripts/screen_wipe.gd")
+const ScreenCaptureScript := preload("res://scripts/screen_capture.gd")
 const ControllerProfileScript := preload("res://scripts/controller_profile.gd")
 const ControllerRouterScript := preload("res://scripts/controller_router.gd")
 const ControllerMenuScript := preload("res://scripts/controller_menu.gd")
@@ -145,6 +147,8 @@ var beat_mark: ColorRect
 var hud_motion: Node
 var combo_readout: Control
 var cinematic_hud: Control
+## The ink wipe between rooms: a drawing over a room that has already loaded.
+var screen_wipe: CanvasLayer
 var _fb_t := 0.0
 var _shake := 0.0
 var _hits_taken := 0
@@ -764,6 +768,11 @@ func _continue_game() -> void:
 	_queue_save()
 
 func _reset_player() -> void:
+	# A new or restored session shows its marks as they are and carries no
+	# wipe, fold or gesture over from the last one.
+	if cinematic_hud != null: cinematic_hud.settle_marks()
+	if screen_wipe != null: screen_wipe.settle()
+	if inventory != null: inventory.settle_paper()
 	player.cancel_pending_strike()
 	player.velocity = Vector2.ZERO
 	player.noise = 0.0
@@ -1132,6 +1141,7 @@ func _on_inventory_opened() -> void:
 func _on_map_collected() -> void:
 	if development_mode or not _has_session or world_room_id != &"headshell" or not map_state.collect():
 		return
+	player.present_item(&"map")
 	audio.play("freed", -11.0, 1.15)
 	_flash("MAP FOUND — M / D-PAD DOWN · open")
 	_queue_save()
@@ -1301,6 +1311,7 @@ func _present_level_up(level: int) -> void:
 	if not _xp_open():
 		return
 	cinematic_hud.present_level(level, int(experience.picks_available()), "Z" if _gamecube_connected() else "I / Start")
+	player.present_level_up()
 	audio.play("freed", -12.0, 1.3)
 	inventory.refresh_growth()
 
@@ -1448,10 +1459,25 @@ func _release_controller_menu_input() -> bool:
 	return false
 
 func _on_inventory_closed() -> void:
+	call_deferred("_present_book_close", room)
 	if not _release_controller_menu_input(): return
 	_book_closing = true
 	get_tree().paused = true
 	call_deferred("_finish_book_close")
+
+## When the Book closes back into play, its last page folds shut into Skip's
+## hands and he tucks it into his coat. Handing over to the map, a pause or a
+## new session lets the kept page go instead.
+func _present_book_close(closed_in: Variant) -> void:
+	var resumed: bool = (room != null and is_instance_valid(closed_in) and room == closed_in
+		and (_has_session or practice_mode) and not _opening_active()
+		and not inventory.is_open() and not map_menu.is_open and not shop.is_open
+		and (game_menu == null or not game_menu.is_open))
+	if not resumed:
+		inventory.settle_paper()
+		return
+	inventory.fold_into_hand(player.get_canvas_transform() * player.book_hand_position())
+	player.present_book_close()
 
 func _finish_book_close() -> void:
 	await get_tree().process_frame
@@ -1558,7 +1584,7 @@ func _apply_settings() -> void:
 	AudioServer.set_bus_volume_db(0, linear_to_db(maxf(0.001, float(_settings.volume))))
 	AudioServer.set_bus_mute(0, float(_settings.volume) <= 0.0)
 	camera.position_smoothing_enabled = not bool(_settings.reduced_motion)
-	for interface in [game_menu, inventory, shop, map_menu, hud_motion, opening, combo_readout, cinematic_hud, controller_menu]:
+	for interface in [game_menu, inventory, shop, map_menu, hud_motion, opening, combo_readout, cinematic_hud, controller_menu, screen_wipe]:
 		if interface != null:
 			interface.call("set_reduced_motion", bool(_settings.reduced_motion))
 	if room != null:
@@ -1861,6 +1887,7 @@ func _on_ability_requested(id: StringName, source: Node2D) -> void:
 	player.refill_air_strikes()
 	room.call("refresh_abilities")
 	combo_readout.set_snapshot(player.combo_snapshot())
+	player.present_item(&"move", id)
 	audio.play("freed", -9.0, 0.9)
 	_flash("%s — RECOVERED" % String(definition.name))
 	_fb_t = 3.0
@@ -2006,6 +2033,7 @@ func _on_lost_pressing_requested(source: Node2D) -> void:
 	# fitting intent and the existing saved equipment transaction applies it.
 	player.cancel_pending_strike()
 	source.refresh()
+	player.present_item(&"pressing", id)
 	audio.play("polish", -9.0, 1.1)
 	_flash("%s — FOUND. Equip in the Book." % String(CollectionCatalog.item(String(id)).name).to_upper())
 	_fb_t = 4.0
@@ -2033,6 +2061,10 @@ func _on_discovery_requested(action: StringName, source: Node2D) -> void:
 		_flash("Could not save this discovery. Stay nearby and try again.")
 		return
 	_refresh_exploration()
+	if action == &"collect_spool":
+		player.present_item(&"spool")
+	elif action == &"collect_survey":
+		player.present_item(&"slip")
 	match action:
 		&"collect_spool": _flash("ECHO SPOOL — yours to carry.")
 		&"record_phrase": _flash("PHRASE HELD — three notes kept.")
@@ -2137,6 +2169,7 @@ func _on_trial_claim(source: Node) -> void:
 	else:
 		receipt["message"] = "%s found. Equip it in the Book." % String(CollectionCatalog.item(found).name)
 		_flash("%s — FOUND" % String(CollectionCatalog.item(found).name).to_upper())
+		player.present_item(&"gear", StringName(found))
 	source.call("accept_reward", receipt)
 	_fb_t = 3.2
 	audio.play("polish", -9.0, 0.85 if found.is_empty() else 1.1)
@@ -2219,6 +2252,9 @@ func _on_route_requested(target_room: StringName, target_entry: StringName) -> v
 		return
 	_transition_pending = true
 	audio.play("door", -10.0)
+	# Keep the frame on screen as a still; the next room still loads at once
+	# and the old one is brushed off it in ink.
+	screen_wipe.begin(ScreenCaptureScript.grab(get_viewport()))
 	call_deferred("_complete_route_transition", target_room, target_entry)
 
 func _complete_route_transition(target_room: StringName, target_entry: StringName) -> void:
@@ -2228,6 +2264,7 @@ func _complete_route_transition(target_room: StringName, target_entry: StringNam
 	else:
 		_load_world_room(target_room, target_entry)
 	_transition_pending = false
+	screen_wipe.arrive(player.get_global_transform_with_canvas().origin.x)
 	_queue_save()
 
 func _on_route_blocked(message: String) -> void:
@@ -2237,6 +2274,8 @@ func _can_open_inventory() -> bool:
 	return not _opening_active() and (_has_session or practice_mode) and not _transition_pending and not _book_closing and not _shop_closing and not shop.is_open and not _map_closing and (map_menu == null or not map_menu.is_open) and (game_menu == null or not game_menu.is_open)
 
 func _on_refrain_unlocked(refrain: int) -> void:
+	if not practice_mode:
+		player.present_item(&"refrain", StringName(str(refrain)))
 	audio.play("freed", -7.0)
 	if refrain == ProgressionScript.Refrain.GATHER:
 		player.refill_air_strikes()
@@ -2390,6 +2429,9 @@ func _build_hud() -> void:
 	cinematic_hud.name = "CinematicHud"
 	layer.add_child(cinematic_hud)
 	cinematic_hud.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	screen_wipe = ScreenWipeScript.new()
+	screen_wipe.name = "ScreenWipe"
+	add_child(screen_wipe)
 
 # -- input --------------------------------------------------------------------
 

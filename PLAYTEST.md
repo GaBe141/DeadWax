@@ -3,8 +3,8 @@
 Run `.\deadwax.cmd play` for the authored opening. Start with the chapter
 checklist, then use `.\deadwax.cmd dev` for focused mechanics regressions.
 Runtime errors are written to `.godot/deadwax-play.log`.
-Run `.\deadwax.cmd check` before handoff; the complete run contains 60 native
-suites, including XP and levels, Groove pressure, Palace shaders/lighting, arena practice, contact feedback, calibrated controllers, movement weight, cinematic presentation,
+Run `.\deadwax.cmd check` before handoff; the complete run contains 61 native
+suites, including animation moments, XP and levels, Groove pressure, Palace shaders/lighting, arena practice, contact feedback, calibrated controllers, movement weight, cinematic presentation,
 Lost Pressings, and Book/map suites. Older review results below retain their
 original suite counts.
 
@@ -16,6 +16,55 @@ original suite counts.
 - Input device:
 - Overall frame pacing: smooth / occasional hitch / frequent hitch
 - Audio clarity and latency:
+
+## Small moments
+
+- [ ] Open the Book: a dark board swings open off the page. Press a card or
+  Escape at once: input and focus never wait for it.
+- [ ] Change tabs with Tab, LB/RB and the mouse: the old page turns over the
+  new one, forward and back. Switch quickly; nothing sticks or blinks.
+- [ ] Close the Book in play: it folds shut and shrinks into Skip's hands; he
+  snaps it shut and tucks it into his coat. Move straight away: nothing
+  stalls. Opening the map from the Book shows no fold or tuck.
+- [ ] Collect a move, the map, a Lost Pressing and a Refrain: Skip raises each
+  overhead once its save succeeds (a failed save raises nothing). Running
+  lowers it early.
+- [ ] Stand still for five seconds: Skip taps along (on the beat with Groove
+  pressure near a foe), looks around, then polishes his stylus. Any input
+  ends it at once.
+- [ ] Turn hard at a run and jump: a skid of dust at the planted foot, puffs at
+  take-off. Dust stays where it was kicked up.
+- [ ] Talk to Tick, the Bootlegger and a listening post from either side: Skip
+  turns to face them and nods at each line. Striking straight after still
+  goes the way you last pressed.
+- [ ] Take a passage both ways: ink brushes the old room off, uncovering
+  Skip's side first. Move at once: the new room is already live. Pause during
+  the stroke: it ends cleanly.
+- [ ] Open the map: the guide unfolds along its creases. Page with
+  Left/Right and close at once.
+- [ ] Take a hit, recover, earn XP and reach a level: a diamond cracks and
+  falls, the restored one re-inks, the hairline fills smoothly, and the level
+  rings out by the waiting mark.
+- [ ] Turn on Reduced motion: no board, page turn, fold, unfold or HUD motion;
+  passages dissolve. Everything stays usable.
+- [ ] Check every moment at 1280×720, 960×540 and fullscreen; the wipe and
+  the Book's fold line up with what was on screen.
+
+## Small moments verification — 10 October 2026
+
+Godot 4.7.1's complete suite run passed all 61 suites and 14,670 checks; the
+60 earlier suites kept their 14,542 checks unchanged. The new animation suite
+drives a standalone Skip on a real floor and the real Main: gestures leave
+body, collider, input and combat clocks untouched; strikes, hits, Hood and
+movement cut them short; listening posts and Tick turn the drawn figure
+without changing facing; dust stays where it was kicked; an unsaved find is
+never raised; the Book's board, turns and fold never delay focus, input or the
+close; the map unfolds and settles; passages load the next room in the same
+frame the wipe begins. Ten deliberate regressions were each caught, and a
+logger fails the suite on any script error. Rendered frames confirmed every
+moment at 1280×720, and the wipe's still matched the replaced frame exactly at
+1000×900 (letterboxed), 960×540 and 1600×800. Feel, timing and whether any
+moment overstays its welcome remain manual.
 
 ## Levels and XP
 

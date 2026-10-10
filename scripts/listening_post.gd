@@ -46,6 +46,11 @@ func try_listen() -> bool:
 	_line = (_line + 1) % lines.size()
 	_dialogue_remaining = DIALOGUE_TIME
 	_rebuild_card()
+	# Skip turns his drawn figure toward the voice and nods at the line. It is
+	# presentation only: facing, reach and every clock stay as they were.
+	var listener := get_tree().get_first_node_in_group("player") if is_inside_tree() else null
+	if listener != null and listener.has_method("present_attention"):
+		listener.call("present_attention", global_position)
 	return true
 
 func set_cinematic_mode(enabled: bool) -> void:

@@ -19,6 +19,7 @@ const CollectionPages := preload("res://scripts/collection_book_pages.gd")
 const GrowthPage := preload("res://scripts/growth_book_page.gd")
 const PAGE_ORDER := ["journey", "equipment", "bestiary", "level"]
 const WorldBackdrop := preload("res://scripts/ui_world_backdrop.gd")
+const BookMotionScript := preload("res://scripts/book_motion.gd")
 
 ## Above this size The Book is shouting, and shouting is set in wood type.
 const DISPLAY_AT := 24
@@ -87,6 +88,8 @@ var _journey_notes: ScrollContainer
 var _refinement_label: Label
 var _controls_footer: Label
 var _opening_gate := false
+## The board, page turns and the closing fold: drawings over the live Book.
+var _paper: Node
 
 func _ready() -> void:
 	layer = 100
@@ -99,6 +102,11 @@ func _ready() -> void:
 	if abilities != null and not bool(abilities.call("has_ability", &"walk")):
 		_selected_slot = &"walk"
 	_build_menu()
+	_paper = BookMotionScript.new()
+	_paper.name = "BookMotion"
+	add_child(_paper)
+	_paper.reduced_motion = _reduced_motion
+	_paper.attach(overlay, self)
 	if progression != null:
 		progression.connect("refrain_unlocked", _on_progression_changed)
 		progression.connect("technique_discovered", _on_progression_changed)
@@ -125,7 +133,7 @@ func _input(event: InputEvent) -> void:
 		elif InputMap.has_action("book_next") and event.is_action_pressed("book_next", false, true):
 			step = 1
 		if step != 0:
-			select_page(PAGE_ORDER[posmod(PAGE_ORDER.find(_current_page) + step, PAGE_ORDER.size())], true)
+			select_page(PAGE_ORDER[posmod(PAGE_ORDER.find(_current_page) + step, PAGE_ORDER.size())], true, step)
 			get_viewport().set_input_as_handled()
 			return
 	if _open and event is InputEventKey and event.is_action_pressed("map") and map_state != null and bool(map_state.get("owned")):
@@ -164,6 +172,8 @@ func set_reduced_motion(enabled: bool) -> void:
 	_reduced_motion = enabled
 	if _motion != null:
 		_motion.reduced_motion = enabled
+	if _paper != null:
+		_paper.set_reduced_motion(enabled)
 
 func open_inventory() -> void:
 	if _open:
@@ -175,6 +185,7 @@ func open_inventory() -> void:
 	_open = true
 	_opening_gate = true
 	overlay.show()
+	_paper.open_cover()
 	_refresh()
 	_focus_selected()
 	get_tree().paused = true
@@ -188,6 +199,9 @@ func close_inventory() -> void:
 		return
 	_open = false
 	_opening_gate = false
+	# The page on screen is kept as a still before the overlay goes, so it can
+	# fold shut into Skip's hands while play has already resumed.
+	_paper.hold_last_page(overlay.get_global_rect(), get_viewport())
 	overlay.hide()
 	var focus_owner := get_viewport().gui_get_focus_owner()
 	if focus_owner != null and overlay.is_ancestor_of(focus_owner):
@@ -205,10 +219,18 @@ func toggle_inventory() -> void:
 func current_page() -> String:
 	return _current_page
 
-func select_page(page_id: String, focus_content := false) -> void:
+func select_page(page_id: String, focus_content := false, turn_direction := 0) -> void:
 	if page_id not in _page_buttons:
 		return
 	_settle_motion()
+	var previous := _current_page
+	if _open and page_id != previous and _paper != null:
+		var shown := _page_control(previous)
+		var direction := float(turn_direction)
+		if turn_direction == 0:
+			direction = 1.0 if PAGE_ORDER.find(page_id) > PAGE_ORDER.find(previous) else -1.0
+		if shown != null:
+			_paper.turn_page(shown.get_global_rect(), direction, get_viewport())
 	_current_page = page_id
 	_journey.visible = page_id == "journey"
 	_collection_pages.visible = page_id in ["equipment", "bestiary"]
@@ -221,6 +243,25 @@ func select_page(page_id: String, focus_content := false) -> void:
 		_apply_card_style(button, id == page_id)
 	if focus_content:
 		_focus_selected()
+
+func _page_control(page_id: String) -> Control:
+	match page_id:
+		"journey": return _journey
+		"equipment", "bestiary": return _collection_pages
+		"level": return _growth_page
+	return null
+
+## Main sends the closed Book toward Skip's drawn hands once play resumes.
+func fold_into_hand(target: Vector2) -> bool:
+	return _paper != null and bool(_paper.fold_into(target))
+
+## Main lets the kept page go when the Book hands over to another menu.
+func settle_paper() -> void:
+	if _paper != null:
+		_paper.settle()
+
+func paper() -> Node:
+	return _paper
 
 func refresh_collection(notice := "") -> void:
 	if _collection_pages != null:
@@ -639,6 +680,8 @@ func _select_slot(slot: StringName, animate := true) -> void:
 
 func _resize_page() -> void:
 	_settle_motion()
+	if _paper != null:
+		_paper.settle()
 	if _page_margin == null or _header == null or _subtitle == null:
 		return
 	var compact := overlay.size.y < 620

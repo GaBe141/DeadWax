@@ -68,7 +68,7 @@ The lightweight project commands are:
 .\deadwax.cmd play    play the campaign with a local runtime log
 .\deadwax.cmd dev     open the original mechanics rooms and planned-world tools
 .\deadwax.cmd editor  open the project in Godot
-.\deadwax.cmd check   import resources; run all sixty native test suites
+.\deadwax.cmd check   import resources; run all sixty-one native test suites
 .\deadwax.cmd vibe    start Mistral Vibe in this repository
 ```
 
@@ -390,6 +390,32 @@ parry window, reach, timing, launches and jumps never change. A choice is
 saved before it applies; if the save fails, nothing changes. XP is saved with
 the next checkpoint (passages, outcomes, the Book, pause, quit). An older
 checkpoint without XP continues at level 1.
+
+## Small moments
+
+Skip and the interface now move in the small places between fights:
+
+- **The Book** swings open like a cover, and its pages turn when you change
+  tabs. Closing it folds the Book shut into Skip's hands; back in play he
+  snaps it shut and tucks it into his coat.
+- **Finds** — a move, a Lost Pressing, the map, a Refrain, the Echo Spool,
+  the surveyor's slip, trial gear — are raised overhead once they are yours.
+  A find whose save fails is never raised.
+- **Left alone**, Skip taps along (to the room's beat when Groove pressure is
+  playing), looks around, and polishes his stylus. Hard turns skid up dust and
+  jumps kick up puffs.
+- **Talking**: Skip turns to face Tick, the Bootlegger and listening posts, and
+  nods as each line arrives.
+- **Passages** brush the old room away in ink; the next room loads exactly as
+  fast as before and is live underneath.
+- **The map** unfolds along its creases.
+- **The HUD**: a lost health diamond cracks and falls away, a restored one
+  re-inks, the XP line fills smoothly, and a new level rings out.
+
+None of it waits: menus take input and focus at once, and Skip's moves,
+timing and reach never change. Pausing freezes the world's motion.
+**Reduced motion** keeps the Book, map and HUD still and dissolves passages
+instead of wiping.
 
 ## Saving and settings
 

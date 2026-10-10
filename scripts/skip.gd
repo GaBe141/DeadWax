@@ -11,6 +11,7 @@ signal shine_earned(amount: int)
 
 const ProgressionScript := preload("res://scripts/progression_state.gd")
 const PressScript := preload("res://scripts/press.gd")
+const GestureScript := preload("res://scripts/press_skip_gesture.gd")
 
 # -- RUN / JUMP (the honest legs) --------------------------------------------
 const RUN_SPEED := 340.0
@@ -162,12 +163,41 @@ var _flat_pose := 0.0
 var _hit_direction := 1.0
 var _animation_grounded := true
 
+# Small moments. Main reports confirmed events (the Book closing, a find, a
+# new level) and listening posts report a line; Skip only poses the drawn
+# figure. Facing, velocity, collision and every combat clock stay put.
+const BOOK_TIME := 0.95
+const ITEM_TIME := 1.3
+const NOD_TIME := 0.42
+const ATTENTION_TIME := 4.0
+const GLOW_TIME := 1.1
+const TAP_PERIOD := 0.5           # the tapping foot's own count when no groove plays
+const DUST_TIME := 0.45
+const MAX_DUST := 24
+const SKID_SPEED := 150.0
+const SKID_GAP := 0.05
+var _book_pose := 0.0
+var _item_pose := 0.0
+var _item_kind: StringName = &""
+var _item_detail: StringName = &""
+var _nod_pose := 0.0
+var _attention := 0.0
+var _attention_face := 1.0
+var _listen_blend := 0.0
+var _glow_pose := 0.0
+var _idle_time := 0.0
+var _dust: Array[Dictionary] = []
+var _dust_count := 0
+var _skid_clock := 0.0
+var _takeoff_dust := false
+
 const INK := Color(0.13, 0.12, 0.11)
 const IRON := Color(0.36, 0.35, 0.37)
 const PALE := Color(0.92, 0.90, 0.85)
 const PINK := Color(0.90, 0.25, 0.50)
 const HOODGREY := Color(0.55, 0.52, 0.58)
 const IRON_REVERSED := Color(0.62, 0.60, 0.63)
+const DUST := Color(0.80, 0.72, 0.56)  # kicked-up wax: reads on dark and pale pages
 
 ## Skip is inked to stay legible on whatever stock the room is printed on:
 ## the same figure, reversed out when the page goes dark.
@@ -236,7 +266,54 @@ func present_parry(from_pos: Vector2) -> void:
 	_parry_pose = PARRY_POSE_TIME
 	queue_redraw()
 
+## Main calls this once play resumes after the Book closes: Skip snaps the
+## small Book shut and tucks it into his coat.
+func present_book_close() -> void:
+	_item_pose = 0.0
+	_book_pose = BOOK_TIME
+	_idle_time = 0.0
+	queue_redraw()
+
+## A confirmed find (a move, a pressing, the map, a Refrain...) held overhead.
+func present_item(kind: StringName, detail: StringName = &"") -> void:
+	_book_pose = 0.0
+	_item_pose = ITEM_TIME
+	_item_kind = kind
+	_item_detail = detail
+	_idle_time = 0.0
+	queue_redraw()
+
+## A listening post or resident spoke a line: turn the drawn figure toward it
+## and nod. `facing` (the strike direction) never changes.
+func present_attention(from_pos: Vector2) -> void:
+	var toward := from_pos.x - global_position.x
+	_attention_face = signf(toward) if absf(toward) > 1.0 else (1.0 if _look_face >= 0.0 else -1.0)
+	_attention = ATTENTION_TIME
+	_nod_pose = NOD_TIME
+	_idle_time = 0.0
+	queue_redraw()
+
+func present_level_up() -> void:
+	_glow_pose = GLOW_TIME
+	queue_redraw()
+
+## Where the drawn small Book sits, in world space, for the closing Book.
+func book_hand_position() -> Vector2:
+	var face := 1.0 if _look_face >= 0.0 else -1.0
+	return global_position + Vector2(GestureScript.BOOK_HAND.x * face, GestureScript.BOOK_HAND.y)
+
+func dust_snapshot() -> Array[Dictionary]:
+	return _dust.duplicate(true)
+
+func _cancel_gestures() -> void:
+	_book_pose = 0.0
+	_item_pose = 0.0
+	_nod_pose = 0.0
+	_attention = 0.0
+	_idle_time = 0.0
+
 func _clear_combat_impression() -> void:
+	_cancel_gestures()
 	_strike_pose = 0.0
 	_strike_big = false
 	_strike_hold = 0.0
@@ -344,6 +421,7 @@ func _physics_process(delta: float) -> void:
 		refill_air_strikes()
 
 	if _buffer > 0.0 and _coyote > 0.0 and _stagger <= 0.0 and not setting:
+		_takeoff_dust = is_on_floor()
 		velocity.y = JUMP_VELOCITY
 		_launch_pose = LAUNCH_POSE_TIME
 		_buffer = 0.0
@@ -512,7 +590,9 @@ func _process(delta: float) -> void:
 	_air_blend = move_toward(_air_blend, 0.0 if _animation_grounded else 1.0, step * 10.0)
 	_hood_blend = move_toward(_hood_blend, 1.0 if hooded else 0.0, step * 7.0)
 	_set_blend = move_toward(_set_blend, 1.0 if setting else 0.0, step * 6.0)
-	_look_face = lerpf(_look_face, facing, 1.0 - exp(-step * 18.0))
+	# While a speaker holds Skip's attention the drawn figure turns to it;
+	# `facing` (the strike direction) is never touched.
+	_look_face = lerpf(_look_face, _attention_face if _attention > 0.0 else facing, 1.0 - exp(-step * 18.0))
 	_land_pose = maxf(_land_pose - step, 0.0)
 	_launch_pose = maxf(_launch_pose - step, 0.0)
 	# A few held draw frames make actual contact readable without hitstop,
@@ -523,13 +603,77 @@ func _process(delta: float) -> void:
 	_contact_pose = maxf(_contact_pose - step, 0.0)
 	_parry_pose = maxf(_parry_pose - step, 0.0)
 	_flat_pose = maxf(_flat_pose - step, 0.0)
+	_advance_gestures(step)
+	_advance_footwork(step)
 	queue_redraw()
+
+func _advance_gestures(step: float) -> void:
+	# Hood and Set fold a held gesture away quickly; moving lowers a raised find.
+	var busy := 4.0 if hooded or setting else 1.0
+	_book_pose = maxf(_book_pose - step * busy, 0.0)
+	_item_pose = maxf(_item_pose - step * maxf(busy, 1.0 + _run_blend * 2.0 + _air_blend), 0.0)
+	_nod_pose = maxf(_nod_pose - step, 0.0)
+	_glow_pose = maxf(_glow_pose - step, 0.0)
+	if absf(velocity.x) > 30.0 or not _animation_grounded or hooded or setting:
+		_attention = 0.0
+	_attention = maxf(_attention - step, 0.0)
+	_listen_blend = move_toward(_listen_blend, 1.0 if _attention > 0.0 else 0.0, step * 6.0)
+	var still := (_animation_grounded and absf(velocity.x) < 4.0 and not hooded and not setting
+		and _strike_pose <= 0.0 and _hit_flash <= 0.0 and _parry_pose <= 0.0 and _land_pose <= 0.0
+		and _book_pose <= 0.0 and _item_pose <= 0.0 and _attention <= 0.0)
+	_idle_time = _idle_time + step if still else 0.0
+
+func _advance_footwork(step: float) -> void:
+	for index in range(_dust.size() - 1, -1, -1):
+		var puff := _dust[index]
+		puff.age = float(puff.age) + step / DUST_TIME
+		var drift: Vector2 = puff.velocity
+		puff.at = Vector2(puff.at) + drift * step
+		puff.velocity = drift * exp(-step * 6.0) + Vector2(0, -14.0 * step)
+		if float(puff.age) >= 1.0:
+			_dust.remove_at(index)
+	if _takeoff_dust:
+		_takeoff_dust = false
+		for side in [-1.0, 1.0]:
+			_kick_dust(global_position + Vector2(side * 11.0, 25.0), Vector2(side * 75.0 - velocity.x * 0.08, -14.0), 1.1)
+		_kick_dust(global_position + Vector2(0, 26.0), Vector2(-velocity.x * 0.05, -6.0), 0.8)
+	# Turning hard plants the leading foot; it kicks up a short skid.
+	var skidding := (_animation_grounded and absf(velocity.x) > SKID_SPEED and signf(velocity.x) != signf(facing)
+		and has_ability(&"walk"))
+	if skidding:
+		_skid_clock -= step
+		if _skid_clock <= 0.0:
+			_skid_clock = SKID_GAP
+			var lead := signf(velocity.x)
+			_kick_dust(global_position + Vector2(lead * 9.0, 25.0), Vector2(lead * 70.0, -26.0), 0.9)
+	else:
+		_skid_clock = 0.0
+
+func _kick_dust(at: Vector2, drift: Vector2, size: float) -> void:
+	_dust_count += 1
+	var jitter := Vector2(sin(_dust_count * 12.9898), cos(_dust_count * 78.233)) * 0.5
+	_dust.append({"at": at + jitter * 3.0, "velocity": drift + jitter * 20.0, "age": 0.0,
+		"size": size * (1.0 + jitter.x * 0.3)})
+	while _dust.size() > MAX_DUST:
+		_dust.remove_at(0)
+
+func _tap_phase() -> float:
+	if groove != null and bool(groove.get("live")):
+		var period := maxf(float(groove.get("period")), 0.05)
+		return clampf(float(groove.call("since_beat")) / period, 0.0, 1.0)
+	return fmod(_idle_time, TAP_PERIOD) / TAP_PERIOD
 
 func _draw() -> void:
 	PressScript.draw_skip(self, _animation_pose(), {
 		"ink": INK, "body": _body, "pale": PALE, "pink": PINK, "hood": HOODGREY,
 		"warm_thread": warm_thread,
 	})
+	# Dust stays where it was kicked up, in front of the feet that raised it.
+	if not _dust.is_empty():
+		var puffs: Array[Dictionary] = []
+		for puff in _dust:
+			puffs.append({"at": Vector2(puff.at) - global_position, "age": puff.age, "size": puff.size})
+		PressScript.draw_skip_dust(self, puffs, DUST)
 
 func _animation_pose() -> Dictionary:
 	return {
@@ -546,6 +690,10 @@ func _animation_pose() -> Dictionary:
 		"strike_launched": _strike_launched, "strike_pogo": _strike_pogo,
 		"hurt": _hit_flash / 0.35, "hit_direction": _hit_direction, "noise": noise,
 		"flat": _flat_pose / FLAT_POSE_TIME,
+		"book": _book_pose / BOOK_TIME, "item": _item_pose / ITEM_TIME,
+		"item_kind": _item_kind, "item_detail": _item_detail,
+		"nod": _nod_pose / NOD_TIME, "listen": _listen_blend, "glow": _glow_pose / GLOW_TIME,
+		"idle": _idle_time, "beat": _tap_phase(),
 	}
 
 ## Recovery and passages move the body instantly; the impression starts at rest
@@ -570,6 +718,13 @@ func reset_animation() -> void:
 	last_strike_groove = &""
 	_hit_flash = 0.0
 	_animation_grounded = true
+	_item_kind = &""
+	_item_detail = &""
+	_listen_blend = 0.0
+	_glow_pose = 0.0
+	_dust.clear()
+	_skid_clock = 0.0
+	_takeoff_dust = false
 	queue_redraw()
 
 func set_page(stock: Color) -> void:

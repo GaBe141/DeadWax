@@ -6,6 +6,14 @@ const Press := preload("res://scripts/press.gd")
 const TITLE_TIME := 3.6
 const XP_RECEIPT_TIME := 1.6       # gains inside this window add up to one receipt
 const LEVEL_RECEIPT_TIME := 4.5
+# The marks react to what Main reports. These clocks are presentation only and
+# pause with play; Reduced motion settles them to their final state.
+const CRACK_TIME := 0.5            # a lost diamond splits and falls away
+const INK_TIME := 0.42             # a restored diamond fills from the bottom
+const INK_STAGGER := 0.08          # several restored diamonds ink one after another
+const XP_CATCH_RATE := 2.4         # line lengths per second while catching up a level
+const BURST_TIME := 1.1            # the ring on a new level
+const SETTLED := 99.0
 var _state: Dictionary = {}
 var _focus: Dictionary = {}
 var _title_time := 0.0
@@ -26,6 +34,13 @@ var _xp_time := 0.0
 var _xp_amount := 0
 var _level_time := 0.0
 var _level_text := ""
+var _shown_health := -1
+var _crack_age: Array[float] = []
+var _ink_age: Array[float] = []
+var _xp_level_shown := -1
+var _xp_shown := 0.0
+var _xp_flash := 0.0
+var _burst_age := -1.0
 
 func _ready() -> void:
 	mouse_filter = Control.MOUSE_FILTER_IGNORE
@@ -64,7 +79,59 @@ func set_palette(ink: Color, accent: Color) -> void:
 
 func set_status(snapshot: Dictionary) -> void:
 	_state = snapshot.duplicate(true)
+	_track_health(int(_state.get("health", 3)), int(_state.get("max_health", 3)))
 	queue_redraw()
+
+## A fresh session or restored checkpoint shows its marks as they are, without
+## replaying a loss, a refill or a level.
+func settle_marks() -> void:
+	_shown_health = -1
+	_crack_age.clear()
+	_ink_age.clear()
+	_xp_level_shown = -1
+	_xp_flash = 0.0
+	_burst_age = -1.0
+	queue_redraw()
+
+func _track_health(health: int, maximum: int) -> void:
+	maximum = maxi(maximum, 0)
+	health = clampi(health, 0, maximum)
+	while _crack_age.size() < maximum:
+		_crack_age.append(SETTLED)
+		_ink_age.append(SETTLED)
+	if _crack_age.size() > maximum:
+		_crack_age = _crack_age.slice(0, maximum)
+		_ink_age = _ink_age.slice(0, maximum)
+	if _shown_health < 0 or _reduced_motion:
+		_shown_health = health
+		for index in maximum:
+			_crack_age[index] = SETTLED
+			_ink_age[index] = SETTLED
+		return
+	if health < _shown_health:
+		for index in range(health, mini(_shown_health, maximum)):
+			_crack_age[index] = 0.0
+			_ink_age[index] = SETTLED
+	elif health > _shown_health:
+		var order := 0
+		for index in range(_shown_health, health):
+			_ink_age[index] = -INK_STAGGER * order
+			_crack_age[index] = SETTLED
+			order += 1
+	_shown_health = health
+
+func marks_snapshot() -> Dictionary:
+	return {"cracks": _progress(_crack_age, CRACK_TIME), "inks": _progress(_ink_age, INK_TIME),
+		"xp": _xp_shown, "xp_level": _xp_level_shown, "flash": _xp_flash,
+		"burst": clampf(_burst_age / BURST_TIME, 0.0, 1.0) if _burst_age >= 0.0 else -1.0}
+
+## -1 is a settled mark, 0..1 one in motion; a restored diamond waiting its
+## turn reads 0, still empty.
+static func _progress(ages: Array[float], duration: float) -> Array[float]:
+	var result: Array[float] = []
+	for age in ages:
+		result.append(-1.0 if age >= duration else clampf(age / duration, 0.0, 1.0))
+	return result
 
 func set_focus(snapshot: Dictionary) -> void:
 	_focus = snapshot.duplicate(true)
@@ -99,6 +166,7 @@ func present_xp(amount: int) -> void:
 func present_level(level: int, picks: int, book_key := "I / Start") -> void:
 	_level_text = "LEVEL %d  ·  %s" % [level, "choose a gain in the Book (%s)" % book_key if picks > 0 else "every gain chosen"]
 	_level_time = LEVEL_RECEIPT_TIME
+	_burst_age = 0.0
 	_update_labels()
 
 func xp_text() -> String:
@@ -117,11 +185,19 @@ func reset_transients() -> void:
 	_xp_time = 0.0
 	_xp_amount = 0
 	_level_time = 0.0
+	_burst_age = -1.0
 	_focus.clear()
 	if area_title != null: _update_labels()
 
 func set_reduced_motion(enabled: bool) -> void:
 	_reduced_motion = enabled
+	if enabled:
+		for index in _crack_age.size():
+			_crack_age[index] = SETTLED
+			_ink_age[index] = SETTLED
+		_xp_level_shown = -1
+		_xp_flash = 0.0
+		_advance_xp(0.0)
 	_update_labels()
 
 func _process(delta: float) -> void:
@@ -129,7 +205,41 @@ func _process(delta: float) -> void:
 	_notice_time = maxf(0.0, _notice_time - delta)
 	_xp_time = maxf(0.0, _xp_time - delta)
 	_level_time = maxf(0.0, _level_time - delta)
+	if delta > 0.0:
+		for index in _crack_age.size():
+			if _crack_age[index] < CRACK_TIME: _crack_age[index] += delta
+			if _ink_age[index] < INK_TIME: _ink_age[index] += delta
+		if _burst_age >= 0.0:
+			_burst_age += delta
+			if _burst_age >= BURST_TIME: _burst_age = -1.0
+		_advance_xp(delta)
 	_update_labels()
+
+## The hairline eases toward Main's ratio. A new level first runs the line to
+## its end, flashes, and starts again from the left.
+func _advance_xp(delta: float) -> void:
+	var xp: Dictionary = _state.get("xp", {}) if _state.get("xp", {}) is Dictionary else {}
+	if xp.is_empty():
+		_xp_level_shown = -1
+		return
+	var level := int(xp.get("level", 1))
+	var target := clampf(float(xp.get("ratio", 0.0)), 0.0, 1.0)
+	_xp_flash = maxf(_xp_flash - delta * 2.0, 0.0)
+	if _xp_level_shown < 0 or _reduced_motion or level < _xp_level_shown:
+		_xp_level_shown = level
+		_xp_shown = target
+		return
+	if level > _xp_level_shown:
+		_xp_shown = minf(_xp_shown + delta * XP_CATCH_RATE, 1.0)
+		if _xp_shown >= 1.0:
+			_xp_level_shown += 1
+			_xp_shown = 0.0
+			_xp_flash = 1.0
+		return
+	if target <= _xp_shown:
+		_xp_shown = target
+		return
+	_xp_shown = minf(target, _xp_shown + maxf((target - _xp_shown) * (1.0 - exp(-delta * 7.0)), delta * 0.15))
 
 func _update_labels() -> void:
 	if area_title == null: return
@@ -173,4 +283,12 @@ func _layout() -> void:
 func _draw() -> void:
 	var pose := _state.duplicate(true)
 	pose.title_alpha = _title_alpha if area_title != null and area_title.visible else 0.0
+	var marks := marks_snapshot()
+	pose.cracks = marks.cracks
+	pose.inks = marks.inks
+	pose.burst = marks.burst
+	pose.burst_still = _reduced_motion
+	if pose.get("xp", {}) is Dictionary and not (pose.xp as Dictionary).is_empty() and _xp_level_shown >= 0:
+		pose.xp.ratio = _xp_shown
+		pose.xp.flash = _xp_flash
 	Press.draw_cinematic(self, size, pose, _ink, _accent)

@@ -187,6 +187,9 @@ static func draw_hush(canvas: CanvasItem, pose: int, ticks: int, parries: int, f
 static func draw_skip(canvas: CanvasItem, pose: Dictionary, palette: Dictionary) -> void:
 	preload("res://scripts/press_skip.gd").draw(canvas, pose, palette)
 
+static func draw_skip_dust(canvas: CanvasItem, puffs: Array, color: Color) -> void:
+	preload("res://scripts/press_skip_gesture.gd").draw_dust(canvas, puffs, color)
+
 static func draw_strike_wave(canvas: CanvasItem, pose: Dictionary, ink: Color, stock: Color) -> void:
 	preload("res://scripts/press_strike.gd").draw(canvas, pose, ink, stock)
 
@@ -198,6 +201,24 @@ static func draw_campaign_map(canvas: CanvasItem, size: Vector2, pose: Dictionar
 
 static func draw_map_pickup(canvas: CanvasItem, pose: Dictionary, ink: Color, stock: Color) -> void:
 	preload("res://scripts/press_map.gd").draw_pickup(canvas, pose, ink, stock)
+
+static func draw_chart_fold(canvas: CanvasItem, size: Vector2, pose: Dictionary, ink: Color, stock: Color) -> void:
+	preload("res://scripts/press_map.gd").draw_fold(canvas, size, pose, ink, stock, BodyFont, DisplayFont)
+
+static func chart_fold_layout(size: Vector2, unfold: float) -> Array[Dictionary]:
+	return preload("res://scripts/press_map.gd").fold_layout(size, unfold)
+
+static func draw_room_wipe(canvas: CanvasItem, size: Vector2, pose: Dictionary, capture: Dictionary) -> void:
+	preload("res://scripts/press_transition.gd").draw_wipe(canvas, size, pose, capture)
+
+static func draw_book_cover(canvas: CanvasItem, rect: Rect2, swing: float) -> void:
+	preload("res://scripts/press_transition.gd").draw_cover(canvas, rect, swing, DisplayFont, BodyFont)
+
+static func draw_page_turn(canvas: CanvasItem, pose: Dictionary, capture: Dictionary) -> void:
+	preload("res://scripts/press_transition.gd").draw_page_turn(canvas, pose, capture)
+
+static func draw_book_fold(canvas: CanvasItem, pose: Dictionary, capture: Dictionary) -> void:
+	preload("res://scripts/press_transition.gd").draw_book_fold(canvas, pose, capture, DisplayFont, BodyFont)
 
 static func draw_loft_voice(canvas: CanvasItem, pose: Dictionary, ink: Color, stock: Color) -> void:
 	preload("res://scripts/press_discovery.gd").draw_voice(canvas, pose, ink, stock)

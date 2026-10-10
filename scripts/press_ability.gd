@@ -19,7 +19,16 @@ static func draw(canvas: CanvasItem, state: Dictionary, ink: Color, stock: Color
 	canvas.draw_rect(Rect2(-27, -29, 54, 55), ink, false, 2.0)
 	canvas.draw_line(Vector2(-22, -23), Vector2(22, -23), accent, 2.0, true)
 	canvas.draw_line(Vector2(-20, 20), Vector2(20, 20), Color(ink, 0.45), 1.0, true)
-	var kind := StringName(state.get("ability", &"strike"))
+	draw_glyph(canvas, StringName(state.get("ability", &"strike")), accent, ink, stock)
+	if not available:
+		canvas.draw_line(Vector2(-25, -20), Vector2(25, 20), Color(accent, 0.65), 5.0, true)
+	if near:
+		canvas.draw_line(Vector2(-35, -9), Vector2(-31, -3), accent, 2.0, true)
+		canvas.draw_line(Vector2(35, -9), Vector2(31, -3), accent, 2.0, true)
+	canvas.draw_set_transform(Vector2.ZERO)
+
+## The engraving alone, centred on the origin; Skip holds the same mark aloft.
+static func draw_glyph(canvas: CanvasItem, kind: StringName, accent: Color, ink: Color, stock: Color) -> void:
 	match kind:
 		&"walk":
 			for index in 2:
@@ -60,9 +69,3 @@ static func draw(canvas: CanvasItem, state: Dictionary, ink: Color, stock: Color
 			canvas.draw_arc(Vector2(0, 14), 10, PI, TAU, 20, ink, 2.0, true)
 			canvas.draw_line(Vector2(11, -12), Vector2(17, -13), accent, 3.0, true)
 			canvas.draw_line(Vector2(17, -13), Vector2(18, -6), accent, 3.0, true)
-	if not available:
-		canvas.draw_line(Vector2(-25, -20), Vector2(25, 20), Color(accent, 0.65), 5.0, true)
-	if near:
-		canvas.draw_line(Vector2(-35, -9), Vector2(-31, -3), accent, 2.0, true)
-		canvas.draw_line(Vector2(35, -9), Vector2(31, -3), accent, 2.0, true)
-	canvas.draw_set_transform(Vector2.ZERO)

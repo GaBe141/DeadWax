@@ -39,28 +39,100 @@ var _lost_status: Label
 var _carried_pressings: Array[String] = []
 var _page_axes: Dictionary = {}
 
+## One third of the guide while it unfolds: its printed face, clipped to the
+## panel, or the plain outside of a flap that has not turned over yet.
+class FoldPanel extends Control:
+	var chart: Control
+	var entry: Dictionary = {}
+	func _ready() -> void:
+		mouse_filter = Control.MOUSE_FILTER_IGNORE
+		focus_mode = Control.FOCUS_NONE
+		clip_contents = true
+	func _draw() -> void:
+		if entry.is_empty() or size.x < 1.0:
+			return
+		if bool(entry.front):
+			var pose: Dictionary = chart.chart_pose()
+			pose["base"] = entry.base
+			Press.draw_campaign_map(self, chart.size, pose, INK, PAPER)
+			draw_set_transform(Vector2.ZERO)
+			draw_rect(Rect2(Vector2.ZERO, size), Color(0, 0, 0, float(entry.shade)))
+		else:
+			Press.draw_chart_fold(self, size, {"turned": entry.turned, "shade": entry.shade,
+				"cover": int(entry.index) == 2}, INK, PAPER)
+		# Crease light and shadow where the flap meets the middle.
+		if int(entry.index) != 1:
+			var hinge := 0.0 if (int(entry.index) == 2) == bool(entry.front) else size.x
+			draw_line(Vector2(hinge, 0), Vector2(hinge, size.y), Color(STOCK, 0.55), 2.0)
+
 class ChartArt extends Control:
+	const UNFOLD_TIME := 0.5
 	var visited: Array[String] = []
 	var current_room := ""
 	var opened_returns: Array[String] = []
 	var region: StringName = &"label"
 	var clock := 0.0
 	var reduced_motion := false
+	## 0 is the guide still folded in three; 1 is the open sheet.
+	var unfold := 1.0
 	var _draw_left := 0.0
+	var _panels: Array[Control] = []
 	func _ready() -> void:
 		mouse_filter = Control.MOUSE_FILTER_IGNORE
-		resized.connect(queue_redraw)
+		resized.connect(_on_resized)
+		for index in 3:
+			var panel := FoldPanel.new()
+			panel.name = "Fold%d" % index
+			panel.chart = self
+			panel.visible = false
+			add_child(panel)
+			_panels.append(panel)
+	func begin_unfold() -> void:
+		unfold = 1.0 if reduced_motion else 0.0
+		_layout_fold()
+	func settle_unfold() -> void:
+		unfold = 1.0
+		_layout_fold()
+	func is_unfolding() -> bool:
+		return unfold < 1.0
+	func _on_resized() -> void:
+		_layout_fold()
+		queue_redraw()
 	func _process(delta: float) -> void:
-		if reduced_motion or delta <= 0.0 or not is_visible_in_tree():
+		if delta <= 0.0 or not is_visible_in_tree():
+			return
+		if unfold < 1.0:
+			unfold = minf(unfold + minf(delta, 1.0 / 30.0) / UNFOLD_TIME, 1.0)
+			_layout_fold()
+		if reduced_motion:
 			return
 		clock += minf(delta, 0.1)
 		_draw_left -= delta
 		if _draw_left <= 0.0:
 			_draw_left = 1.0 / 30.0
 			queue_redraw()
+	func _layout_fold() -> void:
+		var folding := unfold < 1.0
+		var layout: Array[Dictionary] = []
+		if folding:
+			layout = Press.chart_fold_layout(size, unfold)
+		for index in _panels.size():
+			var panel := _panels[index]
+			var entry: Dictionary = layout[index] if index < layout.size() else {}
+			panel.visible = folding and not entry.is_empty() and (entry.rect as Rect2).size.x >= 1.0
+			if panel.visible:
+				panel.entry = entry
+				panel.position = (entry.rect as Rect2).position
+				panel.size = (entry.rect as Rect2).size
+				panel.queue_redraw()
+		queue_redraw()
+	func chart_pose() -> Dictionary:
+		return {"visited": visited, "current_room": current_room,
+			"region": region, "clock": clock, "reduced_motion": reduced_motion, "opened_returns": opened_returns}
 	func _draw() -> void:
-		Press.draw_campaign_map(self, size, {"visited": visited, "current_room": current_room,
-			"region": region, "clock": clock, "reduced_motion": reduced_motion, "opened_returns": opened_returns}, INK, PAPER)
+		if unfold < 1.0:
+			return
+		Press.draw_campaign_map(self, size, chart_pose(), INK, PAPER)
 
 func _ready() -> void:
 	layer = 115
@@ -157,6 +229,7 @@ func show_map(snapshot: Dictionary) -> void:
 	_page_axes.clear()
 	_close_pending = false
 	overlay.show()
+	_chart.begin_unfold()
 	_motion.reveal(_header, 0.0, 0.18)
 	_motion.reveal(_chart, 0.0, 0.22)
 	_motion.reveal(_footer, 0.0, 0.18, 0.025)
@@ -173,6 +246,8 @@ func close_map() -> void:
 	if focused != null and overlay.is_ancestor_of(focused):
 		focused.release_focus()
 	_motion.settle()
+	if _chart != null:
+		_chart.settle_unfold()
 
 func set_reduced_motion(enabled: bool) -> void:
 	_reduced_motion = enabled
@@ -180,6 +255,8 @@ func set_reduced_motion(enabled: bool) -> void:
 		_motion.reduced_motion = enabled
 	if _chart != null:
 		_chart.reduced_motion = enabled
+		if enabled:
+			_chart.settle_unfold()
 		_chart.queue_redraw()
 
 func current_room() -> String:

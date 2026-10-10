@@ -1,6 +1,7 @@
 extends RefCounted
 const Paint := preload("res://scripts/figure_paint.gd")
 const Combat := preload("res://scripts/press_skip_combat.gd")
+const Gesture := preload("res://scripts/press_skip_gesture.gd")
 ## Skip's living ink. Only an explicit pose and palette enter the Press;
 ## deformation is confined to draw commands, with the planted feet as pivot.
 
@@ -26,6 +27,10 @@ static func draw(canvas: CanvasItem, pose: Dictionary, palette: Dictionary) -> v
 	var parry: float = combat.parry
 	var hurt: float = pose.hurt
 	var noise: float = pose.noise
+	# Small moments (the Book, a find, fidgets, nods) give way to any combat
+	# impression on the same frame.
+	var gesture := Gesture.sample(pose)
+	var quiet := (1.0 - snap) * (1.0 - parry) * (1.0 - float(combat.hurt_strength))
 	var breath := sin(time * 2.7)
 	var step := sin(stride)
 	var compression := sin(land * PI) * float(pose.impact)
@@ -35,8 +40,8 @@ static func draw(canvas: CanvasItem, pose: Dictionary, palette: Dictionary) -> v
 		1.0 - compression * 0.24 + rise * 0.16 - kneel * 0.30
 	)
 	stretch.y += breath * 0.018 * (1.0 - run) + cos(stride * 2.0) * run * 0.045
-	stretch += Vector2(combat.body_stretch)
-	var tilt := face * (run * 0.13 + kneel * 0.08) + float(combat.body_tilt)
+	stretch += Vector2(combat.body_stretch) + Vector2(gesture.stretch) * quiet
+	var tilt := face * (run * 0.13 + kneel * 0.08) + float(combat.body_tilt) + float(gesture.tilt) * quiet
 	var bob := -absf(step) * run * 3.5 - sin(float(pose.launch) * PI) * 2.0
 	var offset := Vector2(combat.body_offset) + Vector2(0, bob)
 	var anchor := Vector2(0, 26)
@@ -49,6 +54,8 @@ static func draw(canvas: CanvasItem, pose: Dictionary, palette: Dictionary) -> v
 		var foot := Vector2(side * 8 + sin(phase) * run * 10, 25 - maxf(0, cos(phase)) * run * 8)
 		foot += Vector2(-face * air * 5, -air * (4 + side * 2))
 		foot += Vector2(-attack_face * 4.0, -14.0 + side * 3.0) * float(combat.foot_tuck)
+		if side * face > 0.0:
+			foot.y -= float(gesture.tap) * quiet
 		var hip := Vector2(side * 7, 15 + kneel * 6)
 		var knee := hip.lerp(foot, 0.5) + Vector2(-face * run * 3, 0)
 		Paint.segment(canvas, hip, knee, 4.0, paint.coat, ink, paint.teal)
@@ -95,8 +102,8 @@ static func draw(canvas: CanvasItem, pose: Dictionary, palette: Dictionary) -> v
 
 	# Each stroke has a different silhouette: direct jab, low crossing sweep,
 	# then a planted downward accent. Captured facing survives a running turn.
-	var tip: Vector2 = combat.tip
-	var elbow: Vector2 = combat.elbow
+	var tip: Vector2 = Vector2(combat.tip).lerp(gesture.tip, float(gesture.stylus) * quiet)
+	var elbow: Vector2 = Vector2(combat.elbow).lerp(gesture.elbow, float(gesture.stylus) * quiet)
 	var stem := PackedVector2Array([Vector2(0, -34), elbow, tip])
 	canvas.draw_polyline(stem, Color(ink, 1.0 - hood), 5.0, true)
 	canvas.draw_polyline(stem, Color(paint.brass, 1.0 - hood), 3.2, true)
@@ -109,6 +116,8 @@ static func draw(canvas: CanvasItem, pose: Dictionary, palette: Dictionary) -> v
 		canvas.draw_line(elbow.lerp(tip, 0.18), tip, Color(pale, parry * 0.80), 1.4, true)
 	if noise > 0.03:
 		canvas.draw_line(elbow, tip, Color(pink, noise * (1.0 - hood)), 2.0, true)
+	var body_xform := Transform2D(tilt, stretch, 0.0, translation)
+	Gesture.draw_held(canvas, pose, body_xform, paint, quiet)
 
 	# Lifting the sleeve is a short opening/closing motion, not a sprite swap.
 	if hood > 0.0:
@@ -129,7 +138,8 @@ static func draw(canvas: CanvasItem, pose: Dictionary, palette: Dictionary) -> v
 				Vector2(8 * (1.0 - hood), lerpf(20, -38, hood)), Vector2(20, 24),
 			]), thread, 1.35, true)
 			canvas.draw_line(Vector2(-17, 20), Vector2(16, 20), thread, 1.1, true)
-	var eye_center := Vector2(face * 1.5, lerpf(-2, -12, hood) + kneel * 6)
+	var eye_center := Vector2(face * 1.5, lerpf(-2, -12, hood) + kneel * 6) + Vector2(gesture.eye) * quiet
+	var happy := float(gesture.happy) * quiet > 0.5 and hood < 0.35 and hurt <= 0.1
 	if hood > 0.35:
 		var opening := PackedVector2Array([eye_center+Vector2(-10,-4),eye_center+Vector2(-5,-10),
 			eye_center+Vector2(6,-9),eye_center+Vector2(10,-3),eye_center+Vector2(8,7),eye_center+Vector2(-7,8)])
@@ -142,7 +152,9 @@ static func draw(canvas: CanvasItem, pose: Dictionary, palette: Dictionary) -> v
 	var eye_color: Color = ink
 	for side in [-1.0, 1.0]:
 		var eye := eye_center + Vector2(side * lerpf(5.0, 3.2, hood), 0)
-		if lid > 0.65:
+		if happy:
+			canvas.draw_arc(eye + Vector2(0, 1.2), 2.3, PI, TAU, 8, eye_color, 1.5, true)
+		elif lid > 0.65:
 			canvas.draw_line(eye + Vector2(-2.4, 0), eye + Vector2(2.4, 0), eye_color, 1.7, true)
 		else:
 			var eye_height := lerpf(2.2,1.7,hood)*(1.0-lid*0.45)
@@ -154,6 +166,7 @@ static func draw(canvas: CanvasItem, pose: Dictionary, palette: Dictionary) -> v
 				canvas.draw_line(eye+Vector2(-2.5,-4.0-side*0.8),eye+Vector2(2.0,-3.3+side*0.8),Color(ink,maxf(snap,parry)*0.68),1.3,true)
 	canvas.draw_line(eye_center+Vector2(-2,6),eye_center+Vector2(2,6+hurt*2),ink,1.0,true)
 	canvas.draw_set_transform(Vector2.ZERO)
+	Gesture.draw_marks(canvas, pose, body_xform, paint, quiet)
 
 	# Strike and landing marks are short impressions, rooted at the actual body.
 	if snap > 0.0:
