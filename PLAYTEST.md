@@ -3,8 +3,8 @@
 Run `.\deadwax.cmd play` for the authored opening. Start with the chapter
 checklist, then use `.\deadwax.cmd dev` for focused mechanics regressions.
 Runtime errors are written to `.godot/deadwax-play.log`.
-Run `.\deadwax.cmd check` before handoff; the complete run contains 61 native
-suites, including animation moments, XP and levels, Groove pressure, Palace shaders/lighting, arena practice, contact feedback, calibrated controllers, movement weight, cinematic presentation,
+Run `.\deadwax.cmd check` before handoff; the complete run contains 62 native
+suites, starting with the canon suite and including animation moments, XP and levels, Groove pressure, Palace shaders/lighting, arena practice, contact feedback, calibrated controllers, movement weight, cinematic presentation,
 Lost Pressings, and Book/map suites. Older review results below retain their
 original suite counts.
 
@@ -16,6 +16,24 @@ original suite counts.
 - Input device:
 - Overall frame pacing: smooth / occasional hitch / frequent hitch
 - Audio clarity and latency:
+
+## Canon merge verification — 10 October 2026
+
+The canon pass (PR #3, `claude/canon-step-1`) was rebased onto the Groove
+pressure, XP and small-moments work. Godot 4.7.1's complete suite run passed
+all 62 suites and 14,956 checks with no script errors: the canon suite's 286
+first, and each of the 61 earlier suites kept its exact count (14,670).
+Rendered stills confirmed Skip has no mouth in any new gesture (tapping,
+looking around, the nod, raised finds, the level ring, the Book tuck) and that
+the HUD's crack, re-ink and level ring draw in brass, not pink. The practice
+beat mark now lights in the accent: it is a timing cue, not a heard sound.
+
+- [ ] In the campaign, shatter a voice: its last words scatter in pink and
+  nothing else celebrates. Then reach a level and judge whether its quiet
+  chime and ring read as the fanfare canon rules out (`docs/README.md`,
+  Winning).
+- [ ] With Groove pressure on, the campaign's beat ring fills brass and the
+  practice beat mark lights in the accent, never pink.
 
 ## Small moments
 

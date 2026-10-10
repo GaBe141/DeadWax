@@ -866,7 +866,7 @@ enemy that rings pays +0.40 resonance for a parry inside 100 ms, pink and gold
 are each defined once and gold stays rationed, equipment never carries a move,
 and a shatter speaks its last words in pink.
 
-Run `.\deadwax.cmd check` before committing. It imports resources and runs 59
+Run `.\deadwax.cmd check` before committing. It imports resources and runs 62
 dependency-free native suites, starting with the canon suite, then smoke, save-store, campaign, Tonearm, Overture,
 sprite-animation, residents, economy-state, economy integration, scenery,
 lighting, attack-feel, GUI-animation, and map-item suites. These cover the original combat and

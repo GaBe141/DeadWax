@@ -409,7 +409,7 @@ func _update_beat_mark(cinematic: bool) -> void:
 	var beat := _beat_status()
 	beat_mark.visible = not cinematic and bool(beat.live)
 	if beat_mark.visible:
-		beat_mark.color = PressScript.PINK if bool(beat.lit) else Color(0.1, 0.09, 0.09, 0.22)
+		beat_mark.color = PressScript.ACCENT if bool(beat.lit) else Color(0.1, 0.09, 0.09, 0.22)
 
 func _update_cinematic_presentation() -> void:
 	var cinematic := _cinematic_campaign()
@@ -2394,7 +2394,9 @@ func _build_hud() -> void:
 	layer.add_child(crackle_bar)
 
 	# Groove pressure's beat, a square of ink beside the smear: dim between
-	# beats, pink in the pocket, absent while nothing in the room is listening.
+	# beats, accent in the pocket, absent while nothing in the room is
+	# listening. It is a timing cue, not a sound (it still lights under the
+	# Hood, where the pulse is silent), so it is never pink.
 	beat_mark = ColorRect.new()
 	beat_mark.name = "BeatMark"
 	beat_mark.position = Vector2(MARGIN + 150.0, 697)

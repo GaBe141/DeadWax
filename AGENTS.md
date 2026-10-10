@@ -50,10 +50,19 @@ Keep this file short. Coding agents only read the first part of it (Codex reads
     lighting or atmosphere passes, and no wholesale restyle either.
   - **The beat.** Planned next: a world groove clock, Tap → Sweep → Accent on
     consecutive beats with the Accent heavy only in the pocket, and Auditioners
-    that wake on noise rather than distance.
+    that wake on noise rather than distance. Partly built on 9 October as the
+    Groove pressure setting, off by default: a room beat clock, heavy strokes
+    only in the pocket, counts that tick on the beat. Whether it becomes the
+    default is the user's call.
   - **Progression.** Echo Trials and equipment are frozen: fix bugs, but add no
     pieces, hunts, currencies or ledgers. Cuts replace them later
     (`docs/PROGRESSION.md`).
+  - **Growth.** XP and levels were added on 9 October at the user's request:
+    hits, parries and kills pay XP, and each level buys Ring, Body or Bite in
+    the Book. Canon growth is GAIN, fed by shine at the Bootlegger and paid for
+    with a louder crackle floor (`docs/PROGRESSION.md`), and a level-up's chime
+    and ring may be the fanfare law 9 rules out. Don't extend XP until the
+    user reconciles the two.
 - Scope: tune one enemy (the Auditioner) and one boss (the Tonearm) to the full
   `COMBAT_FEEL.md` target before adding roster.
 
@@ -100,7 +109,8 @@ Keep this file short. Coding agents only read the first part of it (Codex reads
 - `docs/ARCHITECTURE.md`: the detailed system notes that used to live here —
   rooms, atmosphere, lighting and materials, figures and residents, saves and
   menus, abilities, collection and trials, map, controller support, B-side
-  exploration, Lost Pressings — and the regression-sensitive behaviour each
+  exploration, Lost Pressings, Groove pressure, levels and XP, and the small
+  animated moments — and the regression-sensitive behaviour each
   suite locks. Read the section for a system before changing it.
 - `scenes/main.tscn` → `scripts/main.gd` builds the input map, player, camera,
   HUD, audio, menus and rooms at runtime, so an empty editor viewport is

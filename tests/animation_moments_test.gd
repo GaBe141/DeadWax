@@ -161,7 +161,7 @@ func _gesture_pose(extra: Dictionary) -> Dictionary:
 	return pose
 
 func _palette() -> Dictionary:
-	return {"ink": SkipScript.INK, "body": SkipScript.IRON, "pale": SkipScript.PALE, "pink": SkipScript.PINK, "hood": SkipScript.HOODGREY, "warm_thread": false}
+	return {"ink": SkipScript.INK, "body": SkipScript.IRON, "pale": SkipScript.PALE, "pink": Press.PINK, "hood": SkipScript.HOODGREY, "warm_thread": false}
 
 # -- Skip alone ---------------------------------------------------------------------
 

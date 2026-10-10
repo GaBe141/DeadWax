@@ -77,11 +77,14 @@ inside it. Don't infer answers to those questions.
 
 `COMBAT_FEEL.md` closes with a scope flag: tune exactly **one enemy (the
 Auditioner) and one boss (the Tonearm)** to the full feel target before
-building more roster. Both exist now. Neither has the beat yet.
+building more roster. Both exist now. Neither has the beat by default yet;
+with the opt-in Groove pressure setting, the Tonearm's count ticks on the room
+beat.
 
 ## Canon status — where the build differs
 
-As of 2026-10-06, after the canon pass on branch `claude/canon-step-1`.
+As of 2026-10-10, when the canon pass from branch `claude/canon-step-1` was
+merged onto `main` together with the work of 9–10 October.
 
 | Area | Canon | Build | Status |
 |---|---|---|---|
@@ -95,11 +98,13 @@ As of 2026-10-06, after the canon pass on branch `claude/canon-step-1`.
 | Boil is state | 4 / 2 / 0 frames by soul state | A uniform ~10 fps jitter on Auditioners and Test Pressings only | Open; follows the art decision. |
 | Two-world ink | Paper above the Scratch, scratchboard below | The Label is dark; the B-side flips to paper | Open; follows the art decision. |
 | Skip's silhouette | Jagged head, void-almond eyes, one chunky boot, tape-wrapped point, 45-sleeve hood | A teardrop hood figure | Open; follows the art decision. |
-| The beat | A world tempo; off-beat about 0.6× | None. A heavy hit is the third strike of Tap → Sweep → Accent. | **Next.** Groove clock, with the chain on consecutive beats and the Accent heavy only in the pocket. The chain's 650 ms link window is already one beat at 92 bpm. |
+| The beat | A world tempo; off-beat about 0.6× | By default none: a heavy hit is the third strike of Tap → Sweep → Accent. The Groove pressure setting (9 Oct, off by default) adds a room beat clock while a foe is roused: strokes in the pocket (100 ms either side of a centre set 40 ms after the beat) are heavy, the Accent only there, others flat and quieter, and counting foes tick on the beat. | **Next.** Groove clock, with the chain on consecutive beats and the Accent heavy only in the pocket. The chain's 650 ms link window is already one beat at 92 bpm. Groove pressure covers the clock and the pocket, not the chain on consecutive beats; whether it becomes the default is open. |
 | Hearing | Noise wakes enemies | Auditioners wake on distance (shorter when hooded) | **Next**, with the beat. |
 | Telegraph lead | Heard first | Per-enemy tells, no shared lead time | Open. |
 | Combat constants | One source of truth | Auditioner heavy-hit resonance is `RES_HIT × 1.6` (0.224); Test Pressing uses 0.24 | Open; unify with the beat work. |
 | Progression | Cuts: skill-scaled odds, the audit, three homes | Echo Trials: flat 4/3/2/1 % odds, hard pity at 20 clears, Offcuts, a 100-clear mastery ledger per region | **Frozen.** Fix bugs only; add no pieces, hunts, currencies or ledgers. Convert to Cuts after the fight feels right (M3). The saved RNG, pity and rollback plumbing is reusable. |
+| Growth | GAIN: about 12 notches fed by shine and spent at the Bootlegger, buying Ring, Body, Breadth and Bite (capped); it raises the crackle floor, and taking souls is audited | XP and levels (9 Oct, at the user's request): hits, parries and kills pay XP (freeing pays nothing; story foes have a lifetime budget, Echo Trial copies don't); eleven picks of Ring, Body or Bite in the Book; no Breadth, no crackle-floor cost, no audit | **Open.** New since the canon pass; for the user to reconcile with GAIN. Don't extend it meanwhile. |
+| Winning | No fanfare; the shatter speaks its last words, and that is all | A level-up, often straight after a shatter, plays a quiet freed chime and rings out around Skip and on the HUD (10 Oct, at the user's request) | **Open.** Whether a level-up counts as fanfare is the user's call. |
 | Register | The Bootlegger, Tick and the liner-book carry the mania | Everyone speaks in the same quiet voice | Open. Rewrite lines from the voice samples in `CAST.md`. |
 | The Hound | Death itself: carries Skip back to the last cue point | A friendly patroller; a plain respawn | Planned (small). The recovery messages already credit the Hound. |
 | Opening | — | 45 one-pixel taps before Walk | Playtest with someone who hasn't seen it. |
