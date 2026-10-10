@@ -2,6 +2,7 @@
 
 Run `.\deadwax.cmd play` for the authored opening. Start with the chapter
 checklist, then use `.\deadwax.cmd dev` for focused mechanics regressions.
+On Linux, `bash tools/deadwax.sh play`, `dev` and `check` do the same.
 Runtime errors are written to `.godot/deadwax-play.log`.
 Run `.\deadwax.cmd check` before handoff; the complete run contains 62 native
 suites, starting with the canon suite and including animation moments, XP and levels, Groove pressure, Palace shaders/lighting, arena practice, contact feedback, calibrated controllers, movement weight, cinematic presentation,

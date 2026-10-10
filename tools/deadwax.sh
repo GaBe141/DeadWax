@@ -1,99 +1,88 @@
 #!/usr/bin/env bash
-# Linux entry point for the same doctor/check/test flow as tools/deadwax.ps1.
+# Linux counterpart of deadwax.cmd (tools/deadwax.ps1), for Linux machines and
+# cloud agents. `check` and `test` run the suite list read from
+# tools/deadwax.ps1, in its order with the canon suite first, so there is one
+# list to maintain. Install the pinned Godot with tools/install-godot.sh.
 set -euo pipefail
 
 ACTION="${1:-doctor}"
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+PS1_SCRIPT="$ROOT/tools/deadwax.ps1"
 REQUIRED_SERIES="4.7"
+SUITES=()
 
-SUITES=(
-	smoke_test
-	save_store_test
-	campaign_test
-	tonearm_test
-	overture_test
-	sprite_animation_test
-	residents_test
-	economy_state_test
-	economy_test
-	scenery_test
-	lighting_test
-	attack_feel_test
-	gui_animation_test
-	map_item_test
-	gather_reward_test
-	gather_route_test
-	loft_voice_test
-	home_song_test
-	opening_cutscene_test
-	opening_audio_test
-	yard_voice_test
-	yard_audio_test
-	combo_test
-	practice_room_test
-	combo_readability_test
-	street_looper_test
-	unplayed_test
-	discoveries_test
-	echo_audio_test
-	collection_state_test
-	echo_trial_test
-	collection_book_test
-	collection_test
-	abilities_state_test
-	abilities_test
-	ability_world_test
-	ability_book_test
-	walk_test
-	exploration_state_test
-	exploration_test
-	exploration_world_test
-	exploration_map_test
-)
+die() {
+	echo "$*" >&2
+	exit 1
+}
 
 resolve_godot() {
 	if [[ -n "${DEADWAX_GODOT:-}" && -x "$DEADWAX_GODOT" ]]; then
 		printf '%s\n' "$DEADWAX_GODOT"
 		return
 	fi
-	if command -v godot >/dev/null 2>&1; then
-		command -v godot
-		return
-	fi
-	echo "Godot was not found. Run bash tools/install-godot.sh or set DEADWAX_GODOT." >&2
-	exit 1
+	local name
+	for name in godot godot4; do
+		if command -v "$name" >/dev/null 2>&1; then
+			command -v "$name"
+			return
+		fi
+	done
+	die "Godot was not found. Run bash tools/install-godot.sh or set DEADWAX_GODOT."
 }
 
 require_godot_series() {
 	local executable="$1"
 	local version
-	version="$("$executable" --version | head -n 1 | tr -d '[:space:]')"
-	if [[ "$version" != ${REQUIRED_SERIES}* ]]; then
-		echo "Dead Wax requires Godot ${REQUIRED_SERIES}.x; found $version" >&2
-		exit 1
-	fi
+	version="$("$executable" --version 2>/dev/null | head -n 1 | tr -d '[:space:]')" || true
+	[[ "$version" == "$REQUIRED_SERIES".* ]] || die "Dead Wax requires Godot ${REQUIRED_SERIES}.x; found '${version}' at $executable"
 	printf '%s\n' "$version"
 }
 
-run_godot() {
-	local executable="$1"
-	shift
-	"$executable" "$@"
+# deadwax.cmd's suites. Both of its lists (test and check) must agree, and
+# every listed suite must exist.
+load_suites() {
+	[[ -f "$PS1_SCRIPT" ]] || die "Missing $PS1_SCRIPT"
+	local lists
+	# shellcheck disable=SC2016 # $suite is PowerShell's variable, matched literally.
+	lists="$(sed -n 's/.*foreach (\$suite in @(\([^)]*\))).*/\1/p' "$PS1_SCRIPT" | tr -d "' ")"
+	[[ -n "$lists" ]] || die "No suite list found in tools/deadwax.ps1"
+	if [[ "$(printf '%s\n' "$lists" | sort -u | wc -l)" -ne 1 ]]; then
+		die "The test and check suite lists in tools/deadwax.ps1 differ; make them match."
+	fi
+	IFS=',' read -r -a SUITES <<< "$(printf '%s\n' "$lists" | head -n 1)"
+	local suite
+	for suite in "${SUITES[@]}"; do
+		[[ "$suite" =~ ^[a-z0-9_]+$ ]] || die "tools/deadwax.ps1 lists an unexpected suite name: '$suite'"
+		[[ -f "$ROOT/tests/$suite.gd" ]] || die "tools/deadwax.ps1 lists tests/$suite.gd, which doesn't exist."
+	done
+	(( ${#SUITES[@]} > 0 )) || die "tools/deadwax.ps1 lists no suites"
+}
+
+run_suites() {
+	local godot="$1"
+	local suite
+	for suite in "${SUITES[@]}"; do
+		if ! "$godot" --headless --path "$ROOT" --script "res://tests/${suite}.gd"; then
+			die "FAILED: tests/${suite}.gd"
+		fi
+	done
+	echo "All ${#SUITES[@]} suites passed."
 }
 
 show_help() {
 	cat <<'EOF'
 Dead Wax developer commands (Linux)
 
-  bash tools/deadwax.sh doctor  Check Godot, Git, and repository state.
-  bash tools/deadwax.sh play    Run the campaign.
+  bash tools/deadwax.sh doctor  Check Godot, Git, the suite list and repository state.
+  bash tools/deadwax.sh play    Run the campaign with a runtime log in .godot/.
   bash tools/deadwax.sh dev     Open the mechanics rooms and planned-world tools.
   bash tools/deadwax.sh editor  Open the project in the Godot editor.
-  bash tools/deadwax.sh check   Import resources, then run all native test suites.
-  bash tools/deadwax.sh test    Run all native test suites without importing.
+  bash tools/deadwax.sh check   Import resources, then run every test suite.
+  bash tools/deadwax.sh test    Run every test suite without importing.
 
-Mistral Vibe stays on deadwax.cmd. The DEADWAX_GODOT environment variable
-can override Godot discovery.
+bash tools/install-godot.sh installs the Godot that CI pins. DEADWAX_GODOT
+overrides Godot discovery. Mistral Vibe stays on deadwax.cmd.
 EOF
 }
 
@@ -104,35 +93,38 @@ case "$ACTION" in
 	doctor)
 		godot="$(resolve_godot)"
 		version="$(require_godot_series "$godot")"
+		load_suites
 		echo "Project : $ROOT"
 		echo "Godot   : $version ($godot)"
 		echo "Git     : $(git --version)"
+		echo "Suites  : ${#SUITES[@]} from tools/deadwax.ps1, ${SUITES[0]} first"
 		echo "Status  :"
 		git -C "$ROOT" status --short --branch
 		;;
 	test)
 		godot="$(resolve_godot)"
 		version="$(require_godot_series "$godot")"
-		echo "Running Dead Wax smoke tests with Godot $version"
-		for suite in "${SUITES[@]}"; do
-			run_godot "$godot" --headless --path "$ROOT" --script "res://tests/${suite}.gd"
-		done
+		load_suites
+		echo "Running ${#SUITES[@]} Dead Wax test suites with Godot $version"
+		run_suites "$godot"
 		;;
 	check)
 		godot="$(resolve_godot)"
 		version="$(require_godot_series "$godot")"
+		load_suites
 		echo "Importing Dead Wax resources with Godot $version"
-		run_godot "$godot" --headless --path "$ROOT" --import
-		echo "Running native smoke tests"
-		for suite in "${SUITES[@]}"; do
-			run_godot "$godot" --headless --path "$ROOT" --script "res://tests/${suite}.gd"
-		done
+		"$godot" --headless --path "$ROOT" --import || die "The import failed."
+		echo "Running ${#SUITES[@]} Dead Wax test suites"
+		run_suites "$godot"
 		;;
 	play)
 		godot="$(resolve_godot)"
 		version="$(require_godot_series "$godot")"
+		mkdir -p "$ROOT/.godot"
+		log="$ROOT/.godot/deadwax-play.log"
 		echo "Starting Dead Wax with Godot $version"
-		exec "$godot" --path "$ROOT"
+		echo "Runtime log: $log"
+		exec "$godot" --path "$ROOT" --log-file "$log"
 		;;
 	dev)
 		godot="$(resolve_godot)"
@@ -147,7 +139,6 @@ case "$ACTION" in
 		exec "$godot" --editor --path "$ROOT"
 		;;
 	*)
-		echo "Unknown action '$ACTION'. Run: bash tools/deadwax.sh help" >&2
-		exit 1
+		die "Unknown action '$ACTION'. Run: bash tools/deadwax.sh help"
 		;;
 esac

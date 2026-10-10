@@ -76,8 +76,12 @@ Keep this file short. Coding agents only read the first part of it (Codex reads
   starting with `tests/canon_test.gd`. CI runs the same suites from
   `.github/workflows/godot-checks.yml` on a pinned, checksum-verified Godot
   4.7.1. When you add a suite, add it to both lists.
-- Without the Windows wrapper: `godot --headless --path . --import`, then
-  `godot --headless --path . --script res://tests/<suite>.gd` for each suite.
+- On Linux, including cloud agents: `bash tools/install-godot.sh` installs
+  the Godot that the CI workflow pins (checksum-verified, and a no-op once
+  installed), and `bash tools/deadwax.sh check` imports and runs the same
+  suites, read from `tools/deadwax.ps1`. Its `doctor`, `test`, `play`, `dev`
+  and `editor` match the Windows commands. Cursor runs the installer from
+  `.cursor/environment.json`.
 - Timing, audio, rendering and controller feel stay manual. After gameplay
   changes, follow `PLAYTEST.md`.
 - Exits can warn about leaked `AudioStreamWAV` / `AudioStreamPlaybackWAV`
