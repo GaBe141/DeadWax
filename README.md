@@ -68,7 +68,7 @@ The lightweight project commands are:
 .\deadwax.cmd play    play the campaign with a local runtime log
 .\deadwax.cmd dev     open the original mechanics rooms and planned-world tools
 .\deadwax.cmd editor  open the project in Godot
-.\deadwax.cmd check   import resources; run all sixty-two native test suites
+.\deadwax.cmd check   import resources; run all sixty-three native test suites
 .\deadwax.cmd vibe    start Mistral Vibe in this repository
 ```
 
@@ -872,7 +872,7 @@ enemy that rings pays +0.40 resonance for a parry inside 100 ms, pink and gold
 are each defined once and gold stays rationed, equipment never carries a move,
 and a shatter speaks its last words in pink.
 
-Run `.\deadwax.cmd check` before committing. It imports resources and runs 62
+Run `.\deadwax.cmd check` before committing. It imports resources and runs 63
 dependency-free native suites, starting with the canon suite, then smoke, save-store, campaign, Tonearm, Overture,
 sprite-animation, residents, economy-state, economy integration, scenery,
 lighting, attack-feel, GUI-animation, and map-item suites. These cover the original combat and
@@ -929,3 +929,6 @@ The cinematic suites cover presentation-only snapshots, one nearby cue,
 deliberate subtitles, hidden world plates, live earned fixtures, room-note
 refresh, compact-window focus and scrolling, pause and Reduced motion,
 save-error visibility, and preserved practice/development guidance.
+The render-batch suite checks that gathered scenery marks are the engine's own
+triangles and their bookkeeping; run windowed, it also compares them with the
+engine's drawing pixel for pixel.

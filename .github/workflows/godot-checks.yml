@@ -154,3 +154,6 @@ jobs:
 
       - name: Validate animation moments
         run: godot --headless --path . --script res://tests/animation_moments_test.gd
+
+      - name: Validate batched scenery marks
+        run: godot --headless --path . --script res://tests/render_batch_test.gd

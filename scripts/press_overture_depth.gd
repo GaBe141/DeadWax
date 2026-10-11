@@ -8,13 +8,20 @@ static func draw(c: CanvasItem, room_id: StringName, layer: StringName, bounds: 
 	if not ROOMS.has(room_id) or not bounds.has_area(): return
 	var p := Brush.palette(ink, stock)
 	if layer == &"foreground":
+		Brush.begin(c)
 		Brush.face(c, pose.get("surfaces", []), p, room_id in [&"whistlers", &"overture_well", &"the_arm"])
+		Brush.end(c)
 		return
 	if layer not in [&"far", &"middle"]: return
 	var far := layer == &"far"
 	var clock := float(pose.get("clock", 0.0)) * float(pose.get("motion", 1.0))
 	var outcome := String(pose.get("outcome", ""))
 	c.draw_set_transform(bounds.position)
+	# Consecutive brush marks share draw calls (see Brush.begin), unless the
+	# middle plane is moving and redrawn every few frames.
+	var gather := far or not bool(pose.get("middle_moves", false))
+	if gather:
+		Brush.begin(c)
 	match room_id:
 		&"bootlegger": _stall(c, bounds.size, far, clock, p)
 		&"whistlers": _whistlers(c, bounds.size, far, clock, p)
@@ -23,6 +30,8 @@ static func draw(c: CanvasItem, room_id: StringName, layer: StringName, bounds: 
 		&"worn_gallery": _gallery(c, bounds.size, far, p)
 		&"smoothed_floor": _hush(c, bounds.size, far, p)
 		&"the_arm": _arm(c, bounds.size, far, p, outcome)
+	if gather:
+		Brush.end(c)
 	c.draw_set_transform(Vector2.ZERO)
 
 static func _stall(c: CanvasItem, size: Vector2, far: bool, clock: float, p: Dictionary) -> void:
@@ -113,7 +122,7 @@ static func _gallery(c: CanvasItem, size: Vector2, far: bool, p: Dictionary) -> 
 		var center := Vector2(x, 308 + sin(i) * 14)
 		Brush.ellipse(c, center, Vector2(59, 83), Brush.fade(p.shadow, 0.64), 14)
 		Brush.ellipse(c, center, Vector2(57, 82), Brush.fade(p.copper, 0.70), 6)
-		c.draw_circle(center + Vector2(-4, -20), 17, Brush.fade(p.light, 0.09), true, -1, true)
+		Brush.dot(c, center + Vector2(-4, -20), 17, Brush.fade(p.light, 0.09))
 		Brush.curve(c, center + Vector2(-36, 47), center + Vector2(-1, -19), center + Vector2(35, 48), Brush.fade(p.light, 0.09), 23)
 
 static func _hush(c: CanvasItem, _size: Vector2, far: bool, p: Dictionary) -> void:

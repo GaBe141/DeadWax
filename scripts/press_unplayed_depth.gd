@@ -11,13 +11,20 @@ static func draw(c: CanvasItem, room_id: StringName, layer: StringName, bounds: 
 		return
 	var p := Brush.palette(ink, stock)
 	if layer == &"foreground":
+		Brush.begin(c)
 		Brush.face(c, pose.get("surfaces", []), p, room_id in [&"the_drop", &"the_landing"])
+		Brush.end(c)
 		return
 	if layer not in [&"far", &"middle"]:
 		return
 	var far := layer == &"far"
 	var clock := float(pose.get("clock", 0.0)) * float(pose.get("motion", 1.0))
 	c.draw_set_transform(bounds.position)
+	# Consecutive brush marks share draw calls (see Brush.begin), unless the
+	# middle plane is moving and redrawn every few frames.
+	var gather := far or not bool(pose.get("middle_moves", false))
+	if gather:
+		Brush.begin(c)
 	match room_id:
 		&"the_drop": _drop(c, bounds.size, far, clock, p)
 		&"the_landing": _landing(c, bounds.size, far, clock, p)
@@ -25,6 +32,8 @@ static func draw(c: CanvasItem, room_id: StringName, layer: StringName, bounds: 
 		&"verse_warren_n": _warren(c, bounds.size, far, clock, p, false)
 		&"verse_warren_s": _warren(c, bounds.size, far, clock, p, true)
 		&"deep_gallery": _gallery(c, bounds.size, far, clock, p)
+	if gather:
+		Brush.end(c)
 	c.draw_set_transform(Vector2.ZERO)
 
 static func _drop(c: CanvasItem, size: Vector2, far: bool, clock: float, p: Dictionary) -> void:
@@ -108,6 +117,7 @@ static func _record_burrow(c: CanvasItem, center: Vector2, radius: float, p: Dic
 	Brush.ellipse(c, center, Vector2(radius, radius * 0.86), Brush.fade(p.copper, 0.60), 6)
 	# One recessed opening is enough to read a dwelling; no window grille or
 	# miniature vault competes with the nearby live voices.
+	Brush.flush(c)
 	c.draw_rect(Rect2(center + Vector2(-radius * 0.24, -radius * 0.36), Vector2(radius * 0.48, radius * 0.70)),
 		Brush.fade(p.gold if lit else p.shadow, 0.24 if lit else 0.80))
 

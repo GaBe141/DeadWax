@@ -4,8 +4,8 @@ Run `.\deadwax.cmd play` for the authored opening. Start with the chapter
 checklist, then use `.\deadwax.cmd dev` for focused mechanics regressions.
 On Linux, `bash tools/deadwax.sh play`, `dev` and `check` do the same.
 Runtime errors are written to `.godot/deadwax-play.log`.
-Run `.\deadwax.cmd check` before handoff; the complete run contains 62 native
-suites, starting with the canon suite and including animation moments, XP and levels, Groove pressure, Palace shaders/lighting, arena practice, contact feedback, calibrated controllers, movement weight, cinematic presentation,
+Run `.\deadwax.cmd check` before handoff; the complete run contains 63 native
+suites, starting with the canon suite and including batched scenery, animation moments, XP and levels, Groove pressure, Palace shaders/lighting, arena practice, contact feedback, calibrated controllers, movement weight, cinematic presentation,
 Lost Pressings, and Book/map suites. Older review results below retain their
 original suite counts.
 
@@ -17,6 +17,38 @@ original suite counts.
 - Input device:
 - Overall frame pacing: smooth / occasional hitch / frequent hitch
 - Audio clarity and latency:
+
+## Scenery batching verification — 11 October 2026
+
+Scenery brush marks now share draw calls (`docs/ARCHITECTURE.md`, "Batched
+scenery marks"). Measured with Godot 4.7.1 under software GL (llvmpipe, Xvfb,
+1280×720), standing at each room's default entry:
+
+- Draw calls a frame fell from 743 to 291 on average (−61%; 33–74% by room):
+  Horn Plaza 1,229 → 410, Groove Yard 1,226 → 324, Worn Gallery 1,079 → 297.
+  Primitives are unchanged, triangle for triangle.
+- Frames of all 21 rooms and the title, on a first visit and on a revisit, are
+  identical to the previous build's. The only differences are the Count-In
+  door's own random jitter, which also differs between two runs of the old
+  build. The new suite's windowed comparison of 180 random marks against the
+  engine's own drawing: 0 pixels differ.
+- Steady frames cost the same CPU (headless, fixed 60 fps). A room's first
+  visit costs about 5 ms more to enter (17.4 → 23.0 ms on average here);
+  revisits cost what they did (18.5 against 18.9 ms).
+- All 63 suites pass with 15,066 checks; the 62 earlier suites kept their
+  14,956 exactly.
+
+Software rendering can't show the frame-time gain: llvmpipe spends its time
+rasterizing, not on draw calls. The gain is the CPU time a real GPU driver and
+the engine spend on each draw call, so it needs checking on real hardware.
+
+- [ ] On your own machine, walk Horn Plaza, Groove Yard and Worn Gallery with a
+  frame-time readout and compare with the previous build: steadier frames,
+  and nothing looks different.
+- [ ] Enter several rooms for the first time: no new stutter as the ink wipe
+  starts.
+- [ ] Turn the pressing over and back in a scenery-heavy room: the scenery
+  reinks at once, and the A-side looks as it did.
 
 ## Canon merge verification — 10 October 2026
 

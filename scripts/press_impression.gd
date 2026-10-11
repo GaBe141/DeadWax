@@ -10,6 +10,8 @@ var stock := Color("152e37")
 func _draw() -> void:
 	var p := Brush.palette(ink, stock)
 	draw_set_transform(Vector2.ZERO, 0.0, extent / Vector2(400, 400))
+	# Still architecture: every mark below shares draw calls (see Brush.begin).
+	Brush.begin(self)
 	match kind:
 		&"headshell": _cradle(p)
 		&"horn": _horn(p)
@@ -22,6 +24,7 @@ func _draw() -> void:
 		&"market": _market(p)
 		&"stair": _stair(p)
 		_: _facade(p)
+	Brush.end(self)
 	draw_set_transform(Vector2.ZERO)
 
 func _cradle(p: Dictionary) -> void:
@@ -36,8 +39,8 @@ func _cradle(p: Dictionary) -> void:
 		Brush.line(self, Vector2(x - 5, -79), Vector2(x - 12, 81), Brush.fade(p.gold, 0.31), 2)
 	Brush.ellipse(self, Vector2(6, 118), Vector2(65, 18), Brush.fade(p.copper, 0.80), 6)
 	for point in [Vector2(-145, -89), Vector2(139, -74), Vector2(113, 111), Vector2(-134, 88)]:
-		draw_circle(point, 6, p.copper, true, -1, true)
-		draw_circle(point - Vector2(1, 2), 2, p.gold, true, -1, true)
+		Brush.dot(self, point, 6, p.copper)
+		Brush.dot(self, point - Vector2(1, 2), 2, p.gold)
 
 func _horn(p: Dictionary) -> void:
 	Brush.wash(self, PackedVector2Array([Vector2(-33, 89), Vector2(27, 65), Vector2(155, -124), Vector2(-160, -123)]), Brush.fade(p.copper, 0.53))

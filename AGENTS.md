@@ -101,6 +101,11 @@ Keep this file short. Coding agents only read the first part of it (Codex reads
 - Presentation never drives gameplay. Animation, lighting, atmosphere and HUD
   read explicit snapshots; they never move colliders, change combat timers or
   own state. Decoration never adds collision or changes routes or rewards.
+- Scenery drawn with `press_world_brush.gd` between `Brush.begin(c)` and
+  `Brush.end(c)` is gathered into few draw calls: call `Brush.flush(c)` before
+  any other draw call or `draw_set_transform` on that canvas, or the order of
+  marks changes. `press_geometry.gd` mirrors Godot 4.7.1's tessellation; after
+  an engine upgrade run `tests/render_batch_test.gd` windowed.
 - Main owns persistence, transitions and encounter outcomes. Menus and Book
   pages emit intents only. Saves are validated, staged and rolled back on a
   failed write, restoring never replays rewards, and older saves must keep

@@ -212,6 +212,9 @@ func _process(delta: float) -> void:
 func _update_pose() -> void:
 	_pose["clock"] = _clock
 	_pose["motion"] = 0.0 if reduced_motion else 1.0
+	# The middle plane redraws as it moves here, so its brush keeps recurring
+	# marks rather than gathering a run that changes every redraw.
+	_pose["middle_moves"] = not reduced_motion and room_id in AMBIENT_IDS
 	var outcome_key := "addie/addie" if room_id == &"addie" else "the_arm/tonearm"
 	_pose["outcome"] = String(session_outcomes.get(outcome_key, ""))
 	if is_instance_valid(_light_air):

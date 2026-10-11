@@ -8,7 +8,10 @@ static func draw(c: CanvasItem, pose: Dictionary, ink: Color, stock: Color) -> v
 	var near := bool(pose.get("near", false))
 	var locked := bool(pose.get("locked", false))
 	var recess: Color = stock.lerp(p.shadow, 0.8)
-	c.draw_circle(Vector2(0, -55), 23, recess, true, -1, true)
+	# The doorway never moves, so its marks share draw calls (see Brush.begin).
+	Brush.begin(c)
+	Brush.dot(c, Vector2(0, -55), 23, recess)
+	Brush.flush(c)
 	c.draw_rect(Rect2(-23, -55, 46, 76), recess)
 	# Rough outer voussoirs and a thin, burnished inner frame.
 	Brush.ellipse(c, Vector2(0, -54), Vector2(26, 25), Brush.fade(p.edge, 0.90), 6, PI, TAU)
@@ -27,17 +30,20 @@ static func draw(c: CanvasItem, pose: Dictionary, ink: Color, stock: Color) -> v
 	Brush.line(c, Vector2(-33, 21), Vector2(33, 21), p.copper, 4)
 	Brush.line(c, Vector2(-30, 19), Vector2(30, 19), Brush.fade(p.gold, 0.79 if near else 0.40), 1.5)
 	if locked:
+		Brush.flush(c)
 		c.draw_rect(Rect2(-19, -48, 38, 66), Brush.fade(p.copper, 0.22))
 		for side in [-1.0, 1.0]:
 			Brush.line(c, Vector2(-17, -31 * side - 17), Vector2(17, 31 * side - 17), Brush.fade(p.copper, 0.84), 4)
 		Brush.ellipse(c, Vector2(0, -18), Vector2(7, 8), p.gold, 2)
-		c.draw_circle(Vector2(0, -19), 2.2, p.shadow, true, -1, true)
+		Brush.dot(c, Vector2(0, -19), 2.2, p.shadow)
 		Brush.line(c, Vector2(0, -18), Vector2(0, -13), p.shadow, 2)
 	else:
 		# The warm reveal is steady. Nearness changes exposure, never its clock.
+		Brush.flush(c)
 		c.draw_rect(Rect2(-17, -50, 34, 65), Brush.fade(p.gold, 0.09 if near else 0.035))
 		Brush.wash(c, PackedVector2Array([Vector2(-20, -51), Vector2(-11, -46), Vector2(-11, 13), Vector2(-20, 18)]), Brush.fade(p.copper, 0.68))
 		Brush.line(c, Vector2(-12, -43), Vector2(-12, 11), Brush.fade(p.gold, 0.64), 1)
 		Brush.curve(c, Vector2(2, -46), Vector2(16, -30), Vector2(3, -12), Brush.fade(p.gold, 0.57 if near else 0.29), 1.2)
 		Brush.line(c, Vector2(2, -12), Vector2(10, -15), Brush.fade(p.gold, 0.65), 1.6)
+	Brush.end(c)
 	c.draw_set_transform(Vector2.ZERO)

@@ -6,12 +6,19 @@ static func draw(c: CanvasItem, room_id: StringName, layer: StringName, bounds: 
 	if not bounds.has_area(): return
 	var p := Brush.palette(ink, stock)
 	if layer == &"foreground":
+		Brush.begin(c)
 		Brush.face(c, pose.get("surfaces", []), p, room_id in [&"headshell", &"label_descent", &"overture_stair"])
+		Brush.end(c)
 		return
 	if layer not in [&"far", &"middle"]: return
 	var far := layer == &"far"
 	var time := float(pose.get("clock", 0.0)) * float(pose.get("motion", 1.0))
 	c.draw_set_transform(bounds.position)
+	# Consecutive brush marks share draw calls (see Brush.begin), unless the
+	# middle plane is moving and redrawn every few frames.
+	var gather := far or not bool(pose.get("middle_moves", false))
+	if gather:
+		Brush.begin(c)
 	match room_id:
 		&"headshell": _headshell(c, bounds.size, far, time, p, String(pose.get("outcome", "")))
 		&"horn_plaza": _plaza(c, bounds.size, far, p)
@@ -21,6 +28,8 @@ static func draw(c: CanvasItem, room_id: StringName, layer: StringName, bounds: 
 		&"groove_yard": _yard(c, bounds.size, far, p)
 		&"label_descent": _descent(c, bounds.size, far, p)
 		&"overture_stair": _stair(c, bounds.size, far, p)
+	if gather:
+		Brush.end(c)
 	c.draw_set_transform(Vector2.ZERO)
 
 static func _headshell(c: CanvasItem, size: Vector2, far: bool, time: float, p: Dictionary, outcome: String) -> void:
@@ -34,6 +43,7 @@ static func _headshell(c: CanvasItem, size: Vector2, far: bool, time: float, p: 
 	var lamp := Vector2(590 + sin(time * 0.30) * 3.0, 290)
 	Brush.line(c, Vector2(578, 137), lamp - Vector2(0, 14), Brush.fade(p.edge, 0.3), 1.5)
 	Brush.lamp(c, lamp, _faint(p, 0.45), 0.75)
+	Brush.flush(c)
 	c.draw_rect(Rect2(size.x - 137, 210, 85, 290), Brush.fade(p.body, 0.45))
 	if outcome == "freed":
 		Brush.curve(c, Vector2(101, 549), Vector2(331, 569), Vector2(557, 548), Brush.fade(p.gold, 0.5), 3)
@@ -51,8 +61,10 @@ static func _street(c: CanvasItem, size: Vector2, far: bool, p: Dictionary) -> v
 		_roof(c, Rect2(-90, 145, 430, 420), _faint(p, 0.8), 0)
 		_roof(c, Rect2(size.x - 550, 170, 570, 400), _faint(p, 0.65), 2)
 		return
+	Brush.flush(c)
 	c.draw_rect(Rect2(100, 247, 110, 154), Brush.fade(p.body, 0.6))
 	Brush.curve(c, Vector2(69, 414), Vector2(192, 389), Vector2(316, 421), Brush.fade(p.copper, 0.18), 8)
+	Brush.flush(c)
 	c.draw_rect(Rect2(size.x - 290, 208, 140, 213), Brush.fade(p.body, 0.4))
 
 static func _practice(c: CanvasItem, _size: Vector2, far: bool, time: float, p: Dictionary) -> void:
