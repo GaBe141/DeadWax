@@ -211,7 +211,7 @@ static func draw_hush(canvas: CanvasItem, pose: int, ticks: int, parries: int, f
 
 static func draw_skip(canvas: CanvasItem, pose: Dictionary, palette: Dictionary) -> void:
 	if InkTest.active:
-		InkFigures.draw_skip(canvas, pose, PINK, StringName(palette.get("tip", &"")))
+		InkFigures.draw_skip(canvas, pose, PINK, palette)
 		return
 	preload("res://scripts/press_skip.gd").draw(canvas, pose, palette)
 

@@ -53,12 +53,20 @@ Accent the canon's flip-slam, over the top and into the street with both
 hands. Each stroke lands on its first frame, holds a moment and settles; the
 Sweep and the Accent leave a paper smear that a foe shows through.
 
+The hood has had the same pass: the canon's worn 45 sleeve, which goes up
+from behind and comes down over his face, his face its centre hole. It
+carries the wear of a real sleeve (ring wear, its 45 print rubbed half away,
+creases, a taped tear); his boots shuffle under the hem, the hem flares in
+the air, and the Warm Thread and whatever Sleeve is fitted in the Book show
+on it. Hood up stays silence: grey ink, nothing pink.
+
 Measured under software GL (llvmpipe, Xvfb, 1280×720): ink draws about 73
 draw calls and 210k primitives a frame against Quiet Wax's 400 and 35–43k.
 The first F9 pauses 0.4–0.7 s while the planes are drawn once; after that the
-switch is immediate. The new suite (394 checks) proves the same collision,
-nodes and movement in either look, and the point's laws. All 64 suites pass
-with 15,460 checks; the 63 earlier suites kept their 15,066 exactly.
+switch is immediate. The new suite (401 checks) proves the same collision,
+nodes and movement in either look, and the point's and the hood's laws. All
+64 suites pass with 15,467 checks; the 63 earlier suites kept their 15,066
+exactly.
 
 - [ ] Readability first (the Tier B rule): can you always find Skip — at a
   run, mid-strike, under the hood, beside the Hound — against the busier
@@ -72,6 +80,10 @@ with 15,460 checks; the 63 earlier suites kept their 15,066 exactly.
   thrust? Strokes chain only on hits and the plaza has no foes, so the Sweep
   and the Accent can't be thrown there in play.
 - [ ] Fit another Tip in the Book's Point slot: is it the tip you see?
+- [ ] The hood: does it read as a worn record sleeve, going up from behind
+  and over his face? Can you still find him under it against the paper?
+  Walk and jump hooded: the boots, the hem. With the Warm Thread bought or a
+  Sleeve fitted in the Book, is it on the hood?
 - [ ] Does the plaza feel like the canon's Label: print on paper, dense,
   grungy, a town where the played retired?
 - [ ] With the Jump-Cut, turn the pressing over in the plaza: the

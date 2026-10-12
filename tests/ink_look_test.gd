@@ -17,6 +17,9 @@ const Press := preload("res://scripts/press.gd")
 const Point := preload("res://scripts/press_ink_point.gd")
 const Combat := preload("res://scripts/press_skip_combat.gd")
 const Figures := preload("res://scripts/press_ink_figures.gd")
+const Hood := preload("res://scripts/press_ink_hood.gd")
+const Ink := preload("res://scripts/press_ink.gd")
+const Catalog := preload("res://scripts/collection_catalog.gd")
 
 class ErrorLog extends Logger:
 	var script_errors: Array[String] = []
@@ -52,6 +55,7 @@ func _run() -> void:
 	_check(InkTest.ROOMS == [&"horn_plaza"], "the ink test covers one room, Horn Plaza")
 	await _check_scenery()
 	_check_point()
+	_check_hood()
 	await _check_figures()
 	await _check_main()
 	InkTest.enabled = false
@@ -160,6 +164,12 @@ func _check_figures() -> void:
 		for state in [{"available": true, "near": true, "clock": 0.5}, {"available": false}, {"owned": true}]:
 			plans.append(func(c: Control) -> void: Press.draw_ability_pickup(c, state, Color.BLACK, Color.WHITE))
 		plans.append(func(c: Control) -> void: Press.draw_skip_dust(c, [{"at": Vector2(10, 25), "age": 0.4, "size": 1.0}], Color.WHEAT))
+		for lining in Hood.LININGS:
+			for thread in [false, true]:
+				var dressed := _skip_pose({"hood": 1.0 if thread else 0.7, "run": 0.62 if thread else 0.0, "stride": 1.2})
+				plans.append(func(c: Control) -> void:
+					InkTest.far_face = far_face
+					Press.draw_skip(c, dressed, {"lining": lining, "warm_thread": thread}))
 		for tip in Point.TIPS:
 			for noise in [0.0, 1.0]:
 				var fitted := _skip_pose({"noise": noise, "strike": 0.6 if noise > 0.0 else 0.0, "combo_step": 2})
@@ -234,7 +244,95 @@ func _check_point() -> void:
 	_check(Point.loudness({"noise": 0.0}) == 0.0 and Point.tip_paint(quiet, Press.PINK, 0.0) == quiet, "a quiet tip is grey")
 	_check(Point.tip_paint(quiet, Press.PINK, Point.loudness({"noise": 1.0})).is_equal_approx(Press.PINK), "a loud tip is crackle pink")
 	_check(Point.loudness({"noise": 1.0, "hood": 1.0}) == 0.0, "the hood drains the tip grey")
-	_check(Point.TIPS.size() == 6 and &"" in Point.TIPS, "every fitted Tip has a drawing, and so does the bare point")
+	_check(&"" in Point.TIPS and _slot_ids("needle") == _sorted_ids(Point.TIPS), "every fitted Tip has a drawing, and so does the bare point")
+
+# -- the hood: a 45 sleeve over him, silent, his face its centre hole ---------------
+
+func _check_hood() -> void:
+	var moments := [{}, {"run": 0.62, "stride": 0.5}, {"run": 0.62, "stride": 2.1}, {"run": 0.62, "stride": 4.0},
+		{"air": 1.0, "vertical": -0.8}, {"air": 1.0, "vertical": 0.8}, {"land": 0.5, "impact": 0.9}, {"noise": 1.0, "time": 2.6}]
+	var uncovered := 0
+	var faceless := 0
+	var sunk := 0
+	for side in [1.0, -1.0]:
+		for extra in moments:
+			var pose := _skip_pose(extra)
+			pose["face"] = side
+			pose["hood"] = 1.0
+			var body := Figures.skip_body(pose)
+			var sleeve := Hood.shape(pose, body, side)
+			var outline: PackedVector2Array = sleeve.outline
+			# The head, drawn as narrow as the sleeve folds it, stays inside.
+			for vertex in Figures.HEAD:
+				var at: Vector2 = body * (Vector2(vertex) * Vector2(side * float(sleeve.squeeze), 1.0))
+				if not Geometry2D.is_point_in_polygon(at, outline) and _distance_to_outline(at, outline) > 1.5:
+					uncovered += 1
+			var face: Vector2 = sleeve.face
+			if not Geometry2D.is_point_in_polygon(face, outline) or _distance_to_outline(face, outline) < float(sleeve.radius) - 1.0:
+				faceless += 1
+			for point in outline:
+				if point.y > Point.GROUND + 0.01:
+					sunk += 1
+	_check(uncovered == 0, "hood up, his head is inside the sleeve (%d corners out)" % uncovered)
+	_check(faceless == 0, "hood up, the face hole sits whole in the sleeve (%d moments not)" % faceless)
+	_check(sunk == 0, "the sleeve's hem never goes through the street (%d points)" % sunk)
+	# Going up and coming down, every moment of the sleeve is a whole shape.
+	var broken := 0
+	for side in [1.0, -1.0]:
+		for extra in [{}, {"run": 0.62, "stride": 1.4}, {"air": 1.0, "vertical": 0.6}]:
+			for i in range(1, 21):
+				var pose := _skip_pose(extra)
+				pose["face"] = side
+				pose["hood"] = i / 20.0
+				var sleeve := Hood.shape(pose, Figures.skip_body(pose), side)
+				if Geometry2D.triangulate_polygon(sleeve.outline).is_empty():
+					broken += 1
+	_check(broken == 0, "the sleeve is a whole shape all the way up and down (%d moments not)" % broken)
+	var halfway := _skip_pose({"hood": 0.4})
+	var rising := Hood.shape(halfway, Figures.skip_body(halfway), 1.0)
+	_check(float(rising.cover) < 0.1 and Vector2(rising.crown).y < -30.0 and float(rising.open) == 0.0,
+		"it goes up from behind: over his head before it comes down his front")
+	# Hood up is silence: nothing on the sleeve is pink or gold, whatever he wears.
+	var loud := 0
+	for far_face in [false, true]:
+		InkTest.far_face = far_face
+		for lining in Hood.LININGS:
+			for thread in [false, true]:
+				var pose := _skip_pose({"hood": 1.0, "noise": 1.0})
+				var k := Ink.new(null, 1, true)
+				Hood.draw(k, Hood.shape(pose, Figures.skip_body(pose), 1.0), pose, Figures.colours(), 0, {"lining": lining, "warm_thread": thread})
+				k.flush()
+				for entry in k.tape:
+					if entry[0] == &"triangles":
+						for colour in entry[2]:
+							if colour.a > 0.0 and (_same_hue(colour, Press.PINK) or _same_hue(colour, Press.GOLD)):
+								loud += 1
+	InkTest.far_face = false
+	_check(loud == 0, "hood up is silence: no pink or gold on the sleeve (%d points)" % loud)
+	_check(&"" in Hood.LININGS and _slot_ids("lining") == _sorted_ids(Hood.LININGS), "every fitted Sleeve has a drawing, and so does the bare sleeve")
+
+func _distance_to_outline(at: Vector2, outline: PackedVector2Array) -> float:
+	var nearest := INF
+	for i in outline.size():
+		var closest := Geometry2D.get_closest_point_to_segment(at, outline[i], outline[(i + 1) % outline.size()])
+		nearest = minf(nearest, at.distance_to(closest))
+	return nearest
+
+func _slot_ids(slot: String) -> Array:
+	var ids: Array = []
+	for item in Catalog.items():
+		if String(item.get("slot", "")) == slot:
+			ids.append(String(item.id))
+	ids.sort()
+	return ids
+
+func _sorted_ids(names: Array) -> Array:
+	var ids: Array = []
+	for name in names:
+		if not String(name).is_empty():
+			ids.append(String(name))
+	ids.sort()
+	return ids
 
 func _skip_pose(extra: Dictionary) -> Dictionary:
 	var pose := {"time": 1.0, "stride": 0.0, "run": 0.0, "air": 0.0, "vertical": 0.0, "hood": 0.0, "set": 0.0,

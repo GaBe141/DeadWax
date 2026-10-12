@@ -22,6 +22,7 @@ const Combat := preload("res://scripts/press_skip_combat.gd")
 const Gesture := preload("res://scripts/press_skip_gesture.gd")
 const Plaza := preload("res://scripts/press_ink_plaza.gd")
 const Point := preload("res://scripts/press_ink_point.gd")
+const Hood := preload("res://scripts/press_ink_hood.gd")
 
 const BOIL_RATE := 10.0
 const BOIL_FRAMES := 4
@@ -48,6 +49,12 @@ static func colours() -> Dictionary:
 		"scratch": Color(InkTest.GROOVE, 0.55),
 		"hood": InkTest.DUST.lerp(paper, 0.25) if not far else Color("2a2531"),
 		"hood_edge": Color(line, 0.55),
+		# Hood up is silence: the sleeve's ink is grey, never black.
+		"hood_line": line.lerp(paper, 0.42),
+		"thread": Color("c47a35") if not far else Color("e09a5a"),
+		"silk": Color("f6f1e6") if not far else Color("cfc8d8"),
+		"felt": InkTest.DUST.lerp(paper, 0.25).darkened(0.28) if not far else Color("3d3646"),
+		"wrap": InkTest.WAX if not far else Color("4a4258"),
 		"quiet": InkTest.DUST.darkened(0.15) if not far else Color("6b6475"),
 		"tape": Color("5e4231") if not far else Color("a3836a"),
 		"tape_shine": Color("a07a5c") if not far else Color("d8bfa6"),
@@ -104,8 +111,11 @@ static func _skip_body(pose: Dictionary, combat: Dictionary, gesture: Dictionary
 	var translation := anchor + offset - (anchor * stretch).rotated(tilt)
 	return Transform2D(tilt, stretch, 0.0, translation)
 
-static func draw_skip(canvas: CanvasItem, pose: Dictionary, pink: Color, tip_kind: StringName = &"") -> void:
+## `dress` is what he wears from the Book and the shop: the fitted Tip ("tip"),
+## the fitted Sleeve ("lining") and the Warm Thread ("warm_thread").
+static func draw_skip(canvas: CanvasItem, pose: Dictionary, pink: Color, dress: Dictionary = {}) -> void:
 	var c := colours()
+	var tip_kind := StringName(dress.get("tip", &""))
 	var k := Ink.new(canvas, 23)
 	var time := float(pose.get("time", 0.0))
 	var frame := _boil_frame(time)
@@ -171,8 +181,10 @@ static func draw_skip(canvas: CanvasItem, pose: Dictionary, pink: Color, tip_kin
 	k.path(boiled(PackedVector2Array([shoulder_back, shoulder_back.lerp(rear, 0.5) + Vector2(-side * 2, 2), rear]), frame, 60), 2.6, c.body, 0.2)
 
 	# Coat and head: one dark shape, thick-lined, a scratch of light on its edge.
-	# Pulling the hood down, he folds into the sleeve.
-	var squeeze := lerpf(1.0, 0.4, hood)
+	# As the sleeve comes down over him he folds into it.
+	var sleeve := Hood.shape(pose, body, side, turn) if hood > 0.0 else {}
+	var squeeze: float = sleeve.get("squeeze", 1.0)
+	var cover: float = sleeve.get("cover", 0.0)
 	var fold := Vector2(flip.x * squeeze, 1.0)
 	var coat := _transformed(BODY, body, fold)
 	coat = boiled(coat, frame, 1)
@@ -204,7 +216,7 @@ static func draw_skip(canvas: CanvasItem, pose: Dictionary, pink: Color, tip_kin
 	var blink := clampf(1.0 - absf(blink_phase - 4.43) / 0.085, 0.0, 1.0)
 	var lid := maxf(blink, 0.72 if hurt > 0.1 else kneel * 0.3)
 	var happy := float(gesture.happy) * quiet > 0.5 and hurt <= 0.1
-	if hood < 0.6:
+	if cover < 0.55:
 		for i in 2:
 			var eye_center: Vector2 = EYES[i] * Vector2(side * turn * squeeze, 1.0) + look
 			var slant := -0.18 if i == 0 else 0.14
@@ -249,32 +261,16 @@ static func draw_skip(canvas: CanvasItem, pose: Dictionary, pink: Color, tip_kin
 				var fleck := body * (Vector2(side * (-18.0 - i * 3.0), -30.0 + i * 5.0))
 				k.blob(fleck, 1.0 + loud * 0.6, Color(pink, loud * 0.8), 4)
 
-	# The hood: a 45 sleeve pulled down over him. Its centre hole is the face.
+	# The hood (press_ink_hood.gd): a 45 sleeve pulled up over him, its centre
+	# hole his face. Under it his hand comes out of the sleeve's open side to
+	# hold the point, stood beside him.
 	if hood > 0.0:
-		var apex := lerpf(18.0, -50.0, hood)
-		var spread := lerpf(9.0, 25.0, hood)
-		var sleeve := PackedVector2Array([Vector2(-spread, 26), Vector2(-3.0, apex), Vector2(3.0, apex - 1.0), Vector2(spread, 26)])
-		var drawn := PackedVector2Array()
-		for v in sleeve:
-			drawn.append(body * (v * Vector2(side, 1.0)))
-		drawn = boiled(drawn, frame, 120, 0.5)
-		k.fill(drawn, Color(c.hood, minf(hood * 1.6, 1.0)))
-		var shadow := k.shadow_side(drawn, Vector2(-side, -1.0), 0.4)
-		for piece in shadow:
-			k.hatch(piece, -PI * 0.25 if side > 0 else -PI * 0.75, 3.0, 0.8, Color(c.hood_edge, 0.6 * hood))
-		k.outline(drawn, 2.0, Color(c.hood_edge, hood), 0.2, 0.5)
-		if hood > 0.45:
-			var hole := body * Vector2(side * 0.5, -20.0)
-			var ring := k.ellipse_points(hole, Vector2(7.2, 7.2), 0.0, 14)
-			ring = boiled(ring, frame, 130, 0.3)
-			var open := clampf((hood - 0.45) / 0.3, 0.0, 1.0)
-			k.fill(ring, Color(c.body, open))
-			k.outline(ring, 1.4, Color(c.hood_edge, open), 0.1, 0.0)
-			for eye_side: float in [-1.0, 1.0]:
-				k.blob(hole + Vector2(eye_side * 2.6 + side * 0.8, -0.5), 1.1, Color(c.eye, open), 5)
+		Hood.draw(k, sleeve, pose, c, frame, dress)
 	if hood > 0.5:
 		Point.draw(k, point, pose, c, pink, tip_kind, frame)
-		k.path(boiled(PackedVector2Array([shoulder, shoulder.lerp(grip, 0.5) + Vector2(side * 2, 3), grip]), frame, 61), 2.6, c.hood_edge, 0.2)
+		var opening: Vector2 = sleeve.opening
+		k.path(boiled(PackedVector2Array([opening, opening.lerp(grip, 0.5) + Vector2(0, 1), grip]), frame, 61), 2.4, c.body, 0.2)
+		k.blob(grip, 2.4, c.body)
 
 	# Heard: what the stroke hits, the knock of a landing.
 	Point.draw_contact(k, point, pose, combat, c, pink)
