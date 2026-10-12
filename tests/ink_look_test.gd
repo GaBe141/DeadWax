@@ -20,6 +20,7 @@ const Figures := preload("res://scripts/press_ink_figures.gd")
 const Hood := preload("res://scripts/press_ink_hood.gd")
 const Ink := preload("res://scripts/press_ink.gd")
 const Catalog := preload("res://scripts/collection_catalog.gd")
+const Light := preload("res://scripts/press_ink_light.gd")
 
 class ErrorLog extends Logger:
 	var script_errors: Array[String] = []
@@ -56,6 +57,7 @@ func _run() -> void:
 	await _check_scenery()
 	_check_point()
 	_check_hood()
+	_check_light()
 	await _check_figures()
 	await _check_main()
 	InkTest.enabled = false
@@ -90,11 +92,11 @@ func _check_scenery() -> void:
 	root.add_child(canvas)
 	Plaza.clear_cache()
 	for far_face in [false, true]:
-		for plane in [&"paper", &"far", &"set"]:
+		for plane in [&"paper", &"far", &"set", &"light"]:
 			canvas.paint = func(c: Control) -> void: Press.draw_ink_room(c, plane, {"far_face": far_face, "exits": Plaza.EXITS})
 			canvas.queue_redraw()
 			await process_frame
-	_check(canvas.calls >= 6, "both faces of every ink plane draw")
+	_check(canvas.calls >= 8, "both faces of every ink plane draw")
 	var triangles := 0
 	var lettering := 0
 	var pink := 0
@@ -112,7 +114,7 @@ func _check_scenery() -> void:
 			elif entry[0] == &"text":
 				lettering += 1
 				_check(not RegEx.create_from_string("(?i)\\b(needles?|stylus(es)?|styli)\\b").search(String(entry[5])), "street lettering never says needle or stylus: %s" % entry[5])
-	_check(Plaza._tapes.size() == 6, "each plane and face is recorded once (%d)" % Plaza._tapes.size())
+	_check(Plaza._tapes.size() == 8, "each plane and face is recorded once (%d)" % Plaza._tapes.size())
 	_check(triangles > 50000, "the ink scenery is dense (%d triangles)" % triangles)
 	_check(lettering > 20, "the street carries its lettering (%d runs)" % lettering)
 	_check(pink == 0, "no scenery is crackle pink: pink means heard (%d points)" % pink)
@@ -164,6 +166,14 @@ func _check_figures() -> void:
 		for state in [{"available": true, "near": true, "clock": 0.5}, {"available": false}, {"owned": true}]:
 			plans.append(func(c: Control) -> void: Press.draw_ability_pickup(c, state, Color.BLACK, Color.WHITE))
 		plans.append(func(c: Control) -> void: Press.draw_skip_dust(c, [{"at": Vector2(10, 25), "age": 0.4, "size": 1.0}], Color.WHEAT))
+		for lamp_side in [1.0, -1.0]:
+			var lit := _skip_pose({"hood": 0.0 if lamp_side > 0.0 else 1.0, "run": 0.4})
+			plans.append(func(c: Control) -> void:
+				InkTest.far_face = far_face
+				InkTest.lamps = [{"at": c.get_global_transform() * Vector2(lamp_side * 40.0, -60.0), "reach": 200.0, "warmth": 0.9}]
+				Press.draw_skip(c, lit, {})
+				Press.draw_hound(c, {"phase": "patrol", "time": 0.4, "clock": 3.0, "face": lamp_side}, Color.BLACK, Color.WHITE)
+				InkTest.lamps = [])
 		for lining in Hood.LININGS:
 			for thread in [false, true]:
 				var dressed := _skip_pose({"hood": 1.0 if thread else 0.7, "run": 0.62 if thread else 0.0, "stride": 1.2})
@@ -245,6 +255,51 @@ func _check_point() -> void:
 	_check(Point.tip_paint(quiet, Press.PINK, Point.loudness({"noise": 1.0})).is_equal_approx(Press.PINK), "a loud tip is crackle pink")
 	_check(Point.loudness({"noise": 1.0, "hood": 1.0}) == 0.0, "the hood drains the tip grey")
 	_check(&"" in Point.TIPS and _slot_ids("needle") == _sorted_ids(Point.TIPS), "every fitted Tip has a drawing, and so does the bare point")
+
+# -- the light: dawn-grey, the night's last lamps ---------------------------------------
+
+func _check_light() -> void:
+	var rig := Plaza.light_rig()
+	var lamps: Array = rig.lamps
+	var lanterns := 0
+	for lamp: Dictionary in lamps:
+		if lamp.kind == &"lantern" and Vector2(lamp.at).distance_to(Vector2(589, 494)) < 1.0:
+			lanterns += 1
+	_check(lanterns == 1, "the lantern's light hangs where the set draws its glass")
+	# Every lit bulb is a drawn bulb, and the dead grey ones give no light.
+	var drawn: Array = []
+	for bulb in Plaza.bulbs():
+		if int(bulb.turn) != Plaza.BULB_DEAD:
+			drawn.append(Vector2(bulb.glass))
+	var lit: Array = []
+	for lamp: Dictionary in lamps:
+		if lamp.kind == &"bulb":
+			lit.append(Vector2(lamp.at))
+	_check(not lit.is_empty() and lit == drawn, "every lit bulb is a drawn bulb, and the dead ones stay dark (%d lit)" % lit.size())
+	_check(int(rig.failing) >= 0 and lamps[int(rig.failing)].kind == &"bulb", "one bulb on the long run is dying")
+	# Lamps knock the dawn back; the street is lighter than under it; the open
+	# sky over the square is paler than over the roofs.
+	var dark_at_lantern := Light.darkness(rig, Vector2(589, 494))
+	var dark_in_corner := Light.darkness(rig, Vector2(40, 494))
+	_check(dark_at_lantern < dark_in_corner * 0.5, "the lantern knocks the dawn back (%.2f against %.2f)" % [dark_at_lantern, dark_in_corner])
+	var unlit := rig.duplicate()
+	unlit["lamps"] = []
+	_check(Light.darkness(unlit, Vector2(1000, 760)) > Light.darkness(unlit, Vector2(1000, 560)), "under the street is darker than the street")
+	_check(Light.darkness(unlit, Vector2(790, 400)) < Light.darkness(unlit, Vector2(40, 400)) * 0.7, "the open sky over the square is paler than over the roofs")
+	# Hood up is silence, and so is the dawn: nothing in the light is pink or gold.
+	var loud := 0
+	for far_face in [false, true]:
+		var k := Ink.new(null, 1, true)
+		Light.draw_live(k, rig, far_face, 3.7)
+		Light.figure_shadows(k, rig, Color.BLACK, Vector2(560, 600), 600.0, 17.0, 0.0)
+		Light.rim(k, PackedVector2Array([Vector2(570, 540), Vector2(600, 540), Vector2(600, 590), Vector2(570, 590)]), lamps, Color("fff0c8"))
+		k.flush()
+		for entry in k.tape:
+			if entry[0] == &"triangles":
+				for colour in entry[2]:
+					if colour.a > 0.0 and (_same_hue(colour, Press.PINK) or _same_hue(colour, Press.GOLD)):
+						loud += 1
+	_check(loud == 0, "the lamps, the dust and the shadows are never pink or gold (%d points)" % loud)
 
 # -- the hood: a 45 sleeve over him, silent, his face its centre hole ---------------
 
@@ -371,7 +426,17 @@ func _check_main() -> void:
 	await _physics(3)
 	var plate: Node = room.get("ink_plate")
 	_check(InkTest.active and is_instance_valid(plate), "F9's switch draws Horn Plaza in ink")
-	_check(is_instance_valid(plate) and plate.get_parent() == room and plate.get_child_count() == 4, "the ink plate holds its paper, far, set and contact planes")
+	_check(is_instance_valid(plate) and plate.get_parent() == room and plate.get_child_count() == 6, "the ink plate holds its paper, far, set, light, live light and contact planes")
+	_check(InkTest.lamps.size() == Plaza.light_rig().lamps.size(), "the plaza's lamps are there for the figures walking past them")
+	# The live light holds still under Reduced motion and moves without it.
+	var live: Node = plate.get_node("Live")
+	plate.call("set_reduced_motion", true)
+	var held := float(live.get("time"))
+	await _frames(4)
+	_check(is_equal_approx(float(live.get("time")), held), "under Reduced motion the lamps and the dust hold still")
+	plate.call("set_reduced_motion", false)
+	await _frames(4)
+	_check(float(live.get("time")) > held, "without it the lantern breathes")
 	_check(not room.atmosphere.visible and not room.lighting.visible, "Quiet Wax air, depth and lamps step aside")
 	var hidden_skins := true
 	for skin in room._skins:
@@ -406,6 +471,7 @@ func _check_main() -> void:
 	_main._apply_ink_test()
 	await _physics(3)
 	_check(not InkTest.active and room.get("ink_plate") == null and not is_instance_valid(plate), "turning the test off removes the ink plate")
+	_check(InkTest.lamps.is_empty(), "and takes its lamps away")
 	_check(room.atmosphere.visible and room.lighting.visible, "Quiet Wax air, depth and lamps return")
 	var shown := true
 	for skin in room._skins:

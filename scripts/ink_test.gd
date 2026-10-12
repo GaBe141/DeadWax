@@ -17,6 +17,9 @@ static var enabled := false
 static var active := false
 ## Whether that room is showing the far face of the pressing (scratchboard).
 static var far_face := false
+## The lamps burning in that room, in world space, for figures walking past
+## them (press_ink_light.gd). The ink plate sets them and takes them away.
+static var lamps: Array = []
 
 # -- the strata palette (docs/art/direction.html, 05) --------------------------
 ## Crackle pink and etch gold are not repeated here: they live in press.gd,

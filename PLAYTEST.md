@@ -60,13 +60,23 @@ creases, a taped tear); his boots shuffle under the hem, the hem flares in
 the air, and the Warm Thread and whatever Sleeve is fitted in the Book show
 on it. Hood up stays silence: grey ink, nothing pink.
 
-Measured under software GL (llvmpipe, Xvfb, 1280×720): ink draws about 73
-draw calls and 210k primitives a frame against Quiet Wax's 400 and 35–43k.
+The plaza is lit now, at the hour the story keeps for the Label: dawn-grey.
+A cool second printing lies over the page, heaviest overhead and under the
+street, paler where the sky opens behind the horn, and the night's last lamps
+knock it back: the lantern on the ledge (breathing, with dust in its light),
+the festoon bulbs (some dead, one dying), Tick's window, the open bedroom, a
+window over the shop, and light falling through the grate into the drain.
+Lamps near the street throw long shadows from Skip, the Hound and the props,
+and give Skip and the Hound a rim of lamplight. The B-side reads the same rig
+as scratchboard. Fixtures and figures sit above the dawn.
+
+Measured under software GL (llvmpipe, Xvfb, 1280×720): ink draws about 75
+draw calls and 223k primitives a frame against Quiet Wax's 400 and 35–43k.
 The first F9 pauses 0.4–0.7 s while the planes are drawn once; after that the
-switch is immediate. The new suite (401 checks) proves the same collision,
-nodes and movement in either look, and the point's and the hood's laws. All
-64 suites pass with 15,467 checks; the 63 earlier suites kept their 15,066
-exactly.
+switch is immediate. The new suite (414 checks) proves the same collision,
+nodes and movement in either look, and the laws of the point, the hood and
+the light. All 64 suites pass with 15,480 checks; the 63 earlier suites kept
+their 15,066 exactly.
 
 - [ ] Readability first (the Tier B rule): can you always find Skip — at a
   run, mid-strike, under the hood, beside the Hound — against the busier
@@ -80,6 +90,11 @@ exactly.
   thrust? Strokes chain only on hits and the plaza has no foes, so the Sweep
   and the Accent can't be thrown there in play.
 - [ ] Fit another Tip in the Book's Point slot: is it the tip you see?
+- [ ] The light: does the plaza read as early morning with lamps still on?
+  Can you still find Skip, the Hound and every pickup in the darker corners
+  and the underground? Walk under the lantern and through the Stalls arch:
+  the long shadow, the rim of light. With Reduced motion on, the lantern and
+  the dust hold still. Is the lighting part of why ink wins or loses?
 - [ ] The hood: does it read as a worn record sleeve, going up from behind
   and over his face? Can you still find him under it against the paper?
   Walk and jump hooded: the boots, the hem. With the Warm Thread bought or a

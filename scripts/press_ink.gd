@@ -282,6 +282,54 @@ func shape(polygon: PackedVector2Array, flat: Color, edge: Color, width := 2.6) 
 	fill(polygon, flat)
 	outline(polygon, width, edge)
 
+# -- light --------------------------------------------------------------------------
+
+## A wash over `area` whose strength varies across the page, like a second
+## printing in a tint: `strength(point)` (0..1) scales the paint's alpha at
+## every corner of a `cell`-sized grid, blended smoothly between them.
+func wash(area: Rect2, cell: float, paint: Color, strength: Callable) -> void:
+	var columns := int(ceil(area.size.x / cell)) + 1
+	var rows := int(ceil(area.size.y / cell)) + 1
+	var base := batch.points.size()
+	for row in rows:
+		for column in columns:
+			var at := area.position + Vector2(minf(column * cell, area.size.x), minf(row * cell, area.size.y))
+			batch.points.append(at)
+			batch.colors.append(Color(paint, paint.a * clampf(float(strength.call(at)), 0.0, 1.0)))
+	for row in rows - 1:
+		for column in columns - 1:
+			var i := base + row * columns + column
+			batch.indices.append_array(PackedInt32Array([i, i + 1, i + columns, i + 1, i + columns + 1, i + columns]))
+
+## A soft round light: full `paint` at the centre, falling away to nothing at
+## `radius`, held a little brighter over its inner `core`.
+func glow(center: Vector2, radius: float, paint: Color, core := 0.3, sides := 24) -> void:
+	if radius <= 0.5 or paint.a <= 0.0:
+		return
+	var base := batch.points.size()
+	batch.points.append(center)
+	batch.colors.append(paint)
+	for ring: Array in [[core, 0.55], [1.0, 0.0]]:
+		for i in sides:
+			batch.points.append(center + Vector2.from_angle(TAU * i / sides) * radius * float(ring[0]))
+			batch.colors.append(Color(paint, paint.a * float(ring[1])))
+	for i in sides:
+		var j := (i + 1) % sides
+		batch.indices.append_array(PackedInt32Array([base, base + 1 + i, base + 1 + j]))
+		var inner := base + 1
+		var outer := base + 1 + sides
+		batch.indices.append_array(PackedInt32Array([inner + i, outer + i, inner + j, inner + j, outer + i, outer + j]))
+
+## A convex shape coloured corner by corner: a beam fading along its length.
+func graded(polygon: PackedVector2Array, colours: PackedColorArray) -> void:
+	if polygon.size() < 3 or colours.size() != polygon.size():
+		return
+	var base := batch.points.size()
+	batch.points.append_array(polygon)
+	batch.colors.append_array(colours)
+	for i in range(1, polygon.size() - 1):
+		batch.indices.append_array(PackedInt32Array([base, base + i, base + i + 1]))
+
 # -- hatching -------------------------------------------------------------------
 
 ## Parallel hand hatching clipped to `polygon`. Lines start and stop a little

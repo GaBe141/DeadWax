@@ -23,6 +23,7 @@ const Gesture := preload("res://scripts/press_skip_gesture.gd")
 const Plaza := preload("res://scripts/press_ink_plaza.gd")
 const Point := preload("res://scripts/press_ink_point.gd")
 const Hood := preload("res://scripts/press_ink_hood.gd")
+const Light := preload("res://scripts/press_ink_light.gd")
 
 const BOIL_RATE := 10.0
 const BOIL_FRAMES := 4
@@ -54,6 +55,8 @@ static func colours() -> Dictionary:
 		"thread": Color("c47a35") if not far else Color("e09a5a"),
 		"silk": Color("f6f1e6") if not far else Color("cfc8d8"),
 		"felt": InkTest.DUST.lerp(paper, 0.25).darkened(0.28) if not far else Color("3d3646"),
+		# Lamplight caught on an edge.
+		"rim": Color("fff0c8") if not far else Color("f2e6cc"),
 		"wrap": InkTest.WAX if not far else Color("4a4258"),
 		"quiet": InkTest.DUST.darkened(0.15) if not far else Color("6b6475"),
 		"tape": Color("5e4231") if not far else Color("a3836a"),
@@ -200,6 +203,11 @@ static func draw_skip(canvas: CanvasItem, pose: Dictionary, pink: Color, dress: 
 		var lit := PackedVector2Array([head[1].lerp(head[0], 0.15), head[1].lerp(head[2], 0.1), head[2]])
 		k.path(lit, 1.0, c.scratch, 0.2)
 		k.hair(coat[0].lerp(coat[4], 0.2) + Vector2(side * 1.5, 0), coat[0].lerp(coat[4], 0.8) + Vector2(side * 1.5, 0), 0.8, c.scratch)
+	# Lamplight on the edge that faces a lamp (press_ink_light.gd).
+	var lamps := local_lamps(canvas)
+	if not lamps.is_empty() and cover < 0.55:
+		Light.rim(k, head, lamps, c.rim, 1.8)
+		Light.rim(k, coat, lamps, c.rim, 1.6)
 
 	# The point over the coat (beside the sleeve, it is drawn after the hood),
 	# and the front arm over the point to the grip.
@@ -266,6 +274,8 @@ static func draw_skip(canvas: CanvasItem, pose: Dictionary, pink: Color, dress: 
 	# hold the point, stood beside him.
 	if hood > 0.0:
 		Hood.draw(k, sleeve, pose, c, frame, dress)
+		if not lamps.is_empty():
+			Light.rim(k, sleeve.outline, lamps, c.rim, 1.3)
 	if hood > 0.5:
 		Point.draw(k, point, pose, c, pink, tip_kind, frame)
 		var opening: Vector2 = sleeve.opening
@@ -288,6 +298,21 @@ static func draw_skip(canvas: CanvasItem, pose: Dictionary, pink: Color, dress: 
 				arc.append(body * (Vector2(side * 20.0, -18.0) + Vector2(cos(a) * radius * side, sin(a) * radius)))
 			k.path(arc, 1.3, Color(c.line, kneel * (0.5 - i * 0.12)), 0.0)
 	k.flush()
+
+## The room's lamps (ink_test.gd `lamps`) brought into this canvas's own
+## space, the near ones only.
+static func local_lamps(canvas: CanvasItem) -> Array:
+	if InkTest.lamps.is_empty() or not canvas.is_inside_tree():
+		return []
+	var to_local := canvas.get_global_transform().affine_inverse()
+	var near: Array = []
+	for lamp: Dictionary in InkTest.lamps:
+		var at: Vector2 = to_local * Vector2(lamp.at)
+		if at.length() < float(lamp.reach) + 60.0:
+			var local := lamp.duplicate()
+			local["at"] = at
+			near.append(local)
+	return near
 
 static func _transformed(design: Array, body: Transform2D, flip: Vector2) -> PackedVector2Array:
 	var result := PackedVector2Array()
@@ -390,6 +415,9 @@ static func draw_hound(canvas: CanvasItem, pose: Dictionary, gold: Color) -> voi
 	for piece in k.shadow_side(torso, Vector2(-side * 0.4, -1.0), 0.18):
 		k.hatch(piece, PI * 0.25 if side > 0 else PI * 0.75, 3.6, 0.8, Color(c.line, 0.5))
 	k.outline(torso, 2.8, c.line, 0.3, 0.8)
+	var lamps := local_lamps(canvas)
+	if not lamps.is_empty():
+		Light.rim(k, torso, lamps, c.rim, 1.4)
 	# A patch on his back, the colour of an old label.
 	var patch := PackedVector2Array()
 	for v: Vector2 in [Vector2(-14, -20), Vector2(2, -22), Vector2(6, -12), Vector2(-10, -10)]:
@@ -416,6 +444,8 @@ static func draw_hound(canvas: CanvasItem, pose: Dictionary, gold: Color) -> voi
 	for piece in k.shadow_side(skull, Vector2(-side * 0.3, -1.0), 0.3):
 		k.hatch(piece, -PI * 0.25 if side > 0 else -PI * 0.75, 3.0, 0.8, Color(c.line, 0.55))
 	k.outline(skull, 2.6, c.line, 0.3, 0.6)
+	if not lamps.is_empty():
+		Light.rim(k, skull, lamps, c.rim, 1.4)
 	k.path(PackedVector2Array([neck[0], neck[3]]), 2.4, c.line, 0.3)
 	k.path(PackedVector2Array([neck[1], neck[2]]), 2.4, c.line, 0.3)
 	k.blob(h.call(Vector2(25, -1)), 3.0, c.line)

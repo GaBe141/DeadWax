@@ -11,6 +11,7 @@ extends RefCounted
 
 const Ink := preload("res://scripts/press_ink.gd")
 const InkTest := preload("res://scripts/ink_test.gd")
+const Light := preload("res://scripts/press_ink_light.gd")
 
 const GROUND := 600.0
 ## Light comes from the upper left; hatching rises to the right.
@@ -35,6 +36,7 @@ static func draw(canvas: CanvasItem, plane: StringName, state: Dictionary, displ
 			&"paper": _paper(k, p)
 			&"far": _far_town(k, p)
 			&"set": _square(k, p, exits)
+			&"light": Light.draw_plane(k, light_rig(), far_face)
 		k.flush()
 		_tapes[key] = k.tape
 	Ink.play(canvas, _tapes[key])
@@ -795,14 +797,15 @@ static func _horn(k: Ink, p: Dictionary) -> void:
 	var collar := k.ellipse_points(Vector2(810, 487), Vector2(22, 6), 0.0, 18)
 	k.shape(collar, p.brass.lerp(p.umber, 0.3), p.ink, 2.0)
 	# The bell: eight brass petals flaring up and to the right.
-	var mouth := Vector2(838, 350)
-	var axis := Vector2(1.0, -1.0).normalized()
-	var across := axis.orthogonal()
-	var rim_center := mouth + axis * 172.0
-	var rim := Vector2(114, 38)
+	var bell := _bell()
+	var mouth: Vector2 = bell.mouth
+	var axis: Vector2 = bell.axis
+	var across: Vector2 = bell.across
+	var rim_center: Vector2 = bell.rim_center
+	var rim: Vector2 = bell.rim
 	var spin := across.angle()
-	var outer_a := Ink.cubic(mouth + across * 13.0, mouth + axis * 70.0 + across * 17.0, rim_center - axis * 42.0 + across * 62.0, rim_center + across * rim.x, 22)
-	var outer_b := Ink.cubic(mouth - across * 13.0, mouth + axis * 70.0 - across * 17.0, rim_center - axis * 42.0 - across * 62.0, rim_center - across * rim.x, 22)
+	var outer_a: PackedVector2Array = bell.outer_a
+	var outer_b: PackedVector2Array = bell.outer_b
 	# The flanks close straight across the rim; the near lip is its own half.
 	var cone := outer_a.duplicate()
 	var flank := outer_b.duplicate()
@@ -876,18 +879,105 @@ static func _horn(k: Ink, p: Dictionary) -> void:
 	var buckle := Vector2(872, 490).lerp(stay_end, 0.5)
 	k.shape(k.ellipse_points(buckle, Vector2(6, 3), (stay_end - Vector2(872, 490)).angle(), 10), p.slate, p.ink, 1.3)
 
+## The horn's bell: its mouth on the neck, its axis up and to the right, the
+## rim, and its two flanks (outer_a faces the light, upper left).
+static func _bell() -> Dictionary:
+	var mouth := Vector2(838, 350)
+	var axis := Vector2(1.0, -1.0).normalized()
+	var across := axis.orthogonal()
+	var rim_center := mouth + axis * 172.0
+	var rim := Vector2(114, 38)
+	return {
+		"mouth": mouth, "axis": axis, "across": across, "rim_center": rim_center, "rim": rim,
+		"outer_a": Ink.cubic(mouth + across * 13.0, mouth + axis * 70.0 + across * 17.0, rim_center - axis * 42.0 + across * 62.0, rim_center + across * rim.x, 22),
+		"outer_b": Ink.cubic(mouth - across * 13.0, mouth + axis * 70.0 - across * 17.0, rim_center - axis * 42.0 - across * 62.0, rim_center - across * rim.x, 22),
+	}
+
+# -- light: dawn-grey, the night's last lamps -----------------------------------------
+
+static var _rig: Dictionary = {}
+
+## The plaza's light (press_ink_light.gd): the dawn down the page, the lamps
+## still burning where the set draws them, Tick's lit window, the grate's
+## beams, and the sheen on the horn.
+static func light_rig() -> Dictionary:
+	if not _rig.is_empty():
+		return _rig
+	var lamps: Array[Dictionary] = []
+	# The lantern on the ledge post: the brightest thing in the square.
+	lamps.append({"at": Vector2(589, 494), "reach": 270.0, "warmth": 0.95, "glow": 96.0, "kind": &"lantern",
+		"street": true, "flicker": true, "rays": 18})
+	var failing := -1
+	var lit := 0
+	for bulb in bulbs():
+		if int(bulb.turn) == BULB_DEAD:
+			continue
+		var low := int(bulb.run) == 1
+		lamps.append({"at": bulb.glass, "reach": 170.0 if low else 96.0, "warmth": 0.75 if low else 0.42,
+			"glow": 34.0 if low else 24.0, "kind": &"bulb", "street": low})
+		lit += 1
+		if lit == 9:
+			failing = lamps.size() - 1
+	# Tick is up already: his window lit from inside. So is whoever has the
+	# room open to the street, and somebody over the shop.
+	var tick := Rect2(1146, 300, 102, 78)
+	var bedroom := Rect2(252, 410, 96, 70)
+	var over_shop := Rect2(1426, 236, 40, 52)
+	lamps.append({"at": tick.get_center() + Vector2(0, 30), "reach": 210.0, "warmth": 0.62, "glow": 0.0, "kind": &"window"})
+	lamps.append({"at": bedroom.get_center(), "reach": 120.0, "warmth": 0.5, "glow": 0.0, "kind": &"window"})
+	lamps.append({"at": over_shop.get_center() + Vector2(0, 20), "reach": 110.0, "warmth": 0.45, "glow": 0.0, "kind": &"window"})
+	# The High Street beyond its arch, already a little lighter.
+	lamps.append({"at": Vector2(85, 578), "reach": 70.0, "warmth": 0.55, "glow": 0.0, "kind": &"daylight"})
+	# Brass catching the light along the bell's lit flank and the top of its rim.
+	var bell := _bell()
+	var flank := PackedVector2Array()
+	var outer_a: PackedVector2Array = bell.outer_a
+	var outer_b: PackedVector2Array = bell.outer_b
+	for i in range(3, outer_a.size() - 1):
+		flank.append(outer_a[i].lerp(outer_b[i], 0.16))
+	var lip := PackedVector2Array()
+	var rim: Vector2 = bell.rim
+	var spin := Vector2(bell.across).angle()
+	for i in 12:
+		var angle := lerpf(-0.6, 0.5, i / 11.0)
+		lip.append(Vector2(bell.rim_center) + Vector2(cos(angle) * (rim.x + 2.0), sin(angle) * (rim.y + 2.0)).rotated(spin))
+	_rig = {
+		"area": Rect2(-120, -160, 2080, 1200),
+		# Dawn-grey: heaviest overhead and under the street, lightest at the
+		# street where the lamps are; the kerb's foot a little darker.
+		"dawn": [[-160.0, 0.6], [100.0, 0.5], [300.0, 0.34], [470.0, 0.26], [560.0, 0.22], [598.0, 0.3], [630.0, 0.5], [780.0, 0.64], [1040.0, 0.72]],
+		# The open sky over the square, pale where the dawn is coming up
+		# behind the town: x from, x to, y from, y to, how much paler.
+		"sky": [470.0, 1110.0, 230.0, 560.0, 0.55],
+		"lamps": lamps,
+		"windows": [{"box": tick, "warmth": 1.0}, {"box": bedroom, "warmth": 0.7}, {"box": over_shop, "warmth": 0.8}],
+		# What stands on the street near a low lamp throws a shadow along it:
+		# foot x, width, height.
+		"props": [[462.0, 28.0, 45.0], [810.0, 150.0, 100.0], [589.0, 10.0, 170.0], [1046.0, 70.0, 48.0],
+			[1340.0, 90.0, 82.0], [1448.0, 34.0, 40.0], [1560.0, 70.0, 60.0]],
+		"shafts": [{"x": 687.0, "top": GROUND + 2.0, "bottom": GROUND + 88.0, "width": 3.4, "bars": 4, "pitch": 6.5}],
+		"sheens": [flank, lip],
+		"street": GROUND,
+		"failing": failing,
+	}
+	return _rig
+
 # -- lights, cables and flyers ----------------------------------------------------
 
-static func _lights(k: Ink, p: Dictionary) -> void:
-	var runs := [[Vector2(468, 232), Vector2(1104, 280), 56.0], [Vector2(1636, 452), Vector2(1724, 452), 16.0]]
-	var colours := [p.light, p.brass, p.red, p.light, p.stone]
+## The two runs of festoon lights: across the square, and over the lane to the
+## Stalls.
+const RUNS := [[Vector2(468, 232), Vector2(1104, 280), 56.0], [Vector2(1636, 452), Vector2(1724, 452), 16.0]]
+## Bulb glass by turn along the runs; the stone-grey ones are dead.
+const BULB_DEAD := 4
+
+## Every bulb on the runs: where it hangs from the cable, its glass, its turn
+## in the colour order and which run it is on.
+static func bulbs() -> Array[Dictionary]:
+	var result: Array[Dictionary] = []
 	var count := 0
-	for run in runs:
+	for run_index in RUNS.size():
+		var run: Array = RUNS[run_index]
 		var cable := Ink.sag(run[0], run[1], run[2], 30)
-		k.stroke(cable, 1.4, p.ink, 0.2, 0.0, 1.0, 12.0)
-		var total := 0.0
-		for i in range(1, cable.size()):
-			total += cable[i].distance_to(cable[i - 1])
 		var spacing := 30.0
 		var walked := 0.0
 		var next_bulb := spacing * 0.5
@@ -897,18 +987,27 @@ static func _lights(k: Ink, p: Dictionary) -> void:
 			var segment := a.distance_to(b)
 			while walked + segment >= next_bulb:
 				var at := a.lerp(b, (next_bulb - walked) / segment)
-				var bulb := at + Vector2(0, 7)
-				k.line(at, bulb + Vector2(0, -3), 1.0, p.ink, 0.0, 0.0)
-				var glass := k.ellipse_points(bulb, Vector2(3.4, 4.6), 0.0, 10)
-				k.fill(glass, colours[count % colours.size()])
-				k.outline(glass, 1.1, p.ink, 0.1, 0.2)
-				k.fill(k.rough_rect(Rect2(bulb.x - 2, bulb.y - 6, 4, 3), 0.2), p.ink)
+				result.append({"hook": at, "glass": at + Vector2(0, 7), "turn": count % 5, "run": run_index})
 				count += 1
 				next_bulb += spacing
 			walked += segment
+	return result
+
+static func _lights(k: Ink, p: Dictionary) -> void:
+	var colours := [p.light, p.brass, p.red, p.light, p.stone]
+	for run in RUNS:
+		k.stroke(Ink.sag(run[0], run[1], run[2], 30), 1.4, p.ink, 0.2, 0.0, 1.0, 12.0)
+	for bulb in bulbs():
+		var at: Vector2 = bulb.hook
+		var centre: Vector2 = bulb.glass
+		k.line(at, centre + Vector2(0, -3), 1.0, p.ink, 0.0, 0.0)
+		var glass := k.ellipse_points(centre, Vector2(3.4, 4.6), 0.0, 10)
+		k.fill(glass, colours[int(bulb.turn)])
+		k.outline(glass, 1.1, p.ink, 0.1, 0.2)
+		k.fill(k.rough_rect(Rect2(centre.x - 2, centre.y - 6, 4, 3), 0.2), p.ink)
 	_laundry(k, p, Vector2(1296, 262), Vector2(1428, 268), 20.0)
 	# Flyers hung on the long run, turning in no wind.
-	var long_cable := Ink.sag(runs[0][0], runs[0][1], runs[0][2], 30)
+	var long_cable := Ink.sag(RUNS[0][0], RUNS[0][1], RUNS[0][2], 30)
 	for t: float in [0.32, 0.58]:
 		var at := long_cable[int(t * 30)]
 		var flyer := PackedVector2Array([at + Vector2(-9, 2), at + Vector2(10, 1), at + Vector2(11, 27), at + Vector2(-8, 28)])
