@@ -1205,6 +1205,8 @@ func _max_health() -> int:
 func _apply_purchases() -> void:
 	player.hood_speed_mult = float(economy.call("hood_speed_multiplier"))
 	player.warm_thread = bool(economy.call("has_item", &"warm_thread"))
+	var fitted: Dictionary = collection.snapshot().get("equipped", {}) if collection != null else {}
+	player.fitted_tip = StringName(fitted.get("needle", ""))
 	player.apply_equipment(collection.modifiers() if collection != null else {})
 	player.apply_growth(experience.profile() if experience != null else {})
 	if inventory != null and experience != null:

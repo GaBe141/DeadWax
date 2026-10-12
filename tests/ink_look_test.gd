@@ -14,6 +14,9 @@ const ProgressionScript := preload("res://scripts/progression_state.gd")
 const InkTest := preload("res://scripts/ink_test.gd")
 const Plaza := preload("res://scripts/press_ink_plaza.gd")
 const Press := preload("res://scripts/press.gd")
+const Point := preload("res://scripts/press_ink_point.gd")
+const Combat := preload("res://scripts/press_skip_combat.gd")
+const Figures := preload("res://scripts/press_ink_figures.gd")
 
 class ErrorLog extends Logger:
 	var script_errors: Array[String] = []
@@ -48,6 +51,7 @@ func _run() -> void:
 	_check(not InkTest.enabled and not InkTest.active, "the ink test is off by default")
 	_check(InkTest.ROOMS == [&"horn_plaza"], "the ink test covers one room, Horn Plaza")
 	await _check_scenery()
+	_check_point()
 	await _check_figures()
 	await _check_main()
 	InkTest.enabled = false
@@ -156,6 +160,12 @@ func _check_figures() -> void:
 		for state in [{"available": true, "near": true, "clock": 0.5}, {"available": false}, {"owned": true}]:
 			plans.append(func(c: Control) -> void: Press.draw_ability_pickup(c, state, Color.BLACK, Color.WHITE))
 		plans.append(func(c: Control) -> void: Press.draw_skip_dust(c, [{"at": Vector2(10, 25), "age": 0.4, "size": 1.0}], Color.WHEAT))
+		for tip in Point.TIPS:
+			for noise in [0.0, 1.0]:
+				var fitted := _skip_pose({"noise": noise, "strike": 0.6 if noise > 0.0 else 0.0, "combo_step": 2})
+				plans.append(func(c: Control) -> void:
+					InkTest.far_face = far_face
+					Press.draw_skip(c, fitted, {"tip": tip}))
 	for plan in plans:
 		canvas.paint = plan
 		canvas.queue_redraw()
@@ -165,6 +175,66 @@ func _check_figures() -> void:
 	InkTest.far_face = false
 	canvas.queue_free()
 	await process_frame
+
+# -- the point: always touching something, the tip is the crackle meter ------------
+
+func _check_point() -> void:
+	var bodies: Array[Transform2D] = [Transform2D.IDENTITY, Transform2D(0.12, Vector2(1.08, 0.9), 0.0, Vector2(-2, 3)),
+		Transform2D(-0.15, Vector2(0.94, 1.05), 0.0, Vector2(3, -2))]
+	for body in bodies:
+		for side in [1.0, -1.0]:
+			for extra in [{}, {"run": 1.0, "stride": 0.7}, {"hood": 1.0}, {"set": 1.0}]:
+				var pose := _skip_pose(extra)
+				pose["face"] = side
+				var point := Point.solve(pose, Combat.sample(pose), body, side)
+				_check(absf(Vector2(point.tip).y - Point.GROUND) < 1.0,
+					"at rest the point touches the street (%s, facing %d): tip at %s" % [extra, side, point.tip])
+	var neutral := _skip_pose({})
+	var resting := Point.solve(neutral, Combat.sample(neutral), Transform2D.IDENTITY, 1.0)
+	_check(absf(Vector2(resting.tip).distance_to(resting.butt) - (Point.FRONT + Point.BACK)) < 0.5, "the point keeps its length")
+	_check(Vector2(resting.tip).x > Vector2(resting.grip).x, "standing, the point is planted ahead")
+	var running := _skip_pose({"run": 1.0})
+	var dragged := Point.solve(running, Combat.sample(running), Transform2D.IDENTITY, 1.0)
+	_check(Vector2(dragged.tip).x < Vector2(dragged.grip).x, "running, the point drags behind")
+	# The sticking: a thrust, an up-stroke over his head, a slam into the street.
+	var tap := _skip_pose({"strike": 1.0, "combo_step": 1})
+	var thrust := Point.solve(tap, Combat.sample(tap), Transform2D.IDENTITY, 1.0)
+	_check(Vector2(thrust.tip).x > Vector2(resting.tip).x and Vector2(thrust.tip).y < 0.0, "the Tap thrusts the point straight ahead")
+	var held := _skip_pose({"strike": 1.0 - Point.HOLD + 0.05, "combo_step": 1})
+	_check(is_equal_approx(float(Point.solve(held, Combat.sample(held), Transform2D.IDENTITY, 1.0).held), 1.0), "a stroke holds its pose before it settles")
+	var lifted := _skip_pose({"strike": 1.0 - Point.TRAVEL, "combo_step": 2})
+	var sweep := Point.solve(lifted, Combat.sample(lifted), Transform2D.IDENTITY, 1.0)
+	_check(Vector2(sweep.tip).y < -41.0, "the Sweep lifts the point over his head (tip at %s)" % sweep.tip)
+	_check(float(sweep.arc_from) > float(sweep.arc_to), "the Sweep's smear rises from the street")
+	var slam := _skip_pose({"strike": 1.0, "combo_step": 3, "big": true})
+	var accent := Point.solve(slam, Combat.sample(slam), Figures.skip_body(slam), 1.0)
+	_check(Vector2(accent.tip).y > Point.GROUND and Vector2(accent.tip).y <= Point.GROUND + Point.BITE + 0.01 and float(accent.two_hands) > 0.9,
+		"the Accent drives the point into the street with both hands (tip at %s)" % accent.tip)
+	_check(float(accent.arc_from) < -90.0 and float(accent.arc_to) > 0.0, "the Accent's smear comes over the top")
+	var left := tap.duplicate()
+	left["strike_face"] = -1.0
+	_check(Vector2(Point.solve(left, Combat.sample(left), Transform2D.IDENTITY, 1.0).tip).x < 0.0, "a stroke to the left points left")
+	# Whatever the stroke, lean or moment, only the Accent's bite goes into the street.
+	var sunk := 0
+	var samples := 0
+	for side in [1.0, -1.0]:
+		for step in [1, 2, 3]:
+			for contact in [&"miss", &"guard", &"hit"]:
+				for i in 21:
+					var moment := _skip_pose({"strike": i / 20.0, "combo_step": step, "strike_contact": contact,
+						"contact_pulse": 0.6, "strike_face": side, "run": 1.0 if i % 4 == 0 else 0.0, "big": step == 3})
+					moment["face"] = side
+					for body in [Figures.skip_body(moment)] + bodies:
+						var solved := Point.solve(moment, Combat.sample(moment), body, side)
+						samples += 1
+						if Vector2(solved.tip).y > Point.GROUND + Point.BITE + 0.01:
+							sunk += 1
+	_check(sunk == 0, "the point never goes through the street (%d of %d moments)" % [sunk, samples])
+	var quiet := Color("8a8070")
+	_check(Point.loudness({"noise": 0.0}) == 0.0 and Point.tip_paint(quiet, Press.PINK, 0.0) == quiet, "a quiet tip is grey")
+	_check(Point.tip_paint(quiet, Press.PINK, Point.loudness({"noise": 1.0})).is_equal_approx(Press.PINK), "a loud tip is crackle pink")
+	_check(Point.loudness({"noise": 1.0, "hood": 1.0}) == 0.0, "the hood drains the tip grey")
+	_check(Point.TIPS.size() == 6 and &"" in Point.TIPS, "every fitted Tip has a drawing, and so does the bare point")
 
 func _skip_pose(extra: Dictionary) -> Dictionary:
 	var pose := {"time": 1.0, "stride": 0.0, "run": 0.0, "air": 0.0, "vertical": 0.0, "hood": 0.0, "set": 0.0,

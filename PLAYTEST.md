@@ -43,12 +43,22 @@ figures that boil at four frames. Pink appears only when sound is heard
 use of etch gold. With the Jump-Cut, turning the pressing over reprints the
 same drawing as scratchboard, white line out of wax.
 
+Skip's point has had its own pass: the canon's stylus-lance with a cartridge
+butt, a taped grip, an unspooled end of tape, and whichever Tip is fitted in
+the Book. It rests planted on the street ahead, drags behind at a run scoring
+a groove, lies flat when you kneel and stands upright beside the hood;
+polishing it is an idle fidget. Strikes read as a drummer's sticking: the Tap
+a level thrust, the Sweep an up-stroke that lifts it over his head, the
+Accent the canon's flip-slam, over the top and into the street with both
+hands. Each stroke lands on its first frame, holds a moment and settles; the
+Sweep and the Accent leave a paper smear that a foe shows through.
+
 Measured under software GL (llvmpipe, Xvfb, 1280×720): ink draws about 73
 draw calls and 210k primitives a frame against Quiet Wax's 400 and 35–43k.
 The first F9 pauses 0.4–0.7 s while the planes are drawn once; after that the
-switch is immediate. The new suite (355 checks) proves the same collision,
-nodes and movement in either look. All 64 suites pass with 15,421 checks; the
-63 earlier suites kept their 15,066 exactly.
+switch is immediate. The new suite (394 checks) proves the same collision,
+nodes and movement in either look, and the point's laws. All 64 suites pass
+with 15,460 checks; the 63 earlier suites kept their 15,066 exactly.
 
 - [ ] Readability first (the Tier B rule): can you always find Skip — at a
   run, mid-strike, under the hood, beside the Hound — against the busier
@@ -57,6 +67,11 @@ nodes and movement in either look. All 64 suites pass with 15,421 checks; the
   strike's cut, the crack chips when you are loud?
 - [ ] Hood up and stand still by the horn: the sleeve's face hole, the
   Hound coming over, the dull wax buffing back to black.
+- [ ] Skip's point: does it read planted at rest, dragged at a run, laid
+  down when you kneel and upright under the hood? Does the Tap read as a
+  thrust? Strokes chain only on hits and the plaza has no foes, so the Sweep
+  and the Accent can't be thrown there in play.
+- [ ] Fit another Tip in the Book's Point slot: is it the tip you see?
 - [ ] Does the plaza feel like the canon's Label: print on paper, dense,
   grungy, a town where the played retired?
 - [ ] With the Jump-Cut, turn the pressing over in the plaza: the

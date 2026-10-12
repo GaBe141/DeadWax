@@ -21,6 +21,7 @@ const InkTest := preload("res://scripts/ink_test.gd")
 const Combat := preload("res://scripts/press_skip_combat.gd")
 const Gesture := preload("res://scripts/press_skip_gesture.gd")
 const Plaza := preload("res://scripts/press_ink_plaza.gd")
+const Point := preload("res://scripts/press_ink_point.gd")
 
 const BOIL_RATE := 10.0
 const BOIL_FRAMES := 4
@@ -49,6 +50,11 @@ static func colours() -> Dictionary:
 		"hood_edge": Color(line, 0.55),
 		"quiet": InkTest.DUST.darkened(0.15) if not far else Color("6b6475"),
 		"tape": Color("5e4231") if not far else Color("a3836a"),
+		"tape_shine": Color("a07a5c") if not far else Color("d8bfa6"),
+		"steel": Color("cfcac1") if not far else Color("3e3946"),
+		"silver": Color("e3e6e8") if not far else Color("8d939a"),
+		"glass": Color("dfeef0") if not far else Color("6f8a90"),
+		"copper": Color("b06a42") if not far else Color("7a4a33"),
 		"coat": InkTest.GROOVE.lerp(paper, 0.4) if not far else Color("cfc8bb"),
 		"brass": InkTest.BRASS, "umber": InkTest.UMBER, "red": InkTest.CANCEL_RED,
 		"stone": InkTest.STONE if not far else Color("2c2832"),
@@ -69,7 +75,36 @@ static func _boil_frame(time: float) -> int:
 
 # == Skip ===========================================================================
 
-static func draw_skip(canvas: CanvasItem, pose: Dictionary, pink: Color) -> void:
+## Skip's body in his own space: the same squash, lean and bob as Quiet Wax,
+## pivoting on the planted feet. Pure, so the point's laws can be checked
+## against the body it is drawn with.
+static func skip_body(pose: Dictionary) -> Transform2D:
+	return _skip_body(pose, Combat.sample(pose), Gesture.sample(pose))
+
+static func _skip_body(pose: Dictionary, combat: Dictionary, gesture: Dictionary) -> Transform2D:
+	var time := float(pose.get("time", 0.0))
+	var stride := float(pose.get("stride", 0.0))
+	var run := clampf(float(pose.get("run", 0.0)), 0.0, 1.0)
+	var air := clampf(float(pose.get("air", 0.0)), 0.0, 1.0)
+	var kneel := clampf(float(pose.get("set", 0.0)), 0.0, 1.0)
+	var land := float(pose.get("land", 0.0))
+	var side := -1.0 if float(pose.get("face", 1.0)) < 0.0 else 1.0
+	var quiet := (1.0 - float(combat.snap)) * (1.0 - float(combat.parry)) * (1.0 - float(combat.hurt_strength))
+	var breath := sin(time * 2.7)
+	var compression := sin(land * PI) * float(pose.get("impact", 0.0))
+	var rise := maxf(-float(pose.get("vertical", 0.0)), 0.0) * air
+	var stretch := Vector2(1.0 + compression * 0.22 - rise * 0.10 + kneel * 0.12,
+		1.0 - compression * 0.22 + rise * 0.14 - kneel * 0.28)
+	stretch.y += breath * 0.016 * (1.0 - run) + cos(stride * 2.0) * run * 0.04
+	stretch += Vector2(combat.body_stretch) + Vector2(gesture.stretch) * quiet
+	var tilt := side * (run * 0.16 + kneel * 0.06) + float(combat.body_tilt) + float(gesture.tilt) * quiet
+	var bob := -absf(sin(stride)) * run * 3.0 - sin(float(pose.get("launch", 0.0)) * PI) * 2.0
+	var anchor := Vector2(0, 26)
+	var offset := Vector2(combat.body_offset) + Vector2(0, bob)
+	var translation := anchor + offset - (anchor * stretch).rotated(tilt)
+	return Transform2D(tilt, stretch, 0.0, translation)
+
+static func draw_skip(canvas: CanvasItem, pose: Dictionary, pink: Color, tip_kind: StringName = &"") -> void:
 	var c := colours()
 	var k := Ink.new(canvas, 23)
 	var time := float(pose.get("time", 0.0))
@@ -84,9 +119,7 @@ static func draw_skip(canvas: CanvasItem, pose: Dictionary, pink: Color) -> void
 	var land := float(pose.get("land", 0.0))
 	var noise := clampf(float(pose.get("noise", 0.0)), 0.0, 1.0)
 	var hurt := float(pose.get("hurt", 0.0))
-	var combo_step := clampi(int(pose.get("combo_step", 1)), 1, 3)
 	var attack_face := -1.0 if float(pose.get("strike_face", face)) < 0.0 else 1.0
-	var contact := StringName(pose.get("strike_contact", &"miss"))
 	var combat := Combat.sample(pose)
 	var gesture := Gesture.sample(pose)
 	var snap: float = combat.snap
@@ -96,46 +129,27 @@ static func draw_skip(canvas: CanvasItem, pose: Dictionary, pink: Color) -> void
 	var side := -1.0 if face < 0.0 else 1.0
 	var turn := lerpf(0.6, 1.0, clampf(absf(face), 0.0, 1.0))
 	var flip := Vector2(side * turn, 1.0)
-	# The same squash, lean and bob as Quiet Wax, pivoting on the planted feet.
-	var breath := sin(time * 2.7)
-	var compression := sin(land * PI) * float(pose.get("impact", 0.0))
-	var rise := maxf(-float(pose.get("vertical", 0.0)), 0.0) * air
-	var stretch := Vector2(1.0 + compression * 0.22 - rise * 0.10 + kneel * 0.12,
-		1.0 - compression * 0.22 + rise * 0.14 - kneel * 0.28)
-	stretch.y += breath * 0.016 * (1.0 - run) + cos(stride * 2.0) * run * 0.04
-	stretch += Vector2(combat.body_stretch) + Vector2(gesture.stretch) * quiet
-	var tilt := side * (run * 0.16 + kneel * 0.06) + float(combat.body_tilt) + float(gesture.tilt) * quiet
-	var bob := -absf(sin(stride)) * run * 3.0 - sin(float(pose.get("launch", 0.0)) * PI) * 2.0
-	var anchor := Vector2(0, 26)
-	var offset := Vector2(combat.body_offset) + Vector2(0, bob)
-	var translation := anchor + offset - (anchor * stretch).rotated(tilt)
-	var body := Transform2D(tilt, stretch, 0.0, translation)
+	var body := _skip_body(pose, combat, gesture)
 
-	# Where the point is held and where it rests. At rest it is planted on the
-	# street ahead; running drags it behind; kneeling lays it down; under the
-	# hood it stands upright beside the sleeve.
-	var rest_hand := Vector2(10, -1).lerp(Vector2(-2, 1), run)
-	var rest_tip := Vector2(27, 25).lerp(Vector2(-34, 24), run)
-	rest_hand = rest_hand.lerp(Vector2(4, 4), air)
-	rest_tip = rest_tip.lerp(Vector2(-22, 30), air)
-	rest_hand = rest_hand.lerp(Vector2(12, 8), kneel)
-	rest_tip = rest_tip.lerp(Vector2(40, 25), kneel)
-	rest_hand = rest_hand.lerp(Vector2(17, -8), hood)
-	rest_tip = rest_tip.lerp(Vector2(18, 25), hood)
-	rest_hand *= flip
-	rest_tip *= flip
+	# The point (press_ink_point.gd): where it is held, where it rests, how
+	# each stroke carries it. Polishing it is an idle fidget.
+	var fidget := Gesture.fidget(float(pose.get("idle", 0.0)))
+	var polish := float(fidget.weight) * quiet * (1.0 - hood) * (1.0 - kneel) if fidget.kind == &"polish" else 0.0
+	var point := Point.solve(pose, combat, body, side, turn, polish)
 	var swing := maxf(snap, maxf(parry, hurt_strength))
-	var hand := rest_hand.lerp(Vector2(combat.elbow), swing)
-	var tip := rest_tip.lerp(Vector2(combat.tip), swing)
-	var held := float(gesture.stylus) * quiet
-	if held > 0.0:
-		hand = hand.lerp(Vector2(gesture.elbow), held)
-		tip = tip.lerp(Vector2(gesture.tip), held)
-	var rear_hand := Vector2(-9, 5) * flip
+	var rear_hand := body * (Vector2(-9, 5) * flip)
 	if swing > 0.0:
-		rear_hand = rear_hand.lerp(Vector2(combat.rear_hand), swing)
+		rear_hand = rear_hand.lerp(body * Vector2(combat.rear_hand), swing)
+	var two_hands := float(point.two_hands)
+	if two_hands > 0.0:
+		rear_hand = rear_hand.lerp(point.rear_grip, two_hands)
+	if polish > 0.0:
+		var rub := 0.5 + 0.5 * sin(float(fidget.phase) * 2.4 * 13.0)
+		rear_hand = rear_hand.lerp(Vector2(point.grip) + Vector2(point.dir) * lerpf(8.0, 30.0, rub), polish)
 
-	# Legs first: the feet stay where they stand.
+	# The stroke's trace through the air, under everything else.
+	Point.draw_swing(k, point, pose, c, pink)
+	# Legs next: the feet stay where they stand.
 	for index in 2:
 		var leg_side := -1.0 if index == 0 else 1.0
 		var phase := stride + (PI if index == 0 else 0.0)
@@ -153,7 +167,7 @@ static func draw_skip(canvas: CanvasItem, pose: Dictionary, pink: Color) -> void
 
 	# The rear arm, behind the coat.
 	var shoulder_back := body * (Vector2(-4, -6) * flip)
-	var rear := body * rear_hand
+	var rear := rear_hand
 	k.path(boiled(PackedVector2Array([shoulder_back, shoulder_back.lerp(rear, 0.5) + Vector2(-side * 2, 2), rear]), frame, 60), 2.6, c.body, 0.2)
 
 	# Coat and head: one dark shape, thick-lined, a scratch of light on its edge.
@@ -175,27 +189,14 @@ static func draw_skip(canvas: CanvasItem, pose: Dictionary, pink: Color) -> void
 		k.path(lit, 1.0, c.scratch, 0.2)
 		k.hair(coat[0].lerp(coat[4], 0.2) + Vector2(side * 1.5, 0), coat[0].lerp(coat[4], 0.8) + Vector2(side * 1.5, 0), 0.8, c.scratch)
 
-	# The point: dark shaft, tape at the grip, a bright hook of a tip.
-	var grip := body * hand
-	var point := body * tip
-	var along := (point - grip).normalized()
-	var butt := grip - along * 11.0
-	var shaft := boiled(PackedVector2Array([butt, grip.lerp(point, 0.5), point]), frame, 70, 0.5)
-	k.path(shaft, 2.6, c.edge, 0.15)
-	for i in 4:
-		var at := grip.lerp(point, 0.06 + i * 0.07)
-		var across := along.orthogonal() * 3.2
-		k.hair(at - across, at + across + along * 1.5, 1.4, c.tape)
-	k.fill(PackedVector2Array([point + along * 4.0, point + along.orthogonal() * 2.2 - along * 2.0, point - along.orthogonal() * 2.2 - along * 2.0]), c.edge)
-	if noise > 0.03 and hood < 0.5:
-		# Dragging and striking make noise: the tip throws a few heard sparks.
-		for i in 3:
-			var spark := point + Vector2(side * (-4.0 - i * 4.0), -2.0 - i * 2.5)
-			k.hair(spark, spark + Vector2(-side * 3.0, -2.0), 1.2, Color(pink, noise))
-	# The front arm, over the shaft, to the grip.
+	# The point over the coat (beside the sleeve, it is drawn after the hood),
+	# and the front arm over the point to the grip.
+	var grip: Vector2 = point.grip
 	var shoulder := body * (Vector2(4, -6) * flip)
-	k.path(boiled(PackedVector2Array([shoulder, shoulder.lerp(grip, 0.5) + Vector2(side * 2, 3), grip]), frame, 61), 2.6, c.body, 0.2)
-	k.blob(grip, 2.6, c.body)
+	if hood <= 0.5:
+		Point.draw(k, point, pose, c, pink, tip_kind, frame)
+		k.path(boiled(PackedVector2Array([shoulder, shoulder.lerp(grip, 0.5) + Vector2(side * 2, 3), grip]), frame, 61), 2.6, c.body, 0.2)
+		k.blob(grip, 2.6, c.body)
 
 	# Eyes: void almonds with pinprick pupils. No mouth, ever.
 	var look := Vector2(gesture.eye) * quiet + Vector2(side * 1.0, kneel * 2.0)
@@ -248,15 +249,6 @@ static func draw_skip(canvas: CanvasItem, pose: Dictionary, pink: Color) -> void
 				var fleck := body * (Vector2(side * (-18.0 - i * 3.0), -30.0 + i * 5.0))
 				k.blob(fleck, 1.0 + loud * 0.6, Color(pink, loud * 0.8), 4)
 
-	# Tape trails off him when he really moves.
-	if run > 0.55 and hood < 0.3 and air < 0.6:
-		var trail := PackedVector2Array()
-		var origin := body * (Vector2(-13, -20) * flip)
-		var reach := (run - 0.55) / 0.45
-		for i in 8:
-			trail.append(origin + Vector2(-side * i * 6.0 * reach, sin(time * 13.0 + i * 0.9) * 2.4 + i * 1.2))
-		k.stroke(trail, 1.6, Color(c.tape, 0.9), 0.0, 0.3, 0.3)
-
 	# The hood: a 45 sleeve pulled down over him. Its centre hole is the face.
 	if hood > 0.0:
 		var apex := lerpf(18.0, -50.0, hood)
@@ -280,19 +272,12 @@ static func draw_skip(canvas: CanvasItem, pose: Dictionary, pink: Color) -> void
 			k.outline(ring, 1.4, Color(c.hood_edge, open), 0.1, 0.0)
 			for eye_side: float in [-1.0, 1.0]:
 				k.blob(hole + Vector2(eye_side * 2.6 + side * 0.8, -0.5), 1.1, Color(c.eye, open), 5)
+	if hood > 0.5:
+		Point.draw(k, point, pose, c, pink, tip_kind, frame)
+		k.path(boiled(PackedVector2Array([shoulder, shoulder.lerp(grip, 0.5) + Vector2(side * 2, 3), grip]), frame, 61), 2.6, c.hood_edge, 0.2)
 
-	# Heard: the cut of a stroke, the knock of a landing.
-	if snap > 0.0:
-		var flat := clampf(float(pose.get("flat", 0.0)), 0.0, 1.0)
-		var cut := pink.lerp(c.line, 0.6 * flat + 0.0)
-		_strike_cut(k, combo_step, attack_face, snap, cut, bool(pose.get("big", false)), contact, flat > 0.0)
-	if float(combat.impact) > 0.0:
-		var strength := float(combat.impact)
-		for i in 3:
-			var direction := Vector2.from_angle(-PI * 0.5 + (i - 1) * 0.7 + (0.0 if attack_face > 0 else 0.0))
-			k.hair(point + direction * 3.0, point + direction * (7.0 + 5.0 * strength), 1.6, Color(c.line, strength))
-	if parry > 0.0:
-		_star(k, point, 6.0 + parry * 4.0, Color(c.eye, parry), Color(c.edge, parry))
+	# Heard: what the stroke hits, the knock of a landing.
+	Point.draw_contact(k, point, pose, combat, c, pink)
 	if land > 0.0 and float(pose.get("impact", 0.0)) > 0.35:
 		for foot_side: float in [-1.0, 1.0]:
 			var puff := Vector2(foot_side * (18 + (1.0 - land) * 18), 25 - sin(land * PI) * 4)
@@ -328,24 +313,6 @@ static func _foot(k: Ink, at: Vector2, side: float, big: bool, c: Dictionary, fr
 	k.outline(shape, 1.6, c.edge, 0.1, 0.3)
 	if big:
 		k.hair(at + Vector2(-6 * side, -1), at + Vector2(8 * side, -1), 1.0, c.scratch)
-
-static func _strike_cut(k: Ink, step: int, face: float, snap: float, paint: Color, big: bool, contact: StringName, flat: bool) -> void:
-	var radius := 40.0 + (1.0 - snap) * 12.0
-	var start := -1.15 if step == 1 else (-2.5 if step == 2 else -1.0)
-	var sweep := 1.65 if step == 1 else (3.35 if step == 2 else 1.90)
-	var points := PackedVector2Array()
-	for index in 18:
-		var at := Vector2.from_angle(start + sweep * index / 17.0) * radius
-		at.x *= -1.0 if face < 0.0 else 1.0
-		points.append(at + Vector2(0, -8))
-	var strength := 0.3 if contact == &"miss" else (0.6 if contact == &"guard" else 0.9)
-	var heavy := big or (step == 3 and not flat)
-	k.stroke(points, (4.2 if heavy else 2.6), Color(paint, snap * strength), 0.4, 0.35, 0.15)
-	if step == 3:
-		var direction := -1.0 if face < 0.0 else 1.0
-		for side: float in [-1.0, 1.0]:
-			var mark := Vector2(direction * (radius - 2.0), -8.0 + side * 16.0)
-			k.stroke(PackedVector2Array([mark, mark + Vector2(direction * 11.0, side * 6.0)]), 2.2, Color(paint, snap * strength), 0.2, 0.3, 0.2)
 
 static func _star(k: Ink, center: Vector2, size: float, fill: Color, edge: Color) -> void:
 	var star := PackedVector2Array()
