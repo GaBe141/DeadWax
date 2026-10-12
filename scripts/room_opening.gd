@@ -427,6 +427,7 @@ func apply_side(next_side: int) -> void:
 		next_picture.position = previous.position
 		next_picture.z_index = previous.z_index
 		next_picture.modulate = previous.modulate
+		next_picture.visible = previous.visible
 		next_picture.set_meta("impression_kind", previous.get_meta("impression_kind"))
 		next_picture.set_meta("impression_size", previous.get_meta("impression_size"))
 		remove_child(previous)

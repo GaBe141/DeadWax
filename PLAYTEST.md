@@ -4,8 +4,8 @@ Run `.\deadwax.cmd play` for the authored opening. Start with the chapter
 checklist, then use `.\deadwax.cmd dev` for focused mechanics regressions.
 On Linux, `bash tools/deadwax.sh play`, `dev` and `check` do the same.
 Runtime errors are written to `.godot/deadwax-play.log`.
-Run `.\deadwax.cmd check` before handoff; the complete run contains 63 native
-suites, starting with the canon suite and including batched scenery, animation moments, XP and levels, Groove pressure, Palace shaders/lighting, arena practice, contact feedback, calibrated controllers, movement weight, cinematic presentation,
+Run `.\deadwax.cmd check` before handoff; the complete run contains 64 native
+suites, starting with the canon suite and including the art-direction ink test, batched scenery, animation moments, XP and levels, Groove pressure, Palace shaders/lighting, arena practice, contact feedback, calibrated controllers, movement weight, cinematic presentation,
 Lost Pressings, and Book/map suites. Older review results below retain their
 original suite counts.
 
@@ -17,6 +17,55 @@ original suite counts.
 - Input device:
 - Overall frame pacing: smooth / occasional hitch / frequent hitch
 - Audio clarity and latency:
+
+## Art-direction test — 12 October 2026
+
+The canon leaves the look open until "a side-by-side test of one room"
+(`docs/README.md`, canon status). That test is now in the game: Horn Plaza in
+the locked ink direction (`docs/art/direction.html`, `docs/art/cutaway.html`),
+figures included. See `docs/ARCHITECTURE.md`, "The art-direction ink test".
+
+How to run it: `.\deadwax.cmd play`, continue or start a game, walk to Horn
+Plaza and press **F9**. Press it again to go back to Quiet Wax. Nothing is
+saved and every other room stays Quiet Wax. (Running Godot directly with
+`-- --ink-test` starts with it on.)
+
+What it draws: label paper; thick, tapering, sketched ink; hatching on the
+shadowed third and a faint engraving over every wall; grime, stains, cracks
+and streaks; the boarding house with rooms to let and a bedroom open to the
+street; Tick's window with the metronome; the market's shutters and striped
+awnings; the great horn in brass on its plinth; string lights and a washing
+line; and a cutaway of the ground: the cellar, the storeroom of pressings,
+the drain, the horn's speaking tube going down, a bone the Hound buried, and
+the Overture's worn dust at the bottom. Skip v2 and the Hound v2 are Tier B
+figures that boil at four frames. Pink appears only when sound is heard
+(strikes, Skip's crack chips while he is loud); the Hound's tag is the one
+use of etch gold. With the Jump-Cut, turning the pressing over reprints the
+same drawing as scratchboard, white line out of wax.
+
+Measured under software GL (llvmpipe, Xvfb, 1280×720): ink draws about 73
+draw calls and 210k primitives a frame against Quiet Wax's 400 and 35–43k.
+The first F9 pauses 0.4–0.7 s while the planes are drawn once; after that the
+switch is immediate. The new suite (355 checks) proves the same collision,
+nodes and movement in either look. All 64 suites pass with 15,421 checks; the
+63 earlier suites kept their 15,066 exactly.
+
+- [ ] Readability first (the Tier B rule): can you always find Skip — at a
+  run, mid-strike, under the hood, beside the Hound — against the busier
+  street?
+- [ ] Does pink still read as "heard" when everything else is ink: the
+  strike's cut, the crack chips when you are loud?
+- [ ] Hood up and stand still by the horn: the sleeve's face hole, the
+  Hound coming over, the dull wax buffing back to black.
+- [ ] Does the plaza feel like the canon's Label: print on paper, dense,
+  grungy, a town where the played retired?
+- [ ] With the Jump-Cut, turn the pressing over in the plaza: the
+  scratchboard face.
+- [ ] Frame pacing on your machine in ink, and the one-off pause on the first
+  F9.
+- [ ] Decide: ink, Quiet Wax, or which parts of each. Not covered by the
+  test: other rooms, enemies, the HUD, Book and menus, and boil on scenery
+  (the canon boils souls only).
 
 ## Scenery batching verification — 11 October 2026
 

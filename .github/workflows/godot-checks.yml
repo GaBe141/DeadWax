@@ -157,3 +157,6 @@ jobs:
 
       - name: Validate batched scenery marks
         run: godot --headless --path . --script res://tests/render_batch_test.gd
+
+      - name: Validate the art-direction ink test
+        run: godot --headless --path . --script res://tests/ink_look_test.gd

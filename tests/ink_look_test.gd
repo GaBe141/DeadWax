@@ -1,0 +1,325 @@
+extends SceneTree
+## The art-direction test (scripts/ink_test.gd) is presentation only. Off by
+## default, it draws Horn Plaza in the canon's ink and changes nothing else:
+## the same collision, passages and fixtures, the same movement for the same
+## input, every Quiet Wax layer restored when it is turned off, and no other
+## room touched. Its scenery never uses crackle pink (heard sound) or etch
+## gold (her); Skip's crack chips go pink only while he is loud. A logger
+## fails the run on any script error.
+
+const MainScene := preload("res://scenes/main.tscn")
+const SaveScript := preload("res://scripts/save_store.gd")
+const AbilitiesScript := preload("res://scripts/abilities_state.gd")
+const ProgressionScript := preload("res://scripts/progression_state.gd")
+const InkTest := preload("res://scripts/ink_test.gd")
+const Plaza := preload("res://scripts/press_ink_plaza.gd")
+const Press := preload("res://scripts/press.gd")
+
+class ErrorLog extends Logger:
+	var script_errors: Array[String] = []
+	func _log_error(_function: String, file: String, line: int, code: String, rationale: String,
+			_editor_notify: bool, error_type: int, _backtraces: Array[ScriptBacktrace]) -> void:
+		if error_type == ERROR_TYPE_SCRIPT:
+			script_errors.append("%s:%d %s" % [file, line, rationale if not rationale.is_empty() else code])
+	func _log_message(_message: String, _error: bool) -> void:
+		pass
+
+class Canvas extends Control:
+	var paint: Callable
+	var calls := 0
+	func _draw() -> void:
+		if paint.is_valid():
+			paint.call(self)
+			calls += 1
+
+var _checks := 0
+var _failures: Array[String] = []
+var _directory := ""
+var _main: Node2D
+var _log := ErrorLog.new()
+
+func _init() -> void:
+	call_deferred("_run")
+
+func _run() -> void:
+	OS.add_logger(_log)
+	_directory = "user://deadwax-ink-test-%d-%d" % [OS.get_process_id(), Time.get_ticks_usec()]
+	_check(DirAccess.make_dir_absolute(_directory) == OK, "create private ink fixture")
+	_check(not InkTest.enabled and not InkTest.active, "the ink test is off by default")
+	_check(InkTest.ROOMS == [&"horn_plaza"], "the ink test covers one room, Horn Plaza")
+	await _check_scenery()
+	await _check_figures()
+	await _check_main()
+	InkTest.enabled = false
+	InkTest.active = false
+	InkTest.far_face = false
+	if is_instance_valid(_main):
+		_main.queue_free()
+		await _frames(3)
+	paused = false
+	_check(SaveScript.new(_directory + "/checkpoint.json").delete_save(), "remove private checkpoint")
+	for name in ["settings.cfg", "settings.cfg.tmp"]:
+		if FileAccess.file_exists(_directory + "/" + name):
+			DirAccess.remove_absolute(_directory + "/" + name)
+	_check(DirAccess.remove_absolute(_directory) == OK, "remove private ink fixture")
+	await create_timer(0.2).timeout
+	OS.remove_logger(_log)
+	for error in _log.script_errors:
+		_failures.append("script error: " + error)
+	if _failures.is_empty():
+		print("DEAD WAX INK TEST PASS (%d checks)" % _checks)
+		quit(0)
+		return
+	for failure in _failures:
+		push_error("INK TEST FAIL: " + failure)
+	quit(1)
+
+# -- scenery: every plane draws, and none of it is pink or gold --------------------
+
+func _check_scenery() -> void:
+	var canvas := Canvas.new()
+	canvas.size = Vector2(1280, 720)
+	root.add_child(canvas)
+	Plaza.clear_cache()
+	for far_face in [false, true]:
+		for plane in [&"paper", &"far", &"set"]:
+			canvas.paint = func(c: Control) -> void: Press.draw_ink_room(c, plane, {"far_face": far_face, "exits": Plaza.EXITS})
+			canvas.queue_redraw()
+			await process_frame
+	_check(canvas.calls >= 6, "both faces of every ink plane draw")
+	var triangles := 0
+	var lettering := 0
+	var pink := 0
+	var gold := 0
+	for key in Plaza._tapes:
+		for entry in Plaza._tapes[key]:
+			if entry[0] == &"triangles":
+				triangles += entry[3].size() / 3
+				_check(entry[3].size() % 3 == 0 and entry[1].size() == entry[2].size(), "an ink run is whole triangles with a colour per point")
+				for colour in entry[2]:
+					if colour.a > 0.0 and _same_hue(colour, Press.PINK):
+						pink += 1
+					if colour.a > 0.0 and _same_hue(colour, Press.GOLD):
+						gold += 1
+			elif entry[0] == &"text":
+				lettering += 1
+				_check(not RegEx.create_from_string("(?i)\\b(needles?|stylus(es)?|styli)\\b").search(String(entry[5])), "street lettering never says needle or stylus: %s" % entry[5])
+	_check(Plaza._tapes.size() == 6, "each plane and face is recorded once (%d)" % Plaza._tapes.size())
+	_check(triangles > 50000, "the ink scenery is dense (%d triangles)" % triangles)
+	_check(lettering > 20, "the street carries its lettering (%d runs)" % lettering)
+	_check(pink == 0, "no scenery is crackle pink: pink means heard (%d points)" % pink)
+	_check(gold == 0, "no scenery is etch gold: gold is her (%d points)" % gold)
+	# A recorded plane replays without being built again.
+	var before := Plaza._tapes.size()
+	canvas.paint = func(c: Control) -> void: Press.draw_ink_room(c, &"set", {"far_face": false, "exits": Plaza.EXITS})
+	canvas.queue_redraw()
+	await process_frame
+	_check(Plaza._tapes.size() == before, "a drawn plane is replayed from its tape")
+	canvas.queue_free()
+	await process_frame
+
+func _same_hue(a: Color, b: Color) -> bool:
+	return absf(a.r - b.r) < 0.02 and absf(a.g - b.g) < 0.02 and absf(a.b - b.b) < 0.02
+
+# -- figures and fixtures draw in every state ------------------------------------------
+
+func _check_figures() -> void:
+	var canvas := Canvas.new()
+	canvas.size = Vector2(400, 300)
+	root.add_child(canvas)
+	InkTest.active = true
+	var plans: Array[Callable] = []
+	for far_face in [false, true]:
+		for face in [1.0, -1.0, 0.2]:
+			for extra in [{}, {"run": 1.0, "stride": 1.3}, {"air": 1.0, "vertical": -0.8}, {"hood": 1.0}, {"hood": 0.5},
+					{"set": 1.0}, {"noise": 1.0}, {"strike": 0.8, "combo_step": 1}, {"strike": 0.6, "combo_step": 2, "big": true},
+					{"strike": 0.9, "combo_step": 3, "strike_contact": &"hit", "contact_pulse": 0.8}, {"parry": 0.7},
+					{"hurt": 0.9}, {"land": 0.5, "impact": 0.8}, {"item": 0.5, "item_kind": &"move"}, {"idle": 9.0}]:
+				var pose := _skip_pose(extra)
+				pose["face"] = face
+				plans.append(func(c: Control) -> void:
+					InkTest.far_face = far_face
+					Press.draw_skip(c, pose, {}))
+		for phase in ["patrol", "notice", "approach", "sit", "pet", "startled"]:
+			for face in [1.0, -1.0]:
+				plans.append(func(c: Control) -> void:
+					InkTest.far_face = far_face
+					Press.draw_hound(c, {"phase": phase, "time": 0.4, "clock": 3.0, "gait": 2.0, "face": face,
+						"speed": 0.6, "sit": 1.0 if phase in ["sit", "pet"] else 0.0, "pet": 0.6, "wag": 0.8}, Color.BLACK, Color.WHITE))
+		for state in [{"near": false, "locked": false, "target": &"headshell"}, {"near": true, "locked": false, "target": &"practice_room"},
+				{"near": true, "locked": true, "target": &"headshell"}, {"near": true, "locked": false, "target": &"high_street"}]:
+			plans.append(func(c: Control) -> void: Press.draw_passage(c, state, Color.BLACK, Color.WHITE))
+		for state in [{"done": false, "progress": 0.0, "sparkle": 0.0}, {"done": false, "progress": 0.6, "sparkle": 0.0}, {"done": true, "progress": 1.0, "sparkle": 0.5}]:
+			plans.append(func(c: Control) -> void: Press.draw_polish(c, state))
+		for state in [{"collected": false, "available": false, "near": false}, {"collected": false, "available": true, "near": true, "clock": 1.0}, {"collected": true}]:
+			plans.append(func(c: Control) -> void: Press.draw_lost_pressing(c, state, Color.BLACK, Color.WHITE))
+		for state in [{"available": true, "near": true, "clock": 0.5}, {"available": false}, {"owned": true}]:
+			plans.append(func(c: Control) -> void: Press.draw_ability_pickup(c, state, Color.BLACK, Color.WHITE))
+		plans.append(func(c: Control) -> void: Press.draw_skip_dust(c, [{"at": Vector2(10, 25), "age": 0.4, "size": 1.0}], Color.WHEAT))
+	for plan in plans:
+		canvas.paint = plan
+		canvas.queue_redraw()
+		await process_frame
+	_check(canvas.calls >= plans.size(), "every ink figure and fixture draws (%d plans)" % plans.size())
+	InkTest.active = false
+	InkTest.far_face = false
+	canvas.queue_free()
+	await process_frame
+
+func _skip_pose(extra: Dictionary) -> Dictionary:
+	var pose := {"time": 1.0, "stride": 0.0, "run": 0.0, "air": 0.0, "vertical": 0.0, "hood": 0.0, "set": 0.0,
+		"face": 1.0, "land": 0.0, "impact": 0.0, "launch": 0.0, "strike": 0.0, "big": false, "combo_step": 1,
+		"strike_face": 1.0, "strike_contact": &"miss", "strike_hold": 0.0, "contact_pulse": 0.0, "parry": 0.0,
+		"parry_face": 1.0, "queued": 0.0, "strike_launched": false, "strike_pogo": false, "hurt": 0.0,
+		"hit_direction": -1.0, "noise": 0.0, "flat": 0.0}
+	pose.merge(extra, true)
+	return pose
+
+# -- the room: same world, either look ---------------------------------------------------
+
+func _check_main() -> void:
+	_main = MainScene.instantiate()
+	_main.save_path = _directory + "/checkpoint.json"
+	_main.settings_path = _directory + "/settings.cfg"
+	root.add_child(_main)
+	await _frames(3)
+	_main._new_game(false)
+	await _physics(4)
+	_main.abilities.restore_snapshot(AbilitiesScript.legacy_snapshot())
+	_main._apply_purchases()
+	_main._load_world_room(&"horn_plaza")
+	await _physics(6)
+	var room: Node2D = _main.room
+	var wax_bodies := _bodies(room)
+	var wax_nodes := _node_counts(room)
+	var wax_clear := RenderingServer.get_default_clear_color()
+	_check(room.get("ink_plate") == null and not InkTest.active, "Horn Plaza opens in Quiet Wax")
+	var wax_walk := await _walk(room)
+	_check(wax_walk[-1].x - 560.0 > 60.0, "the walk fixture really moves Skip (%s)" % wax_walk[-1])
+
+	# On: the plate replaces the Quiet Wax layers, and nothing else changes.
+	InkTest.enabled = true
+	_main._apply_ink_test()
+	await _physics(3)
+	var plate: Node = room.get("ink_plate")
+	_check(InkTest.active and is_instance_valid(plate), "F9's switch draws Horn Plaza in ink")
+	_check(is_instance_valid(plate) and plate.get_parent() == room and plate.get_child_count() == 4, "the ink plate holds its paper, far, set and contact planes")
+	_check(not room.atmosphere.visible and not room.lighting.visible, "Quiet Wax air, depth and lamps step aside")
+	var hidden_skins := true
+	for skin in room._skins:
+		hidden_skins = hidden_skins and not skin.visible
+	_check(hidden_skins, "Quiet Wax plates step aside")
+	var hidden_scenery := true
+	for child in room.get_children():
+		if child.has_meta("impression_kind"):
+			hidden_scenery = hidden_scenery and not child.visible
+	_check(hidden_scenery, "Quiet Wax impressions step aside")
+	_check(_bodies(room) == wax_bodies, "collision is identical in ink")
+	_check(_nodes_of(plate, "CollisionObject2D") == 0 and _nodes_of(plate, "CollisionShape2D") == 0, "the ink plate adds no collision")
+	var ink_nodes := _node_counts(room)
+	ink_nodes.erase("InkPlate")
+	_check(ink_nodes == wax_nodes, "the room's own nodes are unchanged in ink")
+	_check(RenderingServer.get_default_clear_color().is_equal_approx(InkTest.LABEL_PAPER), "the page is label paper in ink")
+	var ink_walk := await _walk(room)
+	_check(ink_walk == wax_walk, "the same input moves Skip the same way in either look")
+
+	# The far face reprints the same drawing in scratchboard.
+	_main.progression.unlock_refrain(ProgressionScript.Refrain.JUMP_CUT)
+	_check(bool(_main.pressing.flip()), "the pressing turns over in the ink test")
+	await _physics(2)
+	_check(InkTest.far_face and bool(plate.get("far_face")), "the far face is drawn reversed out of wax")
+	_check(RenderingServer.get_default_clear_color().is_equal_approx(InkTest.WAX), "the far face's page is wax")
+	_main.pressing.call("flip")
+	await _physics(2)
+	_check(not InkTest.far_face and not bool(plate.get("far_face")), "the near face is paper again")
+
+	# Off: every Quiet Wax layer comes back exactly as it was.
+	InkTest.enabled = false
+	_main._apply_ink_test()
+	await _physics(3)
+	_check(not InkTest.active and room.get("ink_plate") == null and not is_instance_valid(plate), "turning the test off removes the ink plate")
+	_check(room.atmosphere.visible and room.lighting.visible, "Quiet Wax air, depth and lamps return")
+	var shown := true
+	for skin in room._skins:
+		shown = shown and skin.visible
+	for child in room.get_children():
+		if child.has_meta("impression_kind"):
+			shown = shown and child.visible
+	_check(shown, "Quiet Wax plates and impressions return")
+	_check(_node_counts(room) == wax_nodes and _bodies(room) == wax_bodies, "the room is as it was before the test")
+	_check(RenderingServer.get_default_clear_color().is_equal_approx(wax_clear), "the room's own page colour returns")
+
+	# Other rooms are never drawn in ink, and coming back draws the plaza again.
+	InkTest.enabled = true
+	_main._apply_ink_test()
+	_main._load_world_room(&"headshell", &"from_horn_plaza")
+	await _physics(4)
+	_check(not InkTest.active and _main.room.get("ink_plate") == null and _main.room.atmosphere.visible, "the Headshell stays Quiet Wax with the test on")
+	_main._load_world_room(&"horn_plaza", &"from_headshell")
+	await _physics(4)
+	_check(InkTest.active and is_instance_valid(_main.room.get("ink_plate")), "returning to Horn Plaza draws it in ink again")
+	_main._load_world_room(&"high_street", &"from_horn_plaza")
+	await _physics(4)
+	_check(not InkTest.active and _main.room.get("ink_plate") == null, "the High Street stays Quiet Wax")
+	InkTest.enabled = false
+	_main._apply_ink_test()
+
+## Holds right for a moment from a fixed start and returns Skip's path.
+func _walk(room: Node2D) -> Array[Vector2]:
+	var player: CharacterBody2D = _main.player
+	player.global_position = Vector2(560, 574)
+	player.velocity = Vector2.ZERO
+	await _physics(4)
+	var path: Array[Vector2] = []
+	Input.action_press("move_right")
+	for frame in 30:
+		await physics_frame
+		path.append(player.global_position.round())
+	Input.action_release("move_right")
+	for frame in 20:
+		await physics_frame
+		path.append(player.global_position.round())
+	return path
+
+func _bodies(room: Node) -> Array:
+	var result: Array = []
+	for node in _all(room):
+		if node is CollisionShape2D and node.shape is RectangleShape2D:
+			result.append([String(room.get_path_to(node)), (node as CollisionShape2D).global_position.round(), (node.shape as RectangleShape2D).size, node.disabled])
+	return result
+
+func _node_counts(room: Node) -> Dictionary:
+	var counts := {}
+	for child in room.get_children():
+		var key := String(child.name) if child.name == &"InkPlate" else child.get_class()
+		counts[key] = int(counts.get(key, 0)) + 1
+	return counts
+
+func _nodes_of(root_node: Node, type: String) -> int:
+	if root_node == null:
+		return 0
+	var count := 0
+	for node in _all(root_node):
+		if node.is_class(type):
+			count += 1
+	return count
+
+func _all(root_node: Node) -> Array[Node]:
+	var result: Array[Node] = [root_node]
+	for child in root_node.get_children():
+		result.append_array(_all(child))
+	return result
+
+func _check(condition: bool, message: String) -> void:
+	_checks += 1
+	if not condition:
+		_failures.append(message)
+
+func _frames(count: int) -> void:
+	for frame in count:
+		await process_frame
+
+func _physics(count: int) -> void:
+	for frame in count:
+		await physics_frame
+		await process_frame

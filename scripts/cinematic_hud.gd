@@ -70,11 +70,17 @@ func _label(font_size: int, display := false) -> Label:
 	add_child(label)
 	return label
 
-func set_palette(ink: Color, accent: Color) -> void:
+## `outline` keeps type legible over the world; the art-direction test's ink
+## (ink_test.gd) sets dark type on a wide paper outline, like a pasted slip.
+func set_palette(ink: Color, accent: Color, outline := Color(0.015, 0.02, 0.025, 0.85), outline_size := 3) -> void:
 	_ink = ink
 	_accent = accent
 	for label in [area_title, action_prompt, dialogue, speaker, notice, xp_receipt]:
-		if label != null: label.add_theme_color_override("font_color", ink)
+		if label != null:
+			label.add_theme_color_override("font_color", ink)
+			label.add_theme_color_override("font_outline_color", outline)
+			label.add_theme_color_override("font_shadow_color", Color(outline, minf(outline.a + 0.05, 1.0)))
+			label.add_theme_constant_override("outline_size", outline_size)
 	queue_redraw()
 
 func set_status(snapshot: Dictionary) -> void:
