@@ -72,7 +72,7 @@ func _support_and_permissions(definition: Dictionary) -> void:
 	var label := String(definition.id)
 	_check(_source.position == definition.position and _source.scale == Vector2.ONE, label + " keeps its fixed origin")
 	_check(not _has_collision(_source), label + " fixture adds no physics")
-	_check(_room._skins.size() == (4 if definition.room_id == &"horn_plaza" else (10 if definition.room_id == &"the_stalls" else 3)), label + " preserves all other authored platforms; actual " + str(_room._skins.size()))
+	_check(_room._skins.size() == (4 if definition.room_id == &"horn_plaza" else (13 if definition.room_id == &"the_stalls" else 3)), label + " preserves all other authored platforms; actual " + str(_room._skins.size()))
 	for arrival in _room.entry_points.values():
 		_check(definition.position.distance_to(arrival) > Fixture.INTERACT_RADIUS, label + " is clear of named arrivals")
 	for child in _room.get_children():

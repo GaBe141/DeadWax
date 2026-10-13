@@ -15,12 +15,17 @@ const Side := preload("res://scripts/pressing_state.gd")
 const GEOMETRY := {
 	&"headshell": ["5880a5ed471989eac5efd8a4b9b2d624b67d639163fa153d549a531588cd6b42", "86b425ad50107e94d2b0e99b6c9d0885cd3bcc9e3bb4d8f0461cef70ee58d060"],
 	&"horn_plaza": ["88c3bc512f911183d3d11c317383dea98ce87966978095150bbe137694ed1fd8", "411b700c5538fd6edc6758efddfb6927f7f0c139afbcb7e57ce04b5e2ee54849"],
-	&"high_street": ["3c4db7d386592563648a8f91b5018b5f7218596e98e7ebcb69f492e01350bd68", "6ca19dbedc85a2c0d7043e777a6bed7c226e93b2ed3264e99b18a64e42a81a73"],
-	&"practice_room": ["3a3306c2892c97b54c584e153f4bfff80a422a9ebe5e2651a686f4dcd8f98081", "f6c36af966594b01887de8b6311b60d8105593904dc5b804825b27f42e02be23"],
-	&"the_stalls": ["0f9613a9b96b6479c658580ae0cdefce3a9f449afac83bc2ed88e625f8f9f869", "388fa1e5880e8b96bf6993345466e1551b23a561978bd9e90cd7f33ee0f8f81a"],
-	&"groove_yard": ["a094ed6dc7a6a8cdee19a5e7d1803cf5f2d044cdebc7e4f3ffb01d6290e6ff90", "8eddb2fc873a4a53168e3aec4c3afc71d75cc0d5ea4fb3eae54adee266a60bf5"],
+	&"high_street": ["3c4db7d386592563648a8f91b5018b5f7218596e98e7ebcb69f492e01350bd68", "459dcef6ae68262ce1c57a2384df5420e4c7adc173a06f3dbd813c73141be0e7"],
+	&"practice_room": ["3a3306c2892c97b54c584e153f4bfff80a422a9ebe5e2651a686f4dcd8f98081", "0dda060f432bee7a912bb553f5a1e00e53757116fd7d6ec856e582a161521b7c"],
+	&"the_stalls": ["32f32d1e0e534c85fc87b372374606bc688f699f92a516534aa4c3acf38b0bb9", "531da1dfe09c6ac36607b352cf0d61ccbaabb430b43d83946b2b72f76f6e47d8"],
+	&"groove_yard": ["d002261233693e5b59689d51cc27d577e55ce00319c5d7e2aeb59eefd3db1e00", "e9562cdda451b90a56f333bfa0ef520087e520bf873c31b3db4033287a469b96"],
 	&"label_descent": ["cf6b2d15b67c78c17af63ad114c0fa1116952c4896648a50650282cfc9f71e7f", "549568a66f376007e4de39165ee6711f0b8a97efe62923a65f71e4d3e8dd1b3c"],
-	&"overture_stair": ["e9e7171eed60e55030840a3461422db6299a77c1aee018700dff0cb0ec5fd6b5", "3d2821849b116d0427a15ccf79d5fb7b39bf30d6c976e3b1cc37867690bfdb96"],
+	&"overture_stair": ["517e46f7c0a6d7459efcf845ce51efba62bf7c3a54c697cb2ee483a5a798d50c", "67220aba3e12f404cf96dbda029b3e2674f6eebbf3d70ad7e48880c459309589"],
+	&"rooms_to_let": ["6d7c150b080ad2e8c1c1a28c15666dceca8d584ec1a4dc864ecba7a3c47c51dd", "da1be87bdbe92fe03cc28b159b3d918e05adf89fb745cebea4c81457a0e66098"],
+	&"print_shop": ["593126b27d20ec83d678e1115091be5a9789925e3dd1d440469b24c292b688af", "2a3c557045b7235d98371511f1541c66264f028344679f5c176b82563bc98c4b"],
+	&"stall_cache": ["9f08f1d2b8c875f858b26a7faf7b4e7db2a9cfebd728c392f7e9a3940d26ef53", "d7e9d46b4be442872863abb2bca265026e60be268541a078bcb96757b33f4189"],
+	&"label_balcony": ["9f08f1d2b8c875f858b26a7faf7b4e7db2a9cfebd728c392f7e9a3940d26ef53", "9e5418704c1f0ed09ba6f728adbe81ce5edc0131256561d0e3c3353fd2834d3b"],
+	&"unsigned_alcove": ["6d7c150b080ad2e8c1c1a28c15666dceca8d584ec1a4dc864ecba7a3c47c51dd", "0e3a935b68106bae49e05cb60711b1a77ed511ebb4f419f6f8339569cc5779f2"],
 	&"bootlegger": ["0fbd861f7da0ce6d392af9f306bdef174d4dc26769268f10dae242021a88fe40", "7fb4dc51e827641469249103e182f41021fed86abcad6de7a3cd617d8a960227"],
 	&"whistlers": ["657687e5f8f03462a57bfe59432aaa2116fce147fb50d3f2dab550274d70749c", "c028487a0347c0f14fa2c4edd0f739a7e64fa5bb26a14448e4e9313186e196e3"],
 	&"addie": ["fabbd294383eca1f6c0716fbf5dea6c1e3961be51a238244d3dc1637a0fff020", "8f9341c1edd383acde871ba958933b2e54f14a5b113c99a1c703fa16bc7b95b6"],
@@ -114,7 +119,7 @@ func _check_shader_sources() -> void:
 			and not code.contains("sampler2D"), "world shader palette and local relief need no texture dependency: " + path)
 
 func _check_authored_world() -> void:
-	_check(Campaign.room_ids().size() == 21 and GEOMETRY.size() == 21, "the shipped campaign retains exactly twenty-one authored rooms")
+	_check(Campaign.room_ids().size() == 26 and GEOMETRY.size() == 26, "the shipped campaign retains exactly twenty-six authored rooms")
 	var previous_air: WeakRef
 	var previous_light: WeakRef
 	for id in Campaign.room_ids():

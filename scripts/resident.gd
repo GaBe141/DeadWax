@@ -59,7 +59,11 @@ func try_listen() -> bool:
 	if not super.try_listen():
 		return false
 	_talk = TALK_TIME
-	_sound("tick", -24.0, 0.82 if kind == &"bootlegger" else 1.35)
+	match kind:
+		&"bootlegger": _sound("tick", -24.0, 0.82)
+		&"matron": _sound("tick", -26.0, 0.68)
+		&"typesetter": _sound("tick", -22.0, 1.62)   # a sort clicking into the stick
+		_: _sound("tick", -24.0, 1.35)
 	queue_redraw()
 	return true
 
@@ -82,17 +86,51 @@ func _sound(id: String, volume: float, pitch: float) -> void:
 	if bank != null:
 		bank.call("play", id, volume, pitch)
 
+## The outcome each resident listens for. Matron's seventh phrase waits on
+## Addie; the Typesetter heard the gate counted in from his shop.
+static func story_key_for(kind_id: StringName) -> String:
+	match kind_id:
+		&"tick": return "practice_room/practice_count_in"
+		&"matron": return "addie/addie"
+		&"typesetter": return "label_descent/descent_count_in"
+	return "the_arm/tonearm"
+
 func _refresh_story() -> void:
-	var key := String(session_outcomes.get(
-		"practice_room/practice_count_in" if kind == &"tick" else "the_arm/tonearm", ""
-	))
+	var key := String(session_outcomes.get(story_key_for(kind), ""))
 	# A first visit has an empty outcome too, so also initialize the spoken lines.
 	if key == _story_key and not lines.is_empty():
 		return
 	_story_key = key
 	_line = -1
 	_dialogue_remaining = 0.0
-	if kind == &"tick":
+	if kind == &"matron":
+		# Six worn-smooth pleasantries, warm as radiator pipes. The seventh
+		# only comes once Addie has heard her ending.
+		heading = "MATRON 33⅓"
+		lines = [
+			"there's the pot, love.\nmind the step.",
+			"the bed's made.\nit's always made.",
+			"wipe your feet, there's a dear.\nthe wax tracks in.",
+			"you look peaky.\nsit a while. sit a while.",
+			"the pipes knock at night.\nthat's only the house, love.",
+			"there's the pot.\nmind the step. sleep well.",
+		]
+		if key == "freed":
+			lines.append("addie heard the end, then.\ngood. good.\nnow you, love. there's the pot.")
+	elif kind == &"typesetter":
+		# Deadpan; every sentence set before it is spoken.
+		heading = "THE TYPESETTER"
+		lines = [
+			"i print. the wall forgets.\nwe split the difference.\nwhat'll it be.",
+			"tomorrow's poster, set tonight.\nTHE VOICE, CONT'D.\nit has said that for years.",
+			"every notice in this town\nwent through my hands.\nincluding the last one.",
+			"the cancelled stamps were mine.\ni set them straight.\nthat is the job.",
+		]
+		if key == "opened":
+			lines.append("you counted the gate in.\ni heard it from here. four. even.\ni'd have set it tighter.")
+		else:
+			lines.append("the gate below the yard listens.\nfour even strikes.\ni set that notice too. nobody read it.")
+	elif kind == &"tick":
 		heading = "TICK"
 		if key == "opened":
 			lines = [

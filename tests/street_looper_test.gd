@@ -188,7 +188,7 @@ func _native_guard_and_recovery() -> void:
 				continue
 			exits += 1
 			_check(child.required_refrain == -1, "High Street passage remains free of encounter permissions")
-	_check(exits == 2 and returns == 1 and not (foe is PhysicsBody2D), "both original routes remain beside the new return and the Looper adds no collision barrier")
+	_check(exits == 4 and returns == 1 and not (foe is PhysicsBody2D), "all four street doors remain beside the new return and the Looper adds no collision barrier")
 	_main._on_route_requested(&"practice_room", &"from_high_street")
 	await _physics(4)
 	_check(_main.world_room_id == &"practice_room" and not _main.encounters.has(KEY), "leaving High Street does not require defeating the Looper")

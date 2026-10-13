@@ -157,3 +157,6 @@ jobs:
 
       - name: Validate batched scenery marks
         run: godot --headless --path . --script res://tests/render_batch_test.gd
+
+      - name: Validate the Label's side rooms
+        run: godot --headless --path . --script res://tests/label_rooms_test.gd

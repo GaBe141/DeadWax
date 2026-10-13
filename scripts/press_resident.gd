@@ -20,6 +20,10 @@ static func draw(canvas: CanvasItem, kind: StringName, pose: Dictionary, ink: Co
 			_bootlegger(canvas, clean, ink, stock)
 		&"tick":
 			_tick(canvas, clean, ink, stock)
+		&"matron":
+			_matron(canvas, clean, ink, stock)
+		&"typesetter":
+			_typesetter(canvas, clean, ink, stock)
 
 static func _number(pose: Dictionary, key: String, fallback := 0.0) -> float:
 	var value: Variant = pose.get(key, fallback)
@@ -205,6 +209,195 @@ static func _tick(canvas: CanvasItem, pose: Dictionary, ink: Color, stock: Color
 			var mark_color := warm if mark <= beat and beat < 3 else Color(ink, 0.25)
 			var point := shift + Vector2(-10.0 + mark * 10.0, -111.0)
 			canvas.draw_line(point, point + Vector2(0.0, 5.0), mark_color, 2.5, true)
+
+## MATRON 33⅓. Worn-smooth pleasantries, hands that still improvise: she
+## crochets sleeve-patches from unravelled tape ribbon while she talks. Her
+## hair is a stacked spindle of 45s. Warm as radiator pipes, planted as one.
+static func _matron(canvas: CanvasItem, pose: Dictionary, ink: Color, stock: Color) -> void:
+	var paint := Paint.palette(ink, stock)
+	ink = paint.edge
+	var clock: float = pose.clock
+	var face: float = pose.face
+	var talking: float = pose.talking
+	var greeting: float = pose.greeting
+	var startle: float = pose.startle
+	var breath := sin(clock * 1.4)
+	var paper: Color = paint.cream
+	var housecoat: Color = paint.coat.lerp(paint.copper, 0.28)
+	var apron: Color = paint.cream.lerp(paint.wax, 0.35)
+	var shift := Vector2(face * (talking * 1.2 - startle * 2.0), breath * 1.1 + startle * 1.5)
+	# Slippers, planted. She has not left this floor in a long time.
+	canvas.draw_line(Vector2(-19.0, 25.0), Vector2(-4.0, 25.0), paint.wood, 5.0, true)
+	canvas.draw_line(Vector2(6.0, 25.0), Vector2(21.0, 25.0), paint.wood, 5.0, true)
+	canvas.draw_set_transform(shift)
+	# A broad housecoat over a broader apron: the silhouette is a bell.
+	canvas.draw_colored_polygon(PackedVector2Array([
+		Vector2(-24, -88), Vector2(22, -89), Vector2(36, -40), Vector2(38, 18),
+		Vector2(-38, 19), Vector2(-36, -42),
+	]), paint.shadow)
+	canvas.draw_colored_polygon(PackedVector2Array([
+		Vector2(-21, -84), Vector2(19, -85), Vector2(32, -42), Vector2(34, 14),
+		Vector2(-34, 15), Vector2(-32, -44),
+	]), housecoat)
+	canvas.draw_colored_polygon(PackedVector2Array([Vector2(19, -85), Vector2(32, -42), Vector2(34, 14), Vector2(22, 14), Vector2(16, -40)]), housecoat.lerp(paint.shadow, 0.45))
+	Paint.shape(canvas, PackedVector2Array([Vector2(-20, -52), Vector2(20, -52), Vector2(26, 10), Vector2(-26, 10)]), apron, ink, 1.3)
+	Paint.hatch(canvas, Vector2(-8, 6), 26, 30, Color(paint.wax, 0.26), 4)
+	canvas.draw_line(Vector2(-21, -52), Vector2(21, -52), paint.copper, 2.2, true)
+	# Pockets that hold tape ends, and a line of tiny buttons, each a 45's label.
+	for y in [-40.0, -28.0, -16.0]:
+		Paint.disc(canvas, Vector2(0, y), 2.4, paint.light, ink, paint.light)
+	canvas.draw_rect(Rect2(-22, -22, 13, 11), Color(paint.wax, 0.45))
+	canvas.draw_rect(Rect2(9, -22, 13, 11), Color(paint.wax, 0.45))
+	# A collar of cream wool. Her coat has outlived every guest.
+	Paint.shape(canvas, PackedVector2Array([Vector2(-22, -90), Vector2(-8, -78), Vector2(8, -78), Vector2(22, -90), Vector2(12, -96), Vector2(-12, -96)]), paper, ink, 1.4)
+	canvas.draw_set_transform(Vector2.ZERO)
+	var head := shift + Vector2(face * (2.0 + (1.5 if pose.near else 0.0)) - face * startle * 4.0, -108.0 + breath * 1.2 - startle * 2.0)
+	var tilt := face * (-0.05 + talking * sin(clock * 3.6) * 0.03 + greeting * 0.06)
+	canvas.draw_set_transform(head, tilt)
+	# A soft round face, cheeks warm from the pipes.
+	Paint.shape(canvas, PackedVector2Array([Vector2(-15, -12), Vector2(14, -13), Vector2(17, 6), Vector2(8, 16), Vector2(-10, 16), Vector2(-17, 6)]), paint.cream, ink, 1.6)
+	canvas.draw_colored_polygon(PackedVector2Array([Vector2(6, -11), Vector2(14, -12), Vector2(17, 6), Vector2(8, 16), Vector2(3, 8)]), paint.wax.lerp(paint.wood, 0.14))
+	for side in [-1.0, 1.0]:
+		canvas.draw_circle(Vector2(face * 2.0 + side * 8.0, 7.0), 3.4, Color(paint.coral, 0.34), true, -1.0, true)
+		var eye := Vector2(face * 2.5 + side * 5.5, -2.0)
+		canvas.draw_line(eye + Vector2(-2.2, 0.4), eye + Vector2(2.2, 0.2), ink, 1.6, true)
+		canvas.draw_line(eye + Vector2(-2.3, -2.1), eye + Vector2(2.1, -2.1), Color(paint.wood, 0.5), 1.0, true)
+	canvas.draw_line(Vector2(-3, 11), Vector2(4, 11 - talking * 1.4), ink, 1.2, true)
+	# The spindle of 45s: a leaning stack of small records, labels out.
+	var lean := face * 0.09 + sin(clock * 0.9) * 0.02
+	for index in range(5):
+		var y := -16.0 - index * 7.5
+		var record := Vector2(index * lean * 6.0, y)
+		canvas.draw_set_transform(head + record.rotated(tilt), tilt + lean)
+		canvas.draw_colored_polygon(PackedVector2Array([Vector2(-15, 3.5), Vector2(15, 3.5), Vector2(14, -3.5), Vector2(-14, -3.5)]), ink)
+		canvas.draw_line(Vector2(-13, 0), Vector2(13, 0), Color(paint.shadow.lerp(paint.light, 0.25), 0.7), 1.2, true)
+		canvas.draw_colored_polygon(PackedVector2Array([Vector2(-5, 2.5), Vector2(5, 2.5), Vector2(5, -2.5), Vector2(-5, -2.5)]), [paint.coral, paint.gold, paint.teal, paint.copper, paint.cream][index])
+		canvas.draw_circle(Vector2(0, 0), 1.1, ink, true, -1.0, true)
+	canvas.draw_set_transform(head + Vector2(5 * lean * 6.0, -53.0).rotated(tilt), tilt + lean)
+	canvas.draw_line(Vector2(0, 4), Vector2(0, -6), paint.brass, 2.2, true)
+	canvas.draw_set_transform(Vector2.ZERO)
+	# Hands. One holds the crochet hook, the other the ribbon it pulls from a
+	# basket; the greeting lifts the work, the pleasantry barely moves it.
+	var work := sin(clock * 5.0) * (1.0 - greeting) * 1.6
+	var hook_hand := shift + Vector2(face * (26.0 + talking * 2.0), -48.0 - greeting * 20.0 + work)
+	var ribbon_hand := shift + Vector2(-face * 20.0, -42.0 - greeting * 6.0 - work)
+	_arm(canvas, shift + Vector2(face * 22.0, -74.0), shift + Vector2(face * 34.0, -60.0), hook_hand, housecoat, paper, 11.0, ink, paint.wax)
+	_arm(canvas, shift + Vector2(-face * 22.0, -74.0), shift + Vector2(-face * 32.0, -58.0), ribbon_hand, housecoat, paper, 11.0, ink, paint.wax)
+	canvas.draw_line(hook_hand, hook_hand + Vector2(face * 9.0, -7.0), paint.brass, 2.2, true)
+	canvas.draw_arc(hook_hand + Vector2(face * 9.5, -8.5), 2.2, 0, PI * 1.5, 8, paint.brass, 1.6, true)
+	var basket := shift + Vector2(-face * 44.0, 12.0)
+	Paint.shape(canvas, PackedVector2Array([basket + Vector2(-13, -9), basket + Vector2(13, -9), basket + Vector2(10, 11), basket + Vector2(-10, 11)]), paint.wood, ink, 1.3)
+	Paint.hatch(canvas, basket + Vector2(0, 8), 18, 14, Color(paint.cream, 0.3), 4)
+	var ribbon: Color = paint.copper.lerp(paint.coral, 0.3)
+	var strand := PackedVector2Array()
+	for sample in range(9):
+		var t := sample / 8.0
+		var along := ribbon_hand.lerp(basket + Vector2(0, -8), t)
+		strand.append(along + Vector2(sin(t * PI * 2.0 + clock * 2.0) * 5.0 * (1.0 - t), sin(t * PI) * 10.0))
+	canvas.draw_polyline(strand, ribbon, 2.0, true)
+	var patch := hook_hand.lerp(ribbon_hand, 0.5) + Vector2(0, 6)
+	for row in range(3):
+		canvas.draw_line(patch + Vector2(-7, row * 3.0 - 3.0), patch + Vector2(7, row * 3.0 - 2.5), Color(ribbon, 0.75), 1.4, true)
+	if pose.near or talking > 0.02:
+		# The teapot waits on its ring; there is always the pot.
+		var pot := shift + Vector2(face * 46.0, 8.0)
+		Paint.disc(canvas, pot, 8.0, paint.teal, ink, paint.light)
+		canvas.draw_line(pot + Vector2(-face * 8.0, -2.0), pot + Vector2(-face * 15.0, -8.0), ink, 2.0, true)
+		canvas.draw_line(pot + Vector2(face * 7.0, -3.0), pot + Vector2(face * 11.0, 1.0), ink, 2.2, true)
+		canvas.draw_line(pot + Vector2(0, -8.0), pot + Vector2(0, -11.0), paint.brass, 2.0, true)
+		for wisp in range(2):
+			var y := -14.0 - fposmod(clock * 9.0 + wisp * 7.0, 14.0)
+			canvas.draw_line(pot + Vector2(wisp * 3.0 - 1.0, y), pot + Vector2(wisp * 3.0 + 1.0, y - 4.0), Color(paint.light, 0.35 * (1.0 + y / 28.0)), 1.0, true)
+
+## THE TYPESETTER. The last printer; deadpan; every sentence set before it is
+## spoken. Composing stick in one hand, the other picking sorts from the case
+## at his waist. He sets tomorrow's poster every night, for no one.
+static func _typesetter(canvas: CanvasItem, pose: Dictionary, ink: Color, stock: Color) -> void:
+	var paint := Paint.palette(ink, stock)
+	ink = paint.edge
+	var clock: float = pose.clock
+	var face: float = pose.face
+	var talking: float = pose.talking
+	var greeting: float = pose.greeting
+	var startle: float = pose.startle
+	var breath := sin(clock * 1.7) * 0.8
+	var paper: Color = paint.cream
+	var apron: Color = paint.shadow.lerp(paint.coat, 0.35)
+	var shirt: Color = paint.cream.lerp(paint.wax, 0.5)
+	# Type is picked in a steady rhythm; the hand returns to the stick each beat.
+	var beat := fposmod(clock, 1.1) / 1.1
+	var pick := sin(beat * PI) * (1.0 - greeting) * (1.0 - talking * 0.6)
+	var shift := Vector2(face * (talking * 0.8 - startle * 2.5), breath + startle * 1.5)
+	# Narrow boots, a long still stance.
+	canvas.draw_line(Vector2(-13.0, 25.0), Vector2(-1.0, 25.0), ink, 4.5, true)
+	canvas.draw_line(Vector2(5.0, 25.0), Vector2(17.0, 25.0), ink, 4.5, true)
+	canvas.draw_set_transform(shift)
+	# A tall thin figure: shirt sleeves, a long apron stained to the hem.
+	canvas.draw_colored_polygon(PackedVector2Array([Vector2(-18, -96), Vector2(16, -97), Vector2(22, -40), Vector2(20, 20), Vector2(-20, 20), Vector2(-22, -42)]), paint.shadow)
+	canvas.draw_colored_polygon(PackedVector2Array([Vector2(-15, -92), Vector2(13, -93), Vector2(18, -46), Vector2(-18, -47)]), shirt)
+	Paint.shape(canvas, PackedVector2Array([Vector2(-14, -78), Vector2(13, -78), Vector2(19, 16), Vector2(-19, 16)]), apron, ink, 1.4)
+	canvas.draw_line(Vector2(-14, -78), Vector2(-9, -94), paint.wood, 2.0, true)
+	canvas.draw_line(Vector2(13, -78), Vector2(8, -94), paint.wood, 2.0, true)
+	# Ink: a thumbprint and two wiped smears on the apron, never cleaned.
+	canvas.draw_circle(Vector2(6, -30), 3.0, Color(ink, 0.55), true, -1.0, true)
+	Paint.hatch(canvas, Vector2(-7, 4), 10, 22, Color(ink, 0.42), 2)
+	Paint.hatch(canvas, Vector2(9, -4), 8, 14, Color(ink, 0.36), 2)
+	# Sleeve garters, brass: the one bright thing he allows himself.
+	for side in [-1.0, 1.0]:
+		canvas.draw_line(Vector2(side * 17.0, -70.0), Vector2(side * 21.0, -66.0), paint.brass, 2.4, true)
+	# The type case at his waist: rows of sorts, a few picked clean.
+	canvas.draw_rect(Rect2(-24, -40, 48, 15), paint.wood)
+	canvas.draw_line(Vector2(-24, -40), Vector2(24, -40), paint.brass, 1.6, true)
+	for column in range(8):
+		for row in range(2):
+			var cell := Vector2(-21 + column * 6, -37 + row * 6)
+			var empty := (column * 3 + row * 5) % 7 == 0
+			canvas.draw_rect(Rect2(cell, Vector2(4, 4)), Color(paint.shadow, 0.6) if empty else paper.lerp(ink, 0.25))
+	canvas.draw_set_transform(Vector2.ZERO)
+	# A long face under a green eyeshade; spectacles; the mouth barely moves.
+	var head := shift + Vector2(face * (2.5 + (1.0 if pose.near else 0.0)) - face * startle * 3.0, -114.0 + breath * 0.6 - startle * 2.0)
+	var nod := face * (-0.04 + greeting * 0.08 - startle * 0.08 + talking * sin(clock * 2.0) * 0.015)
+	canvas.draw_set_transform(head, nod)
+	Paint.shape(canvas, PackedVector2Array([Vector2(-11, -16), Vector2(10, -17), Vector2(13, 10), Vector2(6, 20), Vector2(-7, 20), Vector2(-13, 9)]), paint.cream, ink, 1.6)
+	canvas.draw_colored_polygon(PackedVector2Array([Vector2(4, -15), Vector2(10, -17), Vector2(13, 10), Vector2(6, 20), Vector2(2, 9)]), paint.wax.lerp(paint.wood, 0.18))
+	# The eyeshade: a translucent green visor on a band, tilted as he reads.
+	Paint.shape(canvas, PackedVector2Array([Vector2(-19, -12), Vector2(17, -13), Vector2(23, -4), Vector2(-25, -3)]), Color(paint.teal, 0.82), ink, 1.3)
+	canvas.draw_line(Vector2(-13, -14), Vector2(12, -15), paint.shadow, 2.0, true)
+	canvas.draw_colored_polygon(PackedVector2Array([Vector2(-12, -22), Vector2(11, -23), Vector2(12, -15), Vector2(-13, -14)]), paint.shadow)
+	for side in [-1.0, 1.0]:
+		var eye := Vector2(face * 2.0 + side * 5.5, 1.5)
+		canvas.draw_arc(eye, 4.2, 0, TAU, 14, Color(paint.brass, 0.9), 1.0, true)
+		canvas.draw_line(eye + Vector2(-1.8, 0.3), eye + Vector2(1.8, 0.3), ink, 1.5, true)
+	canvas.draw_line(Vector2(-2.5, 1.5), Vector2(2.5, 1.5), Color(paint.brass, 0.9), 1.0, true)
+	canvas.draw_line(Vector2(-3, 13), Vector2(4, 13 - talking * 0.6), ink, 1.3, true)
+	canvas.draw_set_transform(Vector2.ZERO)
+	# The composing stick rides level in the near hand. While he talks the
+	# line he set tilts toward whoever is listening: typeset, then spoken.
+	var stick_hand := shift + Vector2(face * (24.0 + talking * 4.0), -56.0 - greeting * 10.0 - talking * 6.0)
+	var pick_hand := shift + Vector2(-face * (6.0 + pick * 14.0), -34.0 - pick * 20.0 + greeting * 2.0)
+	_arm(canvas, shift + Vector2(face * 15.0, -84.0), shift + Vector2(face * 28.0, -70.0), stick_hand, shirt, paper, 8.5, ink, paint.light)
+	_arm(canvas, shift + Vector2(-face * 15.0, -84.0), shift + Vector2(-face * 26.0, -62.0), pick_hand, shirt, paper, 8.5, ink, paint.light)
+	canvas.draw_set_transform(stick_hand, face * (-0.12 - talking * 0.22))
+	canvas.draw_rect(Rect2(-16, -6, 32, 8), paint.brass)
+	canvas.draw_rect(Rect2(-15, -5, 30, 6), paint.brass.lerp(ink, 0.35))
+	for sort in range(7):
+		var set_count := 4 + int(talking * 3.0)
+		if sort < set_count:
+			canvas.draw_rect(Rect2(-14 + sort * 4, -4, 3, 4), paper.lerp(ink, 0.2))
+	canvas.draw_line(Vector2(-16, 3), Vector2(16, 3), Color(paint.light, 0.5), 1.0, true)
+	canvas.draw_set_transform(Vector2.ZERO)
+	if pick > 0.6:
+		# One sort between finger and thumb, on its way to the line.
+		canvas.draw_rect(Rect2(pick_hand + Vector2(-1.5, -2), Vector2(3, 4)), paper.lerp(ink, 0.2))
+	if pose.near or talking > 0.02:
+		# Tomorrow's poster, pegged to dry: set tonight, like every night.
+		var poster := shift + Vector2(-face * 52.0, -74.0)
+		canvas.draw_line(poster + Vector2(-16, -22), poster + Vector2(16, -22), paint.copper, 1.6, true)
+		Paint.shape(canvas, PackedVector2Array([poster + Vector2(-13, -20), poster + Vector2(13, -20), poster + Vector2(13, 16), poster + Vector2(-13, 16)]), paper, ink, 1.2)
+		for line in range(4):
+			var width: float = [18.0, 10.0, 16.0, 7.0][line]
+			canvas.draw_line(poster + Vector2(-width * 0.5, -13 + line * 7), poster + Vector2(width * 0.5, -13 + line * 7), Color(ink, 0.7 if line == 0 else 0.45), 2.0 if line == 0 else 1.2, true)
+		canvas.draw_line(poster + Vector2(-8, 10), poster + Vector2(8, 10), Color(paint.coral, 0.85), 2.2, true)
 
 static func _arm(canvas: CanvasItem, shoulder: Vector2, elbow: Vector2, hand: Vector2, ink: Color, paper: Color, width: float, edge: Color, highlight: Color) -> void:
 	# Overlapping rounded segments keep folded elbows clean even when an

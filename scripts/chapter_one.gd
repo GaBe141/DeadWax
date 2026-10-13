@@ -8,6 +8,8 @@ const END_ROOM: StringName = &"overture_stair"
 const IDS: Array[StringName] = [
 	&"headshell", &"horn_plaza", &"high_street", &"practice_room",
 	&"the_stalls", &"groove_yard", &"label_descent", &"overture_stair",
+	# The side rooms: a west loop, two secrets and a second way down.
+	&"rooms_to_let", &"print_shop", &"stall_cache", &"label_balcony", &"unsigned_alcove",
 ]
 
 static func has_room(id: StringName) -> bool:

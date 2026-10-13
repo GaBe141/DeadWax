@@ -1,6 +1,6 @@
 # Dead Wax agent notes
 
-Dead Wax is a Godot 4.7 2D metroidvania: 21 authored campaign rooms across the
+Dead Wax is a Godot 4.7 2D metroidvania: 26 authored campaign rooms across the
 Label, the Overture and the first loop of the Unplayed, on the GL
 Compatibility renderer. Everything is built from code at runtime and all audio
 is synthesized. The rest of the planned 53-room world is development
@@ -126,7 +126,7 @@ Keep this file short. Coding agents only read the first part of it (Codex reads
   expected.
 - `scripts/press.gd` owns the visual language (plates, type, colours) and
   dispatches the pure `press_*.gd` drawing helpers.
-- `scripts/campaign.gd` registers the 21 authored rooms through
+- `scripts/campaign.gd` registers the 26 authored rooms through
   `chapter_one/two/three.gd` and `room_opening.gd`, `room_overture.gd` and
   `room_unplayed_campaign.gd`.
 - `data/world_map.json` (schema v2) is the 53-room plan, read by

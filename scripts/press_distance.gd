@@ -25,7 +25,7 @@ static func draw(c: CanvasItem, id: StringName, area: Rect2, ink: Color, stock: 
 		_vault(c, size, p, id)
 	elif id in HALLS:
 		_hall(c, size, p, id)
-	elif id in [&"headshell", &"practice_room", &"label_descent"]:
+	elif id in [&"headshell", &"practice_room", &"label_descent", &"rooms_to_let", &"print_shop", &"stall_cache", &"unsigned_alcove"]:
 		_cradle(c, size, p, id)
 	else:
 		_roofs(c, size, p, id)

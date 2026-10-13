@@ -72,8 +72,8 @@ func _check_completion_rules() -> void:
 
 func _check_full_registry() -> void:
 	var ids: Array[StringName] = CampaignScript.room_ids()
-	_check(ids.size() == 21 and ChapterOne.room_ids().size() == 8 and ChapterTwo.room_ids().size() == 7 and ChapterThree.room_ids().size() == 6,
-		"campaign combines eight opening, seven Overture and six Unplayed rooms")
+	_check(ids.size() == 26 and ChapterOne.room_ids().size() == 13 and ChapterTwo.room_ids().size() == 7 and ChapterThree.room_ids().size() == 6,
+		"campaign combines thirteen Label, seven Overture and six Unplayed rooms")
 	_check(CampaignScript.START_ROOM == &"headshell" and CampaignScript.END_ROOM == &"the_arm",
 		"campaign begins at home and ends at the Tonearm")
 	_check(not CampaignScript.has_room(&"undersong_sump") and CampaignScript.create_room(&"undersong_sump") == null,

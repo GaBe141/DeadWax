@@ -1,5 +1,6 @@
 extends RefCounted
 ## The folded guide describes only authored campaign rooms and their passages.
+## Twenty-six rooms and thirty-three undirected pairs, the earned returns included.
 ## Pure data: safe for map/save models without loading scenes or room factories.
 ## Positions belong to a region's sheet. The Drop shares the Unplayed page as
 ## its approach; this guide grouping does not replace its Scratch stratum.
@@ -12,13 +13,20 @@ const REGIONS := [
 	{"id": &"unplayed", "title": "THE UNPLAYED"},
 ]
 const ROOMS := [
-	{"id": &"headshell", "region": &"label", "label": "The Headshell", "title": "HEADSHELL", "position": Vector2(145, 205)},
-	{"id": &"horn_plaza", "region": &"label", "label": "The Horn Plaza", "title": "HORN PLAZA", "position": Vector2(365, 205)},
-	{"id": &"high_street", "region": &"label", "label": "The High Street", "title": "HIGH STREET", "position": Vector2(365, 75)},
-	{"id": &"practice_room", "region": &"label", "label": "The Practice Room", "title": "PRACTICE\nROOM", "position": Vector2(585, 75)},
-	{"id": &"the_stalls", "region": &"label", "label": "The Stalls", "title": "THE STALLS", "position": Vector2(585, 205)},
-	{"id": &"groove_yard", "region": &"label", "label": "The Locked-Groove Yard", "title": "LOCKED-GROOVE\nYARD", "position": Vector2(805, 205)},
-	{"id": &"label_descent", "region": &"label", "label": "The Descent Gate", "title": "DESCENT\nGATE", "position": Vector2(805, 350)},
+	# The Label's sheet: home above the plaza, the west loop to its left, the
+	# market and the yard to its right, the secrets above and below them.
+	{"id": &"headshell", "region": &"label", "label": "The Headshell", "title": "HEADSHELL", "position": Vector2(500, 40)},
+	{"id": &"horn_plaza", "region": &"label", "label": "The Horn Plaza", "title": "HORN PLAZA", "position": Vector2(500, 130)},
+	{"id": &"high_street", "region": &"label", "label": "The High Street", "title": "HIGH STREET", "position": Vector2(300, 130)},
+	{"id": &"practice_room", "region": &"label", "label": "The Practice Room", "title": "PRACTICE\nROOM", "position": Vector2(300, 40)},
+	{"id": &"print_shop", "region": &"label", "label": "The Print Shop", "title": "PRINT SHOP", "position": Vector2(100, 40)},
+	{"id": &"rooms_to_let", "region": &"label", "label": "Rooms To Let", "title": "ROOMS\nTO LET", "position": Vector2(100, 130)},
+	{"id": &"the_stalls", "region": &"label", "label": "The Stalls", "title": "THE STALLS", "position": Vector2(700, 130)},
+	{"id": &"label_balcony", "region": &"label", "label": "The Label Balcony", "title": "THE\nBALCONY", "position": Vector2(900, 40)},
+	{"id": &"stall_cache", "region": &"label", "label": "The Stall Cache", "title": "STALL\nCACHE", "position": Vector2(600, 220)},
+	{"id": &"groove_yard", "region": &"label", "label": "The Locked-Groove Yard", "title": "LOCKED-GROOVE\nYARD", "position": Vector2(900, 130)},
+	{"id": &"unsigned_alcove", "region": &"label", "label": "The Unsigned Alcove", "title": "UNSIGNED\nALCOVE", "position": Vector2(700, 310)},
+	{"id": &"label_descent", "region": &"label", "label": "The Descent Gate", "title": "DESCENT\nGATE", "position": Vector2(900, 310)},
 	{"id": &"overture_stair", "region": &"overture", "label": "The Overture Stair", "title": "OVERTURE\nSTAIR", "position": Vector2(165, 75)},
 	{"id": &"bootlegger", "region": &"overture", "label": "The Bootlegger's Stall", "title": "BOOTLEGGER", "position": Vector2(385, 75)},
 	{"id": &"whistlers", "region": &"overture", "label": "The Whistlers", "title": "WHISTLERS", "position": Vector2(605, 75)},
@@ -36,14 +44,16 @@ const ROOMS := [
 ]
 ## A border marker represents only the real passage leading off this sheet.
 const BOUNDARIES := [
-	{"region": &"label", "id": &"overture_stair", "position": Vector2(805, 408)},
-	{"region": &"label", "id": &"worn_gallery", "position": Vector2(365, 350)},
-	{"region": &"overture", "id": &"label_descent", "position": Vector2(165, 220)},
+	# Both the Descent and the Alcove leave the Label for the same stair.
+	{"region": &"label", "id": &"overture_stair", "position": Vector2(800, 405)},
+	{"region": &"label", "id": &"worn_gallery", "position": Vector2(400, 220)},
+	{"region": &"overture", "id": &"label_descent", "position": Vector2(165, 20)},
+	{"region": &"overture", "id": &"unsigned_alcove", "position": Vector2(165, 160)},
 	{"region": &"overture", "id": &"the_stalls", "position": Vector2(605, 355)},
 	{"region": &"overture", "id": &"the_drop", "position": Vector2(165, 355)},
 	{"region": &"unplayed", "id": &"the_arm", "position": Vector2(165, 290)},
-	{"region": &"label", "id": &"verse_warren_n", "position": Vector2(145, 75), "route_id": "warren_return"},
-	{"region": &"label", "id": &"deep_gallery", "position": Vector2(145, 350), "route_id": "gallery_return"},
+	{"region": &"label", "id": &"verse_warren_n", "position": Vector2(100, 220), "route_id": "warren_return"},
+	{"region": &"label", "id": &"deep_gallery", "position": Vector2(700, 40), "route_id": "gallery_return"},
 	{"region": &"unplayed", "id": &"high_street", "position": Vector2(825, 25), "route_id": "warren_return"},
 	{"region": &"unplayed", "id": &"headshell", "position": Vector2(825, 405), "route_id": "gallery_return"},
 ]
@@ -65,6 +75,14 @@ const LINKS := [
 	{"a": &"smoothed_floor", "b": &"the_arm", "shortcut": false},
 	{"a": &"worn_gallery", "b": &"the_arm", "shortcut": true},
 	{"a": &"the_stalls", "b": &"worn_gallery", "shortcut": true},
+	# The Label's side rooms: the west loop, two secrets, the second way down.
+	{"a": &"high_street", "b": &"rooms_to_let", "shortcut": false},
+	{"a": &"high_street", "b": &"print_shop", "shortcut": false},
+	{"a": &"print_shop", "b": &"practice_room", "shortcut": false},
+	{"a": &"the_stalls", "b": &"stall_cache", "shortcut": false},
+	{"a": &"the_stalls", "b": &"label_balcony", "shortcut": false},
+	{"a": &"groove_yard", "b": &"unsigned_alcove", "shortcut": false},
+	{"a": &"unsigned_alcove", "b": &"overture_stair", "shortcut": false},
 	{"a": &"the_arm", "b": &"the_drop", "shortcut": false},
 	{"a": &"the_drop", "b": &"the_landing", "shortcut": false},
 	{"a": &"the_landing", "b": &"verse_hall", "shortcut": false},

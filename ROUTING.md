@@ -3,22 +3,42 @@
 ## The authored opening
 
 Normal play starts at a title screen, then loads the Headshell. The opening
-registry contains eight rooms through the Overture Stair, followed by seven
-more Overture rooms and six rooms beneath the Tonearm's seal. Every passage
-stays inside the campaign's 21 authored rooms.
+registry contains thirteen Label rooms through the Overture Stair, followed by
+seven more Overture rooms and six rooms beneath the Tonearm's seal. Every
+passage stays inside the campaign's 26 authored rooms.
 
 ```text
-HEADSHELL <-> HORN PLAZA <-> STALLS <-> YARD <-> DESCENT GATE <-> OVERTURE STAIR
-                 |   |
-           HIGH STREET <-> PRACTICE ROOM
+                     HEADSHELL
+                         |
+ PRINT SHOP <-> PRACTICE ROOM <-> HORN PLAZA <-> STALLS <-> YARD <-> DESCENT GATE
+     |              |               |              |  |      |            |
+ HIGH STREET <------+---------------+          CACHE  BALCONY  ALCOVE ---> OVERTURE STAIR
+     |                                        (glass) (Gather)  (unsigned lock)
+ ROOMS TO LET
 ```
 
-The west branch returns through Practice to the plaza; the east route crosses
-the market and the Yard before reaching the descent. The chapter uses exact
-planned IDs: `headshell`, `horn_plaza`, `high_street`, `practice_room`,
-`the_stalls`, `groove_yard`, `label_descent`, and `overture_stair`. The room
-connections follow contacts in the plan, while their geometry is authored for
-this opening rather than expanded from a grid cell.
+The west end is a loop: the Plaza reaches High Street and Practice directly,
+and the Print Shop joins the two from behind. Rooms To Let opens off High
+Street. East of the Plaza, the Stalls is a five-way junction: the market floor
+to the Yard, the service lane under the bank to the Stall Cache behind its
+display glass (a heavy stroke breaks it; a Tap only rings it), the Gather loft
+up to the Gallery shortcut, and the shelf above the loft out to the Label
+Balcony. Past the Yard's signed Descent stands a second lock with no notice:
+counted in like any other, it drops into the Unsigned Alcove, which comes out
+on a service ledge under the foot of the Overture Stair — a second way down,
+and a loop with the Descent. The alcove's way back up is held closed until the
+yard-side lock has heard its count. The chapter uses exact planned IDs:
+`headshell`, `horn_plaza`, `high_street`, `practice_room`, `the_stalls`,
+`groove_yard`, `label_descent`, `overture_stair`, `rooms_to_let`, `print_shop`,
+`stall_cache`, `label_balcony` and `unsigned_alcove`. The room connections
+follow contacts in the plan, while their geometry is authored for this opening
+rather than expanded from a grid cell.
+
+Matron 33⅓'s bed in Rooms To Let is the one indoor cue point: grounded E/Y
+refills the diamonds, moves the active entry to `matron_bed` and saves, so the
+Hound and Continue both return Skip there. Neither secret pays Shine, gear or
+XP: the cache keeps an unlabeled tape and the balcony the town seen whole, both
+as listening posts.
 
 `scripts/campaign.gd` combines the three chapter registries and rejects unfinished
 destinations. `scripts/chapter_one.gd` owns the Label registry and factory;
@@ -54,10 +74,11 @@ The authored return route adds `the_stalls ↔ worn_gallery`, using a loft
 inside the existing Stalls room. Both ends require `the_stalls/loft_voice=freed`.
 The loft's `from_worn_gallery` arrival is on the balcony; the Gallery's
 `from_the_stalls` arrival is on its first arcade step. This campaign shortcut
-is independent of the development atlas. The carried chart has 21 rooms and
-24 undirected passage pairs; both shortcuts remain dashed. Its Label, Overture,
-and Unplayed pages retain the full graph, with labeled region markers wherever
-a real passage leaves the current sheet. Unvisited room names stay hidden.
+is independent of the development atlas. The carried chart has 26 rooms and
+33 undirected passage pairs (31 from the room factories plus the two wax
+returns); both shortcuts remain dashed. Its Label, Overture, and Unplayed pages
+retain the full graph, with labeled region markers wherever a real passage
+leaves the current sheet. Unvisited room names stay hidden.
 
 Either Tonearm resolution reveals Gather at (1465,554), alongside an optional
 practice shelf. Collection remains a deliberate world encounter, separate
@@ -149,7 +170,7 @@ including its one-way Arm→Drop special.
 ## Development prototype loop
 
 Run `.\deadwax.cmd dev` or pass `-- --dev-rooms` to Godot to enable these
-mechanics rooms. They are separate from the 21-room campaign.
+mechanics rooms. They are separate from the 26-room campaign.
 
 The five runtime rooms form one compact circuit:
 

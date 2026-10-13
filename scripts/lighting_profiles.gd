@@ -61,6 +61,8 @@ static func get_profile(room_id: StringName) -> Dictionary:
 				_light(&"west_open_sky", Vector2(380, 300), 440, Vector2(1.10, 1.10), DAYLIGHT, 0.27),
 				_light(&"worn_names", Vector2(1080, 290), 480, Vector2(1.15, 1.10), PAPER_LIGHT, 0.28),
 				_light(&"east_open_sky", Vector2(1750, 315), 440, Vector2(1.10, 1.10), DAYLIGHT, 0.27),
+				# The unsigned lock at the yard's end stands in the last of the sky.
+				_light(&"unsigned_sky", Vector2(2230, 330), 380, Vector2(1.0, 1.15), DAYLIGHT, 0.24),
 			])
 		&"label_descent":
 			return _profile(Color(0.75, 0.76, 0.76), [
@@ -72,6 +74,36 @@ static func get_profile(room_id: StringName) -> Dictionary:
 				_light(&"label_spill", Vector2(260, 220), 430, Vector2(1.10, 1.10), DAYLIGHT, 0.31),
 				_light(&"cut_wall_lamp", Vector2(920, 450), 490, Vector2(0.95, 1.30), BRASS_LIGHT, 0.33, true),
 				_light(&"lower_arch_lamp", Vector2(1530, 630), 440, Vector2(1.0, 1.15), LAMP_LIGHT, 0.34, true),
+				# One small lamp on the service ledge under the stair.
+				_light(&"under_stair_lamp", Vector2(380, 900), 360, Vector2(1.10, 0.95), LAMP_LIGHT, 0.26, true),
+			])
+		&"rooms_to_let":
+			return _profile(Color(0.80, 0.77, 0.72), [
+				_light(&"hall_window", Vector2(330, 300), 450, Vector2(1.0, 1.20), PAPER_LIGHT, 0.32),
+				_light(&"landing_lamp", Vector2(760, 250), 460, Vector2(1.15, 1.15), LAMP_LIGHT, 0.34, true, 0.012),
+				_light(&"back_room_glow", Vector2(1150, 330), 380, Vector2(1.0, 1.10), BRASS_LIGHT, 0.26, false, 0.0, true),
+			])
+		&"print_shop":
+			return _profile(Color(0.78, 0.77, 0.74), [
+				_light(&"shop_front", Vector2(300, 290), 440, Vector2(1.05, 1.15), DAYLIGHT, 0.30),
+				_light(&"press_lamp", Vector2(780, 230), 480, Vector2(1.20, 1.25), PAPER_LIGHT, 0.35, true),
+				_light(&"back_door_spill", Vector2(1300, 320), 400, Vector2(1.0, 1.10), BRASS_LIGHT, 0.27),
+			])
+		&"stall_cache":
+			return _profile(Color(0.72, 0.72, 0.70), [
+				_light(&"glass_spill", Vector2(230, 320), 420, Vector2(1.0, 1.15), DAYLIGHT, 0.27),
+				_light(&"counter_lamp", Vector2(720, 250), 440, Vector2(1.15, 1.20), LAMP_LIGHT, 0.33, true, 0.015),
+			])
+		&"label_balcony":
+			return _profile(Color(0.84, 0.86, 0.86), [
+				_light(&"open_sky_west", Vector2(320, 240), 520, Vector2(1.25, 1.10), DAYLIGHT, 0.36),
+				_light(&"open_sky_east", Vector2(960, 240), 520, Vector2(1.25, 1.10), DAYLIGHT, 0.36),
+				_light(&"rail_reflection", Vector2(640, 520), 400, Vector2(1.5, 0.6), PAPER_LIGHT, 0.20),
+			])
+		&"unsigned_alcove":
+			return _profile(Color(0.72, 0.74, 0.76), [
+				_light(&"grave_light", Vector2(520, 280), 400, Vector2(1.0, 1.15), PAPER_LIGHT, 0.26),
+				_light(&"stair_mouth", Vector2(1250, 320), 440, Vector2(1.05, 1.15), BRASS_LIGHT, 0.30, true),
 			])
 		&"bootlegger":
 			return _profile(Color(0.74, 0.70, 0.66), [

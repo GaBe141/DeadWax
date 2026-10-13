@@ -27,7 +27,7 @@ scenery marks"). Measured with Godot 4.7.1 under software GL (llvmpipe, Xvfb,
 - Draw calls a frame fell from 743 to 291 on average (−61%; 33–74% by room):
   Horn Plaza 1,229 → 410, Groove Yard 1,226 → 324, Worn Gallery 1,079 → 297.
   Primitives are unchanged, triangle for triangle.
-- Frames of all 21 rooms and the title, on a first visit and on a revisit, are
+- Frames of all 26 rooms and the title, on a first visit and on a revisit, are
   identical to the previous build's. The only differences are the Count-In
   door's own random jitter, which also differs between two runs of the old
   build. The new suite's windowed comparison of 180 random marks against the
@@ -633,7 +633,7 @@ fixture as a measurement of completionist playtime.
 - [ ] After trials, binding, and fitting, save and Continue. Owned pieces,
   fittings, Offcuts, dry streaks, regional clear counts, and bestiary notes
   survive. The nine polish patches still pay one Shine once, and the original
-  shop prices, permanent encounters, and 21-room/26-pair route graph are intact.
+  shop prices, permanent encounters, and 26-room/33-pair route graph are intact.
 - [ ] Enter title-screen Move practice after fitting gear. It remains empty
   with stock handling and a disposable collection. Returning to title and
   Continue restores the campaign collection; practice cannot alter its save.
@@ -645,7 +645,7 @@ fixture as a measurement of completionist playtime.
 
 ## Painted world review
 
-- [ ] Review all 21 rooms at 1280×720 and 960×540: cream faces and upper
+- [ ] Review all 26 rooms at 1280×720 and 960×540: cream faces and upper
   platform lips remain visible against the drawn distance. Inspect the Well
   and Drop at top, middle and bottom; Whistlers' catch lane and the Stalls loft remain clear.
 - [ ] Check the Looper's guard/open states, HUSH's count/swing and the Tonearm's
@@ -776,7 +776,7 @@ At that review, `deadwax.cmd check` passed its then-current 29 suites and 7,813 
 
 - [ ] New Game begins without the map. Recover Walk, then walk right in the Headshell: the folded page is visible before the first raised block, clear of both arrival positions, and collects once on approach.
 - [ ] Collection announces the map without opening a panel or changing Shine, health, Refrains, or knowledge. M / D-pad Down opens the map from play, and the Book gains an Open map button.
-- [ ] The map marks the current room, names explored rooms, and leaves unvisited names hidden. Its 26 passage pairs match the 21 playable rooms; dashed shortcuts do not claim to unlock a passage.
+- [ ] The map marks the current room, names explored rooms, and leaves unvisited names hidden. Its 33 passage pairs match the 26 playable rooms; dashed shortcuts do not claim to unlock a passage.
 - [ ] Label, Overture, and Unplayed tabs select distinct sheets. Mouse clicks, keyboard Left/Right, and D-pad Left/Right all turn pages; controller A on a focused tab selects it without closing the guide. The selected tab and focus remain clear at both supported window sizes.
 - [ ] Opening or reopening selects the player's current region. Boundary markers show the region reached by each real passage without naming an unvisited room. Paging changes no map visits, position, health, Shine, purchases, or progression.
 - [ ] Closing with M, D-pad Down, Escape/Back, or the Close button returns to the same position without a jump, attack, or passage input leaking through. The map, Book, stall, and pause menu cannot overlap.
@@ -911,7 +911,7 @@ checks without script errors. Existing synthesized-audio teardown warnings
 remain in older suites; the new presentation and native tour logs are clean.
 
 The new world presentation suite passed 302 checks headless and 309 with
-native GL Compatibility. It locks all 21 rooms' original solid/route/entry
+native GL Compatibility. It locks all 26 rooms' original solid/route/entry
 signatures, verifies translated world/local coordinates, A/B/A restoration,
 fixed effective lamp snapshots and native material response, and checks
 clock-driven air, frozen reduced-motion pixels and live outcome energy.
@@ -922,7 +922,7 @@ and Palace isolation are covered. Existing scenery (504) and lighting (381)
 also passed headless and native after updating presentation-only expectations.
 
 A separate private native Main tour passed 78 checks and produced 190
-captures across all 21 rooms at 1280×720 and 960×540, including A/B/A, wide
+captures across all 26 rooms at 1280×720 and 960×540, including A/B/A, wide
 rooms, Well/Drop top/middle/bottom, Reduced-motion jumps, immediate recovery,
 live Gather ledges and restored Addie/Tonearm outcomes. Thirty detail frames
 and the complete room sheet received independent visual review: silhouettes,
@@ -1004,7 +1004,7 @@ controller feel and the difficulty of later mixed groups remain manual checks.
 
 ## Scenery and depth
 
-- [ ] Tour all 21 campaign rooms at 1280×720 and 960×540. Wax, stone and aged
+- [ ] Tour all 26 campaign rooms at 1280×720 and 960×540. Wax, stone and aged
   metal respond to the existing local lamps without a tiled texture grid or
   another detailed panorama. Thin landing lips, figure silhouettes and combat
   tells remain distinct from the soft light shafts and sparse dust.
@@ -1017,7 +1017,7 @@ controller feel and the difficulty of later mixed groups remain manual checks.
   the same material and atmosphere without moving their collision or resetting
   lamps. Pause/Book freeze effects; Reduced motion holds haze and parallax but
   still follows actual feet. A→B→A restores materials and exposure cleanly.
-- [ ] The 21 authored rooms have distinct distant architecture and a still field of paper light. The plaza reads as a town, the Stalls as a shuttered market, the Well and Drop as continuous descents, and the Unplayed as rooms waiting for an audience.
+- [ ] The 26 authored rooms have distinct distant architecture and a still field of paper light. The plaza reads as a town, the Stalls as a shuttered market, the Well and Drop as continuous descents, and the Unplayed as rooms waiting for an audience.
 - [ ] Walk and jump through a wide room and descend the Well: far and middle planes move gently with the camera; recovery and room changes introduce no scenery jump after the arrival settles.
 - [ ] Floor engraving stays inside real platform faces, at least 10 pixels below their tops. Check the Stalls service lane, both Whistlers return stairs, and the Well climb: landing edges, gaps, passages, and player silhouettes remain clear.
 - [ ] HUSH's point and the Tonearm's gesture, counted beats, sweep, and openings remain readable against the new backgrounds at 1280×720 and in fullscreen.
@@ -1026,7 +1026,7 @@ controller feel and the difficulty of later mixed groups remain manual checks.
 
 ## Lighting
 
-- [ ] The 21 authored rooms have two to four fixed light sources each. Lamps, windows, and openings produce distinct pools of light without washing out print, grooves, passages, or boss tells at 1280×720 and in fullscreen.
+- [ ] The 26 authored rooms have two to four fixed light sources each. Lamps, windows, and openings produce distinct pools of light without washing out print, grooves, passages, or boss tells at 1280×720 and in fullscreen.
 - [ ] Walk through a wide room and descend the Well: sources stay fixed in world space while the artwork moves in parallax. Inspect the Well's top, middle, and bottom, both Whistlers banks, and the Stalls service lane for readable landings.
 - [ ] In a native preview, toggle shadows on the same view: actual platform faces block light, with no false walls or dark seams across their walkable tops. Soft shadow edges remain steady without streaks or flicker. Occluders change no collision or movement.
 - [ ] Pause, the Book, and the shop freeze slow light modulation. Reduced camera motion also stops it during play; Addie and Tonearm outcome changes still update their light energy and remain correct after returning or Continue.
@@ -1095,6 +1095,18 @@ settings used private paths and were removed afterward.
 - [ ] Freed Addie walks a small patch by her doorway and gently pats a nearby Hood or Set visitor. If freed far from home, she walks back without teleporting. Neither visit nor further strikes replay her encounter or Shine.
 - [ ] A shattered Addie remains absent after leaving, returning, and Continue. Existing version-one saves preserve the same choices.
 - [ ] Pause and the Book freeze every resident's animation, movement, and subtitle lifetime. Characters and selected dialogue remain readable at the usual game size.
+
+## The Label's side rooms
+
+- [ ] From the Plaza, High Street has two doors in its facades: ROOMS TO LET beside the Looper's stretch and THE PRINT SHOP near the Practice end. Practice has the shop's back door by its High Street exit. Walk the loop both ways; every arrival stands on the floor.
+- [ ] Rooms To Let: Matron 33⅓ turns toward Skip and crochets as she talks; six pleasantries, then they repeat. After Addie is freed, a seventh. Stand at the bed and press E/Y: the diamonds refill, "SLEPT WELL" appears, and R returns Skip to the bed, not the door. Quit and Continue; Skip wakes in the bed.
+- [ ] The Print Shop: the Typesetter picks sorts into his stick in a steady rhythm and tilts it toward Skip while he talks. His last line changes once the Descent Gate has been counted in. He sells nothing.
+- [ ] The Stalls' service lane now runs east under the bank to a shop's back window. A Tap rings the glass and chips it; the chain carries on, and the Accent (or a hot-groove stroke) shatters it with a crash. The cache behind it holds an unlabeled tape to listen to. Leave and return: the pane stays broken, silently. On a first visit, before the chain, the pane can only ring.
+- [ ] From the Gather loft, hop the 110 px shelf above it and take THE BALCONY. The far plane shows the plaza and the horn from above; listen at the rail. No ordinary jump from the market or the middle walk reaches that shelf.
+- [ ] The Yard runs on past the Descent to a barred lock with nothing written near it. Count it in like the Descent: four even strikes. The Alcove below has a chalked count on its wall and a listening post, and its east passage comes out on a service ledge under the foot of the Overture Stair, two short hops below the Bootlegger's landing.
+- [ ] Reach that ledge from the Stair first instead. THE ALCOVE is open from below; inside, THE YARD passage reads HELD CLOSED and explains itself. Count the yard-side lock in later and the passage opens from either side.
+- [ ] The map's Label page shows thirteen cards without lines crossing them; unvisited side rooms are blank cards, and the Overture page carries TO THE LABEL both above and below the Stair. Found cards keep their names after Continue.
+- [ ] Neither secret pays Shine, gear or XP; strike counts and purchases are unchanged after a tour. Pause, Reduced motion and the B-side treat the new residents, the glass and the bed like every other fixture.
 
 ## Shine and purchases
 

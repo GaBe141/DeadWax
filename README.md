@@ -2,7 +2,7 @@
 
 [![Godot checks](https://github.com/GaBe141/DeadWax/actions/workflows/godot-checks.yml/badge.svg)](https://github.com/GaBe141/DeadWax/actions/workflows/godot-checks.yml)
 
-A playable journey through 21 authored rooms about a small Player, a street of worn records,
+A playable journey through 26 authored rooms about a small Player, a street of worn records,
 and the song still playing underneath it. Start at the Headshell, count in
 the Descent Gate, then follow the Overture through wind-played grooves,
 Addie's doorway, HUSH's duel, and the Tonearm. How you answer the Tonearm
@@ -16,7 +16,7 @@ One nearby action cue appears at a time; deliberate E / Y conversations use
 brief subtitles. The Book and pause menu keep the full guidance, while Move
 practice and development rooms retain their detailed readouts.
 
-All 21 demo rooms use shaded wax, stone and aged metal surfaces, with soft
+All 26 demo rooms use shaded wax, stone and aged metal surfaces, with soft
 light shafts and sparse dust around their local lamps. Daylight gives the
 Label streets a cooler fill; the Overture keeps warmer interiors, and the
 Unplayed carries violet and copper light. Small shadows beneath Skip and
@@ -84,14 +84,32 @@ for the authored route and development atlases.
 ## The opening chapter
 
 ```text
-HEADSHELL <-> HORN PLAZA <-> STALLS <-> YARD <-> DESCENT GATE <-> OVERTURE STAIR
-                 |   |
-           HIGH STREET <-> PRACTICE ROOM
+                     HEADSHELL
+                         |
+ PRINT SHOP <-> PRACTICE ROOM <-> HORN PLAZA <-> STALLS <-> YARD <-> DESCENT GATE
+     |              |               |              |  |      |            |
+ HIGH STREET <------+---------------+          CACHE  BALCONY  ALCOVE ---> OVERTURE STAIR
+     |
+ ROOMS TO LET
 ```
 
 The plaza is the junction: west leads to the Looper and Tick's Count-In
 lesson; east leads to the market's first movement gate. Practice also returns
-directly to the plaza. Find Strike, then open Tick's listening door with four
+directly to the plaza, and the Print Shop's back door joins High Street to
+Practice from behind. Rooms To Let opens off High Street: Matron 33⅓ keeps a
+bed made, and resting there refills your diamonds and makes the bed the cue
+point the Hound carries you back to. The Typesetter sets tomorrow's poster in
+the Print Shop and will talk, though he sells nothing yet.
+
+The Stalls is a five-way junction. Its service lane runs on under the eastern
+bank to a shop's back window: display glass that a Tap only rings and that a
+heavy stroke shatters, with an unlabeled tape kept behind it. Above the Gather
+loft, one more shelf leads out to the Label Balcony, stared at from the market
+until a held breath can reach it. Past the Yard's signed Descent stands a
+second lock with nothing written beside it; it listens like the others, and
+the Unsigned Alcove beneath it comes out on a service ledge under the foot of
+the Overture Stair, a second way down and back. Neither secret pays Shine,
+gear or XP: they keep things to hear. Find Strike, then open Tick's listening door with four
 even strikes and recover **Groove Riding** beyond it. Return to the Stalls
 and strike its live groove to reach the eastern bank. A missed launch has a
 low western route back to the takeoff; ordinary jumps cannot cross the tall
@@ -333,7 +351,7 @@ before showing success and leaves an empty sleeve behind. Fit it separately
 in **Book → Equipment**; finding gear neither auto-equips nor heals. These
 pieces have their own Book group and regional map counts. They cannot drop
 from trials or be bound with Offcuts, and leave trial odds and pity unchanged.
-All 21 campaign rooms and 26 passage pairs remain intact.
+All 26 campaign rooms and 33 passage pairs remain intact.
 
 ## Groove pressure
 
@@ -638,8 +656,8 @@ A folded page waits on the Headshell floor, a short walk right of the starting
 point and before the first raised block. Walk close to pick it up. The map marks
 your current room and remembers the rooms you explore; unvisited places stay
 unnamed. Three pages cover **The Label**, **The Overture**, and **The Unplayed**,
-including the Drop on the Unplayed sheet. The guide contains all 21 rooms and
-26 real passage pairs, including the two permanent wax returns. Passages may still
+including the Drop on the Unplayed sheet. The guide contains all 26 rooms and
+33 real passage pairs, including the two permanent wax returns. Passages may still
 need to be opened in the world.
 
 Opening the guide selects your current region. Click a region tab or use
@@ -784,7 +802,7 @@ Refrain seals where the plan asks for them. Press **M** in the opt-in
 development rooms to walk it.
 
 These are shells for feeling the map's shape and scale. The campaign uses
-21 of the plan's identities through `scripts/campaign.gd`, with its own
+26 of the plan's identities through `scripts/campaign.gd`, with its own
 authored geometry and passages. The complete graybox atlas remains available
 unchanged for topology checks. See `ROUTING.md` for both loaders.
 
@@ -824,7 +842,7 @@ their palette and subject.
 - **Drawn distance.** Sparse authored roofs, chambers, vaults and shaft faces
   replace the detailed generated panoramas. Broad colour washes leave room for
   each area's horn, cradle, spindle or empty seats to carry its identity. The
-  21 rooms retain their palettes, cached far plane, gentle middle motion and
+  26 rooms retain their palettes, cached far plane, gentle middle motion and
   camera parallax. The original paintings remain archived in `assets/art/`.
 - **Characters.** Layered clothes, wax masks, articulated limbs and worn brass
   give Skip, the voices, residents, Hound and bosses distinct silhouettes.
@@ -890,7 +908,7 @@ also cover fresh-input chains, expiry and cancellation, finisher strength,
 unchanged launch/parry rules, and isolation of the title's empty practice floor.
 The Unplayed suite covers the six-room extension, both Tonearm entry outcomes,
 reversible routes without Gather, encounter persistence, and save continuity.
-Map checks cover all 21 places and 26 passage pairs across the three region pages.
+Map checks cover all 26 places and 33 passage pairs across the three region pages.
 Discovery checks cover ordered spool use, fixed interaction reach, cancellation,
 save validation and rollback, silent restoration, the optional Gather keepsake,
 and practice isolation. Echo audio checks cover lazy finite synthesis, matching

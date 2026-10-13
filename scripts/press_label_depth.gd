@@ -28,6 +28,11 @@ static func draw(c: CanvasItem, room_id: StringName, layer: StringName, bounds: 
 		&"groove_yard": _yard(c, bounds.size, far, p)
 		&"label_descent": _descent(c, bounds.size, far, p)
 		&"overture_stair": _stair(c, bounds.size, far, p)
+		&"rooms_to_let": _lodgings(c, bounds.size, far, time, p)
+		&"print_shop": _print_shop(c, bounds.size, far, time, p)
+		&"stall_cache": _cache(c, bounds.size, far, p)
+		&"label_balcony": _balcony(c, bounds.size, far, time, p)
+		&"unsigned_alcove": _alcove(c, bounds.size, far, p)
 	if gather:
 		Brush.end(c)
 	c.draw_set_transform(Vector2.ZERO)
@@ -118,6 +123,102 @@ static func _stair(c: CanvasItem, size: Vector2, far: bool, p: Dictionary) -> vo
 	_pier(c, 174, 85, 740, 61, Brush.fade(p.body, 0.58))
 	_pier(c, 1414, 517, minf(size.y + 80, 1172), 61, Brush.fade(p.body, 0.45))
 	_plain_arch(c, Vector2(1516, 681), Vector2(166, 178), 930, Brush.fade(p.body, 0.55), 25)
+
+static func _lodgings(c: CanvasItem, size: Vector2, far: bool, time: float, p: Dictionary) -> void:
+	if far:
+		# A papered hall wall with one tall window, and the stair going up.
+		_plain_arch(c, Vector2(330, 300), Vector2(96, 150), 600, Brush.fade(p.body, 0.75), 20)
+		Brush.curve(c, Vector2(size.x - 240, 598), Vector2(size.x - 110, 330), Vector2(size.x + 40, 120), Brush.fade(p.body, 0.7), 26)
+		return
+	# Radiator pipes along the skirting, knocking a little in the warm room.
+	for pipe in range(2):
+		var y := 548.0 + pipe * 14.0
+		Brush.line(c, Vector2(60, y), Vector2(size.x - 60, y + 2 + sin(time * 1.3 + pipe) * 0.6), Brush.fade(p.copper, 0.28), 5)
+	for rib in range(9):
+		var x := 120.0 + rib * 24.0
+		Brush.line(c, Vector2(x, 520), Vector2(x, 575), Brush.fade(p.copper, 0.22), 6)
+	# A row of keys on hooks, every room's, none claimed.
+	for hook in range(6):
+		var x := 540.0 + hook * 34.0
+		Brush.line(c, Vector2(x, 300), Vector2(x, 330 + Brush.grain(hook) * 8), Brush.fade(p.edge, 0.3), 1.5)
+		Brush.dot(c, Vector2(x, 334 + Brush.grain(hook) * 8), 4.0, Brush.fade(p.gold, 0.5))
+	Brush.flush(c)
+	c.draw_rect(Rect2(500, 270, 250, 16), Brush.fade(p.body, 0.5))
+
+static func _print_shop(c: CanvasItem, size: Vector2, far: bool, time: float, p: Dictionary) -> void:
+	if far:
+		_plain_arch(c, Vector2(size.x * 0.5, 320), Vector2(size.x * 0.44, 320), 606, Brush.fade(p.body, 0.72), 30)
+		return
+	# Drying lines across the shop, hung with tomorrow's sheets.
+	for line in range(2):
+		var y := 150.0 + line * 70.0
+		var sag := Vector2(size.x * 0.5, y + 24 + sin(time * 0.3 + line) * 2)
+		Brush.curve(c, Vector2(120, y), sag, Vector2(size.x - 120, y), Brush.fade(p.edge, 0.22), 1.5)
+		for sheet in range(5):
+			var x := 230.0 + sheet * 210.0 + line * 60.0
+			var drop := y + 12 + 12 * sin(PI * (x - 120) / (size.x - 240))
+			Brush.wash(c, PackedVector2Array([Vector2(x - 26, drop), Vector2(x + 26, drop + 1), Vector2(x + 24, drop + 62), Vector2(x - 28, drop + 60)]), Brush.fade(p.light, 0.16))
+			Brush.line(c, Vector2(x - 16, drop + 18), Vector2(x + 14, drop + 18), Brush.fade(p.edge, 0.3), 2)
+			Brush.line(c, Vector2(x - 12, drop + 30), Vector2(x + 8, drop + 30), Brush.fade(p.edge, 0.2), 1.2)
+	# The press itself: a flywheel and a bed, resting.
+	Brush.ellipse(c, Vector2(1010, 470), Vector2(62, 62), Brush.fade(p.edge, 0.34), 7)
+	Brush.ellipse(c, Vector2(1010, 470), Vector2(14, 14), Brush.fade(p.copper, 0.4), 6)
+	for spoke in range(4):
+		var a := spoke * PI / 4.0 + time * 0.0
+		Brush.line(c, Vector2(1010, 470) + Vector2.from_angle(a) * 14, Vector2(1010, 470) + Vector2.from_angle(a) * 58, Brush.fade(p.edge, 0.3), 3)
+		Brush.line(c, Vector2(1010, 470) - Vector2.from_angle(a) * 14, Vector2(1010, 470) - Vector2.from_angle(a) * 58, Brush.fade(p.edge, 0.3), 3)
+	Brush.flush(c)
+	c.draw_rect(Rect2(880, 528, 260, 44), Brush.fade(p.body, 0.55))
+
+static func _cache(c: CanvasItem, size: Vector2, far: bool, p: Dictionary) -> void:
+	if far:
+		Brush.ellipse(c, Vector2(size.x * 0.52, 360), Vector2(size.x * 0.5, 290), Brush.fade(p.body, 0.8), 14)
+		return
+	# Crates of unsold wax stacked to the lintel, their lids chalked blank.
+	for stack in range(3):
+		var x := 980.0 + stack * 86.0
+		for crate in range(3 - stack):
+			var y := 540.0 - crate * 58.0
+			Brush.wash(c, PackedVector2Array([Vector2(x - 36, y), Vector2(x + 36, y - 2), Vector2(x + 34, y - 52), Vector2(x - 38, y - 50)]), Brush.fade(p.body, 0.55))
+			Brush.line(c, Vector2(x - 22, y - 26), Vector2(x + 18, y - 27), Brush.fade(p.light, 0.25), 3)
+
+static func _balcony(c: CanvasItem, size: Vector2, far: bool, time: float, p: Dictionary) -> void:
+	if far:
+		# The town from above: the horn's bell and the plaza, seen down past
+		# the rail, with the streets curving away around them.
+		Brush.ellipse(c, Vector2(size.x * 0.5, 470), Vector2(170, 46), Brush.fade(p.copper, 0.32), 10)
+		Brush.ellipse(c, Vector2(size.x * 0.5, 470), Vector2(62, 18), Brush.fade(p.gold, 0.3), 5)
+		for ring in range(3):
+			var r := 300.0 + ring * 120.0
+			Brush.ellipse(c, Vector2(size.x * 0.5, 480), Vector2(r, r * 0.26), Brush.fade(p.body, 0.5 - ring * 0.12), 9, PI * 1.06, PI * 1.94)
+		return
+	# The rail, worn to the shape of two hands at its middle.
+	Brush.line(c, Vector2(90, 520), Vector2(size.x - 90, 520), Brush.fade(p.copper, 0.6), 7)
+	for post in range(11):
+		var x := 110.0 + post * (size.x - 220.0) / 10.0
+		Brush.line(c, Vector2(x, 524), Vector2(x, 600), Brush.fade(p.copper, 0.45), 4)
+	Brush.ellipse(c, Vector2(size.x * 0.5 - 22, 519), Vector2(26, 6), Brush.fade(p.gold, 0.35), 3)
+	Brush.ellipse(c, Vector2(size.x * 0.5 + 24, 519), Vector2(26, 6), Brush.fade(p.gold, 0.35), 3)
+	# Washing on a line between the two arches, the only movement up here.
+	var sway := sin(time * 0.5) * 4.0
+	Brush.curve(c, Vector2(380, 150), Vector2(640, 182 + sway * 0.4), Vector2(900, 150), Brush.fade(p.edge, 0.25), 1.5)
+	for cloth in range(3):
+		var x := 480.0 + cloth * 160.0
+		Brush.wash(c, PackedVector2Array([Vector2(x - 24, 168), Vector2(x + 24, 168), Vector2(x + 30 + sway, 236), Vector2(x - 18 + sway, 238)]), Brush.fade(p.light, 0.2))
+
+static func _alcove(c: CanvasItem, size: Vector2, far: bool, p: Dictionary) -> void:
+	if far:
+		# Roots come down through the vault from the graves above.
+		Brush.ellipse(c, Vector2(size.x * 0.5, 380), Vector2(size.x * 0.52, 330), Brush.fade(p.body, 0.8), 16)
+		for root in range(5):
+			var x := 200.0 + root * 240.0
+			Brush.curve(c, Vector2(x, 40), Vector2(x + 40 - Brush.grain(root) * 80, 180), Vector2(x - 20 + Brush.grain(root + 2) * 40, 330 + Brush.grain(root + 4) * 70), Brush.fade(p.sage, 0.3), 5)
+		return
+	# A chalk count on the wall, four even marks, in nobody's hand.
+	for mark in range(4):
+		var x := 340.0 + mark * 22.0
+		Brush.line(c, Vector2(x, 300), Vector2(x + 2, 338), Brush.fade(p.light, 0.45), 3)
+	Brush.line(c, Vector2(330, 346), Vector2(420, 344), Brush.fade(p.light, 0.3), 2)
 
 static func _roof(c: CanvasItem, box: Rect2, p: Dictionary, seed: int) -> void:
 	var ridge := box.position + Vector2(box.size.x * (0.42 + Brush.grain(seed) * 0.16), -59 - Brush.grain(seed + 3) * 52)

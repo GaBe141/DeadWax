@@ -51,7 +51,7 @@ func _run() -> void:
 
 func _check_registry() -> void:
 	var ids: Array[StringName] = ChapterScript.room_ids()
-	_check(ids.size() == 21, "campaign contains twenty-one authored rooms")
+	_check(ids.size() == 26, "campaign contains twenty-six authored rooms")
 	_check(ids.has(ChapterScript.START_ROOM) and ids.has(ChapterScript.END_ROOM), "chapter endpoints belong to registry")
 	_check(not ChapterScript.has_room(&"unauthored_room"), "unknown room is outside authored campaign")
 	_check(ChapterScript.create_room(&"unauthored_room") == null, "unknown room cannot create a shell in campaign")
@@ -134,9 +134,12 @@ func _check_geometry(room: Node2D, points: Array[Vector2]) -> void:
 				reachable = reachable or reached.has(index)
 		_check(supported, "%s arrival/passage %s has floor beneath the player" % [room.room_id, point])
 		var optional_loft: bool = room.room_id == &"the_stalls" and point.y == room.entry_points[&"from_worn_gallery"].y
+		var optional_balcony: bool = room.room_id == &"the_stalls" and point.y == room.entry_points[&"from_label_balcony"].y
 		var groove_bank: bool = room.room_id == &"the_stalls" and point.y == room.entry_points[&"from_groove_yard"].y
 		if optional_loft:
 			_check(not reachable, "Stalls loft is an optional earned return, above the ordinary jump route")
+		elif optional_balcony:
+			_check(not reachable, "the balcony shelf above the loft stays a Gather climb, above the ordinary jump route")
 		elif groove_bank:
 			# The six lost moves now include Groove Riding. Its first route is
 			# physically earned; ability_world_test crosses and returns through

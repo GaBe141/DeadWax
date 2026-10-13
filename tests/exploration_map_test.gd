@@ -32,7 +32,7 @@ func _run() -> void:
 		quit(1)
 
 func _chart_visibility() -> void:
-	_check(Chart.LINKS.size() == 26 and Chart.return_ids() == ["warren_return", "gallery_return"],
+	_check(Chart.LINKS.size() == 33 and Chart.return_ids() == ["warren_return", "gallery_return"],
 		"chart contains the two named permanent returns beside the original twenty-four passage pairs")
 	for region in Chart.REGIONS:
 		var page := Chart.page_snapshot(region.id, ["headshell"], &"headshell")
@@ -74,7 +74,7 @@ func _chart_visibility() -> void:
 			for room in page.rooms:
 				_check(not box.intersects(Rect2(room.position - Chart.ROOM_SIZE * 0.5, Chart.ROOM_SIZE)),
 					"return stub does not obscure an authored room card")
-	_check(pairs.size() == 26, "fully explored pages represent all twenty-six real pairs")
+	_check(pairs.size() == 33, "fully explored pages represent all thirty-three real pairs")
 
 func _map_presentation() -> void:
 	var exploration := Exploration.new()

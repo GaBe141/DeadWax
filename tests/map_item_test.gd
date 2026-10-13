@@ -49,7 +49,7 @@ func _check_state_and_schema() -> void:
 	var state := MapStateScript.new()
 	_check(state.snapshot() == {"owned": false, "visited": []}, "map starts unowned without history")
 	_check(state.visit(&"headshell") and not state.visit(&"headshell"), "a real visit is recorded once, even before finding the map")
-	_check(not state.visit(&"rooms_to_let") and not state.visit(&"label"), "planned and prototype rooms cannot enter the carried map")
+	_check(not state.visit(&"hook_pools") and not state.visit(&"label"), "planned and prototype rooms cannot enter the carried map")
 	var expanded := MapStateScript.new()
 	for id in [&"the_drop", &"the_landing", &"verse_hall", &"verse_warren_n", &"deep_gallery", &"verse_warren_s"]:
 		_check(expanded.visit(id), "new authored room records a map visit: " + String(id))
@@ -71,7 +71,7 @@ func _check_state_and_schema() -> void:
 		{"owned": 1, "visited": []}, {"owned": "yes", "visited": []},
 		{"owned": true, "visited": "headshell"}, {"owned": true, "visited": [1]},
 		{"owned": true, "visited": [true]}, {"owned": true, "visited": ["missing_room"]},
-		{"owned": true, "visited": ["rooms_to_let"]}, {"owned": true, "visited": ["label"]},
+		{"owned": true, "visited": ["hook_pools"]}, {"owned": true, "visited": ["label"]},
 		{"owned": true, "visited": ["headshell", "headshell"]},
 		{"owned": true, "visited": [], "extra": true}]
 	for index in invalid.size():
@@ -89,7 +89,7 @@ func _check_chart() -> void:
 	var chart_ids := ChartScript.room_ids()
 	actual_ids.sort()
 	chart_ids.sort()
-	_check(chart_ids == actual_ids and chart_ids.size() == 21, "folded chart names exactly the twenty-one authored rooms")
+	_check(chart_ids == actual_ids and chart_ids.size() == 26, "folded chart names exactly the twenty-six authored rooms")
 	var real_pairs: Array[String] = []
 	for id in actual_ids:
 		var room := CampaignScript.create_room(id)
@@ -105,7 +105,7 @@ func _check_chart() -> void:
 		await _frames(1)
 	var factory_pairs := real_pairs.duplicate()
 	factory_pairs.sort()
-	_check(factory_pairs.size() == 24, "the original twenty-four factory passage pairs remain unchanged")
+	_check(factory_pairs.size() == 31, "the thirty-one factory passage pairs remain unchanged")
 	var return_pairs: Array[String] = []
 	for endpoint in ExplorationCatalog.endpoints():
 		var pair := _pair(endpoint.room_id, endpoint.target_room)
@@ -125,7 +125,7 @@ func _check_chart() -> void:
 				"only authored Gallery and wax returns are marked as shortcuts")
 	real_pairs.sort()
 	chart_pairs.sort()
-	_check(chart_pairs == real_pairs and chart_pairs.size() == 26, "chart routes match the factory passages and Main-installed wax returns")
+	_check(chart_pairs == real_pairs and chart_pairs.size() == 33, "chart routes match the factory passages and Main-installed wax returns")
 	var rooms := ChartScript.rooms()
 	var original := ChartScript.rooms()
 	rooms[0].label = "changed fixture"

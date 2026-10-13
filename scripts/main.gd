@@ -503,6 +503,8 @@ func _swap_room(next_room: Node2D, entry_id: StringName) -> void:
 		room.connect("discovery_cue", _on_discovery_cue)
 	if room.has_signal("map_collected"):
 		room.connect("map_collected", _on_map_collected)
+	if room.has_signal("rest_requested"):
+		room.connect("rest_requested", _on_rest_requested)
 	if not development_mode and not practice_mode:
 		map_state.visit(world_room_id)
 	if not development_mode and not practice_mode and room.room_id == &"the_arm":
@@ -1778,7 +1780,9 @@ func _on_struck(pos: Vector2, big: bool, launched: bool) -> void:
 			impacts.append({"offset": origin - pos, "kind": receipt})
 			if receipt == &"hit" or contact != &"hit":
 				contact = receipt
-		if receipt is StringName and receipt == &"hit":
+		# Only a foe pays for a hit: a prop that rings (the Stalls' display
+		# glass) keeps the chain alive but is nobody's sound to take.
+		if receipt is StringName and receipt == &"hit" and n.is_in_group("strikable"):
 			_award_xp(XpScript.BIG_HIT_XP if big else XpScript.HIT_XP, n)
 	player.resolve_strike_contact(contact)
 	var w := WaveScript.new()
@@ -1891,6 +1895,41 @@ func _on_ability_requested(id: StringName, source: Node2D) -> void:
 	audio.play("freed", -9.0, 0.9)
 	_flash("%s — RECOVERED" % String(definition.name))
 	_fb_t = 3.0
+
+# -- a made bed ---------------------------------------------------------------
+
+## Matron's bed: the one cue point a room keeps indoors. Resting refills the
+## diamonds, makes the bed the entry the Hound returns Skip to, and saves; a
+## failed write changes nothing, so the bed can be asked again.
+func _on_rest_requested(source: Node2D) -> void:
+	if development_mode or practice_mode or not _has_session or get_tree().paused or _respawn_pending:
+		return
+	if not _can_open_inventory() or inventory.is_open() or room == null or not is_instance_valid(source):
+		return
+	if source.get_parent() != room or not source.is_in_group("rest_point"):
+		return
+	var entry: StringName = source.get("entry_id")
+	if entry.is_empty() or not room.entry_points.has(entry) or room.entry_position(entry) != source.position:
+		return
+	if not player.is_on_floor() or player.global_position.distance_to(source.global_position) > 76.0:
+		return
+	var previous_entry := room_entry_id
+	var previous_health := _health
+	room_entry_id = entry
+	_health = _max_health()
+	if not _persist_session():
+		room_entry_id = previous_entry
+		_health = previous_health
+		_flash("Could not save. E / Y to rest again.")
+		return
+	player.cancel_pending_strike()
+	player.refill_air_strikes()
+	hud_motion.present_status()
+	source.call("present_rest")
+	audio.play("freed", -13.0, 0.78)
+	_flash("SLEPT WELL — the Hound knows this bed now.")
+	_fb_t = 3.0
+	_update_campaign_impressions()
 
 # -- the returns pressed into the other face --------------------------------
 

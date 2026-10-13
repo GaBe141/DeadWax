@@ -108,6 +108,10 @@ merged onto `main` together with the work of 9–10 October.
 | Register | The Bootlegger, Tick and the liner-book carry the mania | Everyone speaks in the same quiet voice | Open. Rewrite lines from the voice samples in `CAST.md`. |
 | The Hound | Death itself: carries Skip back to the last cue point | A friendly patroller; a plain respawn | Planned (small). The recovery messages already credit the Hound. |
 | Opening | — | 45 one-pixel taps before Walk | Playtest with someone who hasn't seen it. |
+| The Label's side rooms | Rooms To Let, the Print Shop, the Stall Cache, the Label Balcony and the Unsigned Alcove (`MAP.md`, `PUZZLES.md`) | Built on 13 October at the user's request to make the Label less linear, with the planned ids and contacts | **Built.** The yard-side lock, the on-beat glass and the Gather-only balcony follow `PUZZLES.md`; see the three rows below for what differs. |
+| Secret rewards | The cache and the alcove pay ribbons, the balcony a Last-Bar fragment | Listening posts with lore (an unlabeled tape, the town from above, a groove without a name); no Shine, gear or XP | **User's choice (13 October)**, while progression is frozen. Ribbons and fragments wait on the Cut system. |
+| Matron 33⅓ | Heal/save hub; crochets sleeve-patches (armour) from tape ribbon | Her bed heals and becomes the cue point; she crochets but hands over no patches | Open; sleeve-patches are equipment, which is frozen. |
+| The Typesetter | Trades shine for map pages, margin-markers and trinkets | Talks; sells nothing | Open: `PROGRESSION.md` leaves the shine split between him and the Bootlegger undecided. |
 
 ## Holes that remain
 

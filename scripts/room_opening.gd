@@ -13,11 +13,16 @@ const YardVoiceScript := preload("res://scripts/yard_voice.gd")
 const YardMemoryScript := preload("res://scripts/yard_memory.gd")
 const OutcomeExitScript := preload("res://scripts/outcome_exit.gd")
 const ProgressionScript := preload("res://scripts/progression_state.gd")
+const GlassPaneScript := preload("res://scripts/glass_pane.gd")
+const RestPointScript := preload("res://scripts/rest_point.gd")
+const ListeningPostScript := preload("res://scripts/listening_post.gd")
 const HORN_LISTEN_TIME := 1.4
 const HORN_LISTEN_RADIUS := 135.0
 const HORN_POSITION := Vector2(790, 574)
 
 signal map_collected
+## Matron's bed asks Main to rest; the room only forwards the request.
+signal rest_requested(source: Node2D)
 
 var objective_label := "Find a way out of the Headshell."
 var session_outcomes: Dictionary = {}
@@ -69,6 +74,8 @@ func configure(id: StringName) -> void:
 			register_entry(&"from_horn_plaza", Vector2(180, 574))
 			register_entry(&"from_practice_room", Vector2(1780, 574))
 			register_entry(&"from_verse_warren_n", Vector2(470, 574))
+			register_entry(&"from_rooms_to_let", Vector2(780, 574))
+			register_entry(&"from_print_shop", Vector2(1700, 574))
 		&"practice_room":
 			bg_color = Color("383746")
 			ink = Color("ddc7a1")
@@ -78,6 +85,7 @@ func configure(id: StringName) -> void:
 			cam_limits.size.x = 1700.0
 			register_entry(&"from_high_street", Vector2(180, 574))
 			register_entry(&"from_horn_plaza", Vector2(1460, 574))
+			register_entry(&"from_print_shop", Vector2(300, 574))
 		&"the_stalls":
 			bg_color = Color("344642")
 			ink = Color("e4bd85")
@@ -94,7 +102,7 @@ func configure(id: StringName) -> void:
 			band_name = "The Locked-Groove Yard"
 			band_desc = "Worn names. One bar, over and over."
 			objective_label = "Hear what remains. Find the Descent Gate."
-			cam_limits.size.x = 2100.0
+			cam_limits.size.x = 2400.0
 			register_entry(&"from_the_stalls", Vector2(180, 574))
 			register_entry(&"from_label_descent", Vector2(1880, 574))
 		&"label_descent":
@@ -117,6 +125,52 @@ func configure(id: StringName) -> void:
 			spawn_pos = Vector2(160, 404)
 			register_entry(&"from_label_descent", Vector2(180, 404))
 			register_entry(&"from_bootlegger", Vector2(1510, 824))
+			# The service ledge under the stair, where the unsigned way comes out.
+			register_entry(&"from_unsigned_alcove", Vector2(360, 1004))
+		&"rooms_to_let":
+			bg_color = Color("30393d")
+			ink = Color("e6cfa4")
+			band_name = "Rooms To Let"
+			band_desc = "Every bed made. Every guest gone."
+			objective_label = "Mind the step. Matron keeps a bed made."
+			cam_limits = Rect2(0, 0, 1400, 720)
+			register_entry(&"from_high_street", Vector2(180, 574))
+			# Resting moves the cue point here; the Hound carries Skip back to it.
+			register_entry(&"matron_bed", Vector2(1020, 574))
+		&"print_shop":
+			bg_color = Color("33322f")
+			ink = Color("ddd0b6")
+			band_name = "The Print Shop"
+			band_desc = "Tomorrow's poster, set for no one."
+			objective_label = "The Typesetter has a notice for you."
+			cam_limits = Rect2(0, 0, 1500, 720)
+			register_entry(&"from_high_street", Vector2(180, 574))
+			register_entry(&"from_practice_room", Vector2(1320, 574))
+		&"stall_cache":
+			bg_color = Color("2a2f2c")
+			ink = Color("d9c28f")
+			band_name = "The Stall Cache"
+			band_desc = "Behind the glass. Nobody labeled it."
+			objective_label = "Hear what the market kept back."
+			cam_limits = Rect2(0, 0, 1280, 720)
+			register_entry(&"from_the_stalls", Vector2(180, 574))
+		&"label_balcony":
+			bg_color = Color("3a4d55")
+			ink = Color("ebd6ad")
+			band_name = "The Label Balcony"
+			band_desc = "The whole town, in one breath."
+			objective_label = "Look down on everything you walked."
+			cam_limits = Rect2(0, 0, 1280, 720)
+			register_entry(&"from_the_stalls", Vector2(180, 574))
+		&"unsigned_alcove":
+			bg_color = Color("22303a")
+			ink = Color("cfc8ae")
+			band_name = "The Unsigned Alcove"
+			band_desc = "you knew. that's the whole game."
+			objective_label = "A lock with no notice listened anyway. The stair is below."
+			cam_limits = Rect2(0, 0, 1400, 720)
+			register_entry(&"from_groove_yard", Vector2(180, 574))
+			register_entry(&"from_overture_stair", Vector2(1220, 574))
 
 func _ready() -> void:
 	match room_id:
@@ -128,6 +182,11 @@ func _ready() -> void:
 		&"groove_yard": _build_groove_yard()
 		&"label_descent": _build_descent_gate()
 		&"overture_stair": _build_overture_stair()
+		&"rooms_to_let": _build_rooms_to_let()
+		&"print_shop": _build_print_shop()
+		&"stall_cache": _build_stall_cache()
+		&"label_balcony": _build_label_balcony()
+		&"unsigned_alcove": _build_unsigned_alcove()
 	# The sides of the authored page are walls, not accidental death pits.
 	platform(Vector2(-25, 470), Vector2(50, 1300))
 	platform(Vector2(cam_limits.size.x + 25, 470), Vector2(50, 1300))
@@ -203,6 +262,10 @@ func _build_high_street() -> void:
 		_impression(&"facade", Vector2(330 + index * 430, 315), Vector2(340, 460))
 	_exit(Vector2(85, 574), &"horn_plaza", "THE PLAZA")
 	_exit(Vector2(1880, 574), &"practice_room", "PRACTICE")
+	# Two doors in the street's facades: the boarding house beside the
+	# encounter, and the print shop at the Practice end. Neither is gated.
+	_exit(Vector2(780, 574), &"rooms_to_let", "ROOMS TO LET")
+	_exit(Vector2(1700, 574), &"print_shop", "THE PRINT SHOP")
 	sign_label(Vector2(290, 245), "THE LOOPER\nThree ticks guarded. It swings on four.\nStep clear, or J / X as it lands.\nThen strike while it is OPEN.")
 	var looper := StreetLooperScript.new()
 	looper.name = "StreetLooper"
@@ -226,6 +289,8 @@ func _build_practice_room() -> void:
 	_impression(&"arch", Vector2(1180, 330), Vector2(260, 460))
 	_exit(Vector2(85, 574), &"high_street", "HIGH STREET")
 	_exit(Vector2(1560, 574), &"horn_plaza", "THE PLAZA")
+	# The print shop's back door closes the loop with High Street.
+	_exit(Vector2(300, 574), &"print_shop", "THE PRINT SHOP")
 	sign_label(Vector2(720, 185), "TICK'S PRACTICE\n3... 3... 3...\nThe missing beat is yours.")
 	var tick := ResidentScript.new()
 	tick.name = "Tick"
@@ -265,6 +330,13 @@ func _build_stalls() -> void:
 	get_child(get_child_count() - 1).name = "LoftBalcony"
 	_impression(&"arch", Vector2(1960, 164), Vector2(460, 225))
 	_impression(&"counter", Vector2(1990, 340), Vector2(410, 90))
+	# Above the loft, one more shelf (110 px, an ordinary hop from the loft)
+	# leads out onto the balcony stared at from the market all of Act 1. Only
+	# the loft's held breath reaches it, so Gather keeps the whole climb.
+	platform(Vector2(2050, 185), Vector2(300, 30))
+	get_child(get_child_count() - 1).name = "BalconyShelf"
+	register_entry(&"from_label_balcony", Vector2(2000, 144))
+	_exit(Vector2(2120, 144), &"label_balcony", "THE BALCONY")
 	var loft_voice := LoftVoiceScript.new()
 	loft_voice.name = "LoftVoice"
 	loft_voice.position = Vector2(1870, 254)
@@ -297,13 +369,35 @@ func _build_stalls() -> void:
 	platform(Vector2(1470, 705), Vector2(180, 30))
 	sign_label(Vector2(940, 600), "BACK WEST\nThe low steps return to warm wax.\nRecover the lift in Tick's Practice.")
 	_polish(Vector2(1850, 454), &"market_wax")
+	# The service lane runs on east under the bank, to a shop's back window.
+	# Display glass gives way only to a heavy stroke; a Tap clacks off it. The
+	# lintel closes the gap beneath the bank so nothing hops the pane.
+	platform(Vector2(1960, 800), Vector2(480, 60))
+	platform(Vector2(1740, 590), Vector2(86, 60))
+	var glass := GlassPaneScript.new()
+	glass.name = "StallGlass"
+	glass.position = Vector2(1740, 695)
+	glass.ink = ink
+	glass.stock = bg_color
+	_persistent(glass, &"stall_glass")
+	add_child(glass)
+	sign_label(Vector2(1500, 650), "BEHIND THE GLASS\nThe market kept something back.\nA tap only makes it ring.")
+	register_entry(&"from_stall_cache", Vector2(1960, 744))
+	_exit(Vector2(2080, 744), &"stall_cache", "THE CACHE")
 
 func _build_groove_yard() -> void:
-	_floor(2100)
+	_floor(2400)
 	for index in range(7):
 		_impression(&"headstone", Vector2(350 + index * 240, 468), Vector2(110, 205))
 	_exit(Vector2(85, 574), &"the_stalls", "THE STALLS")
 	_exit(Vector2(1980, 574), &"label_descent", "THE DESCENT")
+	# Past the signed Descent, the yard ends on a second lock with no notice at
+	# all. It listens like the others; the count has to come from the player.
+	# Behind it, a sunk stair leads under the graves to the Overture.
+	_listening_door(Vector2(2200, 525), &"unsigned_lock")
+	platform(Vector2(2340, 400), Vector2(120, 400))
+	register_entry(&"from_unsigned_alcove", Vector2(2250, 574))
+	_exit(Vector2(2250, 574), &"unsigned_alcove", "THE ALCOVE")
 	sign_label(Vector2(285, 310), "WORN NAMES\nSomeone kept writing them\nafter the sound had gone.")
 	ability_pickup(Vector2(610, 574), &"set")
 	_update_yard_note(String(session_outcomes.get("groove_yard/yard_first_voice", "")))
@@ -370,6 +464,128 @@ func _build_overture_stair() -> void:
 	sign_label(Vector2(265, 225), "THE OVERTURE\nThe walls are worn so thin\nyou can hear the other side.")
 	sign_label(Vector2(1180, 545), "THE FIRST NOTE\nYou came all this way.\nStay long enough to hear it.")
 	_exit(Vector2(1590, 824), &"bootlegger", "THE BOOTLEGGER")
+	# A service ledge under the stair: two steps down from the Bootlegger's
+	# landing, every hop an ordinary jump, to the unsigned way back up.
+	platform(Vector2(1080, 960), Vector2(170, 40))
+	platform(Vector2(860, 1020), Vector2(170, 40))
+	platform(Vector2(420, 1060), Vector2(500, 60))
+	_exit(Vector2(260, 1004), &"unsigned_alcove", "THE ALCOVE")
+
+## Matron 33⅓'s boarding house, off High Street: a bed made for whoever is
+## next, and a cue point the Hound knows. Nothing here gates a route.
+func _build_rooms_to_let() -> void:
+	_floor(1400)
+	_impression(&"facade", Vector2(330, 320), Vector2(520, 440))
+	_impression(&"counter", Vector2(640, 540), Vector2(300, 90))
+	_impression(&"arch", Vector2(1230, 330), Vector2(230, 460))
+	_exit(Vector2(85, 574), &"high_street", "HIGH STREET")
+	sign_label(Vector2(360, 230), "ROOMS TO LET\nMind the step.\nEvery bed is made.")
+	var matron := ResidentScript.new()
+	matron.name = "Matron"
+	matron.kind = &"matron"
+	matron.position = Vector2(640, 574)
+	matron.session_outcomes = session_outcomes
+	matron.ink = ink
+	matron.stock = bg_color
+	add_child(matron)
+	var bed := RestPointScript.new()
+	bed.name = "MadeBed"
+	bed.position = entry_points[&"matron_bed"]
+	bed.entry_id = &"matron_bed"
+	bed.ink = ink
+	bed.stock = bg_color
+	bed.rest_requested.connect(rest_requested.emit)
+	add_child(bed)
+	sign_label(Vector2(1120, 300), "THE BACK ROOM\nThe pipes knock all night.\nThe Hound sleeps through it.")
+
+## The Typesetter's shop, between High Street and Practice. He sets tomorrow's
+## poster for no one and sells nothing yet; the shop closes the west loop.
+func _build_print_shop() -> void:
+	_floor(1500)
+	_impression(&"facade", Vector2(380, 325), Vector2(560, 430))
+	_impression(&"counter", Vector2(760, 540), Vector2(360, 90))
+	_impression(&"arch", Vector2(1180, 330), Vector2(260, 460))
+	_exit(Vector2(85, 574), &"high_street", "HIGH STREET")
+	_exit(Vector2(1400, 574), &"practice_room", "PRACTICE")
+	sign_label(Vector2(360, 220), "TOMORROW\nTHE VOICE, CONT'D.\nSet tonight. Like every night.")
+	var typesetter := ResidentScript.new()
+	typesetter.name = "Typesetter"
+	typesetter.kind = &"typesetter"
+	typesetter.position = Vector2(760, 574)
+	typesetter.session_outcomes = session_outcomes
+	typesetter.ink = ink
+	typesetter.stock = bg_color
+	add_child(typesetter)
+	sign_label(Vector2(1020, 250), "CANCELLED\nThe last notice this shop set.\nThe stamp is still inked.")
+
+## The back room behind the Stalls' display glass. A bootleg nobody labeled.
+func _build_stall_cache() -> void:
+	_floor(1280)
+	_impression(&"market", Vector2(330, 320), Vector2(420, 400))
+	_impression(&"counter", Vector2(700, 540), Vector2(320, 90))
+	_impression(&"arch", Vector2(1060, 330), Vector2(240, 460))
+	_exit(Vector2(85, 574), &"the_stalls", "THE STALLS")
+	sign_label(Vector2(330, 235), "BEHIND THE GLASS\nNobody labeled it.\nThe market kept it anyway.")
+	_listening_post(Vector2(700, 574), "AN UNLABELED TAPE", [
+		"— warm wax, still warm, get it while —\n(a crowd, a long way off)",
+		"— side b. side b's the one.\ndon't tell him i said —",
+		"(laughter. a plate rings.\nsomebody counts in, and misses.)",
+		"— party starter. that's what\nthey called it. that's all it —",
+	])
+
+## The balcony stared at from the market all of Act 1. Gather is the only
+## way up to it; from here the Label reads as one shape.
+func _build_label_balcony() -> void:
+	_floor(1280)
+	_impression(&"arch", Vector2(250, 330), Vector2(240, 460))
+	_impression(&"arch", Vector2(1030, 330), Vector2(240, 460))
+	_impression(&"counter", Vector2(640, 540), Vector2(640, 70))
+	_exit(Vector2(85, 574), &"the_stalls", "THE STALLS")
+	sign_label(Vector2(330, 235), "THE BALCONY\nStared at from below.\nNow it is yours.")
+	_listening_post(Vector2(640, 574), "THE TOWN FROM ABOVE", [
+		"From up here the streets run in rings.\nEvery road you walked bends the same way.",
+		"The horn is the only thing\nnot facing the middle.",
+		"Somebody stood here a long time.\nThe rail is worn to the shape of two hands.",
+	])
+
+## Under the graves, between the Yard's unsigned lock and the foot of the
+## Overture Stair. Open from the stair side; the yard side needs the count.
+func _build_unsigned_alcove() -> void:
+	_floor(1400)
+	_impression(&"headstone", Vector2(520, 468), Vector2(110, 205))
+	_impression(&"headstone", Vector2(960, 468), Vector2(110, 205))
+	_impression(&"arch", Vector2(1240, 330), Vector2(240, 460))
+	var yard_passage := OutcomeExitScript.new()
+	yard_passage.name = "YardPassage"
+	yard_passage.position = Vector2(85, 574)
+	yard_passage.target_room = &"groove_yard"
+	yard_passage.target_entry = &"from_unsigned_alcove"
+	yard_passage.display_name = "THE YARD"
+	yard_passage.session_outcomes = session_outcomes
+	yard_passage.required_outcome_key = "groove_yard/unsigned_lock"
+	yard_passage.required_outcomes = ["opened"]
+	yard_passage.gate_label = "HELD CLOSED"
+	yard_passage.blocked_message = "The lock above has not heard its count. Nothing opens it from below."
+	yard_passage.route_requested.connect(_on_exit_route_requested)
+	yard_passage.route_blocked.connect(_on_exit_route_blocked)
+	add_child(yard_passage)
+	_exit(Vector2(1320, 574), &"overture_stair", "THE STAIR")
+	sign_label(Vector2(300, 230), "UNSIGNED\nNo notice. No chalk.\nThe count came from you.")
+	_listening_post(Vector2(740, 574), "A GROOVE WITHOUT A NAME", [
+		"Four even strikes. You gave them\nto a door that never asked.",
+		"Every lock in the Label listens.\nMost of them were never signed.",
+		"The count is yours now.\nTry it where nothing tells you to.",
+	])
+
+func _listening_post(pos: Vector2, heading: String, lines: Array[String]) -> void:
+	var post := ListeningPostScript.new()
+	post.position = pos
+	post.heading = heading
+	post.lines = lines
+	post.ink = ink
+	post.stock = bg_color
+	post.add_to_group("listening_post")
+	add_child(post)
 
 func _floor(width: float) -> void:
 	platform(Vector2(width / 2.0, 630), Vector2(width, 60))
@@ -434,7 +650,7 @@ func apply_side(next_side: int) -> void:
 		add_child(next_picture)
 		_scenery[index] = next_picture
 	for child in get_children():
-		if (child.is_in_group("world_resident") or child.is_in_group("map_pickup") or child.is_in_group("room_exit") or child.is_in_group("echo_trial") or child.name in [&"LoftVoice", &"YardVoice", &"YardMemory", &"StreetLooper"]) and child.has_method("reink"):
+		if (child.is_in_group("world_resident") or child.is_in_group("map_pickup") or child.is_in_group("room_exit") or child.is_in_group("echo_trial") or child.is_in_group("listening_post") or child.name in [&"LoftVoice", &"YardVoice", &"YardMemory", &"StreetLooper", &"StallGlass"]) and child.has_method("reink"):
 			child.call("reink", _solid_color(), _stock_color())
 
 func set_scenery_motion(reduced: bool) -> void:
@@ -533,6 +749,8 @@ func _refresh_ability_objective() -> void:
 				objective_label = "The voices can wait. A Hood rests on High Street's upper walk."
 			elif String(session_outcomes.get("groove_yard/yard_first_voice", "")) not in ["freed", "shattered"]:
 				objective_label = "Hear the first voice under the Hood, then answer with Set."
+			elif String(session_outcomes.get("groove_yard/unsigned_lock", "")) == "opened":
+				objective_label = "A lock nobody signed has heard you. There are two ways down now."
 			else:
 				objective_label = "Let the worn name settle. The Descent Gate waits ahead."
 		&"overture_stair":

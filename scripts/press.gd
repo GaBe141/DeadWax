@@ -255,6 +255,12 @@ static func draw_resident(canvas: CanvasItem, kind: StringName, pose: Dictionary
 static func draw_hound(canvas: CanvasItem, pose: Dictionary, ink: Color, stock: Color) -> void:
 	preload("res://scripts/press_hound.gd").draw(canvas, pose, ink, stock)
 
+static func draw_glass_pane(canvas: CanvasItem, pose: Dictionary, ink: Color, stock: Color) -> void:
+	preload("res://scripts/press_glass.gd").draw(canvas, pose, ink, stock, BRASS, CREAM)
+
+static func draw_rest_point(canvas: CanvasItem, pose: Dictionary, ink: Color, stock: Color) -> void:
+	preload("res://scripts/press_rest.gd").draw(canvas, pose, ink, stock, BRASS)
+
 static func draw_shop_item(canvas: CanvasItem, item_id: StringName, size: Vector2, ink: Color, stock: Color) -> void:
 	preload("res://scripts/press_shop.gd").draw(canvas, item_id, size, ink, stock)
 
