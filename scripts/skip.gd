@@ -142,6 +142,10 @@ var _print_time := 0.0
 var _stride := 0.0
 var _run_blend := 0.0
 var _air_blend := 0.0
+var _accel_blend := 0.0   # smoothed horizontal acceleration along the facing, -1 .. 1
+var _accel_target := 0.0  # the physics step's reading the blend follows
+var _skid_blend := 0.0    # a hard turn: sliding against the facing
+var _last_vx := 0.0
 var _hood_blend := 0.0
 var _set_blend := 0.0
 var _look_face := 1.0
@@ -175,6 +179,7 @@ const TAP_PERIOD := 0.5           # the tapping foot's own count when no groove 
 const DUST_TIME := 0.45
 const MAX_DUST := 24
 const SKID_SPEED := 150.0
+const ACCEL_LEAN_SCALE := 2400.0  # ground acceleration that reads as a full lean
 const SKID_GAP := 0.05
 var _book_pose := 0.0
 var _item_pose := 0.0
@@ -447,6 +452,10 @@ func _physics_process(delta: float) -> void:
 	if not grounded_before and _animation_grounded and landing_speed > 80.0:
 		_land_pose = LAND_POSE_TIME
 		_land_strength = clampf(landing_speed / 950.0, 0.25, 1.0)
+	# The lean reads the change of ground speed along the facing once per
+	# physics step, so the drawing blend is the same at any frame rate.
+	_accel_target = clampf((velocity.x - _last_vx) / maxf(delta, 0.001) * facing / ACCEL_LEAN_SCALE, -1.0, 1.0) if _animation_grounded else 0.0
+	_last_vx = velocity.x
 
 func _strike() -> void:
 	if not has_ability(&"strike"):
@@ -587,6 +596,12 @@ func _process(delta: float) -> void:
 	var running := clampf(absf(velocity.x) / RUN_SPEED, 0.0, 1.0) if _animation_grounded else 0.0
 	_run_blend = move_toward(_run_blend, running, step * 7.0)
 	_air_blend = move_toward(_air_blend, 0.0 if _animation_grounded else 1.0, step * 10.0)
+	# Lean reads the real change of ground speed along the facing; a skid is
+	# the physical turn the footwork dust already answers. Both are smoothed
+	# drawing blends and never feed back into movement.
+	_accel_blend = lerpf(_accel_blend, _accel_target, 1.0 - exp(-step * 12.0))
+	var sliding := _animation_grounded and absf(velocity.x) > SKID_SPEED and signf(velocity.x) != signf(facing)
+	_skid_blend = move_toward(_skid_blend, 1.0 if sliding else 0.0, step * (14.0 if sliding else 8.0))
 	_hood_blend = move_toward(_hood_blend, 1.0 if hooded else 0.0, step * 7.0)
 	_set_blend = move_toward(_set_blend, 1.0 if setting else 0.0, step * 6.0)
 	# While a speaker holds Skip's attention the drawn figure turns to it;
@@ -681,6 +696,7 @@ func _animation_pose() -> Dictionary:
 		"hood": _hood_blend, "set": _set_blend, "face": _look_face,
 		"land": _land_pose / LAND_POSE_TIME, "impact": _land_strength,
 		"launch": _launch_pose / LAUNCH_POSE_TIME,
+		"accel": _accel_blend, "skid": _skid_blend,
 		"strike": _strike_pose / _strike_pose_duration, "big": _strike_big,
 		"combo_step": _strike_combo, "strike_face": _strike_face, "strike_contact": last_strike_contact,
 		"strike_hold": _strike_hold / ACCENT_HOLD_TIME, "contact_pulse": _contact_pose / CONTACT_POSE_TIME,
@@ -702,6 +718,10 @@ func reset_animation() -> void:
 	_stride = 0.0
 	_run_blend = 0.0
 	_air_blend = 0.0
+	_accel_blend = 0.0
+	_accel_target = 0.0
+	_skid_blend = 0.0
+	_last_vx = velocity.x
 	_hood_blend = 1.0 if hooded else 0.0
 	_set_blend = 0.0
 	_look_face = facing

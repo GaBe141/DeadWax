@@ -2,6 +2,7 @@ extends RefCounted
 const Paint := preload("res://scripts/figure_paint.gd")
 const Combat := preload("res://scripts/press_skip_combat.gd")
 const Gesture := preload("res://scripts/press_skip_gesture.gd")
+const Gait := preload("res://scripts/press_skip_gait.gd")
 ## Skip's living ink. Only an explicit pose and palette enter the Press;
 ## deformation is confined to draw commands, with the planted feet as pivot.
 
@@ -12,9 +13,7 @@ static func draw(canvas: CanvasItem, pose: Dictionary, palette: Dictionary) -> v
 	var pink: Color = palette.get("pink", paint.coral)  # the crackle meter: pink only while heard
 	var hood_ink: Color = paint.teal
 	var time: float = pose.time
-	var stride: float = pose.stride
 	var run: float = pose.run
-	var air: float = pose.air
 	var hood: float = pose.hood
 	var kneel: float = pose.set
 	var face: float = pose.face
@@ -31,36 +30,35 @@ static func draw(canvas: CanvasItem, pose: Dictionary, palette: Dictionary) -> v
 	# impression on the same frame.
 	var gesture := Gesture.sample(pose)
 	var quiet := (1.0 - snap) * (1.0 - parry) * (1.0 - float(combat.hurt_strength))
+	# The stride, the lean, the jump and the landing come from one gait sample.
+	var gait := Gait.sample(pose)
 	var breath := sin(time * 2.7)
-	var step := sin(stride)
-	var compression := sin(land * PI) * float(pose.impact)
-	var rise := maxf(-float(pose.vertical), 0.0) * air
-	var stretch := Vector2(
-		1.0 + compression * 0.24 - rise * 0.10 + kneel * 0.15,
-		1.0 - compression * 0.24 + rise * 0.16 - kneel * 0.30
-	)
-	stretch.y += breath * 0.018 * (1.0 - run) + cos(stride * 2.0) * run * 0.045
+	var stretch := Vector2.ONE + Vector2(gait.stretch)
+	stretch.y += breath * 0.018 * (1.0 - run)
 	stretch += Vector2(combat.body_stretch) + Vector2(gesture.stretch) * quiet
-	var tilt := face * (run * 0.13 + kneel * 0.08) + float(combat.body_tilt) + float(gesture.tilt) * quiet
-	var bob := -absf(step) * run * 3.5 - sin(float(pose.launch) * PI) * 2.0
-	var offset := Vector2(combat.body_offset) + Vector2(0, bob)
+	var tilt := float(gait.lean) + face * kneel * 0.08 + float(combat.body_tilt) + float(gesture.tilt) * quiet
+	var offset := Vector2(combat.body_offset) + Vector2(0, float(gait.bob))
 	var anchor := Vector2(0, 26)
 	var translation := anchor + offset - (anchor * stretch).rotated(tilt)
 
 	# Small articulated feet sell the stride while preserving the stylus body.
+	# The gait plants them on the sole; only a pogo tuck and a fidget lift one.
 	for index in range(2):
 		var side := -1.0 if index == 0 else 1.0
-		var phase := stride + (PI if index == 0 else 0.0)
-		var foot := Vector2(side * 8 + sin(phase) * run * 10, 25 - maxf(0, cos(phase)) * run * 8)
-		foot += Vector2(-face * air * 5, -air * (4 + side * 2))
-		foot += Vector2(-attack_face * 4.0, -14.0 + side * 3.0) * float(combat.foot_tuck)
+		var foot: Vector2 = gait.feet[index]
+		var knee: Vector2 = gait.knees[index]
+		var hip: Vector2 = gait.hips[index]
+		var tuck := Vector2(-attack_face * 4.0, -14.0 + side * 3.0) * float(combat.foot_tuck)
+		foot += tuck
+		knee += tuck * 0.5
 		if side * face > 0.0:
 			foot.y -= float(gesture.tap) * quiet
-		var hip := Vector2(side * 7, 15 + kneel * 6)
-		var knee := hip.lerp(foot, 0.5) + Vector2(-face * run * 3, 0)
 		Paint.segment(canvas, hip, knee, 4.0, paint.coat, ink, paint.teal)
 		Paint.segment(canvas, knee, foot, 4.5, paint.brass, ink, paint.gold)
-		var toe := Vector2(face * 5, 0)
+		# The toe points along the shin: down in a swing, flat on the ground.
+		var shin := (foot - knee).normalized()
+		var toe_dir := Vector2(face, 0.0).lerp(Vector2(face * 0.75, 0.65), clampf(absf(shin.x) * 1.6, 0.0, 1.0) * float(gait.step))
+		var toe := toe_dir.normalized() * 5.0
 		Paint.shape(canvas, PackedVector2Array([foot + Vector2(-face*4,-2), foot + Vector2(face*3,-2), foot + toe + Vector2(0,1), foot + Vector2(-face*4,1)]), paint.shadow, ink, 1.2)
 		canvas.draw_line(foot + Vector2(-face*2,-1.5), foot + toe + Vector2(-face,-1.5), Color(paint.rim,0.62), 1.1, true)
 
@@ -73,6 +71,15 @@ static func draw(canvas: CanvasItem, pose: Dictionary, palette: Dictionary) -> v
 		var hand: Vector2 = combat.rear_hand
 		Paint.segment(canvas, shoulder, rear_elbow, 5.0, paint.coat, ink, paint.teal)
 		Paint.segment(canvas, rear_elbow, hand, 4.0, paint.brass, ink, paint.gold)
+	elif float(gait.arm) > 0.0:
+		# At a run the free arm swings against the legs. It fades in with
+		# speed so a standing Skip keeps his hands in his coat.
+		var reach := float(gait.arm)
+		var shoulder: Vector2 = gait.shoulder
+		var elbow_joint: Vector2 = gait.elbow
+		var hand: Vector2 = gait.hand
+		Paint.segment(canvas, shoulder, shoulder.lerp(elbow_joint, reach), 5.0, paint.coat, ink, paint.teal)
+		Paint.segment(canvas, shoulder.lerp(elbow_joint, reach), elbow_joint.lerp(hand, reach), 4.0, paint.brass, ink, paint.gold)
 	var body := PackedVector2Array([Vector2(0,-34), Vector2(8,-22), Vector2(17,2),
 		Vector2(19,15), Vector2(13,21), Vector2(-3,20), Vector2(-13,22),
 		Vector2(-18,14), Vector2(-15,-5), Vector2(-5,-28)])
@@ -95,15 +102,17 @@ static func draw(canvas: CanvasItem, pose: Dictionary, palette: Dictionary) -> v
 	# The short copper scarf follows the body rather than the collision node.
 	Paint.shape(canvas,PackedVector2Array([Vector2(-14,12),Vector2(12,12),Vector2(16,16),Vector2(2,19),Vector2(-13,17)]),paint.copper.lerp(paint.wood,0.24),ink,0.8)
 	var cloth_face := attack_face if snap > 0.0 else face
-	var cloth_drag := maxf(run, maxf(snap * 0.7, float(combat.hurt_strength)))
-	canvas.draw_colored_polygon(PackedVector2Array([Vector2(-cloth_face*9,15),Vector2(-cloth_face*(26+cloth_drag*6),11+sin(time*6)*2),Vector2(-cloth_face*19,20),Vector2(-cloth_face*8,19)]),paint.copper)
+	var scarf: Dictionary = gait.scarf
+	var cloth_drag := maxf(float(scarf.drag), maxf(snap * 0.7, float(combat.hurt_strength)) * 6.0)
+	var tail := Vector2(-cloth_face*(26+cloth_drag), 11+sin(time*6)*2 + float(scarf.flap) - float(scarf.lift))
+	canvas.draw_colored_polygon(PackedVector2Array([Vector2(-cloth_face*9,15),tail,Vector2(-cloth_face*19,20 - float(scarf.lift) * 0.4),Vector2(-cloth_face*8,19)]),paint.copper)
 	canvas.draw_colored_polygon(PackedVector2Array([Vector2(-14,15),Vector2(7,16),Vector2(2,19),Vector2(-13,17)]),Color(paint.wood,0.55))
 	canvas.draw_line(Vector2(-10,13),Vector2(5,14),Color(paint.coral,0.65),1.0,true)
 
 	# Each stroke has a different silhouette: direct jab, low crossing sweep,
 	# then a planted downward accent. Captured facing survives a running turn.
-	var tip: Vector2 = Vector2(combat.tip).lerp(gesture.tip, float(gesture.stylus) * quiet)
-	var elbow: Vector2 = Vector2(combat.elbow).lerp(gesture.elbow, float(gesture.stylus) * quiet)
+	var tip: Vector2 = Vector2(combat.tip).lerp(gesture.tip, float(gesture.stylus) * quiet) + Vector2(gait.point_sway) * quiet
+	var elbow: Vector2 = Vector2(combat.elbow).lerp(gesture.elbow, float(gesture.stylus) * quiet) + Vector2(gait.point_sway) * quiet * 0.6
 	var stem := PackedVector2Array([Vector2(0, -34), elbow, tip])
 	canvas.draw_polyline(stem, Color(ink, 1.0 - hood), 5.0, true)
 	canvas.draw_polyline(stem, Color(paint.brass, 1.0 - hood), 3.2, true)

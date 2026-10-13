@@ -1085,6 +1085,13 @@ settings used private paths and were removed afterward.
 - [ ] A live victory settles into its resolved pose; Continue shows that settled pose without replaying the victory or granting rewards.
 - [ ] Pausing freezes character motion. Resume continues it; room transitions and recovery clear stale landing, strike, and hit poses.
 
+## Locomotion
+
+- [ ] Run along High Street both ways. Skip trots: the body rises between steps, leans into the run, the free arm swings and the scarf trails. Facing left, the feet still step forward (no moonwalk). A stroll keeps the hands in the coat.
+- [ ] Set off, stop and turn hard. He leans forward as he sets off, leans back when you let go, and a reversal at speed plants both feet wide and leans against the slide while the dust kicks up. None of it changes where he actually is, how fast he stops, or the collider.
+- [ ] Jump from a run and from standing. Take-off stretches him tall, he tucks his feet on the way up, drops them to meet the ground on the way down, and a hard landing squashes him wide and settles once; a short hop barely squashes. Hooded and kneeling poses still read; Reduced motion and pause freeze everything.
+- [ ] The Hound trots rather than glides: head bob, ear flop, tail bouncing a beat behind; sitting, petting and startling are unchanged. Auditioners roll and lean as they pursue; their reach, tells and timing feel the same.
+
 ## Residents
 
 - [ ] The Bootlegger sorts and inspects tapes, looks toward Skip, and gestures when spoken to. His words change after either Tonearm ending.

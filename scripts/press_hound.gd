@@ -16,7 +16,12 @@ static func draw(canvas: CanvasItem, pose: Dictionary, ink: Color, stock: Color)
 	var faded: Color = paint.coat
 	var warm: Color = paint.brass
 	var breath := sin(clock * 2.8) * 1.2
-	var bob := -absf(sin(gait)) * stride * 2.5
+	# A trot: the body rises twice a cycle as the diagonal pairs push off,
+	# pitches nose-up on each push and nose-down on each landing, and the
+	# head bobs against it so the ears and collar have something to follow.
+	var flight := pow(0.5 - 0.5 * cos(gait * 2.0), 0.7)
+	var bob := -flight * stride * 4.0
+	var pitch := sin(gait * 2.0 + 0.6) * stride * 0.06
 	var startle := 0.0
 	if phase == "startled":
 		startle = sin(clampf(float(pose.time) / 0.3, 0.0, 1.0) * PI)
@@ -24,14 +29,16 @@ static func draw(canvas: CanvasItem, pose: Dictionary, ink: Color, stock: Color)
 	var body := Vector2(-4.0 - sit * 8.0, -8.0 + breath + bob + sit * 4.0)
 	var sniff := sin(clock * 7.0) * 2.0 if phase == "notice" else 0.0
 	var nuzzle := sin(clock * 3.5) * 2.6 * float(pose.pet)
-	var head := body + Vector2(34.0 + sniff + nuzzle, -22.0 - sit * 4.0)
+	var head := body + Vector2(34.0 + sniff + nuzzle - stride * 2.0, -22.0 - sit * 4.0 + flight * stride * 2.5)
 	head.y -= startle * 5.0
-	canvas.draw_set_transform(Vector2.ZERO, 0.0, Vector2(float(pose.face), 1.0))
+	canvas.draw_set_transform(Vector2.ZERO, pitch * float(pose.face), Vector2(float(pose.face), 1.0))
 	# The rear pair leads the gait by half a cycle; front legs carry the sit.
 	_leg(canvas, body + Vector2(-19, 8), -24.0, gait + PI, stride, sit, faded,ink,warm,paint.wax)
 	_leg(canvas, body + Vector2(15, 8), 23.0, gait, stride, 0.0, faded,ink,warm,paint.wax)
 	var tail_root := body + Vector2(-23, -2)
 	var wag_angle := sin(clock * (5.0 + wag * 11.0)) * (0.12 + wag * 0.40)
+	# At a trot the tail streams out and bounces a beat behind the body.
+	wag_angle += sin(gait * 2.0 - 1.2) * stride * 0.18 + stride * 0.10
 	var tail_tip := tail_root + Vector2(-38, -14).rotated(wag_angle)
 	if phase == "startled":
 		tail_tip = tail_root + Vector2(-24, 13)
@@ -53,8 +60,8 @@ static func draw(canvas: CanvasItem, pose: Dictionary, ink: Color, stock: Color)
 	_leg(canvas, body + Vector2(-14, 11), -15.0, gait, stride, sit, paint.coat,ink,warm,paint.wax)
 	_leg(canvas, body + Vector2(19, 9), 30.0, gait + PI, stride, 0.0, paint.coat,ink,warm,paint.wax)
 	# Folded paper ears, a sloped muzzle, and a small needle for a nose.
-	var ear_lift := 8.0 * startle + (4.0 if phase == "notice" else 0.0)
-	var ear_swing := sin(clock * 3.0 - 0.8) * 2.0 + stride * sin(gait - 0.5) * 3.0
+	var ear_lift := 8.0 * startle + (4.0 if phase == "notice" else 0.0) - flight * stride * 3.0
+	var ear_swing := sin(clock * 3.0 - 0.8) * 2.0 + stride * sin(gait * 2.0 - 1.4) * 5.0
 	Paint.shape(canvas,PackedVector2Array([
 		head + Vector2(-14, -4), head + Vector2(-24 + ear_swing, -22 - ear_lift), head + Vector2(-4, -8),
 	]),paint.coat,ink,1.5)
@@ -80,10 +87,13 @@ static func draw(canvas: CanvasItem, pose: Dictionary, ink: Color, stock: Color)
 	canvas.draw_set_transform(Vector2.ZERO)
 
 static func _leg(canvas: CanvasItem, hip: Vector2, stance_x: float, gait: float, stride: float, sit: float, color: Color, edge: Color, metal: Color, highlight: Color) -> void:
+	# The paw reaches forward while it is up and draws back along the ground
+	# while it bears weight; the knee folds up under a lifted leg.
 	var swing := sin(gait)
-	var foot := Vector2(stance_x + swing * stride * 8.0, 26.0 - maxf(swing, 0.0) * stride * 7.0)
+	var lifted := pow(maxf(cos(gait), 0.0), 0.8)
+	var foot := Vector2(stance_x + swing * stride * 9.0, 26.0 - lifted * stride * 8.0)
 	foot.x = lerpf(foot.x, stance_x - 9.0, sit)
-	var knee := hip.lerp(foot, 0.56) + Vector2(-4.0 - sit * 6.0, 0)
+	var knee := hip.lerp(foot, 0.56) + Vector2(-4.0 - sit * 6.0 + lifted * stride * 3.0, -lifted * stride * 4.0)
 	Paint.segment(canvas,hip,knee,5.2,color,edge,highlight)
 	Paint.segment(canvas,knee,foot,4.3,metal,edge,highlight)
 	canvas.draw_line(foot+Vector2(-4,0),foot+Vector2(5,0),edge,4.0,true)

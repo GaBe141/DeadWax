@@ -19,14 +19,18 @@ static func draw_auditioner(canvas: CanvasItem, pose: Dictionary, ink: Color, bo
 	var resident: Dictionary = pose.get("resident", {})
 	var walking := phase == "pursue" or phase == "reach" or bool(resident.get("walking", false))
 	var step := sin(stride) if walking else 0.0
-	var lift := absf(cos(stride)) * 1.8 if walking else breath * 1.4
+	# A pursuit rolls: the body rises on each push, drops at each plant and
+	# leans into the chase, so the approach reads before the reach begins.
+	var flight := pow(0.5 - 0.5 * cos(stride * 2.0), 0.7)
+	var lift := flight * 3.6 if walking else breath * 1.4
+	var hurry := 1.0 if phase == "pursue" else 0.0
 	var recoil: float = pose.recoil
 	var reach: float = pose.reach if phase == "reach" else 0.0
 	var anticipation := sin(reach * PI)
 	var extension := reach * reach
-	var center := Vector2(face * (extension * 8.0 - anticipation * 3.0 - recoil * 8.0), -26.0 - lift)
+	var center := Vector2(face * (extension * 8.0 - anticipation * 3.0 - recoil * 8.0 + hurry * 2.5), -26.0 - lift)
 	center += Vector2(pose.jitter)
-	var rotation := face * (extension * 0.15 - recoil * 0.23)
+	var rotation := face * (extension * 0.15 - recoil * 0.23 + hurry * (0.07 + sin(stride * 2.0) * 0.03))
 	if phase == "stagger":
 		rotation += -face * cos(float(pose.state_time) * 22.0) * exp(-float(pose.state_time) * 5.0) * 0.24
 	if phase == "recover":
