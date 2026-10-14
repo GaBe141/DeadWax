@@ -1,5 +1,5 @@
 extends RefCounted
-## Light in the art-direction test's ink (ink_test.gd). The Label at the hour
+## Light in the ink look (ink_look.gd). The Label at the hour
 ## the story keeps for it, dawn-grey (docs/STORY.md, beats 2 and the last):
 ## the page takes a cool second printing that is heaviest overhead and under
 ## the street, and the night's last lamps knock it back where they still burn.

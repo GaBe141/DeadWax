@@ -1,5 +1,5 @@
 extends RefCounted
-## Skip's hood in the art-direction test's ink (ink_test.gd): "a worn 45
+## Skip's hood in the ink look (ink_look.gd): "a worn 45
 ## sleeve for a hood" (docs/CAST.md), drawn after the canon's LIFT pose
 ## (docs/art/direction.html, 02): a tall sleeve pulled up over him, its centre
 ## hole his face, its hem corners flicked out.

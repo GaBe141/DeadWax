@@ -42,14 +42,16 @@ Keep this file short. Coding agents only read the first part of it (Codex reads
   - The Tonearm never swings first.
   - Register law (`CAST.md`): the Bootlegger, the liner-book, Tick and the
     Typesetter carry the mania; the Engineer, HUSH and Soon play it straight.
+- The look. Settled on 14 October: the game is drawn in the canon's ink
+  (`scripts/ink_look.gd`, on by default; Horn Plaza by hand in
+  `press_ink_plaza.gd`, every other room from its own geometry in
+  `press_ink_room.gd`; paper above the Scratch, scratchboard below). F9 flips
+  to the earlier "Quiet Wax" look for comparison only. Don't extend Quiet Wax:
+  new scenery, props and figures are drawn in ink (`press_ink_set.gd`,
+  `press_ink_figures.gd`). The HUD, Book and menus are still Quiet Wax's and
+  wait on a pass.
 - Open decisions. Don't build further in these directions until the user
   settles them; the status table has details.
-  - **Art direction.** The build's "Quiet Wax" look against the locked dense,
-    grungy direction in `docs/art/direction.html`, to be settled by a
-    side-by-side test of one room. That test is built (12 October): F9 in
-    Horn Plaza, off by default (`scripts/ink_test.gd`). Until the user
-    decides: no new panorama, material, lighting or atmosphere passes, no
-    wholesale restyle, and no ink beyond Horn Plaza.
   - **The beat.** Planned next: a world groove clock, Tap → Sweep → Accent on
     consecutive beats with the Accent heavy only in the pocket, and Auditioners
     that wake on noise rather than distance. Partly built on 9 October as the
@@ -121,7 +123,7 @@ Keep this file short. Coding agents only read the first part of it (Codex reads
   rooms, atmosphere, lighting and materials, figures and residents, saves and
   menus, abilities, collection and trials, map, controller support, B-side
   exploration, Lost Pressings, Groove pressure, levels and XP, the small
-  animated moments and the art-direction ink test — and the
+  animated moments and the ink look — and the
   regression-sensitive behaviour each
   suite locks. Read the section for a system before changing it.
 - `scenes/main.tscn` → `scripts/main.gd` builds the input map, player, camera,

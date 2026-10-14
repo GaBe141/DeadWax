@@ -1,14 +1,21 @@
 extends Node2D
-## The art-direction test's drawing of a room (ink_test.gd). The room adds
-## this in place of its Quiet Wax layers and removes it to turn back. It only
-## draws: no collision, no routes, no clocks that reach gameplay. The far town
+## A room's drawing in the ink look (ink_look.gd). The room adds this in
+## place of its Quiet Wax layers and removes it to turn back. It only draws:
+## no collision, no routes, no clocks that reach gameplay. The far plane
 ## drifts a little with the camera; everything else is fixed to the page.
+##
+## Horn Plaza is composed by hand (press_ink_plaza.gd). Every other room is
+## composed from its own geometry (press_ink_room.gd): the plate reads the
+## room's solid faces, passages and landmarks once at setup and hands them
+## to the drawing as plain data.
 
 const Press := preload("res://scripts/press.gd")
 const Plaza := preload("res://scripts/press_ink_plaza.gd")
+const Room := preload("res://scripts/press_ink_room.gd")
 const Ink := preload("res://scripts/press_ink.gd")
 const Light := preload("res://scripts/press_ink_light.gd")
-const InkTest := preload("res://scripts/ink_test.gd")
+const Set := preload("res://scripts/press_ink_set.gd")
+const InkLook := preload("res://scripts/ink_look.gd")
 
 ## The still planes. The light lies over the set and the passages (z 0) but
 ## under contact shadows (2), fixtures (3-4) and figures, so what can be
@@ -18,15 +25,19 @@ const FAR_DRIFT := Vector2(0.12, 0.065)
 
 var room_id: StringName
 var bounds := Rect2(0, 0, 1800, 820)
-var far_face := false
+## Whether the page is scratchboard (ink_look.gd `scratchboard`).
+var scratchboard := false
 ## Passage positions by destination, read from the room's own exits.
 var exits: Dictionary = {}
+## The room as the generic drawing sees it (press_ink_room.gd `describe`).
+var scene: Dictionary = {}
 var reduced_motion := false
 var _layers: Array[InkPlane] = []
 var _live: Live
 var _contacts: Contacts
 var _source: Node
 var _published: Array = []
+var _rig: Dictionary = {}
 
 class InkPlane extends Node2D:
 	var plane: StringName
@@ -49,7 +60,7 @@ class Live extends Node2D:
 		if rig.is_empty():
 			return
 		var k := Ink.new(self, 11)
-		Light.draw_live(k, rig, plate.far_face, time)
+		Light.draw_live(k, rig, plate.scratchboard, time)
 		k.flush()
 
 ## Soft ink shadows where figures meet the street, from the room's own
@@ -57,10 +68,10 @@ class Live extends Node2D:
 ## the street throw.
 class Contacts extends Node2D:
 	var actors: Array = []
-	var far_face := false
+	var scratchboard := false
 	var rig: Dictionary = {}
 	func _draw() -> void:
-		var p := Plaza.palette(far_face)
+		var p := Set.palette(scratchboard)
 		var k := Ink.new(self, 7)
 		for actor in actors:
 			var foot: Vector2 = actor.get("foot_position", Vector2.ZERO)
@@ -80,18 +91,51 @@ func setup(source: Node, field: Rect2, id: StringName, face_b: bool) -> void:
 	_source = source
 	bounds = field
 	room_id = id
-	far_face = face_b
+	scratchboard = InkLook.page_is_scratchboard(id, face_b)
+	_read_room()
+
+## What the drawing needs from the room, read once: its passages, solid faces
+## and landmarks. Nothing live is read after this.
+func _read_room() -> void:
 	exits.clear()
-	for child in source.get_children():
+	var passages: Array[Dictionary] = []
+	for child in _source.get_children():
 		if child.is_in_group("room_exit") and "target_room" in child:
-			exits[StringName(child.get("target_room"))] = (child as Node2D).position.x
+			var at := (child as Node2D).position
+			exits[StringName(child.get("target_room"))] = at.x
+			passages.append({"target": StringName(child.get("target_room")), "at": at,
+				"name": String(child.get("display_name")) if "display_name" in child else ""})
+	var surfaces: Array[Rect2] = []
+	if _source.has_method("surface_rects"):
+		surfaces = _source.call("surface_rects")
+	var landmarks: Array[Dictionary] = []
+	if _source.has_method("landmark_records"):
+		landmarks = _source.call("landmark_records")
+	var spawn: Vector2 = _source.get("spawn_pos") if "spawn_pos" in _source else bounds.get_center()
+	scene = Room.describe(room_id, bounds, surfaces, passages, landmarks, spawn)
+	_rig = {}
+
+## A solid face laid after the plate went up (an earned ledge): the drawing
+## is composed again around it.
+func add_surface(_surface: Rect2) -> void:
+	_read_room()
+	Room.forget(room_id)
+	for layer in _layers:
+		layer.queue_redraw()
+	if _contacts != null:
+		_contacts.rig = light_rig()
+	_publish_lamps()
 
 func snapshot() -> Dictionary:
-	return {"room_id": room_id, "far_face": far_face, "exits": exits}
+	return {"room_id": room_id, "far_face": scratchboard, "scratchboard": scratchboard, "exits": exits, "scene": scene}
 
-## The room's light, if it has one drawn in ink.
+## The room's light.
 func light_rig() -> Dictionary:
-	return Plaza.light_rig() if room_id == &"horn_plaza" else {}
+	if InkLook.hand_drawn(room_id):
+		return Plaza.light_rig()
+	if _rig.is_empty() and not scene.is_empty():
+		_rig = Room.light_rig(scene)
+	return _rig
 
 func _ready() -> void:
 	add_to_group("ink_plate")
@@ -111,7 +155,7 @@ func _ready() -> void:
 	_contacts = Contacts.new()
 	_contacts.name = "Contacts"
 	_contacts.z_index = 2
-	_contacts.far_face = far_face
+	_contacts.scratchboard = scratchboard
 	_contacts.rig = light_rig()
 	add_child(_contacts)
 	_publish_lamps()
@@ -120,8 +164,8 @@ func _ready() -> void:
 func _exit_tree() -> void:
 	# Only this plate's own lamps: a plate leaving after the next one arrived
 	# (the same room reloaded) must not put out its successor's.
-	if is_same(InkTest.lamps, _published):
-		InkTest.lamps = []
+	if is_same(InkLook.lamps, _published):
+		InkLook.lamps = []
 
 ## Lamps in world space, for the figures that walk past them.
 func _publish_lamps() -> void:
@@ -131,7 +175,7 @@ func _publish_lamps() -> void:
 		lit["at"] = to_global(Vector2(lamp.at))
 		lamps.append(lit)
 	_published = lamps
-	InkTest.lamps = lamps
+	InkLook.lamps = lamps
 
 func _process(_delta: float) -> void:
 	_sync_camera()
@@ -151,11 +195,13 @@ func _sync_camera() -> void:
 		travel = camera.get_screen_center_position() - bounds.get_center()
 	_layers[1].position = travel * FAR_DRIFT
 
-## Turning the pressing over reprints the same drawing reversed out of wax.
-func reink(face_b: bool) -> void:
-	far_face = face_b
+## Turning the pressing over reprints the same drawing on the other page.
+## (Not `reink`: the rooms reink every child that has one with their own two
+## colours, and the plate takes its page from the look.)
+func reprint(face_b: bool) -> void:
+	scratchboard = InkLook.page_is_scratchboard(room_id, face_b)
 	if _contacts != null:
-		_contacts.far_face = far_face
+		_contacts.scratchboard = scratchboard
 		_contacts.queue_redraw()
 	for layer in _layers:
 		layer.queue_redraw()

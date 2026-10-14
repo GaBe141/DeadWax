@@ -1,5 +1,5 @@
 extends RefCounted
-## Skip's point in the art-direction test's ink (ink_test.gd): the canon's
+## Skip's point in the ink look (ink_look.gd): the canon's
 ## "oversized stylus-lance wrapped in unspooled cassette tape"
 ## (docs/BRAINSTORM.md, docs/CAST.md), the Engineer's stylus made a weapon.
 ## From the butt: a cartridge block, a taped grip, the cantilever shaft with

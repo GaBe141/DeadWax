@@ -210,10 +210,14 @@ func _check_player_blends() -> void:
 	var player: CharacterBody2D = _main.player
 	var transform_before := player.transform
 	_key(KEY_D, true)
-	await _physics(3)
-	var starting: Dictionary = player._animation_pose()
-	_check(float(starting.accel) > 0.25, "setting off leans forward: the pose reads the real acceleration")
-	await _physics(30)
+	# The blends smooth over wall-clock time, so the lean is read at its peak
+	# over the first frames of the start rather than at one frame.
+	var starting_lean := 0.0
+	for frame in 8:
+		await _physics(1)
+		starting_lean = maxf(starting_lean, float(player._animation_pose().accel))
+	_check(starting_lean > 0.25, "setting off leans forward: the pose reads the real acceleration (%.2f)" % starting_lean)
+	await _physics(22)
 	var cruising: Dictionary = player._animation_pose()
 	_check(absf(float(cruising.accel)) < 0.2 and float(cruising.run) > 0.9, "a steady run settles the lean")
 	_check(is_zero_approx(float(cruising.skid)), "running the way Skip faces is not a skid")
@@ -226,10 +230,12 @@ func _check_player_blends() -> void:
 	var settled: Dictionary = player._animation_pose()
 	_check(float(settled.skid) < 0.05 and float(settled.accel) < 0.3, "once Skip runs the new way the skid is over")
 	_key(KEY_A, false)
-	await _physics(3)
-	var stopping: Dictionary = player._animation_pose()
-	_check(float(stopping.accel) < -0.2, "letting go leans back against the braking")
-	await _physics(30)
+	var stopping_lean := 0.0
+	for frame in 8:
+		await _physics(1)
+		stopping_lean = minf(stopping_lean, float(player._animation_pose().accel))
+	_check(stopping_lean < -0.2, "letting go leans back against the braking (%.2f)" % stopping_lean)
+	await _physics(22)
 	_check(absf(float(player._animation_pose().accel)) < 0.05, "standing still, the lean is gone")
 	_check(player.scale == Vector2.ONE and is_zero_approx(player.rotation) and absf(player.transform.origin.y - transform_before.origin.y) < 1.0,
 		"the gait never scales or rotates the gameplay node")

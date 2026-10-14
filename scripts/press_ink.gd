@@ -1,5 +1,5 @@
 extends RefCounted
-## The ink kit for the art-direction test (ink_test.gd): the canon's "detail
+## The ink kit for the ink look (ink_look.gd): the canon's "detail
 ## language" (docs/art/direction.html, density target) as brush marks. Thick
 ## tapering ink that fills its shape, hatching on the shadowed third, cross-
 ## hatch in the deep shadows, grime, stains and flat colour under texture.

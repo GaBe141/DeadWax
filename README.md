@@ -1,4 +1,4 @@
-# DEAD WAX — Quiet Wax
+# DEAD WAX
 
 [![Godot checks](https://github.com/GaBe141/DeadWax/actions/workflows/godot-checks.yml/badge.svg)](https://github.com/GaBe141/DeadWax/actions/workflows/godot-checks.yml)
 
@@ -16,12 +16,18 @@ One nearby action cue appears at a time; deliberate E / Y conversations use
 brief subtitles. The Book and pause menu keep the full guidance, while Move
 practice and development rooms retain their detailed readouts.
 
-All 26 demo rooms use shaded wax, stone and aged metal surfaces, with soft
-light shafts and sparse dust around their local lamps. Daylight gives the
-Label streets a cooler fill; the Overture keeps warmer interiors, and the
-Unplayed carries violet and copper light. Small shadows beneath Skip and
-the standing figures follow real platforms and fade during jumps. Pause
-freezes the effects; Reduced motion holds decorative haze and parallax still.
+The game is drawn in ink. Above the Scratch the Label and the Overture are
+black ink on aged label paper: thick tapering outlines, hatching on the
+shadowed third, grime, flyers, crates and tapes, building fronts with their
+windows and shutters, and the earth cut away beneath every street. Below the
+Scratch the Unplayed is scratchboard, the same line reversed out of wax, and
+turning the pressing over prints any room on the other page. Horn Plaza is
+composed by hand; every other room is composed from its own platforms,
+passages and landmarks. The hour is dawn-grey, the night's last lamps still
+burning, and figures walking past them catch a rim of lamplight and throw
+long shadows down the street. Pause freezes the lantern's breathing and the
+dust in its light; Reduced motion holds them and the far plane still.
+**F9** flips back to "Quiet Wax", the build's earlier look, for comparison.
 
 The **Lost Pressings** equipment finds add three guaranteed rewards to the
 return journey: a cabinet beyond the Stalls' groove, a high balcony in Horn
@@ -553,9 +559,9 @@ controller uses the physical layout above.
 - **F** (or right shoulder) — **FLIP**: turn the pressing over. Needs the
   **Jump-Cut**. Silent until you carry it.
 - **R** respawn at the current room entry.
-- **F9** — the art-direction test: Horn Plaza drawn in the canon's ink in place
-  of Quiet Wax, to compare the two in play. Press again to turn back. Nothing
-  is saved; every other room stays as it is.
+- **F9** — flip the whole game between its ink look and "Quiet Wax", the
+  build's earlier look, to compare the two in play. Nothing is saved;
+  `-- --quiet-wax` starts in the old look.
 
 After collecting the folded map, **M / D-pad Down** opens it while exploring.
 The Book also has an **Open map** button. **Journey → This Place** holds the
@@ -953,6 +959,7 @@ save-error visibility, and preserved practice/development guidance.
 The render-batch suite checks that gathered scenery marks are the engine's own
 triangles and their bookkeeping; run windowed, it also compares them with the
 engine's drawing pixel for pixel.
-The ink-test suite checks that the art-direction test changes presentation
-only: the same collision, nodes and movement in either look, every Quiet Wax
-layer restored, other rooms untouched, and no pink or gold in its scenery.
+The ink-look suite checks that the look changes presentation only: every
+campaign room opens in ink on the right page with its passages where the
+room put them, the same collision, nodes and movement in either look, every
+Quiet Wax layer restored by F9, and no pink or gold in the scenery.

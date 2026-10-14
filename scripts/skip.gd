@@ -76,8 +76,8 @@ var groove: RefCounted
 var hood_speed_mult := HOOD_SPEED_MULT
 var warm_thread := false
 ## The Tip and the Sleeve fitted in the Book, by item id. Drawing only: the
-## art-direction test's ink shows them on the point and the hood
-## (press_ink_point.gd, press_ink_hood.gd).
+## ink look shows them on the point and the hood (press_ink_point.gd,
+## press_ink_hood.gd).
 var fitted_tip: StringName = &""
 var fitted_lining: StringName = &""
 ## Optional equipment affects handling, never strike/parry clocks or jump height.

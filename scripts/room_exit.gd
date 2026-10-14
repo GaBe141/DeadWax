@@ -108,7 +108,9 @@ func _required_refrain_label() -> String:
 	return "REFRAIN"
 
 func _draw() -> void:
-	PressScript.draw_passage(self, {"near": _near, "locked": is_locked(), "target": target_room}, ink, stock)
+	var parent := get_parent()
+	var room_id: StringName = parent.get("room_id") if parent != null and "room_id" in parent else &""
+	PressScript.draw_passage(self, {"near": _near, "locked": is_locked(), "target": target_room, "room": room_id}, ink, stock)
 
 func reink(next_ink: Color, next_stock: Color) -> void:
 	ink = next_ink

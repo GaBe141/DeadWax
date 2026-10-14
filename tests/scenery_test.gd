@@ -10,6 +10,7 @@ const PressingScript := preload("res://scripts/pressing_state.gd")
 const PaintedWorld := preload("res://scripts/press_painted_world.gd")
 const ExplorationCatalog := preload("res://scripts/exploration_catalog.gd")
 const ExplorationFixture := preload("res://scripts/exploration_fixture.gd")
+const InkLook := preload("res://scripts/ink_look.gd")
 const BASELINE := {
 	&"headshell": [4, 4, 0, 0, 1, 0],
 	&"horn_plaza": [4, 4, 0, 1, 4, 1],
@@ -50,6 +51,8 @@ func _init() -> void:
 	call_deferred("_run")
 
 func _run() -> void:
+	# This suite locks the Quiet Wax presentation, the look behind F9.
+	InkLook.enabled = false
 	for path in [PaintedWorld.LABEL_PATH, PaintedWorld.OVERTURE_PATH, PaintedWorld.WELL_PATH, PaintedWorld.UNPLAYED_PATH]:
 		var painting := PaintedWorld.texture(path)
 		_check(painting != null and painting.get_width() >= 700 and painting.get_height() >= 700,

@@ -1,8 +1,15 @@
 extends RefCounted
 ## Shared gouache materials. Supplied page colours tune contrast and contours;
 ## brush marks are deterministic, and no helper owns a clock or scene state.
+## In ink (ink_look.gd) the same figures take the page's working inks: black
+## line and dark wax on paper, or white line out of wax on scratchboard, so
+## every resident, voice and fixture prints in the room's own look.
+
+const InkLook := preload("res://scripts/ink_look.gd")
 
 static func palette(ink: Color, stock: Color) -> Dictionary:
+	if InkLook.active:
+		return ink_palette(InkLook.scratchboard)
 	var dark := stock.get_luminance() < 0.38
 	return {
 		"edge": Color("13292e").lerp(ink, 0.10),
@@ -13,6 +20,25 @@ static func palette(ink: Color, stock: Color) -> Dictionary:
 		"gold": Color("e5bd70"), "copper": Color("c87955"),
 		"coral": Color("ed987b"), "wood": Color("81513c"),
 		"rim": Color("b8c9b1") if dark else Color("49645f"),
+	}
+
+## The gouache materials as the ink look prints them. Pink and gold are not
+## here: pink is heard sound and gold is her, both from press.gd only.
+static func ink_palette(scratchboard: bool) -> Dictionary:
+	if scratchboard:
+		return {
+			"edge": InkLook.GROOVE, "shadow": Color("050407"), "coat": Color("1a1720"),
+			"teal": Color("2b2832"), "cream": Color("8d8799"), "light": Color("d9d3c7"),
+			"wax": Color("2a2531"), "brass": Color("7a6240"), "gold": Color("8c7a52"),
+			"copper": Color("7a4a33"), "coral": Color("5c2b23"), "wood": Color("3a2e25"),
+			"rim": Color("4a4258"),
+		}
+	return {
+		"edge": InkLook.LINE, "shadow": Color("17141b"), "coat": Color("17141b"),
+		"teal": Color("3a3a44"), "cream": Color("f0e8d4"), "light": InkLook.GROOVE,
+		"wax": InkLook.DUST, "brass": InkLook.BRASS, "gold": Color("c9a05a"),
+		"copper": Color("b06a42"), "coral": InkLook.CANCEL_RED, "wood": Color("8a6440"),
+		"rim": Color("9a8f7a"),
 	}
 
 static func shape(c: CanvasItem, points: PackedVector2Array, fill: Color, edge: Color, width := 1.8) -> void:

@@ -1,5 +1,5 @@
 extends RefCounted
-## Figures and fixtures in the art-direction test's ink (ink_test.gd).
+## Figures and fixtures in the ink look (ink_look.gd).
 ##
 ## The canon's Tier B (docs/art/tier_compare.html): readable gameplay figures,
 ## a bold silhouette first, detail from texture and a thick line rather than
@@ -17,10 +17,12 @@ extends RefCounted
 ## gesture samplers Quiet Wax uses, so the two looks move alike.
 
 const Ink := preload("res://scripts/press_ink.gd")
-const InkTest := preload("res://scripts/ink_test.gd")
+const InkLook := preload("res://scripts/ink_look.gd")
 const Combat := preload("res://scripts/press_skip_combat.gd")
 const Gesture := preload("res://scripts/press_skip_gesture.gd")
+const Gait := preload("res://scripts/press_skip_gait.gd")
 const Plaza := preload("res://scripts/press_ink_plaza.gd")
+const Room := preload("res://scripts/press_ink_room.gd")
 const Point := preload("res://scripts/press_ink_point.gd")
 const Hood := preload("res://scripts/press_ink_hood.gd")
 const Light := preload("res://scripts/press_ink_light.gd")
@@ -39,37 +41,37 @@ const EYES := [Vector2(-4.5, -22.0), Vector2(7.5, -21.5)]
 const CHIPS := [[Vector2(-17, -20), -1.0], [Vector2(15, -22), 1.0]]
 
 static func colours() -> Dictionary:
-	var far := InkTest.far_face
-	var paper := InkTest.stock(far)
-	var line := InkTest.ink(far)
+	var far := InkLook.scratchboard
+	var paper := InkLook.stock(far)
+	var line := InkLook.ink(far)
 	return {
 		"paper": paper, "line": line,
-		"body": InkTest.WAX if far else Color("17141b"),
-		"edge": InkTest.GROOVE if far else InkTest.WAX,
-		"eye": InkTest.GROOVE, "pupil": InkTest.WAX,
-		"scratch": Color(InkTest.GROOVE, 0.55),
-		"hood": InkTest.DUST.lerp(paper, 0.25) if not far else Color("2a2531"),
+		"body": InkLook.WAX if far else Color("17141b"),
+		"edge": InkLook.GROOVE if far else InkLook.WAX,
+		"eye": InkLook.GROOVE, "pupil": InkLook.WAX,
+		"scratch": Color(InkLook.GROOVE, 0.55),
+		"hood": InkLook.DUST.lerp(paper, 0.25) if not far else Color("2a2531"),
 		"hood_edge": Color(line, 0.55),
 		# Hood up is silence: the sleeve's ink is grey, never black.
 		"hood_line": line.lerp(paper, 0.42),
 		"thread": Color("c47a35") if not far else Color("e09a5a"),
 		"silk": Color("f6f1e6") if not far else Color("cfc8d8"),
-		"felt": InkTest.DUST.lerp(paper, 0.25).darkened(0.28) if not far else Color("3d3646"),
+		"felt": InkLook.DUST.lerp(paper, 0.25).darkened(0.28) if not far else Color("3d3646"),
 		# Lamplight caught on an edge.
 		"rim": Color("fff0c8") if not far else Color("f2e6cc"),
-		"wrap": InkTest.WAX if not far else Color("4a4258"),
-		"quiet": InkTest.DUST.darkened(0.15) if not far else Color("6b6475"),
+		"wrap": InkLook.WAX if not far else Color("4a4258"),
+		"quiet": InkLook.DUST.darkened(0.15) if not far else Color("6b6475"),
 		"tape": Color("5e4231") if not far else Color("a3836a"),
 		"tape_shine": Color("a07a5c") if not far else Color("d8bfa6"),
 		"steel": Color("cfcac1") if not far else Color("3e3946"),
 		"silver": Color("e3e6e8") if not far else Color("8d939a"),
 		"glass": Color("dfeef0") if not far else Color("6f8a90"),
 		"copper": Color("b06a42") if not far else Color("7a4a33"),
-		"coat": InkTest.GROOVE.lerp(paper, 0.4) if not far else Color("cfc8bb"),
-		"brass": InkTest.BRASS, "umber": InkTest.UMBER, "red": InkTest.CANCEL_RED,
-		"stone": InkTest.STONE if not far else Color("2c2832"),
+		"coat": InkLook.GROOVE.lerp(paper, 0.4) if not far else Color("cfc8bb"),
+		"brass": InkLook.BRASS, "umber": InkLook.UMBER, "red": InkLook.CANCEL_RED,
+		"stone": InkLook.STONE if not far else Color("2c2832"),
 		"wood": Color("8a6440") if not far else Color("3a2e25"),
-		"deep": InkTest.WAX,
+		"deep": InkLook.WAX,
 	}
 
 ## Moves every point by this boil frame's small, fixed offset.
@@ -86,31 +88,27 @@ static func _boil_frame(time: float) -> int:
 # == Skip ===========================================================================
 
 ## Skip's body in his own space: the same squash, lean and bob as Quiet Wax,
-## pivoting on the planted feet. Pure, so the point's laws can be checked
-## against the body it is drawn with.
+## from the same gait sample (press_skip_gait.gd), pivoting on the planted
+## feet. Pure, so the point's laws can be checked against the body it is
+## drawn with.
 static func skip_body(pose: Dictionary) -> Transform2D:
-	return _skip_body(pose, Combat.sample(pose), Gesture.sample(pose))
+	return _skip_body(pose, Combat.sample(pose), Gesture.sample(pose), Gait.sample(pose))
 
-static func _skip_body(pose: Dictionary, combat: Dictionary, gesture: Dictionary) -> Transform2D:
+static func _skip_body(pose: Dictionary, combat: Dictionary, gesture: Dictionary, gait: Dictionary) -> Transform2D:
 	var time := float(pose.get("time", 0.0))
-	var stride := float(pose.get("stride", 0.0))
 	var run := clampf(float(pose.get("run", 0.0)), 0.0, 1.0)
-	var air := clampf(float(pose.get("air", 0.0)), 0.0, 1.0)
 	var kneel := clampf(float(pose.get("set", 0.0)), 0.0, 1.0)
-	var land := float(pose.get("land", 0.0))
 	var side := -1.0 if float(pose.get("face", 1.0)) < 0.0 else 1.0
 	var quiet := (1.0 - float(combat.snap)) * (1.0 - float(combat.parry)) * (1.0 - float(combat.hurt_strength))
 	var breath := sin(time * 2.7)
-	var compression := sin(land * PI) * float(pose.get("impact", 0.0))
-	var rise := maxf(-float(pose.get("vertical", 0.0)), 0.0) * air
-	var stretch := Vector2(1.0 + compression * 0.22 - rise * 0.10 + kneel * 0.12,
-		1.0 - compression * 0.22 + rise * 0.14 - kneel * 0.28)
-	stretch.y += breath * 0.016 * (1.0 - run) + cos(stride * 2.0) * run * 0.04
+	# The stride, the lean into a run or a skid, the jump and the landing's
+	# squash and settle all come from the gait.
+	var stretch := Vector2.ONE + Vector2(gait.stretch)
+	stretch.y += breath * 0.016 * (1.0 - run)
 	stretch += Vector2(combat.body_stretch) + Vector2(gesture.stretch) * quiet
-	var tilt := side * (run * 0.16 + kneel * 0.06) + float(combat.body_tilt) + float(gesture.tilt) * quiet
-	var bob := -absf(sin(stride)) * run * 3.0 - sin(float(pose.get("launch", 0.0)) * PI) * 2.0
+	var tilt := float(gait.lean) + side * kneel * 0.06 + float(combat.body_tilt) + float(gesture.tilt) * quiet
 	var anchor := Vector2(0, 26)
-	var offset := Vector2(combat.body_offset) + Vector2(0, bob)
+	var offset := Vector2(combat.body_offset) + Vector2(0, float(gait.bob))
 	var translation := anchor + offset - (anchor * stretch).rotated(tilt)
 	return Transform2D(tilt, stretch, 0.0, translation)
 
@@ -123,9 +121,6 @@ static func draw_skip(canvas: CanvasItem, pose: Dictionary, pink: Color, dress: 
 	var time := float(pose.get("time", 0.0))
 	var frame := _boil_frame(time)
 	k.reseed(frame + 1)
-	var stride := float(pose.get("stride", 0.0))
-	var run := clampf(float(pose.get("run", 0.0)), 0.0, 1.0)
-	var air := clampf(float(pose.get("air", 0.0)), 0.0, 1.0)
 	var hood := clampf(float(pose.get("hood", 0.0)), 0.0, 1.0)
 	var kneel := clampf(float(pose.get("set", 0.0)), 0.0, 1.0)
 	var face := float(pose.get("face", 1.0))
@@ -135,6 +130,7 @@ static func draw_skip(canvas: CanvasItem, pose: Dictionary, pink: Color, dress: 
 	var attack_face := -1.0 if float(pose.get("strike_face", face)) < 0.0 else 1.0
 	var combat := Combat.sample(pose)
 	var gesture := Gesture.sample(pose)
+	var gait := Gait.sample(pose)
 	var snap: float = combat.snap
 	var parry: float = combat.parry
 	var hurt_strength: float = combat.hurt_strength
@@ -142,7 +138,7 @@ static func draw_skip(canvas: CanvasItem, pose: Dictionary, pink: Color, dress: 
 	var side := -1.0 if face < 0.0 else 1.0
 	var turn := lerpf(0.6, 1.0, clampf(absf(face), 0.0, 1.0))
 	var flip := Vector2(side * turn, 1.0)
-	var body := _skip_body(pose, combat, gesture)
+	var body := _skip_body(pose, combat, gesture, gait)
 
 	# The point (press_ink_point.gd): where it is held, where it rests, how
 	# each stroke carries it. Polishing it is an idle fidget.
@@ -151,6 +147,10 @@ static func draw_skip(canvas: CanvasItem, pose: Dictionary, pink: Color, dress: 
 	var point := Point.solve(pose, combat, body, side, turn, polish)
 	var swing := maxf(snap, maxf(parry, hurt_strength))
 	var rear_hand := body * (Vector2(-9, 5) * flip)
+	# At a run the free arm swings against the legs; standing, it stays in
+	# the coat.
+	if float(gait.arm) > 0.0:
+		rear_hand = rear_hand.lerp(Vector2(gait.hand), float(gait.arm))
 	if swing > 0.0:
 		rear_hand = rear_hand.lerp(body * Vector2(combat.rear_hand), swing)
 	var two_hands := float(point.two_hands)
@@ -162,17 +162,23 @@ static func draw_skip(canvas: CanvasItem, pose: Dictionary, pink: Color, dress: 
 
 	# The stroke's trace through the air, under everything else.
 	Point.draw_swing(k, point, pose, c, pink)
-	# Legs next: the feet stay where they stand.
+	# Legs next: the gait plants the feet on the sole and swings them; only a
+	# pogo tuck and a fidget lift one.
 	for index in 2:
 		var leg_side := -1.0 if index == 0 else 1.0
-		var phase := stride + (PI if index == 0 else 0.0)
-		var foot := Vector2(leg_side * 6.0 + sin(phase) * run * 10.0, 25.0 - maxf(0.0, cos(phase)) * run * 8.0)
-		foot += Vector2(-side * air * 5.0, -air * (5.0 + leg_side * 2.0))
-		foot += Vector2(-attack_face * 4.0, -14.0 + leg_side * 3.0) * float(combat.foot_tuck)
+		var gait_foot: Vector2 = gait.feet[index]
+		var gait_knee: Vector2 = gait.knees[index]
+		var gait_hip: Vector2 = gait.hips[index]
+		var foot := Vector2(gait_foot.x * 0.8, gait_foot.y - 1.0)
+		var tuck := Vector2(-attack_face * 4.0, -14.0 + leg_side * 3.0) * float(combat.foot_tuck)
+		foot += tuck
 		if leg_side * side > 0.0:
 			foot.y -= float(gesture.tap) * quiet
 		var hip := body * (Vector2(leg_side * 4.0, 8.0) * flip)
-		var knee := hip.lerp(foot, 0.5) + Vector2(side * (2.0 + kneel * 5.0) - side * run * 2.0, kneel * 2.0)
+		# The knee bends as the gait's does: up and forward in a swing, long
+		# on the planted leg.
+		var bend := (gait_knee - gait_hip.lerp(gait_foot, 0.5)) * Vector2(0.8, 1.0)
+		var knee := hip.lerp(foot, 0.5) + bend + Vector2(side * kneel * 5.0, kneel * 2.0) + tuck * 0.5
 		var leg := boiled(PackedVector2Array([hip, knee, foot]), frame, 40 + index)
 		k.path(leg, 3.0, c.body, 0.2)
 		var rear := leg_side * side < 0.0
@@ -299,14 +305,14 @@ static func draw_skip(canvas: CanvasItem, pose: Dictionary, pink: Color, dress: 
 			k.path(arc, 1.3, Color(c.line, kneel * (0.5 - i * 0.12)), 0.0)
 	k.flush()
 
-## The room's lamps (ink_test.gd `lamps`) brought into this canvas's own
+## The room's lamps (ink_look.gd `lamps`) brought into this canvas's own
 ## space, the near ones only.
 static func local_lamps(canvas: CanvasItem) -> Array:
-	if InkTest.lamps.is_empty() or not canvas.is_inside_tree():
+	if InkLook.lamps.is_empty() or not canvas.is_inside_tree():
 		return []
 	var to_local := canvas.get_global_transform().affine_inverse()
 	var near: Array = []
-	for lamp: Dictionary in InkTest.lamps:
+	for lamp: Dictionary in InkLook.lamps:
 		var at: Vector2 = to_local * Vector2(lamp.at)
 		if at.length() < float(lamp.reach) + 60.0:
 			var local := lamp.duplicate()
@@ -525,13 +531,16 @@ static func draw_polish(canvas: CanvasItem, pose: Dictionary) -> void:
 		k.stroke(ring, 2.0, c.line, 0.3, 0.1, 0.4, 100.0)
 	k.flush()
 
-## A passage: the plaza draws the doorway or arch; this is what moves in it.
+## A passage: the room's plate draws the doorway, archway or cut; this is
+## what moves in it.
 static func draw_passage(canvas: CanvasItem, pose: Dictionary, font: Font) -> void:
 	var c := colours()
 	var k := Ink.new(canvas, 43)
 	var near := bool(pose.get("near", false))
 	var locked := bool(pose.get("locked", false))
-	var arch := StringName(pose.get("target", &"")) in Plaza.ARCHES
+	var here := StringName(pose.get("room", &""))
+	var target := StringName(pose.get("target", &""))
+	var arch := target in Plaza.ARCHES if InkLook.hand_drawn(here) else Room.is_arch(here, target)
 	if arch:
 		if near and not locked:
 			# Two small ink chevrons at the threshold: this way.

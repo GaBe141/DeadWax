@@ -1,5 +1,5 @@
 extends RefCounted
-## Horn Plaza drawn in the canon's ink (ink_test.gd, docs/art/cutaway.html):
+## Horn Plaza drawn in the canon's ink (ink_look.gd, docs/art/cutaway.html):
 ## black ink on aged label paper, thick tapering outlines, hatching on the
 ## shadowed third, grime, props and a cutaway of the ground beneath the street.
 ## The great horn stands silent in the square; the street keeps its passages
@@ -10,8 +10,9 @@ extends RefCounted
 ## player or owns a clock. Still planes are recorded once and replayed.
 
 const Ink := preload("res://scripts/press_ink.gd")
-const InkTest := preload("res://scripts/ink_test.gd")
+const InkLook := preload("res://scripts/ink_look.gd")
 const Light := preload("res://scripts/press_ink_light.gd")
+const Set := preload("res://scripts/press_ink_set.gd")
 
 const GROUND := 600.0
 ## Light comes from the upper left; hatching rises to the right.
@@ -46,25 +47,7 @@ static func clear_cache() -> void:
 	_tapes.clear()
 
 static func palette(far_face: bool) -> Dictionary:
-	var p := {
-		"paper": InkTest.LABEL_PAPER, "ink": InkTest.LINE, "deep": InkTest.WAX,
-		"stone": InkTest.STONE, "dust": InkTest.DUST, "brass": InkTest.BRASS,
-		"umber": InkTest.UMBER, "red": InkTest.CANCEL_RED, "light": InkTest.GROOVE,
-		"patina": Color("6f7d69"), "wood": Color("8a6440"), "slate": Color("5b5560"),
-	}
-	if far_face:
-		# Scratchboard: the same drawing, reversed out of the wax.
-		p = {
-			"paper": InkTest.WAX, "ink": InkTest.GROOVE, "deep": Color("050407"),
-			"stone": Color("26222b"), "dust": Color("1d1a22"), "brass": Color("4a3a28"),
-			"umber": Color("2a2430"), "red": Color("5c2b23"), "light": Color("d9d3c7"),
-			"patina": Color("33403a"), "wood": Color("33281f"), "slate": Color("2b2832"),
-		}
-	p["hatch"] = Color(p.ink, 0.5)
-	p["soft"] = Color(p.ink, 0.22)
-	p["grime"] = Color(p.ink, 0.16)
-	p["shade"] = p.paper.lerp(p.ink, 0.07)
-	return p
+	return Set.palette(far_face)
 
 # == the sheet =====================================================================
 
@@ -224,14 +207,14 @@ static func _cellar(k: Ink, p: Dictionary) -> void:
 	var room := Rect2(168, GROUND + 46, 284, 118)
 	var walls := k.rough_rect(room, 1.0)
 	k.fill(walls, p.paper.lerp(p.dust, 0.35))
-	_bricks(k, p, room.grow(-4), 9.0, 22.0, 0.3)
+	Set.bricks(k, p, room.grow(-4), 9.0, 22.0, 0.3)
 	# Deep at the back and the ceiling: crosshatch fading down the wall.
 	k.crosshatch(k.rect_points(Rect2(room.position, Vector2(room.size.x, 26))), HATCH, 4.0, 0.8, Color(p.ink, 0.45))
 	k.hatch(k.rect_points(Rect2(room.position + Vector2(0, 26), Vector2(70, room.size.y - 26))), HATCH, 4.5, 0.8, Color(p.ink, 0.35))
 	# Barrels, a crate and a shelf of jars.
 	for barrel: Vector2 in [Vector2(230, GROUND + 160), Vector2(272, GROUND + 162)]:
-		_barrel(k, p, barrel, 19.0, 38.0)
-	_crate(k, p, Rect2(318, GROUND + 126, 46, 38), "")
+		Set.barrel(k, p, barrel, 19.0, 38.0)
+	Set.crate(k, p, Rect2(318, GROUND + 126, 46, 38), "")
 	var shelf_y := GROUND + 84.0
 	k.line(Vector2(372, shelf_y), Vector2(440, shelf_y), 2.4, p.ink, 0.4, 0.05)
 	for i in 6:
@@ -241,7 +224,7 @@ static func _cellar(k: Ink, p: Dictionary) -> void:
 		k.outline(glass, 1.0, p.ink, 0.2, 0.4)
 	k.line(Vector2(372, shelf_y + 30), Vector2(440, shelf_y + 30), 2.4, p.ink, 0.4, 0.05)
 	for i in 4:
-		_tape(k, p, Vector2(384 + i * 15, shelf_y + 22), 0.55, k.rand(-0.08, 0.08))
+		Set.tape(k, p, Vector2(384 + i * 15, shelf_y + 22), 0.55, k.rand(-0.08, 0.08))
 	k.outline(walls, 2.6, p.ink, 0.6, 1.0)
 	k.line(Vector2(room.position.x, room.end.y - 1), Vector2(room.end.x, room.end.y - 1), 3.0, p.ink)
 
@@ -263,8 +246,8 @@ static func _storeroom(k: Ink, p: Dictionary) -> void:
 			k.fill(sleeve, p.paper if k.chance(0.7) else p.red.lerp(p.paper, 0.4))
 			k.outline(sleeve, 0.7, p.ink, 0.1, 0.2)
 			x += k.rand(3.5, 6.5)
-	_crate(k, p, Rect2(room.position.x + 190, room.end.y - 40, 50, 40), "")
-	_crate(k, p, Rect2(room.position.x + 228, room.end.y - 70, 44, 32), "")
+	Set.crate(k, p, Rect2(room.position.x + 190, room.end.y - 40, 50, 40), "")
+	Set.crate(k, p, Rect2(room.position.x + 228, room.end.y - 70, 44, 32), "")
 	# A dead bulb on its flex.
 	var bulb := Vector2(room.position.x + 205, room.position.y + 46)
 	k.line(Vector2(bulb.x, room.position.y + 2), bulb, 1.0, p.ink, 0.2, 0.0)
@@ -320,7 +303,7 @@ static func _speaking_tube(k: Ink, p: Dictionary) -> void:
 
 ## Things the street lost: a tape, a bone the Hound buried, a broken pressing.
 static func _buried(k: Ink, p: Dictionary) -> void:
-	_tape(k, p, Vector2(560, GROUND + 150), 1.2, 0.35)
+	Set.tape(k, p, Vector2(560, GROUND + 150), 1.2, 0.35)
 	var ribbon := Ink.cubic(Vector2(578, GROUND + 148), Vector2(610, GROUND + 120), Vector2(640, GROUND + 175), Vector2(672, GROUND + 140), 16)
 	k.stroke(ribbon, 1.6, p.umber, 0.4, 0.1, 0.5)
 	# The Hound's bone, just under the horn's step.
@@ -351,16 +334,16 @@ static func _corner_gate(k: Ink, p: Dictionary, gate_x: float) -> void:
 	var wall := k.rough_rect(body, 1.0)
 	k.fill(wall, p.paper.lerp(p.dust, 0.25))
 	k.hatch(wall, HATCH + 0.12, 6.5, 0.7, Color(p.ink, 0.07), 0.85)
-	_bricks(k, p, body, 10.0, 24.0, 0.55)
+	Set.bricks(k, p, body, 10.0, 24.0, 0.55)
 	k.shade(wall, LIGHT, 0.3, 4.2, 0.8, p.hatch)
-	_weather(k, p, body)
-	_damp(k, p, Rect2(body.position.x, GROUND - 46, body.size.x, 46))
+	Set.weather(k, p, body)
+	Set.damp(k, p, Rect2(body.position.x, GROUND - 46, body.size.x, 46))
 	# Cornice and a chimney stack.
 	var cornice := k.rough_rect(Rect2(-64, 156, 236, 14), 0.8)
 	k.shape(cornice, p.umber, p.ink, 2.4)
 	var stack := k.rough_rect(Rect2(40, 118, 30, 40), 1.0)
 	k.fill(stack, p.paper.lerp(p.dust, 0.3))
-	_bricks(k, p, Rect2(40, 118, 30, 40), 8.0, 14.0, 0.5)
+	Set.bricks(k, p, Rect2(40, 118, 30, 40), 8.0, 14.0, 0.5)
 	k.outline(stack, 2.4, p.ink)
 	for pot: float in [46.0, 58.0]:
 		var chimney_pot := k.rough_rect(Rect2(pot, 104, 8, 15), 0.6)
@@ -369,7 +352,7 @@ static func _corner_gate(k: Ink, p: Dictionary, gate_x: float) -> void:
 	for row in 2:
 		for column in 2:
 			var box := Rect2(8 + column * 78, 210 + row * 108, 40, 62)
-			_window(k, p, box, row * 2 + column + 3)
+			Set.window(k, p, box, row * 2 + column + 3)
 	# The arch the street runs through.
 	var center := Vector2(gate_x, 522)
 	var outer := 40.0
@@ -404,8 +387,8 @@ static func _corner_gate(k: Ink, p: Dictionary, gate_x: float) -> void:
 	k.shape(plate, p.umber, p.ink, 2.0)
 	k.text(p.display, Vector2(gate_x - 40, 463), "← HIGH ST.", 15, p.light)
 	# Flyers pasted by the arch, half torn.
-	_poster(k, p, Rect2(132, 470, 30, 44), "LAST\nNIGHT", 0.05, true)
-	_poster(k, p, Rect2(124, 520, 34, 40), "ONE\nNIGHT", -0.06, false)
+	Set.poster(k, p, Rect2(132, 470, 30, 44), "LAST\nNIGHT", 0.05, true)
+	Set.poster(k, p, Rect2(124, 520, 34, 40), "ONE\nNIGHT", -0.06, false)
 	# A drainpipe down the corner.
 	k.line(Vector2(161, 172), Vector2(161, GROUND - 2), 4.0, p.umber, 0.4, 0.0)
 	k.line(Vector2(158, 172), Vector2(158, GROUND - 2), 1.0, p.ink, 0.3, 0.0)
@@ -419,9 +402,9 @@ static func _boarding_house(k: Ink, p: Dictionary, home_x: float) -> void:
 	var body := PackedVector2Array([Vector2(left, GROUND), Vector2(left, eave), Vector2(right, eave), Vector2(right, GROUND)])
 	k.fill(body, p.paper.lerp(p.stone, 0.6))
 	k.hatch(body, HATCH + 0.12, 6.5, 0.7, Color(p.ink, 0.07), 0.85)
-	_bricks(k, p, Rect2(left, eave, right - left, GROUND - eave - 100), 9.0, 22.0, 0.45)
+	Set.bricks(k, p, Rect2(left, eave, right - left, GROUND - eave - 100), 9.0, 22.0, 0.45)
 	k.shade(body, LIGHT, 0.28, 4.0, 0.8, p.hatch)
-	_weather(k, p, Rect2(left, eave, right - left, GROUND - eave - 100), 3)
+	Set.weather(k, p, Rect2(left, eave, right - left, GROUND - eave - 100), 3)
 	# Shopfront in dark wood along the ground floor.
 	var front := k.rough_rect(Rect2(left, GROUND - 100, right - left, 100), 0.6)
 	k.fill(front, p.umber.lerp(p.paper, 0.18))
@@ -451,11 +434,11 @@ static func _boarding_house(k: Ink, p: Dictionary, home_x: float) -> void:
 	k.shape(plate, p.light, p.ink, 1.3)
 	k.text(p.body, Vector2(home_x - 62, GROUND - 72), "0:00", 9, p.ink)
 	# Upper floors: windows, one boarded, one open to the room behind it.
-	_window(k, p, Rect2(190, 418, 42, 62), 11)
+	Set.window(k, p, Rect2(190, 418, 42, 62), 11)
 	_cutaway_bedroom(k, p, Rect2(252, 410, 96, 70))
-	_window(k, p, Rect2(368, 418, 42, 62), 12, true)
-	_window(k, p, Rect2(190, 316, 42, 62), 13)
-	_window(k, p, Rect2(268, 316, 42, 62), 14)
+	Set.window(k, p, Rect2(368, 418, 42, 62), 12, true)
+	Set.window(k, p, Rect2(190, 316, 42, 62), 13)
+	Set.window(k, p, Rect2(268, 316, 42, 62), 14)
 	# The balcony door, second storey, onto the ledge.
 	var jamb := k.rough_rect(Rect2(404, 324, 52, 76), 0.6)
 	k.shape(jamb, p.stone.lerp(p.dust, 0.3), p.ink, 2.2)
@@ -490,7 +473,7 @@ static func _boarding_house(k: Ink, p: Dictionary, home_x: float) -> void:
 	k.outline(porthole, 2.4, p.ink, 0.3, 0.5)
 	var stack := PackedVector2Array([Vector2(214, 196), Vector2(212, 132), Vector2(240, 128), Vector2(244, 178)])
 	k.fill(stack, p.paper.lerp(p.dust, 0.3))
-	_bricks(k, p, Rect2(212, 130, 30, 60), 8.0, 14.0, 0.5)
+	Set.bricks(k, p, Rect2(212, 130, 30, 60), 8.0, 14.0, 0.5)
 	k.outline(stack, 2.4, p.ink)
 	var cowl := PackedVector2Array([Vector2(218, 128), Vector2(222, 108), Vector2(238, 100), Vector2(246, 108), Vector2(234, 112), Vector2(234, 128)])
 	k.shape(cowl, p.slate, p.ink, 2.0)
@@ -513,8 +496,8 @@ static func _boarding_house(k: Ink, p: Dictionary, home_x: float) -> void:
 	for bracket: Vector2 in [Vector2(474, 430)]:
 		var iron := PackedVector2Array([bracket, bracket + Vector2(0, 26), bracket + Vector2(-8, 26), bracket + Vector2(-8, 0)])
 		k.shape(iron, p.slate, p.ink, 1.6)
-	_lantern(k, p, Vector2(589, 470))
-	_damp(k, p, Rect2(left, GROUND - 40, right - left, 40))
+	Set.lantern(k, p, Vector2(589, 470))
+	Set.damp(k, p, Rect2(left, GROUND - 40, right - left, 40))
 	k.sketch(body, 3.4, p.ink)
 
 ## The first-floor middle window opens on the room behind it: a bed, a
@@ -563,10 +546,10 @@ static func _practice(k: Ink, p: Dictionary, door_x: float) -> void:
 	k.fill(body, p.paper.lerp(p.dust, 0.42))
 	k.hatch(body, HATCH + 0.12, 6.5, 0.7, Color(p.ink, 0.06), 0.85)
 	k.stipple(PackedVector2Array([Vector2(left, top), Vector2(right, top), Vector2(right, GROUND - 110), Vector2(left, GROUND - 110)]), 260, Color(p.ink, 0.28), 0.8)
-	_bricks(k, p, Rect2(left, GROUND - 110, right - left, 110), 9.0, 22.0, 0.55)
+	Set.bricks(k, p, Rect2(left, GROUND - 110, right - left, 110), 9.0, 22.0, 0.55)
 	k.shade(body, LIGHT, 0.3, 4.0, 0.8, p.hatch)
-	_weather(k, p, Rect2(left, top, right - left, GROUND - top))
-	_damp(k, p, Rect2(left, GROUND - 36, right - left, 36))
+	Set.weather(k, p, Rect2(left, top, right - left, GROUND - top))
+	Set.damp(k, p, Rect2(left, GROUND - 36, right - left, 36))
 	# Parapet and the water tank on the roof.
 	var parapet := k.rough_rect(Rect2(left - 5, top - 12, right - left + 10, 14), 0.6)
 	k.shape(parapet, p.stone.lerp(p.dust, 0.4), p.ink, 2.4)
@@ -610,7 +593,7 @@ static func _practice(k: Ink, p: Dictionary, door_x: float) -> void:
 	k.streak(Vector2(window.end.x - 12, window.end.y + 6), 26, 1.6, p.grime)
 	# Ground floor: a small window with a lesson card, the door, the sign.
 	var small := Rect2(1116, 512, 30, 46)
-	_window(k, p, small, 21)
+	Set.window(k, p, small, 21)
 	var lesson := k.rough_rect(Rect2(1119, 520, 24, 14), 0.4)
 	k.shape(lesson, p.light, p.ink, 1.0)
 	k.text(p.body, Vector2(1121, 530), "ANY", 7, p.ink)
@@ -631,8 +614,8 @@ static func _practice(k: Ink, p: Dictionary, door_x: float) -> void:
 	k.line(icon + Vector2(0, -3), icon + Vector2(-4, -24), 1.0, p.ink, 0.1, 0.0)
 	k.text(p.display, arm + Vector2(23, 26), "TICK", 10, p.ink)
 	k.text(p.display, arm + Vector2(23, 39), "LESSONS", 8, p.ink)
-	_poster(k, p, Rect2(1150, 440, 36, 50), "ANY\nTEMPO", 0.04, false)
-	_poster(k, p, Rect2(1112, 446, 30, 40), "3 3 3", -0.05, true)
+	Set.poster(k, p, Rect2(1150, 440, 36, 50), "ANY\nTEMPO", 0.04, false)
+	Set.poster(k, p, Rect2(1112, 446, 30, 40), "3 3 3", -0.05, true)
 	k.sketch(body, 3.4, p.ink)
 
 ## The market front: shutters down, awnings out, nobody minding the stalls.
@@ -643,13 +626,13 @@ static func _market(k: Ink, p: Dictionary, stalls_x: float) -> void:
 	var body := PackedVector2Array([Vector2(left, GROUND), Vector2(left, top), Vector2(right, top), Vector2(right, GROUND)])
 	k.fill(body, p.paper.lerp(p.stone, 0.5))
 	k.hatch(body, HATCH + 0.12, 6.5, 0.7, Color(p.ink, 0.07), 0.85)
-	_bricks(k, p, Rect2(left, top, right - left, 180), 9.0, 22.0, 0.4)
+	Set.bricks(k, p, Rect2(left, top, right - left, 180), 9.0, 22.0, 0.4)
 	k.shade(body, LIGHT, 0.22, 4.0, 0.8, p.hatch)
-	_weather(k, p, Rect2(left, top, right - left, 180), 3)
+	Set.weather(k, p, Rect2(left, top, right - left, 180), 3)
 	var cornice := k.rough_rect(Rect2(left - 6, top - 14, right - left + 12, 16), 0.6)
 	k.shape(cornice, p.umber, p.ink, 2.6)
 	for i in 4:
-		_window(k, p, Rect2(1330 + i * 96, 236, 40, 52), 31 + i)
+		Set.window(k, p, Rect2(1330 + i * 96, 236, 40, 52), 31 + i)
 	# The signboard, and a runtime plate where a number would be.
 	var board := k.rough_rect(Rect2(1312, 304, 316, 40), 0.6)
 	k.fill(board, p.umber)
@@ -683,9 +666,9 @@ static func _market(k: Ink, p: Dictionary, stalls_x: float) -> void:
 	k.text(p.display, Vector2(stalls_x - 40, 417), "THE STALLS →", 14, p.light)
 	k.line(Vector2(right - 60, top + 2), Vector2(right - 60, GROUND - 2), 4.0, p.umber, 0.4, 0.0)
 	k.line(Vector2(right - 63, top + 2), Vector2(right - 63, GROUND - 2), 1.0, p.ink, 0.3, 0.0)
-	_poster(k, p, Rect2(1742, 430, 36, 52), "SOLD\nOUT", 0.05, true)
-	_poster(k, p, Rect2(1786, 450, 32, 44), "LAST\nSHOW", -0.04, false)
-	_damp(k, p, Rect2(left, GROUND - 38, right - left, 38))
+	Set.poster(k, p, Rect2(1742, 430, 36, 52), "SOLD\nOUT", 0.05, true)
+	Set.poster(k, p, Rect2(1786, 450, 32, 44), "LAST\nSHOW", -0.04, false)
+	Set.damp(k, p, Rect2(left, GROUND - 38, right - left, 38))
 	k.sketch(body, 3.4, p.ink)
 
 static func _stall(k: Ink, p: Dictionary, box: Rect2, index: int) -> void:
@@ -1005,7 +988,7 @@ static func _lights(k: Ink, p: Dictionary) -> void:
 		k.fill(glass, colours[int(bulb.turn)])
 		k.outline(glass, 1.1, p.ink, 0.1, 0.2)
 		k.fill(k.rough_rect(Rect2(centre.x - 2, centre.y - 6, 4, 3), 0.2), p.ink)
-	_laundry(k, p, Vector2(1296, 262), Vector2(1428, 268), 20.0)
+	Set.laundry(k, p, Vector2(1296, 262), Vector2(1428, 268), 20.0)
 	# Flyers hung on the long run, turning in no wind.
 	var long_cable := Ink.sag(RUNS[0][0], RUNS[0][1], RUNS[0][2], 30)
 	for t: float in [0.32, 0.58]:
@@ -1016,47 +999,18 @@ static func _lights(k: Ink, p: Dictionary) -> void:
 			k.hair(at + Vector2(-5, 9 + i * 5), at + Vector2(7, 8 + i * 5), 0.7, Color(p.ink, 0.6))
 		k.blob(at + Vector2(1, 2), 1.5, p.red)
 
-## Somebody still does their washing: a line between the Practice and the
-## market, a shirt, a pair of socks, and a sleeve pegged out to dry.
-static func _laundry(k: Ink, p: Dictionary, a: Vector2, b: Vector2, drop: float) -> void:
-	var line := Ink.sag(a, b, drop, 24)
-	k.stroke(line, 1.2, p.ink, 0.2, 0.0, 1.0, 12.0)
-	var at := func(t: float) -> Vector2: return line[int(t * (line.size() - 1))]
-	# A shirt.
-	var shirt: Vector2 = at.call(0.2)
-	var body := PackedVector2Array([shirt + Vector2(-9, 0), shirt + Vector2(9, 0), shirt + Vector2(15, 7), shirt + Vector2(11, 10),
-		shirt + Vector2(9, 8), shirt + Vector2(9, 28), shirt + Vector2(-9, 28), shirt + Vector2(-9, 8), shirt + Vector2(-11, 10), shirt + Vector2(-15, 7)])
-	k.fill(body, p.light)
-	k.shade(body, LIGHT, 0.35, 3.0, 0.7, Color(p.ink, 0.45))
-	k.outline(body, 1.6, p.ink, 0.3, 0.4)
-	for peg: float in [-6.0, 6.0]:
-		k.line(shirt + Vector2(peg, -3), shirt + Vector2(peg, 4), 2.2, p.wood, 0.0, 0.0)
-	# Socks.
-	for i in 2:
-		var sock: Vector2 = at.call(0.45 + i * 0.07)
-		var shape := PackedVector2Array([sock + Vector2(-3, 0), sock + Vector2(3, 0), sock + Vector2(3, 13), sock + Vector2(8, 17), sock + Vector2(6, 21), sock + Vector2(-3, 16)])
-		k.fill(shape, p.red.lerp(p.paper, 0.35) if i == 0 else p.slate.lerp(p.paper, 0.4))
-		k.outline(shape, 1.3, p.ink, 0.2, 0.3)
-	# A record sleeve, pegged by one corner.
-	var sleeve_at: Vector2 = at.call(0.72)
-	var sleeve := PackedVector2Array([sleeve_at + Vector2(-2, 0), sleeve_at + Vector2(20, 4), sleeve_at + Vector2(16, 26), sleeve_at + Vector2(-6, 22)])
-	k.fill(sleeve, p.paper.lerp(p.dust, 0.3))
-	k.fill(k.ellipse_points(sleeve_at + Vector2(7, 13), Vector2(4, 4), 0.0, 10), p.deep)
-	k.outline(sleeve, 1.4, p.ink, 0.2, 0.4)
-	k.line(sleeve_at + Vector2(0, -3), sleeve_at + Vector2(0, 4), 2.2, p.wood, 0.0, 0.0)
-
 # -- street furniture and litter ------------------------------------------------------
 
 static func _street_props(k: Ink, p: Dictionary) -> void:
 	# Crates by the first stall, stamped and never sent.
-	_crate(k, p, Rect2(1306, GROUND - 46, 52, 46), "CANCELLED")
-	_crate(k, p, Rect2(1360, GROUND - 38, 44, 38), "")
-	_crate(k, p, Rect2(1318, GROUND - 82, 40, 36), "")
-	_barrel(k, p, Vector2(1448, GROUND), 17.0, 40.0)
+	Set.crate(k, p, Rect2(1306, GROUND - 46, 52, 46), "CANCELLED")
+	Set.crate(k, p, Rect2(1360, GROUND - 38, 44, 38), "")
+	Set.crate(k, p, Rect2(1318, GROUND - 82, 40, 36), "")
+	Set.barrel(k, p, Vector2(1448, GROUND), 17.0, 40.0)
 	# A hand cart with records leaning in it.
-	_cart(k, p, Vector2(1560, GROUND))
+	Set.cart(k, p, Vector2(1560, GROUND))
 	# A bench beside the horn for whoever comes to listen.
-	_bench(k, p, Vector2(1046, GROUND))
+	Set.bench(k, p, Vector2(1046, GROUND))
 	# A bin under the ledge, and a grate over the drain shaft.
 	var bin := PackedVector2Array([Vector2(452, GROUND), Vector2(448, GROUND - 40), Vector2(476, GROUND - 40), Vector2(472, GROUND)])
 	k.fill(bin, p.slate.lerp(p.paper, 0.4))
@@ -1069,203 +1023,8 @@ static func _street_props(k: Ink, p: Dictionary) -> void:
 	for i in 5:
 		k.line(Vector2(686 + i * 6.5, GROUND - 3), Vector2(686 + i * 6.5, GROUND + 2), 1.0, p.stone, 0.0, 0.0)
 	# Litter: dropped tapes and loose ribbon.
-	_tape(k, p, Vector2(1490, GROUND - 4), 0.7, -0.1)
-	_tape(k, p, Vector2(1615, GROUND - 3), 0.6, 0.15)
-	_tape(k, p, Vector2(215, GROUND - 4), 0.6, 0.05)
+	Set.tape(k, p, Vector2(1490, GROUND - 4), 0.7, -0.1)
+	Set.tape(k, p, Vector2(1615, GROUND - 3), 0.6, 0.15)
+	Set.tape(k, p, Vector2(215, GROUND - 4), 0.6, 0.05)
 	k.stroke(Ink.cubic(Vector2(1500, GROUND - 3), Vector2(1520, GROUND - 16), Vector2(1540, GROUND + 2), Vector2(1562, GROUND - 6), 14), 1.2, p.umber, 0.3, 0.1, 0.5)
 	k.stroke(Ink.cubic(Vector2(226, GROUND - 3), Vector2(240, GROUND - 12), Vector2(262, GROUND + 1), Vector2(280, GROUND - 2), 12), 1.2, p.umber, 0.3, 0.1, 0.5)
-
-# -- shared pieces ---------------------------------------------------------------------
-
-## Brick courses drawn the way a hand draws them: every course, joints here
-## and there, a few bricks picked out darker.
-static func _bricks(k: Ink, p: Dictionary, area: Rect2, course: float, brick: float, strength: float) -> void:
-	var y := area.position.y + course
-	var row := 0
-	while y < area.end.y - 2:
-		var line_paint := Color(p.ink, 0.3 * strength + 0.08)
-		var x := area.position.x
-		while x < area.end.x:
-			var run := minf(k.rand(40, 120), area.end.x - x)
-			if k.chance(0.82):
-				k.hair(Vector2(x, y + k.rand(-0.5, 0.5)), Vector2(x + run, y + k.rand(-0.5, 0.5)), 0.8, line_paint)
-			x += run + k.rand(2, 10)
-		var joint := area.position.x + (brick * 0.5 if row % 2 == 1 else 0.0) + k.rand(0, 3)
-		while joint < area.end.x:
-			if k.chance(0.7):
-				k.hair(Vector2(joint, y - course + 1), Vector2(joint, y - 1), 0.8, line_paint)
-			if k.chance(0.06 * strength + 0.02):
-				var face := k.rough_rect(Rect2(joint + 1, y - course + 1.5, minf(brick - 2, area.end.x - joint - 1), course - 2.5), 0.4)
-				if Ink.bounds(face).size.x > 3:
-					k.fill(face, Color(p.umber, k.rand(0.08, 0.2)))
-			joint += brick
-		y += course
-		row += 1
-	k.flecks(area, int(area.size.x * area.size.y / 900.0), p.grime, 1.0)
-
-## Years on a wall: blotches, a crack or two, soot settled under ledges.
-static func _weather(k: Ink, p: Dictionary, area: Rect2, cracks := 2) -> void:
-	for i in maxi(int(area.size.x * area.size.y / 9000.0), 2):
-		var at := area.position + Vector2(k.rand(0.1, 0.9) * area.size.x, k.rand(0.1, 0.9) * area.size.y)
-		k.stain(at, k.rand(10, 26), Color(p.umber, k.rand(0.04, 0.08)), k.chance(0.4))
-	for i in cracks:
-		var from := area.position + Vector2(k.rand(0.05, 0.95) * area.size.x, k.rand(0.0, 0.4) * area.size.y)
-		k.crack(from, Vector2(k.rand(-0.5, 0.5), 1.0), k.rand(18, 40), 1.0, Color(p.ink, 0.7), 1)
-
-## Rising damp: a soiled band along the foot of a wall, ragged at its top.
-static func _damp(k: Ink, p: Dictionary, band: Rect2) -> void:
-	var edge := PackedVector2Array()
-	var steps := maxi(int(band.size.x / 14.0), 2)
-	for i in steps + 1:
-		edge.append(Vector2(band.position.x + band.size.x * i / steps, band.position.y + k.rand(0, band.size.y * 0.45)))
-	var soil := edge.duplicate()
-	soil.append(band.end)
-	soil.append(Vector2(band.position.x, band.end.y))
-	k.fill(soil, Color(p.umber, 0.1), 2.0)
-	k.stroke(edge, 0.9, Color(p.umber, 0.25), 0.4, 0.05, 0.5, 12.0)
-	k.flecks(band, int(band.size.x / 6.0), Color(p.ink, 0.25), 1.1)
-	for i in int(band.size.x / 40.0):
-		k.streak(Vector2(band.position.x + k.rand(4, band.size.x - 4), band.position.y - k.rand(10, 40)), k.rand(14, 38), 1.4, p.grime)
-
-## A sash window: frame, panes, a sill, the grime it sheds. Boarded on request.
-static func _window(k: Ink, p: Dictionary, box: Rect2, seed_value: int, boarded := false) -> void:
-	var frame := k.rough_rect(box, 0.6)
-	k.fill(frame, p.deep.lerp(p.paper, 0.3))
-	k.hatch(frame, HATCH, 3.2, 0.8, Color(p.ink, 0.5))
-	if seed_value % 3 == 0 and not boarded:
-		# A drawn blind, half down.
-		var blind := k.rough_rect(Rect2(box.position.x + 2, box.position.y + 2, box.size.x - 4, box.size.y * 0.45), 0.4)
-		k.fill(blind, p.paper.lerp(p.dust, 0.3))
-		k.line(Vector2(box.position.x + 4, box.position.y + box.size.y * 0.45), Vector2(box.end.x - 4, box.position.y + box.size.y * 0.45), 1.6, p.ink, 0.2, 0.0)
-	k.line(Vector2(box.get_center().x, box.position.y), Vector2(box.get_center().x, box.end.y), 1.8, p.ink, 0.2, 0.0)
-	k.line(Vector2(box.position.x, box.get_center().y), Vector2(box.end.x, box.get_center().y), 1.8, p.ink, 0.2, 0.0)
-	if seed_value % 4 == 1 and not boarded:
-		k.crack(box.position + Vector2(box.size.x * 0.7, 6), Vector2(-0.4, 1), 18, 0.8, Color(p.light, 0.8), 1)
-	k.outline(frame, 2.4, p.ink, 0.4, 0.8)
-	if boarded:
-		for i in 3:
-			var y := box.position.y + 12 + i * 18
-			var board := PackedVector2Array([Vector2(box.position.x - 5, y + k.rand(-3, 3)), Vector2(box.end.x + 5, y + k.rand(-3, 3)),
-				Vector2(box.end.x + 5, y + 9 + k.rand(-2, 2)), Vector2(box.position.x - 5, y + 9 + k.rand(-2, 2))])
-			k.shape(board, p.wood, p.ink, 1.6)
-			for end: float in [box.position.x - 1, box.end.x + 1]:
-				k.blob(Vector2(end, y + 4.5), 1.2, p.ink)
-		k.text(p.body, box.position + Vector2(-2, box.size.y * 0.62), "cancelled", 8, p.red, -0.2)
-	var sill := k.rough_rect(Rect2(box.position.x - 4, box.end.y, box.size.x + 8, 5), 0.4)
-	k.shape(sill, p.stone, p.ink, 1.5)
-	k.streak(Vector2(box.position.x + k.rand(4, box.size.x * 0.4), box.end.y + 5), k.rand(16, 34), 1.8, p.grime)
-	if k.chance(0.5):
-		k.streak(Vector2(box.end.x - k.rand(4, 12), box.end.y + 5), k.rand(10, 22), 1.4, p.grime)
-
-## A flyer pasted to a wall, torn at a corner, sometimes stamped.
-static func _poster(k: Ink, p: Dictionary, box: Rect2, words: String, tilt: float, stamped: bool) -> void:
-	var center := box.get_center()
-	var corners := k.rect_points(box)
-	var sheet := PackedVector2Array()
-	for corner in corners:
-		sheet.append(center + (corner - center).rotated(tilt))
-	sheet[2] = sheet[2].lerp(sheet[1], 0.25) + Vector2(-4, 2)
-	k.fill(sheet, p.light.lerp(p.dust, 0.2))
-	k.outline(sheet, 1.2, p.ink, 0.3, 0.4)
-	var lines := words.split("\n")
-	for i in lines.size():
-		k.text(p.display, center + Vector2(-box.size.x * 0.42, -box.size.y * 0.2 + i * 11).rotated(tilt), lines[i], 10, p.ink, tilt)
-	for i in 3:
-		k.hair(center + Vector2(-box.size.x * 0.36, box.size.y * 0.12 + i * 4).rotated(tilt), center + Vector2(box.size.x * 0.3, box.size.y * 0.12 + i * 4).rotated(tilt), 0.6, Color(p.ink, 0.6))
-	if stamped:
-		var stamp := center + Vector2(0, -2)
-		k.outline(k.ellipse_points(stamp, Vector2(box.size.x * 0.46, 7), tilt - 0.35, 16), 1.1, Color(p.red, 0.85), 0.3, 0.0)
-		k.text(p.body, stamp + Vector2(-box.size.x * 0.4, 3).rotated(tilt - 0.35), "CANCELLED", 6, Color(p.red, 0.9), tilt - 0.35)
-	k.streak(sheet[3] + Vector2(3, 0), 10, 1.2, p.grime)
-
-static func _crate(k: Ink, p: Dictionary, box: Rect2, stamp: String) -> void:
-	var crate := k.rough_rect(box, 0.6)
-	k.fill(crate, p.wood.lerp(p.paper, 0.35))
-	for i in 3:
-		var y := box.position.y + box.size.y * (i + 1) / 4.0
-		k.line(Vector2(box.position.x + 2, y), Vector2(box.end.x - 2, y), 0.9, Color(p.ink, 0.5), 0.3, 0.0)
-	k.line(box.position + Vector2(3, 3), box.end - Vector2(3, 3), 2.2, p.wood, 0.2, 0.0)
-	k.path(PackedVector2Array([box.position + Vector2(3, 3), box.end - Vector2(3, 3)]), 0.9, p.ink, 0.2)
-	k.shade(crate, LIGHT, 0.35, 3.2, 0.8, Color(p.ink, 0.45))
-	if not stamp.is_empty():
-		k.misregistered(k.rough_rect(Rect2(box.position.x + 4, box.get_center().y - 6, box.size.x - 8, 12), 0.4), Color(p.red, 0.2))
-		k.text(p.body, Vector2(box.position.x + 5, box.get_center().y + 4), stamp, 7, p.red, -0.08)
-	k.outline(crate, 2.2, p.ink, 0.4, 0.8)
-	for corner in k.rect_points(box.grow(-3)):
-		k.blob(corner, 1.1, p.ink)
-
-static func _barrel(k: Ink, p: Dictionary, base: Vector2, radius: float, height: float) -> void:
-	var body := PackedVector2Array([base + Vector2(-radius * 0.86, 0), base + Vector2(-radius, -height * 0.5),
-		base + Vector2(-radius * 0.86, -height), base + Vector2(radius * 0.86, -height),
-		base + Vector2(radius, -height * 0.5), base + Vector2(radius * 0.86, 0)])
-	k.fill(body, p.wood)
-	for i in 4:
-		var x := lerpf(-radius * 0.6, radius * 0.6, i / 3.0)
-		k.line(base + Vector2(x * 0.9, -2), base + Vector2(x * 0.9, -height + 2), 0.8, Color(p.ink, 0.5), 0.3, 0.0)
-	for band: float in [0.18, 0.82]:
-		k.line(base + Vector2(-radius * 0.95, -height * band), base + Vector2(radius * 0.95, -height * band), 2.2, p.slate, 0.2, 0.0)
-	k.shade(body, LIGHT, 0.35, 3.0, 0.8, Color(p.ink, 0.5))
-	k.outline(body, 2.2, p.ink, 0.3, 0.6)
-	var top := k.ellipse_points(base + Vector2(0, -height), Vector2(radius * 0.86, 3.5), 0.0, 14)
-	k.shape(top, p.wood.lerp(p.paper, 0.3), p.ink, 1.4)
-
-static func _tape(k: Ink, p: Dictionary, center: Vector2, scale: float, tilt: float) -> void:
-	var shell := PackedVector2Array()
-	for corner: Vector2 in [Vector2(-14, -9), Vector2(14, -9), Vector2(14, 9), Vector2(-14, 9)]:
-		shell.append(center + (corner * scale).rotated(tilt))
-	k.fill(shell, p.deep.lerp(p.paper, 0.15))
-	var window := PackedVector2Array()
-	for corner: Vector2 in [Vector2(-8, -4), Vector2(8, -4), Vector2(8, 3), Vector2(-8, 3)]:
-		window.append(center + (corner * scale).rotated(tilt))
-	k.fill(window, p.light)
-	for side: float in [-5.0, 5.0]:
-		var reel := k.ellipse_points(center + (Vector2(side, -0.5) * scale).rotated(tilt), Vector2(2.4, 2.4) * scale, 0.0, 8)
-		k.fill(reel, p.deep)
-	var label := PackedVector2Array()
-	for corner: Vector2 in [Vector2(-11, -8), Vector2(11, -8), Vector2(11, -5), Vector2(-11, -5)]:
-		label.append(center + (corner * scale).rotated(tilt))
-	k.fill(label, p.red.lerp(p.paper, 0.3))
-	k.outline(shell, 1.2, p.ink, 0.2, 0.4)
-
-static func _lantern(k: Ink, p: Dictionary, hook: Vector2) -> void:
-	k.line(hook, hook + Vector2(0, 10), 1.2, p.ink, 0.1, 0.0)
-	var cap := PackedVector2Array([hook + Vector2(-8, 16), hook + Vector2(0, 9), hook + Vector2(8, 16)])
-	k.shape(cap, p.slate, p.ink, 1.6)
-	var glass := k.rough_rect(Rect2(hook.x - 6, hook.y + 16, 12, 16), 0.3)
-	k.fill(glass, p.brass.lerp(p.light, 0.3))
-	k.line(Vector2(hook.x, hook.y + 16), Vector2(hook.x, hook.y + 32), 1.0, p.ink, 0.1, 0.0)
-	k.outline(glass, 1.6, p.ink, 0.2, 0.4)
-	k.shape(k.rough_rect(Rect2(hook.x - 7, hook.y + 32, 14, 4), 0.2), p.slate, p.ink, 1.4)
-
-static func _bench(k: Ink, p: Dictionary, base: Vector2) -> void:
-	var seat := k.rough_rect(Rect2(base.x - 36, base.y - 24, 72, 6), 0.4)
-	k.shape(seat, p.wood, p.ink, 1.8)
-	var back := k.rough_rect(Rect2(base.x - 34, base.y - 48, 68, 14), 0.4)
-	k.fill(back, p.wood)
-	k.line(Vector2(base.x - 34, base.y - 41), Vector2(base.x + 34, base.y - 41), 0.8, Color(p.ink, 0.6), 0.2, 0.0)
-	k.outline(back, 1.8, p.ink, 0.3, 0.5)
-	for side: float in [-1.0, 1.0]:
-		var leg := PackedVector2Array([base + Vector2(side * 30, 0), base + Vector2(side * 32, -48), base + Vector2(side * 27, -48), base + Vector2(side * 25, 0)])
-		k.shape(leg, p.slate, p.ink, 1.5)
-
-static func _cart(k: Ink, p: Dictionary, base: Vector2) -> void:
-	var tray := PackedVector2Array([base + Vector2(-34, -20), base + Vector2(34, -20), base + Vector2(30, -46), base + Vector2(-38, -46)])
-	k.fill(tray, p.wood)
-	for i in 3:
-		k.line(base + Vector2(-35, -28 - i * 7), base + Vector2(32, -28 - i * 7), 0.8, Color(p.ink, 0.5), 0.2, 0.0)
-	# Records leaning in the tray, edge on.
-	for i in 5:
-		var x := -26.0 + i * 11.0
-		var record := k.ellipse_points(base + Vector2(x, -52), Vector2(3.5, 17), k.rand(-0.25, 0.1), 12)
-		k.shape(record, p.deep, p.ink, 1.0)
-	k.shade(tray, LIGHT, 0.4, 3.0, 0.8, Color(p.ink, 0.5))
-	k.outline(tray, 2.0, p.ink, 0.3, 0.6)
-	k.line(base + Vector2(-38, -44), base + Vector2(-62, -62), 2.4, p.wood, 0.2, 0.0)
-	k.path(PackedVector2Array([base + Vector2(-38, -44), base + Vector2(-62, -62)]), 1.0, p.ink, 0.2)
-	var hub := base + Vector2(8, -14)
-	var wheel := k.ellipse_points(hub, Vector2(14, 14), 0.0, 20)
-	k.outline(wheel, 2.6, p.ink, 0.3, 0.0)
-	for i in 6:
-		k.line(hub, hub + Vector2.from_angle(TAU * i / 6.0) * 13.0, 1.2, p.ink, 0.1, 0.0)
-	k.blob(hub, 2.4, p.ink)
-	k.line(base + Vector2(-28, -20), base + Vector2(-28, 0), 2.0, p.ink, 0.2, 0.0)

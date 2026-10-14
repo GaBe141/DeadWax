@@ -1,18 +1,21 @@
 extends SceneTree
-## The art-direction test (scripts/ink_test.gd) is presentation only. Off by
-## default, it draws Horn Plaza in the canon's ink and changes nothing else:
-## the same collision, passages and fixtures, the same movement for the same
-## input, every Quiet Wax layer restored when it is turned off, and no other
-## room touched. Its scenery never uses crackle pink (heard sound) or etch
-## gold (her); Skip's crack chips go pink only while he is loud. A logger
-## fails the run on any script error.
+## The ink look (scripts/ink_look.gd) is presentation only. On by default, it
+## draws every campaign room in the canon's ink — Horn Plaza by hand, the
+## rest from their own geometry — and changes nothing else: the same
+## collision, passages and fixtures, the same movement for the same input,
+## every Quiet Wax layer restored when F9 turns it off. Its scenery never
+## uses crackle pink (heard sound) or etch gold (her); Skip's crack chips go
+## pink only while he is loud. Below the Scratch the page is scratchboard.
+## A logger fails the run on any script error.
 
 const MainScene := preload("res://scenes/main.tscn")
 const SaveScript := preload("res://scripts/save_store.gd")
 const AbilitiesScript := preload("res://scripts/abilities_state.gd")
 const ProgressionScript := preload("res://scripts/progression_state.gd")
-const InkTest := preload("res://scripts/ink_test.gd")
+const InkLook := preload("res://scripts/ink_look.gd")
 const Plaza := preload("res://scripts/press_ink_plaza.gd")
+const Room := preload("res://scripts/press_ink_room.gd")
+const Paint := preload("res://scripts/figure_paint.gd")
 const Press := preload("res://scripts/press.gd")
 const Point := preload("res://scripts/press_ink_point.gd")
 const Combat := preload("res://scripts/press_skip_combat.gd")
@@ -21,6 +24,9 @@ const Hood := preload("res://scripts/press_ink_hood.gd")
 const Ink := preload("res://scripts/press_ink.gd")
 const Catalog := preload("res://scripts/collection_catalog.gd")
 const Light := preload("res://scripts/press_ink_light.gd")
+const ChapterOne := preload("res://scripts/chapter_one.gd")
+const ChapterTwo := preload("res://scripts/chapter_two.gd")
+const ChapterThree := preload("res://scripts/chapter_three.gd")
 
 class ErrorLog extends Logger:
 	var script_errors: Array[String] = []
@@ -52,17 +58,24 @@ func _run() -> void:
 	OS.add_logger(_log)
 	_directory = "user://deadwax-ink-test-%d-%d" % [OS.get_process_id(), Time.get_ticks_usec()]
 	_check(DirAccess.make_dir_absolute(_directory) == OK, "create private ink fixture")
-	_check(not InkTest.enabled and not InkTest.active, "the ink test is off by default")
-	_check(InkTest.ROOMS == [&"horn_plaza"], "the ink test covers one room, Horn Plaza")
+	_check(InkLook.enabled and not InkLook.active, "ink is the look by default; no room is drawn yet")
+	_check(InkLook.HAND_DRAWN == [&"horn_plaza"], "Horn Plaza is the one room composed by hand")
+	for id in ChapterThree.IDS:
+		_check(InkLook.below_scratch(id) and InkLook.page_is_scratchboard(id, false) and not InkLook.page_is_scratchboard(id, true),
+			"%s lies below the Scratch: scratchboard on the near face, paper on the far" % id)
+	for id in ChapterOne.IDS + ChapterTwo.IDS:
+		_check(not InkLook.below_scratch(id) and not InkLook.page_is_scratchboard(id, false) and InkLook.page_is_scratchboard(id, true),
+			"%s lies above the Scratch: paper on the near face, scratchboard on the far" % id)
 	await _check_scenery()
 	_check_point()
 	_check_hood()
 	_check_light()
 	await _check_figures()
 	await _check_main()
-	InkTest.enabled = false
-	InkTest.active = false
-	InkTest.far_face = false
+	InkLook.enabled = true
+	InkLook.active = false
+	InkLook.far_face = false
+	InkLook.scratchboard = false
 	if is_instance_valid(_main):
 		_main.queue_free()
 		await _frames(3)
@@ -77,11 +90,11 @@ func _run() -> void:
 	for error in _log.script_errors:
 		_failures.append("script error: " + error)
 	if _failures.is_empty():
-		print("DEAD WAX INK TEST PASS (%d checks)" % _checks)
+		print("DEAD WAX INK LOOK PASS (%d checks)" % _checks)
 		quit(0)
 		return
 	for failure in _failures:
-		push_error("INK TEST FAIL: " + failure)
+		push_error("INK LOOK FAIL: " + failure)
 	quit(1)
 
 # -- scenery: every plane draws, and none of it is pink or gold --------------------
@@ -93,7 +106,7 @@ func _check_scenery() -> void:
 	Plaza.clear_cache()
 	for far_face in [false, true]:
 		for plane in [&"paper", &"far", &"set", &"light"]:
-			canvas.paint = func(c: Control) -> void: Press.draw_ink_room(c, plane, {"far_face": far_face, "exits": Plaza.EXITS})
+			canvas.paint = func(c: Control) -> void: Press.draw_ink_room(c, plane, {"room_id": &"horn_plaza", "far_face": far_face, "scratchboard": far_face, "exits": Plaza.EXITS})
 			canvas.queue_redraw()
 			await process_frame
 	_check(canvas.calls >= 8, "both faces of every ink plane draw")
@@ -121,7 +134,7 @@ func _check_scenery() -> void:
 	_check(gold == 0, "no scenery is etch gold: gold is her (%d points)" % gold)
 	# A recorded plane replays without being built again.
 	var before := Plaza._tapes.size()
-	canvas.paint = func(c: Control) -> void: Press.draw_ink_room(c, &"set", {"far_face": false, "exits": Plaza.EXITS})
+	canvas.paint = func(c: Control) -> void: Press.draw_ink_room(c, &"set", {"room_id": &"horn_plaza", "far_face": false, "scratchboard": false, "exits": Plaza.EXITS})
 	canvas.queue_redraw()
 	await process_frame
 	_check(Plaza._tapes.size() == before, "a drawn plane is replayed from its tape")
@@ -137,7 +150,7 @@ func _check_figures() -> void:
 	var canvas := Canvas.new()
 	canvas.size = Vector2(400, 300)
 	root.add_child(canvas)
-	InkTest.active = true
+	InkLook.active = true
 	var plans: Array[Callable] = []
 	for far_face in [false, true]:
 		for face in [1.0, -1.0, 0.2]:
@@ -148,12 +161,12 @@ func _check_figures() -> void:
 				var pose := _skip_pose(extra)
 				pose["face"] = face
 				plans.append(func(c: Control) -> void:
-					InkTest.far_face = far_face
+					InkLook.scratchboard = far_face
 					Press.draw_skip(c, pose, {}))
 		for phase in ["patrol", "notice", "approach", "sit", "pet", "startled"]:
 			for face in [1.0, -1.0]:
 				plans.append(func(c: Control) -> void:
-					InkTest.far_face = far_face
+					InkLook.scratchboard = far_face
 					Press.draw_hound(c, {"phase": phase, "time": 0.4, "clock": 3.0, "gait": 2.0, "face": face,
 						"speed": 0.6, "sit": 1.0 if phase in ["sit", "pet"] else 0.0, "pet": 0.6, "wag": 0.8}, Color.BLACK, Color.WHITE))
 		for state in [{"near": false, "locked": false, "target": &"headshell"}, {"near": true, "locked": false, "target": &"practice_room"},
@@ -169,30 +182,30 @@ func _check_figures() -> void:
 		for lamp_side in [1.0, -1.0]:
 			var lit := _skip_pose({"hood": 0.0 if lamp_side > 0.0 else 1.0, "run": 0.4})
 			plans.append(func(c: Control) -> void:
-				InkTest.far_face = far_face
-				InkTest.lamps = [{"at": c.get_global_transform() * Vector2(lamp_side * 40.0, -60.0), "reach": 200.0, "warmth": 0.9}]
+				InkLook.scratchboard = far_face
+				InkLook.lamps = [{"at": c.get_global_transform() * Vector2(lamp_side * 40.0, -60.0), "reach": 200.0, "warmth": 0.9}]
 				Press.draw_skip(c, lit, {})
 				Press.draw_hound(c, {"phase": "patrol", "time": 0.4, "clock": 3.0, "face": lamp_side}, Color.BLACK, Color.WHITE)
-				InkTest.lamps = [])
+				InkLook.lamps = [])
 		for lining in Hood.LININGS:
 			for thread in [false, true]:
 				var dressed := _skip_pose({"hood": 1.0 if thread else 0.7, "run": 0.62 if thread else 0.0, "stride": 1.2})
 				plans.append(func(c: Control) -> void:
-					InkTest.far_face = far_face
+					InkLook.scratchboard = far_face
 					Press.draw_skip(c, dressed, {"lining": lining, "warm_thread": thread}))
 		for tip in Point.TIPS:
 			for noise in [0.0, 1.0]:
 				var fitted := _skip_pose({"noise": noise, "strike": 0.6 if noise > 0.0 else 0.0, "combo_step": 2})
 				plans.append(func(c: Control) -> void:
-					InkTest.far_face = far_face
+					InkLook.scratchboard = far_face
 					Press.draw_skip(c, fitted, {"tip": tip}))
 	for plan in plans:
 		canvas.paint = plan
 		canvas.queue_redraw()
 		await process_frame
 	_check(canvas.calls >= plans.size(), "every ink figure and fixture draws (%d plans)" % plans.size())
-	InkTest.active = false
-	InkTest.far_face = false
+	InkLook.active = false
+	InkLook.scratchboard = false
 	canvas.queue_free()
 	await process_frame
 
@@ -350,7 +363,7 @@ func _check_hood() -> void:
 	# Hood up is silence: nothing on the sleeve is pink or gold, whatever he wears.
 	var loud := 0
 	for far_face in [false, true]:
-		InkTest.far_face = far_face
+		InkLook.scratchboard = far_face
 		for lining in Hood.LININGS:
 			for thread in [false, true]:
 				var pose := _skip_pose({"hood": 1.0, "noise": 1.0})
@@ -362,7 +375,7 @@ func _check_hood() -> void:
 						for colour in entry[2]:
 							if colour.a > 0.0 and (_same_hue(colour, Press.PINK) or _same_hue(colour, Press.GOLD)):
 								loud += 1
-	InkTest.far_face = false
+	InkLook.scratchboard = false
 	_check(loud == 0, "hood up is silence: no pink or gold on the sleeve (%d points)" % loud)
 	_check(&"" in Hood.LININGS and _slot_ids("lining") == _sorted_ids(Hood.LININGS), "every fitted Sleeve has a drawing, and so does the bare sleeve")
 
@@ -413,21 +426,13 @@ func _check_main() -> void:
 	_main._load_world_room(&"horn_plaza")
 	await _physics(6)
 	var room: Node2D = _main.room
-	var wax_bodies := _bodies(room)
-	var wax_nodes := _node_counts(room)
-	var wax_clear := RenderingServer.get_default_clear_color()
-	_check(room.get("ink_plate") == null and not InkTest.active, "Horn Plaza opens in Quiet Wax")
-	var wax_walk := await _walk(room)
-	_check(wax_walk[-1].x - 560.0 > 60.0, "the walk fixture really moves Skip (%s)" % wax_walk[-1])
-
-	# On: the plate replaces the Quiet Wax layers, and nothing else changes.
-	InkTest.enabled = true
-	_main._apply_ink_test()
-	await _physics(3)
 	var plate: Node = room.get("ink_plate")
-	_check(InkTest.active and is_instance_valid(plate), "F9's switch draws Horn Plaza in ink")
+	_check(InkLook.active and is_instance_valid(plate), "Horn Plaza opens in ink")
+	_check(bool(room.get("ink_look")) and room.ink.is_equal_approx(InkLook.LINE) and room.bg_color.is_equal_approx(InkLook.LABEL_PAPER),
+		"a room built in ink prints in the page's colours from the start")
+	_check(Paint.palette(Color.BLACK, Color.WHITE).edge.is_equal_approx(InkLook.LINE), "residents, voices and fixtures take the ink palette")
 	_check(is_instance_valid(plate) and plate.get_parent() == room and plate.get_child_count() == 6, "the ink plate holds its paper, far, set, light, live light and contact planes")
-	_check(InkTest.lamps.size() == Plaza.light_rig().lamps.size(), "the plaza's lamps are there for the figures walking past them")
+	_check(InkLook.lamps.size() == Plaza.light_rig().lamps.size(), "the plaza's lamps are there for the figures walking past them")
 	# The live light holds still under Reduced motion and moves without it.
 	var live: Node = plate.get_node("Live")
 	plate.call("set_reduced_motion", true)
@@ -447,31 +452,32 @@ func _check_main() -> void:
 		if child.has_meta("impression_kind"):
 			hidden_scenery = hidden_scenery and not child.visible
 	_check(hidden_scenery, "Quiet Wax impressions step aside")
-	_check(_bodies(room) == wax_bodies, "collision is identical in ink")
-	_check(_nodes_of(plate, "CollisionObject2D") == 0 and _nodes_of(plate, "CollisionShape2D") == 0, "the ink plate adds no collision")
+	var ink_bodies := _bodies(room)
 	var ink_nodes := _node_counts(room)
 	ink_nodes.erase("InkPlate")
-	_check(ink_nodes == wax_nodes, "the room's own nodes are unchanged in ink")
-	_check(RenderingServer.get_default_clear_color().is_equal_approx(InkTest.LABEL_PAPER), "the page is label paper in ink")
+	_check(_nodes_of(plate, "CollisionObject2D") == 0 and _nodes_of(plate, "CollisionShape2D") == 0, "the ink plate adds no collision")
+	_check(RenderingServer.get_default_clear_color().is_equal_approx(InkLook.LABEL_PAPER), "the page is label paper in ink")
 	var ink_walk := await _walk(room)
-	_check(ink_walk == wax_walk, "the same input moves Skip the same way in either look")
+	_check(ink_walk[-1].x - 560.0 > 60.0, "the walk fixture really moves Skip (%s)" % ink_walk[-1])
 
 	# The far face reprints the same drawing in scratchboard.
 	_main.progression.unlock_refrain(ProgressionScript.Refrain.JUMP_CUT)
-	_check(bool(_main.pressing.flip()), "the pressing turns over in the ink test")
+	_check(bool(_main.pressing.flip()), "the pressing turns over in ink")
 	await _physics(2)
-	_check(InkTest.far_face and bool(plate.get("far_face")), "the far face is drawn reversed out of wax")
-	_check(RenderingServer.get_default_clear_color().is_equal_approx(InkTest.WAX), "the far face's page is wax")
+	_check(InkLook.far_face and InkLook.scratchboard and bool(plate.get("scratchboard")), "the far face is drawn reversed out of wax")
+	_check(RenderingServer.get_default_clear_color().is_equal_approx(InkLook.WAX), "the far face's page is wax")
+	_check(Paint.palette(Color.BLACK, Color.WHITE).edge.is_equal_approx(InkLook.GROOVE), "figures take the scratchboard palette with it")
 	_main.pressing.call("flip")
 	await _physics(2)
-	_check(not InkTest.far_face and not bool(plate.get("far_face")), "the near face is paper again")
+	_check(not InkLook.far_face and not InkLook.scratchboard and not bool(plate.get("scratchboard")), "the near face is paper again")
 
-	# Off: every Quiet Wax layer comes back exactly as it was.
-	InkTest.enabled = false
-	_main._apply_ink_test()
+	# F9: every Quiet Wax layer comes back in its own colours, and nothing
+	# else changes.
+	InkLook.enabled = false
+	_main._apply_look()
 	await _physics(3)
-	_check(not InkTest.active and room.get("ink_plate") == null and not is_instance_valid(plate), "turning the test off removes the ink plate")
-	_check(InkTest.lamps.is_empty(), "and takes its lamps away")
+	_check(not InkLook.active and room.get("ink_plate") == null and not is_instance_valid(plate), "F9 removes the ink plate")
+	_check(InkLook.lamps.is_empty(), "and takes its lamps away")
 	_check(room.atmosphere.visible and room.lighting.visible, "Quiet Wax air, depth and lamps return")
 	var shown := true
 	for skin in room._skins:
@@ -480,23 +486,86 @@ func _check_main() -> void:
 		if child.has_meta("impression_kind"):
 			shown = shown and child.visible
 	_check(shown, "Quiet Wax plates and impressions return")
-	_check(_node_counts(room) == wax_nodes and _bodies(room) == wax_bodies, "the room is as it was before the test")
-	_check(RenderingServer.get_default_clear_color().is_equal_approx(wax_clear), "the room's own page colour returns")
-
-	# Other rooms are never drawn in ink, and coming back draws the plaza again.
-	InkTest.enabled = true
-	_main._apply_ink_test()
-	_main._load_world_room(&"headshell", &"from_horn_plaza")
-	await _physics(4)
-	_check(not InkTest.active and _main.room.get("ink_plate") == null and _main.room.atmosphere.visible, "the Headshell stays Quiet Wax with the test on")
-	_main._load_world_room(&"horn_plaza", &"from_headshell")
-	await _physics(4)
-	_check(InkTest.active and is_instance_valid(_main.room.get("ink_plate")), "returning to Horn Plaza draws it in ink again")
+	_check(not bool(room.get("ink_look")) and room.ink.is_equal_approx(Color("e3cfaa")) and room.bg_color.is_equal_approx(Color("254b4e")),
+		"the room's own Quiet Wax colours return")
+	_check(_node_counts(room) == ink_nodes and _bodies(room) == ink_bodies, "the room's own nodes and collision are unchanged either way")
+	_check(not RenderingServer.get_default_clear_color().is_equal_approx(InkLook.LABEL_PAPER), "the room's own page colour returns")
+	var wax_walk := await _walk(room)
+	_check(wax_walk == ink_walk, "the same input moves Skip the same way in either look")
 	_main._load_world_room(&"high_street", &"from_horn_plaza")
 	await _physics(4)
-	_check(not InkTest.active and _main.room.get("ink_plate") == null, "the High Street stays Quiet Wax")
-	InkTest.enabled = false
-	_main._apply_ink_test()
+	_check(not InkLook.active and _main.room.get("ink_plate") == null and _main.room.atmosphere.visible and not bool(_main.room.get("ink_look")),
+		"with Quiet Wax chosen the next room opens in Quiet Wax")
+	InkLook.enabled = true
+	_main._apply_look()
+	await _physics(3)
+	_check(InkLook.active and is_instance_valid(_main.room.get("ink_plate")) and bool(_main.room.get("ink_look")), "F9 again draws the High Street in ink")
+
+	# Every campaign room opens in ink, from its own geometry: the ground is
+	# found, every passage stands where the room put it, the page is right
+	# for its side of the Scratch, and nothing in the scenery is pink or gold.
+	var canvas := Canvas.new()
+	canvas.size = Vector2(1280, 720)
+	root.add_child(canvas)
+	for id in ChapterOne.IDS + ChapterTwo.IDS + ChapterThree.IDS:
+		_main._load_world_room(id)
+		await _physics(3)
+		var drawn: Node = _main.room.get("ink_plate")
+		_check(InkLook.active and is_instance_valid(drawn), "%s opens in ink" % id)
+		if not is_instance_valid(drawn):
+			continue
+		var below := InkLook.below_scratch(id)
+		_check(InkLook.scratchboard == below and bool(drawn.get("scratchboard")) == below, "%s is %s on the near face" % [id, "scratchboard" if below else "paper"])
+		_check(RenderingServer.get_default_clear_color().is_equal_approx(InkLook.stock(below)), "%s's page is %s" % [id, "wax" if below else "label paper"])
+		if id == &"horn_plaza":
+			continue
+		var scene: Dictionary = drawn.get("scene")
+		_check(not scene.is_empty() and Vector2(Rect2(scene.ground).size).x >= 500.0, "%s's ground is its widest face" % id)
+		var exits := 0
+		for child in _main.room.get_children():
+			if child.is_in_group("room_exit"):
+				exits += 1
+		_check(scene.ways.size() == exits, "%s's passages are all in the drawing (%d of %d)" % [id, scene.ways.size(), exits])
+		for way: Dictionary in scene.ways:
+			var stands := false
+			for child in _main.room.get_children():
+				if child.is_in_group("room_exit") and StringName(child.get("target_room")) == way.target and absf((child as Node2D).position.x - Vector2(way.at).x) < 0.5:
+					stands = true
+			_check(stands, "%s's way to %s stands where the room put its passage" % [id, way.target])
+			_check(Vector2(way.at).y >= 100.0, "%s's way to %s stands on a face" % [id, way.target])
+		var rig: Dictionary = drawn.call("light_rig")
+		_check(not rig.is_empty() and rig.lamps.size() >= 1 and InkLook.lamps.size() == rig.lamps.size(), "%s has lamps, published for the figures" % id)
+		Room.forget(id)
+		var state: Dictionary = drawn.call("snapshot")
+		for plane in [&"paper", &"far", &"set", &"light"]:
+			canvas.paint = func(c: Control) -> void: Press.draw_ink_room(c, plane, state)
+			canvas.queue_redraw()
+			await process_frame
+		var triangles := 0
+		var loud := 0
+		for key in Room._tapes:
+			if key[0] != id:
+				continue
+			for entry in Room._tapes[key]:
+				if entry[0] == &"triangles":
+					triangles += entry[3].size() / 3
+					for colour in entry[2]:
+						if colour.a > 0.0 and (_same_hue(colour, Press.PINK) or _same_hue(colour, Press.GOLD)):
+							loud += 1
+				elif entry[0] == &"text":
+					_check(not RegEx.create_from_string("(?i)\\b(needles?|stylus(es)?|styli)\\b").search(String(entry[5])), "%s's lettering never says needle or stylus: %s" % [id, entry[5]])
+		_check(triangles > 50000, "%s is drawn dense (%d triangles)" % [id, triangles])
+		_check(loud == 0, "%s's scenery is never pink or gold (%d points)" % [id, loud])
+	canvas.queue_free()
+	await process_frame
+	# A face laid while the plate is up is drawn into it.
+	_main._load_world_room(&"practice_room")
+	await _physics(3)
+	var practice: Node2D = _main.room
+	var before: int = Dictionary(practice.get("ink_plate").get("scene")).floors.size()
+	practice.call("platform", Vector2(700, 300), Vector2(200, 30))
+	await _physics(2)
+	_check(int(Dictionary(practice.get("ink_plate").get("scene")).floors.size()) == before + 1, "a ledge laid later is drawn into the plate")
 
 ## Holds right for a moment from a fixed start and returns Skip's path.
 func _walk(room: Node2D) -> Array[Vector2]:

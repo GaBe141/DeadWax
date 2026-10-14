@@ -70,8 +70,8 @@ func _label(font_size: int, display := false) -> Label:
 	add_child(label)
 	return label
 
-## `outline` keeps type legible over the world; the art-direction test's ink
-## (ink_test.gd) sets dark type on a wide paper outline, like a pasted slip.
+## `outline` keeps type legible over the world; the ink look (ink_look.gd)
+## sets dark type on a wide paper outline, like a pasted slip.
 func set_palette(ink: Color, accent: Color, outline := Color(0.015, 0.02, 0.025, 0.85), outline_size := 3) -> void:
 	_ink = ink
 	_accent = accent

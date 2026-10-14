@@ -13,6 +13,7 @@ const RoomExitScript := preload("res://scripts/room_exit.gd")
 const AtmosphereScript := preload("res://scripts/room_atmosphere.gd")
 const LightingScript := preload("res://scripts/room_lighting.gd")
 const InkPlateScript := preload("res://scripts/ink_plate.gd")
+const InkLookScript := preload("res://scripts/ink_look.gd")
 
 signal refrain_collected(refrain: int)
 signal ability_requested(ability: StringName, source: Node2D)
@@ -77,8 +78,13 @@ var _grooves: Array[Node2D] = []
 var _backdrop: ColorRect
 var atmosphere: Node2D
 var lighting: Node2D
-## The art-direction test's drawing, while this room is shown in ink.
+## The ink plate: this room's drawing while it is printed in ink.
 var ink_plate: Node2D
+## Whether the room is printed in ink (ink_look.gd), and its own Quiet Wax
+## pair kept for turning back.
+var ink_look := false
+var _wax_ink := Color.BLACK
+var _wax_stock := Color.WHITE
 var _world_materials := false
 
 ## Authored rooms opt in after laying their real platforms. Decoration never
@@ -170,6 +176,8 @@ func platform(pos: Vector2, size: Vector2) -> void:
 		_apply_world_material(vis)
 	_skins.append(vis)
 	add_child(b)
+	if is_instance_valid(ink_plate):
+		ink_plate.call("add_surface", Rect2(pos + vis.position, size))
 
 ## The halftone tint block a room is printed over. Main lays this down once the
 ## room is in the tree, so no room script has to think about its own backdrop.
@@ -190,14 +198,36 @@ func groove(pos: Vector2, groove_side: int = PressingScript.Side.A) -> void:
 	_grooves.append(p)
 	add_child(p)
 
-## The art-direction test (ink_test.gd): this room drawn in the canon's ink in
-## place of its Quiet Wax layers. Collision, passages, fixtures and every
-## encounter stay exactly as they are; only what draws the room changes, and
-## turning back restores the Quiet Wax layers untouched.
-func set_ink_test(enabled: bool) -> void:
+## The look (ink_look.gd): this room printed in the canon's ink in place of
+## its Quiet Wax layers. Collision, passages, fixtures and every encounter
+## stay exactly as they are; only what draws the room changes, and turning
+## back restores the Quiet Wax layers untouched.
+##
+## Main calls this once before the room builds, so the page's colours are in
+## place for everything the room prints and every figure it dresses, and
+## again once it is in the tree, which lays the ink plate over its platforms.
+## The page is paper above the Scratch and scratchboard below it; the plate
+## takes its own palette from the look, so a room's pair only has to be near
+## enough for what prints in it.
+func set_ink(enabled: bool) -> void:
+	if enabled != ink_look:
+		ink_look = enabled
+		if enabled:
+			_wax_ink = ink
+			_wax_stock = bg_color
+			var page := InkLookScript.page_is_scratchboard(room_id, false)
+			ink = InkLookScript.ink(page)
+			bg_color = InkLookScript.stock(page)
+		else:
+			ink = _wax_ink
+			bg_color = _wax_stock
+		if is_inside_tree():
+			# Everything already printed takes the other page's colours.
+			apply_side(side)
+	if not is_inside_tree():
+		return
 	var drawn := is_instance_valid(ink_plate)
 	if enabled == drawn:
-		# Nothing to change: a room never shown in ink is never touched.
 		return
 	if enabled:
 		ink_plate = InkPlateScript.new()
@@ -223,6 +253,25 @@ func set_ink_test(enabled: bool) -> void:
 			child.visible = not enabled
 	propagate_call("queue_redraw")
 
+## The room's solid faces, in room space, for the ink plate to print the
+## ground and the walls from. Decoration never adds to this list.
+func surface_rects() -> Array[Rect2]:
+	var rects: Array[Rect2] = []
+	for skin in _skins:
+		if is_instance_valid(skin) and skin.get_parent() != null:
+			rects.append(Rect2(skin.get_parent().position + skin.position, skin.size))
+	return rects
+
+## The room's authored landmarks (impressions): kind, centre and size, for the
+## ink plate to draw its own version of each where the room put it.
+func landmark_records() -> Array[Dictionary]:
+	var records: Array[Dictionary] = []
+	for child in get_children():
+		if child.has_meta("impression_kind") and child is Node2D:
+			records.append({"kind": StringName(child.get_meta("impression_kind")), "at": (child as Node2D).position,
+				"size": Vector2(child.get_meta("impression_size", Vector2(200, 200)))})
+	return records
+
 ## Turns the room over. Ink and paper trade places, grooves pressed on the far
 ## face fall quiet, and anything HUSH burnished stops being burnished — he only
 ## ever smoothed the side that was face-up.
@@ -246,7 +295,7 @@ func apply_side(next_side: int) -> void:
 		if is_instance_valid(hot):
 			hot.call("set_current_side", next_side)
 	if is_instance_valid(ink_plate):
-		ink_plate.call("reink", next_side == PressingScript.Side.B)
+		ink_plate.call("reprint", next_side == PressingScript.Side.B)
 	for child in get_children():
 		if child.is_in_group("ability_pickup") or child.is_in_group("exploration_fixture") or child.is_in_group("lost_pressing"):
 			child.call("reink", solid, stock)
@@ -254,7 +303,8 @@ func apply_side(next_side: int) -> void:
 			child.set("muted", muted and next_side == PressingScript.Side.A)
 
 ## The ink a room is currently printed in, and the stock under it. Turning the
-## pressing over trades the two.
+## pressing over trades the two. In ink the pair is the page's (set_ink), so
+## the far face trades paper for wax the same way.
 func _solid_color() -> Color:
 	return bg_color if side == PressingScript.Side.B else ink
 
