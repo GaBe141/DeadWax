@@ -12,6 +12,7 @@ const AbilitiesScript := preload("res://scripts/abilities_state.gd")
 const RoomExitScript := preload("res://scripts/room_exit.gd")
 const AtmosphereScript := preload("res://scripts/room_atmosphere.gd")
 const LightingScript := preload("res://scripts/room_lighting.gd")
+const InkPlateScript := preload("res://scripts/ink_plate.gd")
 
 signal refrain_collected(refrain: int)
 signal ability_requested(ability: StringName, source: Node2D)
@@ -76,6 +77,8 @@ var _grooves: Array[Node2D] = []
 var _backdrop: ColorRect
 var atmosphere: Node2D
 var lighting: Node2D
+## The art-direction test's drawing, while this room is shown in ink.
+var ink_plate: Node2D
 var _world_materials := false
 
 ## Authored rooms opt in after laying their real platforms. Decoration never
@@ -161,6 +164,7 @@ func platform(pos: Vector2, size: Vector2) -> void:
 	cs.shape = sh
 	b.add_child(cs)
 	var vis := PressScript.plate(size, _solid_color(), _stock_color(), PressScript.ACCENT, pos.x + pos.y, true)
+	vis.visible = ink_plate == null
 	b.add_child(vis)
 	if _world_materials:
 		_apply_world_material(vis)
@@ -186,6 +190,39 @@ func groove(pos: Vector2, groove_side: int = PressingScript.Side.A) -> void:
 	_grooves.append(p)
 	add_child(p)
 
+## The art-direction test (ink_test.gd): this room drawn in the canon's ink in
+## place of its Quiet Wax layers. Collision, passages, fixtures and every
+## encounter stay exactly as they are; only what draws the room changes, and
+## turning back restores the Quiet Wax layers untouched.
+func set_ink_test(enabled: bool) -> void:
+	var drawn := is_instance_valid(ink_plate)
+	if enabled == drawn:
+		# Nothing to change: a room never shown in ink is never touched.
+		return
+	if enabled:
+		ink_plate = InkPlateScript.new()
+		ink_plate.name = "InkPlate"
+		ink_plate.call("setup", self, cam_limits, room_id, side == PressingScript.Side.B)
+		add_child(ink_plate)
+		ink_plate.call("set_reduced_motion", bool(atmosphere.get("reduced_motion")) if atmosphere != null else false)
+	else:
+		remove_child(ink_plate)
+		ink_plate.queue_free()
+		ink_plate = null
+	for skin in _skins:
+		if is_instance_valid(skin):
+			skin.visible = not enabled
+	if atmosphere != null:
+		atmosphere.visible = not enabled
+	if lighting != null:
+		lighting.visible = not enabled
+	if _backdrop != null:
+		_backdrop.visible = not enabled and atmosphere == null
+	for child in get_children():
+		if child.has_meta("impression_kind"):
+			child.visible = not enabled
+	propagate_call("queue_redraw")
+
 ## Turns the room over. Ink and paper trade places, grooves pressed on the far
 ## face fall quiet, and anything HUSH burnished stops being burnished — he only
 ## ever smoothed the side that was face-up.
@@ -208,6 +245,8 @@ func apply_side(next_side: int) -> void:
 	for hot in _grooves:
 		if is_instance_valid(hot):
 			hot.call("set_current_side", next_side)
+	if is_instance_valid(ink_plate):
+		ink_plate.call("reink", next_side == PressingScript.Side.B)
 	for child in get_children():
 		if child.is_in_group("ability_pickup") or child.is_in_group("exploration_fixture") or child.is_in_group("lost_pressing"):
 			child.call("reink", solid, stock)

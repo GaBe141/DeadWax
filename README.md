@@ -68,7 +68,7 @@ The lightweight project commands are:
 .\deadwax.cmd play    play the campaign with a local runtime log
 .\deadwax.cmd dev     open the original mechanics rooms and planned-world tools
 .\deadwax.cmd editor  open the project in Godot
-.\deadwax.cmd check   import resources; run all sixty-three native test suites
+.\deadwax.cmd check   import resources; run all sixty-four native test suites
 .\deadwax.cmd vibe    start Mistral Vibe in this repository
 ```
 
@@ -553,6 +553,9 @@ controller uses the physical layout above.
 - **F** (or right shoulder) — **FLIP**: turn the pressing over. Needs the
   **Jump-Cut**. Silent until you carry it.
 - **R** respawn at the current room entry.
+- **F9** — the art-direction test: Horn Plaza drawn in the canon's ink in place
+  of Quiet Wax, to compare the two in play. Press again to turn back. Nothing
+  is saved; every other room stays as it is.
 
 After collecting the folded map, **M / D-pad Down** opens it while exploring.
 The Book also has an **Open map** button. **Journey → This Place** holds the
@@ -890,7 +893,7 @@ enemy that rings pays +0.40 resonance for a parry inside 100 ms, pink and gold
 are each defined once and gold stays rationed, equipment never carries a move,
 and a shatter speaks its last words in pink.
 
-Run `.\deadwax.cmd check` before committing. It imports resources and runs 63
+Run `.\deadwax.cmd check` before committing. It imports resources and runs 64
 dependency-free native suites, starting with the canon suite, then smoke, save-store, campaign, Tonearm, Overture,
 sprite-animation, residents, economy-state, economy integration, scenery,
 lighting, attack-feel, GUI-animation, and map-item suites. These cover the original combat and
@@ -950,3 +953,6 @@ save-error visibility, and preserved practice/development guidance.
 The render-batch suite checks that gathered scenery marks are the engine's own
 triangles and their bookkeeping; run windowed, it also compares them with the
 engine's drawing pixel for pixel.
+The ink-test suite checks that the art-direction test changes presentation
+only: the same collision, nodes and movement in either look, every Quiet Wax
+layer restored, other rooms untouched, and no pink or gold in its scenery.

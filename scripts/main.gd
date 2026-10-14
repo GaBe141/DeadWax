@@ -47,6 +47,8 @@ const ScreenCaptureScript := preload("res://scripts/screen_capture.gd")
 const ControllerProfileScript := preload("res://scripts/controller_profile.gd")
 const ControllerRouterScript := preload("res://scripts/controller_router.gd")
 const ControllerMenuScript := preload("res://scripts/controller_menu.gd")
+## The art-direction test: Horn Plaza in the canon's ink beside Quiet Wax.
+const InkTestScript := preload("res://scripts/ink_test.gd")
 const AuditionerFigure := preload("res://scripts/auditioner.gd")
 const PressingFigure := preload("res://scripts/test_pressing.gd")
 const ResidentFigure := preload("res://scripts/resident.gd")
@@ -163,8 +165,10 @@ var _shatter_i := 0
 func _ready() -> void:
 	randomize()
 	development_mode = development_mode or (OS.is_debug_build() and "--dev-rooms" in OS.get_cmdline_user_args())
+	if "--ink-test" in OS.get_cmdline_user_args():
+		InkTestScript.enabled = true
 	if not development_mode and DisplayServer.get_name() != "headless":
-		DisplayServer.window_set_title("Dead Wax — Quiet Wax")
+		DisplayServer.window_set_title("Dead Wax — Ink test" if InkTestScript.enabled else "Dead Wax — Quiet Wax")
 	_setup_input()
 	progression = ProgressionScript.new()
 	abilities = AbilitiesScript.new()
@@ -283,6 +287,10 @@ func _notification(what: int) -> void:
 		_quit_game()
 
 func _unhandled_input(event: InputEvent) -> void:
+	if event.is_action_pressed("art_test") and not event.is_echo():
+		_toggle_ink_test()
+		get_viewport().set_input_as_handled()
+		return
 	if event.is_action_pressed("map") and not event.is_echo():
 		_open_map()
 		get_viewport().set_input_as_handled()
@@ -532,6 +540,7 @@ func _swap_room(next_room: Node2D, entry_id: StringName) -> void:
 	room.call("apply_side", pressing.side)
 	room.call("set_scenery_motion", bool(_settings.reduced_motion))
 	room.call("set_cinematic_mode", _cinematic_campaign())
+	_apply_ink_test()
 	_apply_room_air()
 	_sync_home_song()
 
@@ -1198,6 +1207,9 @@ func _max_health() -> int:
 func _apply_purchases() -> void:
 	player.hood_speed_mult = float(economy.call("hood_speed_multiplier"))
 	player.warm_thread = bool(economy.call("has_item", &"warm_thread"))
+	var fitted: Dictionary = collection.snapshot().get("equipped", {}) if collection != null else {}
+	player.fitted_tip = StringName(fitted.get("needle", ""))
+	player.fitted_lining = StringName(fitted.get("lining", ""))
 	player.apply_equipment(collection.modifiers() if collection != null else {})
 	player.apply_growth(experience.profile() if experience != null else {})
 	if inventory != null and experience != null:
@@ -1621,6 +1633,9 @@ func _apply_room_air() -> void:
 
 func _apply_room_palette() -> void:
 	var paper: Color = room.ink if bool(pressing.call("on_b_side")) else room.bg_color
+	InkTestScript.far_face = bool(pressing.call("on_b_side"))
+	if InkTestScript.active:
+		paper = InkTestScript.stock(InkTestScript.far_face)
 	RenderingServer.set_default_clear_color(paper)
 	_apply_hud_palette(paper)
 	if player != null:
@@ -1644,12 +1659,48 @@ func _apply_hud_palette(stock: Color) -> void:
 	PressScript.folio_panel(masthead, text, panel_stock)
 	PressScript.folio_panel(footer_stock, text, panel_stock)
 	combo_readout.set_palette(text, stock)
-	if cinematic_hud != null: cinematic_hud.set_palette(PressScript.CREAM, PressScript.BRASS)
+	if cinematic_hud != null:
+		if InkTestScript.active:
+			cinematic_hud.set_palette(InkTestScript.ink(InkTestScript.far_face), InkTestScript.CANCEL_RED, Color(stock, 0.94), 8)
+		else:
+			cinematic_hud.set_palette(PressScript.CREAM, PressScript.BRASS)
 	feedback.add_theme_color_override(
 		"font_outline_color", Color(stock.r, stock.g, stock.b, 0.9)
 	)
 	if paper != null:
-		PressScript.repaper(paper, PressScript.DEEP)
+		if InkTestScript.active and not InkTestScript.far_face:
+			# Aged stock browns at its edges rather than sinking into shadow.
+			PressScript.repaper(paper, InkTestScript.UMBER, 0.28)
+		else:
+			PressScript.repaper(paper, PressScript.DEEP)
+
+## The art-direction test (ink_test.gd). F9 flips between the canon's ink and
+## Quiet Wax for this run; only rooms the test covers change, and nothing is
+## saved or replayed.
+func _toggle_ink_test() -> void:
+	InkTestScript.enabled = not InkTestScript.enabled
+	_apply_ink_test()
+	if room == null or development_mode or practice_mode:
+		return
+	if not InkTestScript.enabled:
+		_flash("QUIET WAX — F9 for the ink test")
+	elif InkTestScript.active:
+		_flash("INK TEST — F9 for Quiet Wax")
+	else:
+		_flash("The ink test is drawn in Horn Plaza.")
+
+func _apply_ink_test() -> void:
+	var covered := room != null and not development_mode and not practice_mode and InkTestScript.covers(world_room_id)
+	InkTestScript.active = InkTestScript.enabled and covered
+	InkTestScript.far_face = bool(pressing.call("on_b_side")) if pressing != null else false
+	if room != null and room.has_method("set_ink_test"):
+		room.call("set_ink_test", InkTestScript.active)
+	if room != null:
+		_apply_room_palette()
+	if player != null:
+		player.queue_redraw()
+	if not development_mode and DisplayServer.get_name() != "headless":
+		DisplayServer.window_set_title("Dead Wax — Ink test" if InkTestScript.enabled else "Dead Wax — Quiet Wax")
 
 ## Turning the pressing over is a Jump-Cut. Without it the input is inert and
 ## says nothing: an unearned Refrain is never announced before it is found.
@@ -2500,6 +2551,7 @@ func _setup_input() -> void:
 	_action("world_map", [KEY_M])
 	_action("debug_grant", [KEY_G])
 	_action("pause_game", [KEY_ESCAPE])
+	_action("art_test", [KEY_F9])
 	for action in ["book_previous", "book_next", "book_scroll_up", "book_scroll_down"]:
 		_action(action, [])
 	_refresh_pad_input()

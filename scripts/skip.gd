@@ -75,6 +75,11 @@ var economy: RefCounted
 var groove: RefCounted
 var hood_speed_mult := HOOD_SPEED_MULT
 var warm_thread := false
+## The Tip and the Sleeve fitted in the Book, by item id. Drawing only: the
+## art-direction test's ink shows them on the point and the hood
+## (press_ink_point.gd, press_ink_hood.gd).
+var fitted_tip: StringName = &""
+var fitted_lining: StringName = &""
 ## Optional equipment affects handling, never strike/parry clocks or jump height.
 ## Main installs the complete derived profile only after a saved transaction.
 var equipment_speed := 1.0
@@ -680,7 +685,7 @@ func _tap_phase() -> float:
 func _draw() -> void:
 	PressScript.draw_skip(self, _animation_pose(), {
 		"ink": INK, "body": _body, "pale": PALE, "pink": PressScript.PINK, "hood": HOODGREY,
-		"warm_thread": warm_thread,
+		"warm_thread": warm_thread, "tip": fitted_tip, "lining": fitted_lining,
 	})
 	# Dust stays where it was kicked up, in front of the feet that raised it.
 	if not _dust.is_empty():

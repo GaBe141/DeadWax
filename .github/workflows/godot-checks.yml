@@ -163,3 +163,6 @@ jobs:
 
       - name: Validate locomotion
         run: godot --headless --path . --script res://tests/locomotion_test.gd
+
+      - name: Validate the ink look
+        run: godot --headless --path . --script res://tests/ink_look_test.gd

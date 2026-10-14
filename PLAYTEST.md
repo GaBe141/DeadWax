@@ -4,8 +4,8 @@ Run `.\deadwax.cmd play` for the authored opening. Start with the chapter
 checklist, then use `.\deadwax.cmd dev` for focused mechanics regressions.
 On Linux, `bash tools/deadwax.sh play`, `dev` and `check` do the same.
 Runtime errors are written to `.godot/deadwax-play.log`.
-Run `.\deadwax.cmd check` before handoff; the complete run contains 63 native
-suites, starting with the canon suite and including batched scenery, animation moments, XP and levels, Groove pressure, Palace shaders/lighting, arena practice, contact feedback, calibrated controllers, movement weight, cinematic presentation,
+Run `.\deadwax.cmd check` before handoff; the complete run contains 64 native
+suites, starting with the canon suite and including the art-direction ink test, batched scenery, animation moments, XP and levels, Groove pressure, Palace shaders/lighting, arena practice, contact feedback, calibrated controllers, movement weight, cinematic presentation,
 Lost Pressings, and Book/map suites. Older review results below retain their
 original suite counts.
 
@@ -17,6 +17,97 @@ original suite counts.
 - Input device:
 - Overall frame pacing: smooth / occasional hitch / frequent hitch
 - Audio clarity and latency:
+
+## Art-direction test — 12 October 2026
+
+The canon leaves the look open until "a side-by-side test of one room"
+(`docs/README.md`, canon status). That test is now in the game: Horn Plaza in
+the locked ink direction (`docs/art/direction.html`, `docs/art/cutaway.html`),
+figures included. See `docs/ARCHITECTURE.md`, "The art-direction ink test".
+
+How to run it: `.\deadwax.cmd play`, continue or start a game, walk to Horn
+Plaza and press **F9**. Press it again to go back to Quiet Wax. Nothing is
+saved and every other room stays Quiet Wax. (Running Godot directly with
+`-- --ink-test` starts with it on.)
+
+What it draws: label paper; thick, tapering, sketched ink; hatching on the
+shadowed third and a faint engraving over every wall; grime, stains, cracks
+and streaks; the boarding house with rooms to let and a bedroom open to the
+street; Tick's window with the metronome; the market's shutters and striped
+awnings; the great horn in brass on its plinth; string lights and a washing
+line; and a cutaway of the ground: the cellar, the storeroom of pressings,
+the drain, the horn's speaking tube going down, a bone the Hound buried, and
+the Overture's worn dust at the bottom. Skip v2 and the Hound v2 are Tier B
+figures that boil at four frames. Pink appears only when sound is heard
+(strikes, Skip's crack chips while he is loud); the Hound's tag is the one
+use of etch gold. With the Jump-Cut, turning the pressing over reprints the
+same drawing as scratchboard, white line out of wax.
+
+Skip's point has had its own pass: the canon's stylus-lance with a cartridge
+butt, a taped grip, an unspooled end of tape, and whichever Tip is fitted in
+the Book. It rests planted on the street ahead, drags behind at a run scoring
+a groove, lies flat when you kneel and stands upright beside the hood;
+polishing it is an idle fidget. Strikes read as a drummer's sticking: the Tap
+a level thrust, the Sweep an up-stroke that lifts it over his head, the
+Accent the canon's flip-slam, over the top and into the street with both
+hands. Each stroke lands on its first frame, holds a moment and settles; the
+Sweep and the Accent leave a paper smear that a foe shows through.
+
+The hood has had the same pass: the canon's worn 45 sleeve, which goes up
+from behind and comes down over his face, his face its centre hole. It
+carries the wear of a real sleeve (ring wear, its 45 print rubbed half away,
+creases, a taped tear); his boots shuffle under the hem, the hem flares in
+the air, and the Warm Thread and whatever Sleeve is fitted in the Book show
+on it. Hood up stays silence: grey ink, nothing pink.
+
+The plaza is lit now, at the hour the story keeps for the Label: dawn-grey.
+A cool second printing lies over the page, heaviest overhead and under the
+street, paler where the sky opens behind the horn, and the night's last lamps
+knock it back: the lantern on the ledge (breathing, with dust in its light),
+the festoon bulbs (some dead, one dying), Tick's window, the open bedroom, a
+window over the shop, and light falling through the grate into the drain.
+Lamps near the street throw long shadows from Skip, the Hound and the props,
+and give Skip and the Hound a rim of lamplight. The B-side reads the same rig
+as scratchboard. Fixtures and figures sit above the dawn.
+
+Measured under software GL (llvmpipe, Xvfb, 1280×720): ink draws about 75
+draw calls and 223k primitives a frame against Quiet Wax's 400 and 35–43k.
+The first F9 pauses 0.4–0.7 s while the planes are drawn once; after that the
+switch is immediate. The new suite (414 checks) proves the same collision,
+nodes and movement in either look, and the laws of the point, the hood and
+the light. All 64 suites pass with 15,480 checks; the 63 earlier suites kept
+their 15,066 exactly.
+
+- [ ] Readability first (the Tier B rule): can you always find Skip — at a
+  run, mid-strike, under the hood, beside the Hound — against the busier
+  street?
+- [ ] Does pink still read as "heard" when everything else is ink: the
+  strike's cut, the crack chips when you are loud?
+- [ ] Hood up and stand still by the horn: the sleeve's face hole, the
+  Hound coming over, the dull wax buffing back to black.
+- [ ] Skip's point: does it read planted at rest, dragged at a run, laid
+  down when you kneel and upright under the hood? Does the Tap read as a
+  thrust? Strokes chain only on hits and the plaza has no foes, so the Sweep
+  and the Accent can't be thrown there in play.
+- [ ] Fit another Tip in the Book's Point slot: is it the tip you see?
+- [ ] The light: does the plaza read as early morning with lamps still on?
+  Can you still find Skip, the Hound and every pickup in the darker corners
+  and the underground? Walk under the lantern and through the Stalls arch:
+  the long shadow, the rim of light. With Reduced motion on, the lantern and
+  the dust hold still. Is the lighting part of why ink wins or loses?
+- [ ] The hood: does it read as a worn record sleeve, going up from behind
+  and over his face? Can you still find him under it against the paper?
+  Walk and jump hooded: the boots, the hem. With the Warm Thread bought or a
+  Sleeve fitted in the Book, is it on the hood?
+- [ ] Does the plaza feel like the canon's Label: print on paper, dense,
+  grungy, a town where the played retired?
+- [ ] With the Jump-Cut, turn the pressing over in the plaza: the
+  scratchboard face.
+- [ ] Frame pacing on your machine in ink, and the one-off pause on the first
+  F9.
+- [ ] Decide: ink, Quiet Wax, or which parts of each. Not covered by the
+  test: other rooms, enemies, the HUD, Book and menus, and boil on scenery
+  (the canon boils souls only).
 
 ## Scenery batching verification — 11 October 2026
 

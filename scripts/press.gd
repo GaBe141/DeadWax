@@ -16,6 +16,11 @@ const PalaceAirShader := preload("res://assets/shaders/palace_air.gdshader")
 const WorldMaterialShader := preload("res://assets/shaders/world_material.gdshader")
 const WorldLightAirShader := preload("res://assets/shaders/world_light_air.gdshader")
 
+## The art-direction test (ink_test.gd): while it is active, figures and
+## fixtures are drawn in the canon's ink instead of Quiet Wax.
+const InkTest := preload("res://scripts/ink_test.gd")
+const InkFigures := preload("res://scripts/press_ink_figures.gd")
+
 const DisplayFont := preload("res://assets/fonts/BigShoulders-Bold.ttf")
 const DisplayLight := preload("res://assets/fonts/BigShoulders-Regular.ttf")
 const BodyFont := preload("res://assets/fonts/IBMPlexMono-Regular.ttf")
@@ -76,9 +81,15 @@ static func draw_exploration(canvas: CanvasItem, state: Dictionary, ink: Color, 
 	preload("res://scripts/press_exploration.gd").draw(canvas, state, ink, stock)
 
 static func draw_lost_pressing(canvas: CanvasItem, state: Dictionary, ink: Color, stock: Color) -> void:
+	if InkTest.active:
+		InkFigures.draw_lost_pressing(canvas, state, BodyFont)
+		return
 	preload("res://scripts/press_lost_pressing.gd").draw(canvas, state, ink, stock)
 
 static func draw_ability_pickup(canvas: CanvasItem, state: Dictionary, ink: Color, stock: Color) -> void:
+	if InkTest.active:
+		InkFigures.draw_ability_pickup(canvas, state)
+		return
 	preload("res://scripts/press_ability.gd").draw(canvas, state, ink, stock)
 
 static func draw_cinematic(canvas: CanvasItem, extent: Vector2, state: Dictionary, ink: Color, accent: Color) -> void:
@@ -136,9 +147,15 @@ static func draw_live_groove(canvas: CanvasItem, pose: Dictionary) -> void:
 	preload("res://scripts/press_props.gd").draw_groove(canvas, pose, DEEP, CREAM, BRASS, ACCENT, PINK)
 
 static func draw_polish(canvas: CanvasItem, pose: Dictionary) -> void:
+	if InkTest.active:
+		InkFigures.draw_polish(canvas, pose)
+		return
 	preload("res://scripts/press_props.gd").draw_polish(canvas, pose, DEEP, BRASS, CREAM, ACCENT)
 
 static func draw_passage(canvas: CanvasItem, pose: Dictionary, ink: Color, stock: Color) -> void:
+	if InkTest.active:
+		InkFigures.draw_passage(canvas, pose, DisplayFont)
+		return
 	preload("res://scripts/press_passage.gd").draw(canvas, pose, ink, stock)
 
 static func menu_button_style(ink: Color, stock: Color, highlighted := false, focused := false) -> StyleBoxFlat:
@@ -193,9 +210,15 @@ static func draw_hush(canvas: CanvasItem, pose: int, ticks: int, parries: int, f
 	preload("res://scripts/press_hush.gd").draw(canvas, pose, ticks, parries, face, time, ink, stock, motion)
 
 static func draw_skip(canvas: CanvasItem, pose: Dictionary, palette: Dictionary) -> void:
+	if InkTest.active:
+		InkFigures.draw_skip(canvas, pose, PINK, palette)
+		return
 	preload("res://scripts/press_skip.gd").draw(canvas, pose, palette)
 
 static func draw_skip_dust(canvas: CanvasItem, puffs: Array, color: Color) -> void:
+	if InkTest.active:
+		InkFigures.draw_dust(canvas, puffs)
+		return
 	preload("res://scripts/press_skip_gesture.gd").draw_dust(canvas, puffs, color)
 
 static func draw_strike_wave(canvas: CanvasItem, pose: Dictionary, ink: Color, stock: Color) -> void:
@@ -253,6 +276,10 @@ static func draw_resident(canvas: CanvasItem, kind: StringName, pose: Dictionary
 	preload("res://scripts/press_resident.gd").draw(canvas, kind, pose, ink, stock)
 
 static func draw_hound(canvas: CanvasItem, pose: Dictionary, ink: Color, stock: Color) -> void:
+	if InkTest.active:
+		# Etch gold belongs to the Engineer; her dog's tag is one of its six uses.
+		InkFigures.draw_hound(canvas, pose, GOLD)
+		return
 	preload("res://scripts/press_hound.gd").draw(canvas, pose, ink, stock)
 
 static func draw_glass_pane(canvas: CanvasItem, pose: Dictionary, ink: Color, stock: Color) -> void:
@@ -263,6 +290,10 @@ static func draw_rest_point(canvas: CanvasItem, pose: Dictionary, ink: Color, st
 
 static func draw_shop_item(canvas: CanvasItem, item_id: StringName, size: Vector2, ink: Color, stock: Color) -> void:
 	preload("res://scripts/press_shop.gd").draw(canvas, item_id, size, ink, stock)
+
+## A room in the art-direction test's ink (ink_plate.gd), one plane at a time.
+static func draw_ink_room(canvas: CanvasItem, plane: StringName, state: Dictionary) -> void:
+	preload("res://scripts/press_ink_plaza.gd").draw(canvas, plane, state, DisplayFont, BodyFont)
 
 static func draw_room_depth(canvas: CanvasItem, room_id: StringName, layer: StringName, bounds: Rect2, pose: Dictionary, ink: Color, stock: Color) -> void:
 	if room_id in [&"the_drop", &"the_landing", &"verse_hall", &"verse_warren_n", &"verse_warren_s", &"deep_gallery"]:
@@ -474,10 +505,11 @@ static func paper_overlay(tint: Color) -> ColorRect:
 	rect.material = mat
 	return rect
 
-static func repaper(rect: ColorRect, tint: Color) -> void:
+static func repaper(rect: ColorRect, tint: Color, vignette := 0.42) -> void:
 	var mat := rect.material as ShaderMaterial
 	if mat != null:
 		mat.set_shader_parameter("tint", tint)
+		mat.set_shader_parameter("vignette", vignette)
 
 # -- type ---------------------------------------------------------------------
 
