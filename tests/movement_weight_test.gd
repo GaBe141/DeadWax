@@ -29,6 +29,7 @@ func _run() -> void:
 	await _reverse()
 	await _set_and_hood()
 	await _air_handling()
+	await _jumps()
 	await _equipment()
 	await _shuffle()
 	_release()
@@ -151,6 +152,34 @@ func _air_handling() -> void:
 	await _physics(5)
 	_check(is_equal_approx(_player.velocity.x, 680.0 - 1170.0 * 5.0 / 60.0),
 		"steering a launch still sheds excess speed at the old rate")
+
+func _jumps() -> void:
+	await _reset()
+	var floor_y := _player.position.y
+	Input.action_press("jump")
+	var peak := floor_y
+	for frame in 50:
+		await _physics(1)
+		peak = minf(peak, _player.position.y)
+		if frame > 4 and _player.is_on_floor():
+			break
+	var full_rise := floor_y - peak
+	_check(full_rise > 126.0 and full_rise < 133.0,
+		"holding jump keeps the original crest; rise %.2f" % full_rise)
+	await _reset()
+	floor_y = _player.position.y
+	Input.action_press("jump")
+	await _physics(1)
+	Input.action_release("jump")
+	peak = _player.position.y
+	for frame in 40:
+		await _physics(1)
+		peak = minf(peak, _player.position.y)
+		if frame > 3 and _player.is_on_floor():
+			break
+	var short_rise := floor_y - peak
+	_check(short_rise > 45.0 and short_rise < full_rise - 40.0,
+		"releasing jump stays a shorter hop; rise %.2f against full %.2f" % [short_rise, full_rise])
 
 func _equipment() -> void:
 	await _reset({"accel": 1.25})

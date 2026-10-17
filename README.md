@@ -558,8 +558,11 @@ and Set braking **3800 px/s²**. At 60 physics ticks, reaching the unchanged
 **340 px/s** top speed takes about 0.18 seconds; a full-speed release coasts
 about 21 pixels before settling. Air steering remains **1170 px/s²** with
 **760 px/s²** neutral drag. Equipment still applies its stated handling
-benefits and costs. Jump height, gravity, coyote time, hit reach, basic strike
-cadence, and the 100 ms parry window are unchanged.
+benefits and costs. A held jump keeps the original crest. Releasing jump
+keeps 60% of the upward speed, so a tap is a shorter hop. Gravity, coyote
+time, hit reach, basic strike cadence, and the 100 ms parry window are
+unchanged. The camera eases ahead of a run and below a fall; reduced motion
+keeps it centered.
 
 Before finding the chain, every attack is a single Tap. After recovering
 **Three-Strike Chain**, connected hits link **Tap → Sweep → Accent**. Execute

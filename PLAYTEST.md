@@ -1120,7 +1120,8 @@ settings used private paths and were removed afterward.
 - [ ] Escape/gamepad Back pauses the chapter. Resume does not also jump or enter a passage with the confirming input.
 - [ ] Returning to title and quitting preserve the checkpoint. A save failure is visible and prevents a silent departure.
 - [ ] Volume including mute, fullscreen, and reduced camera motion work from settings and survive a relaunch.
-- [ ] Reduced camera motion removes camera smoothing, hit shake, decorative ambient motion, scenery parallax, and slow lamp modulation; movement and passage transitions still work normally.
+- [ ] Reduced camera motion removes camera smoothing, the run/fall lead, hit shake, decorative ambient motion, scenery parallax, and slow lamp modulation; movement and passage transitions still work normally.
+- [ ] Run through a wide room and drop down the Well: the view eases ahead of the run and below the fall, then settles back on Skip after you stop. A tapped jump is visibly shorter than a held jump, and the held crest still cannot clear the Stalls gate.
 - [ ] Keyboard, D-pad, stick, and menu focus behave correctly with a controller, if available.
 
 The native save suite tests malformed checkpoints and backup recovery using

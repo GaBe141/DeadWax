@@ -23,7 +23,7 @@ const AIR_FRICTION := 760.0
 const SHUFFLE_STEP := 1.0         # one pixel per fresh direction press until Walk
 const AIR_CONTROL := AIR_ACCEL / RUN_ACCEL # ratio exposed to traversal fixtures
 const JUMP_VELOCITY := -640.0
-const JUMP_CUT := 0.45
+const JUMP_CUT := 0.60            # a tap stays a hop; holding keeps the original crest
 const COYOTE_TIME := 0.10
 const JUMP_BUFFER := 0.12
 const HOOD_SPEED_MULT := 0.62      # hooded = slower, softer
