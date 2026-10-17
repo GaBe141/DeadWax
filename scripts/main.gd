@@ -17,6 +17,10 @@ const ROOM_SCRIPTS := [
 	preload("res://scripts/room_smoothed.gd"),
 ]
 const ROOM_IDS := [&"label", &"practice", &"verse", &"unplayed", &"smoothed"]
+const CAMERA_LEAD_X := 52.0
+const CAMERA_LEAD_FALL := 70.0
+const CAMERA_LEAD_RISE := 22.0
+const CAMERA_LEAD_RESPONSE := 7.0
 const WorldMapScript := preload("res://scripts/world_map.gd")
 const GrayboxScript := preload("res://scripts/room_graybox.gd")
 const PressingScript := preload("res://scripts/pressing_state.gd")
@@ -331,6 +335,7 @@ func _process(delta: float) -> void:
 		camera.offset = Vector2(randf_range(-_shake, _shake), randf_range(-_shake, _shake))
 	else:
 		camera.offset = Vector2.ZERO
+	_update_camera_lead(delta)
 
 	# living HUD + audio beds
 	audio.set_crackle(player.noise if not player.hooded else 0.0)
@@ -355,6 +360,20 @@ func _process(delta: float) -> void:
 		if player.shine != _last_saved_shine:
 			_queue_save()
 	_update_cinematic_presentation()
+
+func _update_camera_lead(delta: float) -> void:
+	if camera == null or player == null:
+		return
+	var target := Vector2.ZERO
+	if not bool(_settings.reduced_motion):
+		var horizontal := clampf(player.velocity.x / SkipScript.RUN_SPEED, -1.0, 1.0)
+		target.x = horizontal * CAMERA_LEAD_X
+		if player.velocity.y > 80.0:
+			target.y = clampf(player.velocity.y / SkipScript.MAX_FALL, 0.0, 1.0) * CAMERA_LEAD_FALL
+		elif player.velocity.y < -80.0:
+			target.y = -clampf(player.velocity.y / SkipScript.JUMP_VELOCITY, 0.0, 1.0) * CAMERA_LEAD_RISE
+	var blend := 1.0 if bool(_settings.reduced_motion) else 1.0 - exp(-CAMERA_LEAD_RESPONSE * delta)
+	camera.position = camera.position.lerp(target, blend)
 
 func _cinematic_campaign() -> bool:
 	return not development_mode and not practice_mode
@@ -1734,6 +1753,7 @@ func _respawn() -> void:
 		player.set("_recover", 0.0)
 	player.refill_air_strikes()
 	player.reset_animation()
+	camera.position = Vector2.ZERO
 	camera.reset_smoothing()
 	camera.force_update_scroll()
 	room.call("sync_scenery_camera")

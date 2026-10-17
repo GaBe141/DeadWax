@@ -199,6 +199,7 @@ func _check_camera_and_pause() -> void:
 	var camera_before: Vector2 = _main.camera.get_screen_center_position()
 	_key(KEY_D, true)
 	await _physics(20)
+	_check(_main.camera.position.x > 20.0, "the camera leads ahead of a run")
 	_key(KEY_D, false)
 	await _physics(8)
 	var after := _offsets(atmosphere)
@@ -244,6 +245,7 @@ func _check_reduced_motion() -> void:
 	_key(KEY_D, false)
 	await _physics(5)
 	_check(_offsets(atmosphere) == offsets, "reduced motion holds every scenery layer still while the camera moves")
+	_check(_main.camera.position.length() < 1.0, "reduced motion keeps the camera centered on Skip")
 	_check(_decorative_snapshot(atmosphere) == frozen, "reduced motion also freezes ambient animation state while actor contacts follow actual movement")
 	var original_ink: Color = atmosphere.ink
 	var original_stock: Color = atmosphere.stock
